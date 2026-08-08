@@ -27,7 +27,8 @@ import { UsersModule } from './users/users.module';
         password: config.get('DB_PASSWORD', 'postgres'),
         database: config.get('DB_NAME', 'habilisalud'),
         entities: [User, Clinic],
-        synchronize: true,
+        // Schema clínico/ERP lo gestiona Prisma; TypeORM solo auth/clinics.
+        synchronize: false,
       }),
     }),
     UsersModule,

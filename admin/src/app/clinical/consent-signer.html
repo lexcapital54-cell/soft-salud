@@ -1,0 +1,129 @@
+<section class="signer">
+  <header class="signer-head">
+    <div>
+      <p class="eyebrow">Motor de consentimientos</p>
+      <h3>Firma biométrica del documento</h3>
+      <p class="lead">
+        Elija la plantilla, <strong>léala</strong> (los datos del paciente/firmante se muestran
+        resaltados) y firme abajo. No copie este texto a la historia clínica: el PDF sellado es el
+        documento legal.
+      </p>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <p class="muted">Cargando plantillas…</p>
+  }
+
+  @if (error()) {
+    <p class="banner err">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="banner ok">{{ message() }}</p>
+  }
+
+  <label class="field">
+    Plantilla legal
+    <select
+      [ngModel]="selectedId()"
+      (ngModelChange)="onSelectTemplate($event)"
+      [disabled]="loading() || !templates().length"
+    >
+      @if (!templates().length) {
+        <option value="">— Sin plantillas cargadas —</option>
+      }
+      @for (t of templates(); track t.id) {
+        <option [value]="t.id">{{ t.code }} · {{ t.title }} (v{{ t.version }})</option>
+      }
+    </select>
+  </label>
+
+  @if (!loading() && !templates().length) {
+    <p class="muted small">
+      Tip: con la API encendida, en una terminal ejecute
+      <code>cd api && npm run prisma:seed</code>
+      y luego pulse recargar abajo.
+    </p>
+    <button type="button" class="ghost" (click)="reload()">Reintentar carga de plantillas</button>
+  }
+
+  @if (previewHtml(); as html) {
+    <article class="legal-doc" [innerHTML]="html"></article>
+    <p class="muted small">
+      Vista previa: los datos en negrita se toman del paciente/firmante. El PDF final también incluye
+      firma, fecha, IP y hash.
+    </p>
+  }
+
+  <div class="signer-meta">
+    <label class="field">
+      Nombre del firmante
+      <input [(ngModel)]="signerName" placeholder="Paciente o acudiente" />
+    </label>
+    <label class="field">
+      Tipo de documento
+      <select [(ngModel)]="signerDocumentType">
+        @for (t of documentTypes; track t.value) {
+          <option [value]="t.value">{{ t.label }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      Número de documento
+      <input [(ngModel)]="signerDocument" placeholder="Número" />
+    </label>
+  </div>
+
+  <div class="pad-wrap">
+    <p class="pad-label">Trazo de firma</p>
+    <canvas #padCanvas class="pad" aria-label="Canvas de firma"></canvas>
+    <p class="muted small">
+      Use el dedo o el mouse para firmar. El sello de tiempo e IP se capturan al aceptar.
+    </p>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="ghost" (click)="clearSignature()" [disabled]="submitting()">
+      Limpiar firma
+    </button>
+    <button
+      type="button"
+      class="primary"
+      (click)="acceptAndSeal()"
+      [disabled]="submitting() || !canSeal()"
+    >
+      {{ submitting() ? 'Sellando…' : 'Aceptar y sellar documento' }}
+    </button>
+  </div>
+
+  @if (!patientId()) {
+    <p class="banner err">
+      Para sellar: arriba seleccione paciente y pulse <strong>Abrir atención</strong>.
+    </p>
+  }
+
+  @if (signed().length) {
+    <div class="history">
+      <h4>Consentimientos firmados en esta atención / paciente</h4>
+      <ul>
+        @for (s of signed(); track s.id) {
+          <li>
+            <strong>{{ s.template?.code || 'DOC' }}</strong>
+            — {{ s.template?.title || 'Plantilla' }}
+            <span class="muted">
+              · {{ s.signedAt | date: 'short' }}
+              @if (s.pdfStorageKey) {
+                · PDF sellado
+              } @else {
+                · PDF pendiente
+              }
+            </span>
+            @if (s.pdfStorageKey) {
+              <button type="button" class="linkish" (click)="openPdf(s.id)">Ver PDF</button>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</section>

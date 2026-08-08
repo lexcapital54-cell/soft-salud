@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
 import { seedDocumentRequirements } from './document-requirements.seed';
+import { seedConsents } from './seedConsents';
 
 const prisma = new PrismaClient();
 
@@ -81,7 +82,13 @@ async function main() {
     `  Categorías: ${docs.categories} | Requisitos plantilla: ${docs.requirements} | Clínicas: ${docs.clinics} | Upserts: ${docs.upserted}`,
   );
 
-  console.log('Seed Paso 2 completado.');
+  console.log('→ Sembrando plantillas de consentimiento (Psicología v1)...');
+  const consents = await seedConsents(prisma);
+  console.log(
+    `  Plantillas: ${consents.templates} (${consents.specialty} v${consents.version})`,
+  );
+
+  console.log('Seed completado.');
 }
 
 main()

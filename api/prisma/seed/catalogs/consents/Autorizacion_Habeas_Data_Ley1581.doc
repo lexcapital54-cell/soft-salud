@@ -1,0 +1,48 @@
+
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+    h2 { text-align: center; font-size: 16px; font-weight: bold; }
+    h3 { font-size: 14px; font-weight: bold; margin-top: 25px; }
+    p, li { font-size: 12px; text-align: justify; }
+    .signature-box { margin-top: 50px; width: 100%; }
+    .signature-line { border-top: 1px solid black; width: 80%; margin-top: 40px; }
+</style>
+</head>
+<body>
+    <h2>AUTORIZACIÓN PARA EL TRATAMIENTO DE DATOS PERSONALES Y SENSIBLES (LEY 1581 DE 2012)</h2>
+    <p><strong>Ciudad y Fecha:</strong> ___________________________</p>
+    
+    <p>Yo, ________________________________________________, identificado(a) con C.C. / C.E. / T.I. No. _________________ de _________________, obrando en nombre propio o en representación legal del menor/paciente ________________________________________________, autorizo de manera previa, expresa e informada al consultorio/profesional tratante para realizar la recolección, almacenamiento, uso, circulación y supresión de mis datos personales y <strong>datos sensibles</strong>, conforme a lo dispuesto en la Ley 1581 de 2012 y el Decreto 1377 de 2013.</p>
+    
+    <h3>1. Finalidad del Tratamiento</h3>
+    <p>Entiendo y acepto que mis datos personales y sensibles (relacionados con mi estado de salud física y mental, antecedentes clínicos, diagnósticos, y procesos terapéuticos) serán utilizados estrictamente para las siguientes finalidades:</p>
+    <ul>
+        <li>Prestación integral de servicios de salud (evaluación, diagnóstico y tratamiento).</li>
+        <li>Apertura, actualización y custodia de la Historia Clínica Electrónica, en estricto cumplimiento de la Resolución 1995 de 1999 y la Resolución 1732 de 2026 del Ministerio de Salud y Protección Social.</li>
+        <li>Gestión administrativa: agendamiento de citas, recordatorios vía plataformas de mensajería (WhatsApp/Email/SMS), facturación electrónica y reporte de RIPS al Ministerio.</li>
+    </ul>
+    
+    <h3>2. Tratamiento de Datos Sensibles</h3>
+    <p>Se me ha informado que, por tratarse de datos relativos a mi salud (considerados legalmente como <em>datos sensibles</em>), <strong>no estoy obligado(a) a autorizar su tratamiento</strong> para fines distintos a los de la prestación del servicio. Sin embargo, entiendo que la recolección de los datos clínicos y demográficos es un requisito legal, asistencial e ineludible para que el profesional pueda brindarme la atención en salud solicitada y registrarla en el sistema de salud colombiano.</p>
+    
+    <h3>3. Derechos del Titular</h3>
+    <p>Conozco que, como titular de los datos personales, me asisten los derechos previstos en la ley, específicamente los de: a) Conocer, actualizar y rectificar mis datos personales; b) Solicitar prueba de esta autorización; c) Ser informado sobre el uso que se le ha dado a mis datos; d) Presentar quejas ante la Superintendencia de Industria y Comercio por infracciones; e) Revocar la autorización y/o solicitar la supresión del dato (<strong>Nota Legal:</strong> La supresión de la historia clínica no será procedente cuando exista un deber legal de permanecer en la base de datos, como lo es la obligación de custodia clínica por un periodo mínimo de 15 años, según la normatividad vigente).</p>
+    
+    <p>Leído el presente documento, manifiesto que he sido informado de forma clara y precisa, y otorgo mi consentimiento libre, consciente y voluntario.</p>
+    
+    <table class="signature-box">
+        <tr>
+            <td style="width: 50%;">
+                <div class="signature-line"></div>
+                <strong>Firma del Paciente o Representante Legal</strong><br>
+                Nombre:<br>
+                C.C.: <br>
+                Teléfono: 
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

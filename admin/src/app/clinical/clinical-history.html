@@ -51,7 +51,14 @@
 
     @if (patientMode === 'create') {
       <div class="grid-4">
-        <label>Tipo doc. <input [(ngModel)]="patientForm.documentType" /></label>
+        <label
+          >Tipo doc.
+          <select [(ngModel)]="patientForm.documentType">
+            @for (t of documentTypes; track t.value) {
+              <option [value]="t.value">{{ t.label }}</option>
+            }
+          </select>
+        </label>
         <label>Número <input [(ngModel)]="patientForm.documentNumber" /></label>
         <label>Nombres <input [(ngModel)]="patientForm.firstName" /></label>
         <label>Apellidos <input [(ngModel)]="patientForm.lastName" /></label>
@@ -97,8 +104,19 @@
       <div class="main">
         <section class="block">
           <h3>1. Datos de identificación del paciente</h3>
+          <p class="muted small">
+            Estos campos actualizan la ficha del paciente al guardar el borrador. No escriba aquí el
+            texto de la plantilla legal.
+          </p>
           <div class="grid-4">
-            <label>Tipo documento <input [(ngModel)]="patientForm.documentType" /></label>
+            <label
+              >Tipo documento
+              <select [(ngModel)]="patientForm.documentType">
+                @for (t of documentTypes; track t.value) {
+                  <option [value]="t.value">{{ t.label }}</option>
+                }
+              </select>
+            </label>
             <label>Número <input [(ngModel)]="patientForm.documentNumber" /></label>
             <label>Nombres <input [(ngModel)]="patientForm.firstName" /></label>
             <label>Apellidos <input [(ngModel)]="patientForm.lastName" /></label>
@@ -424,7 +442,28 @@
         </section>
 
         <section class="block">
-          <h3>5. Consentimientos</h3>
+          <h3>5. Consentimientos (plantilla legal + firma)</h3>
+          <div class="consent-help">
+            <p><strong>Cómo funciona (importante):</strong></p>
+            <ol>
+              <li>
+                La <strong>plantilla legal</strong> es un texto de solo lectura (Habeas Data, Adultos,
+                NNA o Telepsicología). <em>No se digita dentro de la HCE</em>; solo se lee y se firma.
+              </li>
+              <li>
+                Los datos del paciente ya vienen de la atención. Abajo solo confirme
+                <strong>quién firma</strong> (paciente o acudiente) y el documento.
+              </li>
+              <li>
+                Trace la firma → <strong>Aceptar y sellar</strong>. Eso crea el PDF legal. Es
+                independiente de “Guardar borrador”.
+              </li>
+              <li>
+                “Guardar borrador” guarda la historia clínica (motivo, examen, CIE/CUPS). No firma
+                consentimientos.
+              </li>
+            </ol>
+          </div>
           <div class="checks">
             <label>
               <input
@@ -432,7 +471,7 @@
                 [ngModel]="consentGranted('INFORMED')"
                 (ngModelChange)="setConsent('INFORMED', $event)"
               />
-              Consentimiento informado
+              Flag HCE: consentimiento informado (se marca solo al sellar, o manual)
             </label>
             <label>
               <input
@@ -440,8 +479,31 @@
                 [ngModel]="consentGranted('DATA_PROCESSING')"
                 (ngModelChange)="setConsent('DATA_PROCESSING', $event)"
               />
-              Autorización tratamiento de datos
+              Flag HCE: autorización de datos (se marca al sellar Habeas Data)
             </label>
+          </div>
+          <div class="consent-signer-embed">
+            <app-consent-signer
+              [patientId]="encounter()?.patient?.id || selectedPatientId || null"
+              [encounterId]="encounter()?.id || null"
+              [patientName]="
+                encounter()?.patient
+                  ? encounter()!.patient.firstName + ' ' + encounter()!.patient.lastName
+                  : ''
+              "
+              [patientDocument]="encounter()?.patient?.documentNumber || ''"
+              [patientDocumentType]="encounter()?.patient?.documentType || 'CC'"
+              [professionalName]="
+                encounter()?.professional?.fullName || content.signature.professionalName || ''
+              "
+              [professionalCard]="
+                encounter()?.professional?.professionalCard ||
+                content.signature.professionalCard ||
+                ''
+              "
+              (sealed)="onConsentSealed()"
+              (flagsChanged)="onConsentFlagsChanged()"
+            />
           </div>
         </section>
 

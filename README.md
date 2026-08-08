@@ -18,16 +18,14 @@ Crea la base `habilisalud` en pgAdmin. Ver `database/README.md`.
 
 Ajusta `api/.env` con tu usuario y contraseña de Postgres.
 
-Tras crear la BD, aplica tablas clínicas y seed (Paso 2):
+Tras crear la BD, aplica tablas clínicas/ERP y seed:
 
 ```bash
 cd api
-# si aún no están las tablas clínicas:
-# node -e "..." o reutiliza prisma/migrations/20260808_paso2_clinical_tables/migration.sql
-npm run prisma:seed
+# migraciones idempotentes en api/prisma/migrations/
+npm run prisma:generate
+npm run prisma:seed   # CIE/CUPS + requisitos documentales
 ```
-
-El seed carga CIE/CUPS de psicología (MVP) y requisitos del Excel `Checklist_Habilitacion_Consultorio_Psicologico_Base2.xlsx`.
 
 ## 2. API
 

@@ -1,99 +1,66 @@
-# Arquitectura MVP — HABILISALUD
+# Arquitectura ERP HealthTech — HABILISALUD
 
-Documento del **Paso 1**: arquitectura, base de datos y storage.
+Documento del **Paso 1 ERP**: extensión del schema Prisma a 5 módulos (agenda/admisión, HCE, facturación/RIPS, auditoría de calidad, habilitación/PAMEC).
 
 ## Stack
 
 | Capa | Tecnología |
 |------|------------|
 | Landing | React + Vite (`src/`) |
-| App clínica / admin | Angular (`admin/`) |
+| App clínica / admin | Angular (`admin/`) — marca blanca Tailwind/Shadcn en Paso 4 visual |
 | API | NestJS (`api/`) |
-| ORM | Prisma 6 (fuente de verdad del modelo clínico) |
+| ORM | Prisma 6 (dominio ERP); TypeORM residual en auth/clinics |
 | BD | PostgreSQL `habilisalud` + JSONB |
-| PDFs | Storage local `api/storage/` (interfaz lista para S3) |
-| Generación PDF | `pdfmake` / `pdf-lib` (Paso 3) |
-| Visor PDF | Angular + blob/iframe o visor dedicado (Paso 4) |
-
-Auth y clinics actuales (TypeORM) se mantienen; el dominio clínico (agenda, HCE, RDA, documentos) avanza sobre Prisma en la misma BD.
+| PDFs / firmas | `api/storage/` (`STORAGE_ROOT`) |
 
 ## Módulos
 
-1. **Agendamiento** — `Appointment` con estados y vínculo a `Encounter`
-2. **HCE dinámica** — `FormTemplate.schemaJson` + `ClinicalRecord.content` (JSONB); export PDF legal con bloque RDA + JSON HL7 FHIR R4
-3. **Gestión documental** — `DocumentRequirement` / `DocumentFile` con upload, download y visor
+1. **Agendamiento y admisión** — máquina de estados de cita + Habeas Data (Ley 1581) antes de `IN_WAITING`; trigger de borrador HCE
+2. **HCE dinámica** — plantillas JSONB, alertas clínicas, consentimientos firmados, anexos, evoluciones inmutables + notas aclaratorias, export RDA/FHIR
+3. **Facturación / tesorería / RIPS** — `billingMode` (`RECEIPT_ONLY` | `FEV_MANUAL` | `FEV_API`), paquetes de sesiones, invoices + transactions
+4. **Auditoría clínica y calidad** — KPIs (`QualitySnapshot`), CIE críticos (`CieCode.isCritical`), brecha de consentimientos
+5. **Gestión documental / PAMEC** — requisitos/archivos, equipos, insumos, `ExpiryAlert`, checklist REPS
 
-## Estructura relevante
+## Mapeo FHIR R4
+
+| Dominio | FHIR |
+|---------|------|
+| Clinic | Organization |
+| User | Practitioner |
+| Patient | Patient |
+| Appointment | Appointment |
+| Encounter | Encounter |
+| ClinicalRecord / evoluciones | Composition + Observation |
+| Diagnosis | Condition |
+| ClinicalProcedure | Procedure |
+| ClinicalConsent | Consent |
+| ClinicalAttachment | DocumentReference |
+| Invoice / RIPS | Claim (export) |
+
+## Flujo agenda → HCE
 
 ```text
-api/
-├── prisma/
-│   ├── schema.prisma
-│   ├── migrations/          # se generan al migrar
-│   └── seed/
-│       └── catalogs/        # CIE/CUPS (Paso 2, desde Excel)
-├── storage/                 # gitignored (salvo .gitkeep)
-│   ├── clinical-exports/
-│   ├── rda-json/
-│   ├── habilitation-docs/
-│   └── clinical-attachments/
-└── src/
-    ├── auth/, clinics/, users/   # existentes
-    └── modules/                  # patients, appointments, clinical, rda, documents (Pasos 3–4)
+SCHEDULED → CONFIRMED → (Habeas Data firmado) → IN_WAITING
+  → crea Encounter + ClinicalRecord DRAFT
+  → COMPLETED | NO_SHOW | CANCELLED
 ```
 
-## Flujo de dominio
+Modelo: `AppointmentAdmission.habeasDataSigned` (gate).
 
-```text
-Appointment --iniciar atención--> Encounter
-Encounter --> ClinicalRecord (JSONB)
-ClinicalRecord --> Diagnosis (CIE) + ClinicalProcedure (CUPS)
-Cerrar HCE --> RdaExport (PDF + FHIR JSON)
-DocumentRequirement --> DocumentFile (PDF habilitación)
-```
+## Modelos clave (Prisma)
 
-## Convención `ClinicalRecord.content` (Psicología MVP)
+Fuente: [`api/prisma/schema.prisma`](../api/prisma/schema.prisma)
 
-- `careMinimum`: motive, presentIllness, antecedents, systemsReview
-- `mentalExam`: appearance, behavior, speech, mood, affect, thought, perception, judgment, insight
-- `assessment`: impressionNarrative, observations, managementPlan[]
-- `vitals`, `allergies`, `medications`, `risks`
-- `rdaMeta`: includedEvents[], deviceId, physicalLocation
+- Agenda: `Appointment`, `AppointmentAdmission`
+- HCE: `ClinicalRecord`, `ClinicalEvolution`, `ClarificationNote`, `ClinicalAlert`, `ClinicalConsent`, `ClinicalConsentTemplate`, `ClinicalAttachment`, `RdaExport`
+- Facturación: `SessionPackage`, `Invoice`, `InvoiceItem`, `Transaction`
+- Calidad: `QualitySnapshot`, `CieCode.isCritical`
+- Habilitación: `DocumentRequirement`/`DocumentFile`, `EquipmentResume`, `EquipmentMaintenance`, `SupplyItem`, `ExpiryAlert`, `RepsChecklist`/`RepsChecklistItem`
 
-Otras especialidades (medicina, estética, odontología) usan el mismo contenedor JSONB con `FormTemplate` distinto.
-
-## Storage
-
-| Tipo | `storageKey` ejemplo |
-|------|----------------------|
-| Docs habilitación | `habilitation-docs/{clinicId}/{requirementId}/{fileId}.pdf` |
-| PDF HCE + RDA | `clinical-exports/{clinicId}/{encounterId}/hce-rda.pdf` |
-| FHIR Bundle | `rda-json/{clinicId}/{encounterId}/bundle.json` |
-| Anexos clínicos | `clinical-attachments/{encounterId}/{fileId}` |
-
-Variables:
-
-- `DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/habilisalud`
-- `STORAGE_ROOT=./storage`
-
-## Esquema Prisma
-
-Fuente de verdad: [`api/prisma/schema.prisma`](../api/prisma/schema.prisma).
-
-Modelos principales: `Clinic`, `User`, `Patient`, `Appointment`, `FormTemplate`, `Encounter`, `ClinicalRecord`, `Diagnosis`, `ClinicalProcedure`, `Consent`, `ClinicalAttachment`, `RdaExport`, `CieCode`, `CupsCode`, `DocumentCategory`, `DocumentRequirement`, `DocumentFile`, `AuditLog`.
+Migración idempotente: `api/prisma/migrations/20260808_erp_paso1_extension/migration.sql`
 
 ## Próximos pasos
 
-- **Paso 2 (hecho):** Seed CIE/CUPS MVP psicología + requisitos documentales desde `Checklist_Habilitacion_Consultorio_Psicologico_Base2.xlsx` (`npm run prisma:seed` en `api/`)
-- **Paso 3:** Servicios Nest (formularios, RDA PDF/FHIR, upload PDF)
-- **Paso 4:** UI Angular (agenda, HCE dinámica, dashboard documental + visor)
-
-### Nota catálogos
-
-El Excel de habilitación **no incluye** hojas CIE/CUPS. El seed usa:
-
-- `api/prisma/seed/catalogs/cie-psychology.json` (30 códigos)
-- `api/prisma/seed/catalogs/cups-psychology.json` (15 códigos)
-- Requisitos: 12 categorías / ~189 documentos del checklist, replicados por clínica activa
-
-Cuando exista un Excel oficial CIE/CUPS completo, se reemplazan esos JSON.
+- **Paso 2:** Seed CIE/CUPS ampliado + mock ingresos/egresos/atenciones
+- **Paso 3:** Backend (inmutabilidad HCE, cron vencimientos, paquetes, toggle facturación)
+- **Paso 4:** Frontend layout, checklist REPS, calendario, banner de alertas HCE

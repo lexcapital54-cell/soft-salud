@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { ClinicalApiService } from './clinical-api.service';
+import { ConsentSigner } from './consent-signer';
+import { DOCUMENT_TYPES } from './document-types';
 import {
   CatalogCode,
   ClinicalContent,
@@ -59,13 +61,15 @@ function emptyContent(): ClinicalContent {
 
 @Component({
   selector: 'app-clinical-history',
-  imports: [FormsModule, RouterLink, DatePipe],
+  imports: [FormsModule, RouterLink, DatePipe, ConsentSigner],
   templateUrl: './clinical-history.html',
   styleUrl: './clinical-history.scss',
 })
 export class ClinicalHistory implements OnInit {
   private readonly api = inject(ClinicalApiService);
   private readonly auth = inject(AuthService);
+
+  readonly documentTypes = DOCUMENT_TYPES;
 
   readonly user = this.auth.user;
   readonly loading = signal(false);
@@ -336,6 +340,21 @@ export class ClinicalHistory implements OnInit {
     this.consents = next;
   }
 
+  onConsentSealed() {
+    this.message.set('Consentimiento firmado y vinculado a la atención.');
+    const enc = this.encounter();
+    if (enc?.id) {
+      this.loadEncounter(enc.id);
+    }
+  }
+
+  onConsentFlagsChanged() {
+    const enc = this.encounter();
+    if (enc?.id) {
+      this.loadEncounter(enc.id);
+    }
+  }
+
   saveDraft() {
     const enc = this.encounter();
     if (!enc) {
@@ -380,21 +399,62 @@ export class ClinicalHistory implements OnInit {
         next: (updated) => {
           this.applyEncounter(updated);
           this.saving.set(false);
-          this.message.set('Borrador guardado.');
-          if (this.selectedPatientId) {
-            this.api
-              .updatePatient(this.selectedPatientId, {
-                ...this.patientForm,
-                birthDate: this.patientForm.birthDate,
-              })
-              .subscribe({ error: () => undefined });
-          }
+          this.message.set(
+            'Borrador de HCE guardado (motivo, examen, diagnósticos, etc.).',
+          );
+          this.persistPatientDemographics();
         },
         error: (err) => {
           this.saving.set(false);
           this.error.set(err?.error?.message || 'No se pudo guardar el borrador.');
         },
       });
+  }
+
+  /** Actualiza demografía del paciente solo con campos seguros (sin id/clinicId). */
+  private persistPatientDemographics() {
+    const id = this.selectedPatientId || this.encounter()?.patient?.id;
+    if (!id) return;
+
+    const f = this.patientForm;
+    if (!f.documentType || !f.documentNumber || !f.firstName || !f.lastName || !f.birthDate) {
+      return;
+    }
+
+    const payload: Partial<Patient> = {
+      documentType: f.documentType,
+      documentNumber: f.documentNumber,
+      firstName: f.firstName,
+      lastName: f.lastName,
+      birthDate: f.birthDate,
+    };
+    if (f.middleName) payload.middleName = f.middleName;
+    if (f.secondLastName) payload.secondLastName = f.secondLastName;
+    if (f.sexAtBirth) payload.sexAtBirth = f.sexAtBirth;
+    if (f.genderIdentity) payload.genderIdentity = f.genderIdentity;
+    if (f.sexualOrientation) payload.sexualOrientation = f.sexualOrientation;
+    if (f.maritalStatus) payload.maritalStatus = f.maritalStatus;
+    if (f.address) payload.address = f.address;
+    if (f.city) payload.city = f.city;
+    if (f.department) payload.department = f.department;
+    if (f.phone) payload.phone = f.phone;
+    if (f.email && f.email.includes('@')) payload.email = f.email;
+    if (f.eps) payload.eps = f.eps;
+    if (f.regime) payload.regime = f.regime;
+    if (f.affiliationNumber) payload.affiliationNumber = f.affiliationNumber;
+    if (f.occupation) payload.occupation = f.occupation;
+    if (f.educationLevel) payload.educationLevel = f.educationLevel;
+    if (f.emergencyContactName) payload.emergencyContactName = f.emergencyContactName;
+    if (f.emergencyContactPhone) payload.emergencyContactPhone = f.emergencyContactPhone;
+    if (f.emergencyRelationship) payload.emergencyRelationship = f.emergencyRelationship;
+
+    this.api.updatePatient(id, payload).subscribe({
+      error: (err) =>
+        this.error.set(
+          err?.error?.message ||
+            'La HCE se guardó, pero no se pudieron actualizar los datos del paciente.',
+        ),
+    });
   }
 
   newAttention() {

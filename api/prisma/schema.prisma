@@ -7,6 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Auth / multi-tenant (coexiste con TypeORM) ─────────────────────────────
+
 enum UserRole {
   SUPER_ADMIN
   CLINIC_ADMIN
@@ -32,13 +34,29 @@ enum DashboardType {
   @@map("clinics_dashboard_type_enum")
 }
 
+enum BillingMode {
+  RECEIPT_ONLY
+  FEV_MANUAL
+  FEV_API
+}
+
+// ─── Agenda / admisión ──────────────────────────────────────────────────────
+
 enum AppointmentStatus {
   SCHEDULED
   CONFIRMED
   IN_WAITING
   COMPLETED
+  NO_SHOW
   CANCELLED
 }
+
+enum CareModality {
+  IN_PERSON
+  VIRTUAL
+}
+
+// ─── HCE / compliance ───────────────────────────────────────────────────────
 
 enum EncounterStatus {
   PLANNED
@@ -53,11 +71,6 @@ enum ClinicalRecordStatus {
   CLOSED
 }
 
-enum CareModality {
-  IN_PERSON
-  VIRTUAL
-}
-
 enum DiagnosisType {
   PRINCIPAL
   RELATED
@@ -68,6 +81,99 @@ enum RdaExportStatus {
   PENDING
   GENERATED
   FAILED
+}
+
+enum SignatureMethod {
+  DRAW
+  OTP
+  BIOMETRIC
+  CLICKWRAP
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum AlertCode {
+  ALLERGY
+  SUICIDE_RISK
+  CONTRAINDICATION
+  DRUG_INTERACTION
+  EPIDEMIOLOGIC
+  OTHER
+}
+
+enum AttachmentCategory {
+  LAB
+  EXTERNAL_HCE
+  IMAGE
+  OTHER
+}
+
+// ─── Facturación / tesorería ────────────────────────────────────────────────
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  VOID
+}
+
+enum PackageStatus {
+  ACTIVE
+  EXHAUSTED
+  CANCELLED
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CARD
+  OTHER
+}
+
+enum DianExportStatus {
+  NONE
+  PENDING
+  EXPORTED
+  ACCEPTED
+  REJECTED
+}
+
+// ─── Habilitación / PAMEC ───────────────────────────────────────────────────
+
+enum EquipmentStatus {
+  ACTIVE
+  OUT_OF_SERVICE
+}
+
+enum SupplyCategory {
+  AESTHETIC
+  CONSUMABLE
+  MEDICATION
+}
+
+enum ExpiryAlertChannel {
+  UI
+  EMAIL
+}
+
+enum ExpiryAlertStatus {
+  PENDING
+  SENT
+  DISMISSED
+}
+
+enum RepsResult {
+  CUMPLE
+  NO_CUMPLE
+  NA
 }
 
 enum AuditAction {
@@ -81,45 +187,64 @@ enum AuditAction {
   CLOSE
 }
 
+// ─── Models ────────────────────────────────────────────────────────────────
+
 model Clinic {
   id            String          @id @default(uuid()) @db.Uuid
   name          String          @db.VarChar(160)
   specialty     ClinicSpecialty
   dashboardType DashboardType?  @map("dashboard_type")
+  billingMode   BillingMode     @default(RECEIPT_ONLY) @map("billing_mode")
   address       String?         @db.VarChar(255)
   phone         String?         @db.VarChar(40)
   isActive      Boolean         @default(true) @map("is_active")
   createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  users                User[]
-  patients             Patient[]
-  appointments         Appointment[]
-  encounters           Encounter[]
-  formTemplates        FormTemplate[]
-  documentRequirements DocumentRequirement[]
-  auditLogs            AuditLog[]
+  users                  User[]
+  patients               Patient[]
+  appointments           Appointment[]
+  encounters             Encounter[]
+  formTemplates          FormTemplate[]
+  documentRequirements   DocumentRequirement[]
+  auditLogs              AuditLog[]
+  clinicalAlerts         ClinicalAlert[]
+  clinicalConsents       ClinicalConsent[]
+  sessionPackages        SessionPackage[]
+  invoices               Invoice[]
+  transactions           Transaction[]
+  equipmentResumes       EquipmentResume[]
+  supplyItems            SupplyItem[]
+  expiryAlerts           ExpiryAlert[]
+  repsChecklists         RepsChecklist[]
+  qualitySnapshots       QualitySnapshot[]
+  consentTemplates       ConsentTemplate[]
+  patientConsents        PatientConsent[]
 
   @@map("clinics")
 }
 
 model User {
-  id               String   @id @default(uuid()) @db.Uuid
-  email            String   @unique @db.VarChar(180)
-  passwordHash     String   @map("password_hash")
-  fullName         String   @map("full_name") @db.VarChar(160)
+  id               String    @id @default(uuid()) @db.Uuid
+  email            String    @unique @db.VarChar(180)
+  passwordHash     String    @map("password_hash")
+  fullName         String    @map("full_name") @db.VarChar(160)
   role             UserRole
-  professionalCard String?  @map("professional_card") @db.VarChar(80)
-  clinicId         String?  @map("clinic_id") @db.Uuid
-  clinic           Clinic?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
-  isActive         Boolean  @default(true) @map("is_active")
-  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  professionalCard String?   @map("professional_card") @db.VarChar(80)
+  clinicId         String?   @map("clinic_id") @db.Uuid
+  clinic           Clinic?   @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  appointmentsAsProfessional Appointment[]    @relation("AppointmentProfessional")
-  encountersAsProfessional   Encounter[]      @relation("EncounterProfessional")
+  appointmentsAsProfessional Appointment[]         @relation("AppointmentProfessional")
+  encountersAsProfessional   Encounter[]           @relation("EncounterProfessional")
   clinicalRecordsAuthored    ClinicalRecord[]
+  clinicalEvolutionsAuthored ClinicalEvolution[]
+  clarificationNotesAuthored ClarificationNote[]
   uploadedDocuments          DocumentFile[]
+  uploadedAttachments        ClinicalAttachment[]
+  transactionsCreated        Transaction[]
   auditLogs                  AuditLog[]
 
   @@index([clinicId])
@@ -158,8 +283,13 @@ model Patient {
   createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  appointments Appointment[]
-  encounters   Encounter[]
+  appointments     Appointment[]
+  encounters       Encounter[]
+  clinicalAlerts   ClinicalAlert[]
+  clinicalConsents ClinicalConsent[]
+  patientConsents  PatientConsent[]
+  sessionPackages  SessionPackage[]
+  invoices         Invoice[]
 
   @@unique([clinicId, documentType, documentNumber])
   @@index([clinicId, lastName])
@@ -185,9 +315,30 @@ model Appointment {
   createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  admission    AppointmentAdmission?
+  invoiceItems InvoiceItem[]
+  invoices     Invoice[]
+
   @@index([clinicId, startsAt])
   @@index([professionalId, startsAt])
   @@map("appointments")
+}
+
+model AppointmentAdmission {
+  id                   String    @id @default(uuid()) @db.Uuid
+  appointmentId        String    @unique @map("appointment_id") @db.Uuid
+  appointment          Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  habeasDataSigned     Boolean   @default(false) @map("habeas_data_signed")
+  habeasDataSignedAt   DateTime? @map("habeas_data_signed_at") @db.Timestamptz(6)
+  signedByName         String?   @map("signed_by_name") @db.VarChar(160)
+  documentNumber       String?   @map("document_number") @db.VarChar(40)
+  signatureStorageKey  String?   @map("signature_storage_key")
+  ipAddress            String?   @map("ip_address") @db.VarChar(60)
+  userAgent            String?   @map("user_agent")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("appointment_admissions")
 }
 
 model FormTemplate {
@@ -233,9 +384,12 @@ model Encounter {
   clinicalRecord ClinicalRecord?
   diagnoses      Diagnosis[]
   procedures     ClinicalProcedure[]
-  consents       Consent[]
+  consents       ClinicalConsent[]
+  patientConsents PatientConsent[]
   attachments    ClinicalAttachment[]
   rdaExports     RdaExport[]
+  clinicalAlerts ClinicalAlert[]
+  invoices       Invoice[]
 
   @@index([clinicId, startedAt])
   @@map("encounters")
@@ -251,13 +405,72 @@ model ClinicalRecord {
   author           User                 @relation(fields: [authorId], references: [id])
   status           ClinicalRecordStatus @default(DRAFT)
   content          Json
+  contentHash      String?              @map("content_hash") @db.VarChar(128)
+  lockedAt         DateTime?            @map("locked_at") @db.Timestamptz(6)
+  lockReason       String?              @map("lock_reason") @db.VarChar(160)
   signedAt         DateTime?            @map("signed_at") @db.Timestamptz(6)
   closedAt         DateTime?            @map("closed_at") @db.Timestamptz(6)
   verificationCode String?              @map("verification_code") @db.VarChar(80)
   createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  evolutions         ClinicalEvolution[]
+  clarificationNotes ClarificationNote[]
+
   @@map("clinical_records")
+}
+
+model ClinicalEvolution {
+  id               String   @id @default(uuid()) @db.Uuid
+  clinicalRecordId String   @map("clinical_record_id") @db.Uuid
+  clinicalRecord   ClinicalRecord @relation(fields: [clinicalRecordId], references: [id], onDelete: Cascade)
+  authorId         String   @map("author_id") @db.Uuid
+  author           User     @relation(fields: [authorId], references: [id])
+  content          Json
+  contentHash      String   @map("content_hash") @db.VarChar(128)
+  signedAt         DateTime @map("signed_at") @db.Timestamptz(6)
+  immutable        Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([clinicalRecordId, signedAt])
+  @@map("clinical_evolutions")
+}
+
+model ClarificationNote {
+  id               String   @id @default(uuid()) @db.Uuid
+  clinicalRecordId String   @map("clinical_record_id") @db.Uuid
+  clinicalRecord   ClinicalRecord @relation(fields: [clinicalRecordId], references: [id], onDelete: Cascade)
+  authorId         String   @map("author_id") @db.Uuid
+  author           User     @relation(fields: [authorId], references: [id])
+  reason           String   @db.VarChar(255)
+  content          String
+  contentHash      String   @map("content_hash") @db.VarChar(128)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([clinicalRecordId, createdAt])
+  @@map("clarification_notes")
+}
+
+model ClinicalAlert {
+  id            String        @id @default(uuid()) @db.Uuid
+  clinicId      String        @map("clinic_id") @db.Uuid
+  clinic        Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patientId     String        @map("patient_id") @db.Uuid
+  patient       Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  encounterId   String?       @map("encounter_id") @db.Uuid
+  encounter     Encounter?    @relation(fields: [encounterId], references: [id], onDelete: SetNull)
+  severity      AlertSeverity @default(WARNING)
+  code          AlertCode
+  message       String
+  source        Json?
+  isActive      Boolean       @default(true) @map("is_active")
+  acknowledgedAt DateTime?    @map("acknowledged_at") @db.Timestamptz(6)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([clinicId, patientId, isActive])
+  @@index([encounterId])
+  @@map("clinical_alerts")
 }
 
 model Diagnosis {
@@ -287,28 +500,94 @@ model ClinicalProcedure {
   @@map("clinical_procedures")
 }
 
-model Consent {
-  id           String    @id @default(uuid()) @db.Uuid
-  encounterId  String    @map("encounter_id") @db.Uuid
-  encounter    Encounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
-  consentType  String    @map("consent_type") @db.VarChar(60)
-  granted      Boolean   @default(false)
-  grantedAt    DateTime? @map("granted_at") @db.Timestamptz(6)
-  evidencePath String?   @map("evidence_path")
+model ConsentTemplate {
+  id           String          @id @default(uuid()) @db.Uuid
+  clinicId     String?         @map("clinic_id") @db.Uuid
+  clinic       Clinic?         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  specialty    ClinicSpecialty
+  code         String          @db.VarChar(60)
+  title        String          @db.VarChar(255)
+  bodyHtml     String          @map("body_html")
+  bodyMarkdown String?         @map("body_markdown")
+  bodyJson     Json?           @map("body_json")
+  version      Int             @default(1)
+  isActive     Boolean         @default(true) @map("is_active")
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  patientConsents PatientConsent[]
+
+  @@unique([specialty, code, version])
+  @@map("consent_templates")
+}
+
+/// Flags ligeros de HCE (INFORMED / DATA_PROCESSING). El PDF sellado vive en PatientConsent.
+model ClinicalConsent {
+  id                String           @id @default(uuid()) @db.Uuid
+  clinicId          String?          @map("clinic_id") @db.Uuid
+  clinic            Clinic?          @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  patientId         String?          @map("patient_id") @db.Uuid
+  patient           Patient?         @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  encounterId       String?          @map("encounter_id") @db.Uuid
+  encounter         Encounter?       @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  consentType       String           @map("consent_type") @db.VarChar(60)
+  templateCode      String?          @map("template_code") @db.VarChar(60)
+  procedureCupsCode String?          @map("procedure_cups_code") @db.VarChar(20)
+  granted           Boolean          @default(false)
+  grantedAt         DateTime?        @map("granted_at") @db.Timestamptz(6)
+  evidencePath      String?          @map("evidence_path")
+  signedPayload     Json?            @map("signed_payload")
+  signatureMethod   SignatureMethod? @map("signature_method")
+  contentHash       String?          @map("content_hash") @db.VarChar(128)
+  immutableAt       DateTime?        @map("immutable_at") @db.Timestamptz(6)
+
+  @@index([encounterId])
+  @@index([patientId, consentType])
   @@map("consents")
 }
 
-model ClinicalAttachment {
-  id          String    @id @default(uuid()) @db.Uuid
-  encounterId String    @map("encounter_id") @db.Uuid
-  encounter   Encounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
-  label       String    @db.VarChar(160)
-  storageKey  String    @map("storage_key")
-  mimeType    String    @map("mime_type") @db.VarChar(80)
-  sizeBytes   Int       @map("size_bytes")
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+/// Consentimiento informado firmado + PDF inalterable (Ley 1581 / Ley 1090)
+model PatientConsent {
+  id              String          @id @default(uuid()) @db.Uuid
+  clinicId        String          @map("clinic_id") @db.Uuid
+  clinic          Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patientId       String          @map("patient_id") @db.Uuid
+  patient         Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  encounterId     String?         @map("encounter_id") @db.Uuid
+  encounter       Encounter?      @relation(fields: [encounterId], references: [id], onDelete: SetNull)
+  templateId      String          @map("template_id") @db.Uuid
+  template        ConsentTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  signerName      String?         @map("signer_name") @db.VarChar(160)
+  signerDocument  String?         @map("signer_document") @db.VarChar(40)
+  signatureBase64 String          @map("signature_base64")
+  signedAt        DateTime        @map("signed_at") @db.Timestamptz(6)
+  ipAddress       String?         @map("ip_address") @db.VarChar(60)
+  userAgent       String?         @map("user_agent")
+  pdfStorageKey   String?         @map("pdf_storage_key")
+  contentHash     String?         @map("content_hash") @db.VarChar(128)
+  immutableAt     DateTime?       @map("immutable_at") @db.Timestamptz(6)
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  @@index([patientId, templateId])
+  @@index([encounterId])
+  @@index([clinicId, signedAt])
+  @@map("patient_consents")
+}
+
+model ClinicalAttachment {
+  id           String             @id @default(uuid()) @db.Uuid
+  encounterId  String             @map("encounter_id") @db.Uuid
+  encounter    Encounter          @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  uploadedById String?            @map("uploaded_by_id") @db.Uuid
+  uploadedBy   User?              @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  label        String             @db.VarChar(160)
+  category     AttachmentCategory @default(OTHER)
+  storageKey   String             @map("storage_key")
+  mimeType     String             @map("mime_type") @db.VarChar(80)
+  sizeBytes    Int                @map("size_bytes")
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([encounterId])
   @@map("clinical_attachments")
 }
 
@@ -333,6 +612,7 @@ model CieCode {
   code        String  @unique @db.VarChar(20)
   description String
   version     String  @default("CIE-10") @db.VarChar(20)
+  isCritical  Boolean @default(false) @map("is_critical")
   isActive    Boolean @default(true) @map("is_active")
 
   @@index([description])
@@ -348,6 +628,118 @@ model CupsCode {
   @@index([description])
   @@map("cups_codes")
 }
+
+// ─── Facturación / tesorería / RIPS ─────────────────────────────────────────
+
+model SessionPackage {
+  id            String        @id @default(uuid()) @db.Uuid
+  clinicId      String        @map("clinic_id") @db.Uuid
+  clinic        Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patientId     String        @map("patient_id") @db.Uuid
+  patient       Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  name          String        @db.VarChar(160)
+  totalSessions Int           @map("total_sessions")
+  usedSessions  Int           @default(0) @map("used_sessions")
+  cupsCode      String?       @map("cups_code") @db.VarChar(20)
+  unitPrice     Decimal       @map("unit_price") @db.Decimal(12, 2)
+  status        PackageStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  invoiceItems InvoiceItem[]
+
+  @@index([clinicId, patientId, status])
+  @@map("session_packages")
+}
+
+model Invoice {
+  id               String           @id @default(uuid()) @db.Uuid
+  clinicId         String           @map("clinic_id") @db.Uuid
+  clinic           Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patientId        String           @map("patient_id") @db.Uuid
+  patient          Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointmentId    String?          @map("appointment_id") @db.Uuid
+  appointment      Appointment?     @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  encounterId      String?          @map("encounter_id") @db.Uuid
+  encounter        Encounter?       @relation(fields: [encounterId], references: [id], onDelete: SetNull)
+  number           String           @db.VarChar(60)
+  issuedAt         DateTime?        @map("issued_at") @db.Timestamptz(6)
+  status           InvoiceStatus    @default(DRAFT)
+  billingMode      BillingMode      @map("billing_mode")
+  subtotal         Decimal          @db.Decimal(12, 2)
+  tax              Decimal          @default(0) @db.Decimal(12, 2)
+  total            Decimal          @db.Decimal(12, 2)
+  ripsJson         Json?            @map("rips_json")
+  ripsStorageKey   String?          @map("rips_storage_key")
+  fevPayload       Json?            @map("fev_payload")
+  dianExportStatus DianExportStatus @default(NONE) @map("dian_export_status")
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  items        InvoiceItem[]
+  transactions Transaction[]
+
+  @@unique([clinicId, number])
+  @@index([clinicId, issuedAt])
+  @@index([patientId])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id            String          @id @default(uuid()) @db.Uuid
+  invoiceId     String          @map("invoice_id") @db.Uuid
+  invoice       Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description   String          @db.VarChar(255)
+  cupsCode      String?         @map("cups_code") @db.VarChar(20)
+  quantity      Int             @default(1)
+  unitPrice     Decimal         @map("unit_price") @db.Decimal(12, 2)
+  packageId     String?         @map("package_id") @db.Uuid
+  package       SessionPackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  appointmentId String?         @map("appointment_id") @db.Uuid
+  appointment   Appointment?    @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}
+
+model Transaction {
+  id          String        @id @default(uuid()) @db.Uuid
+  clinicId    String        @map("clinic_id") @db.Uuid
+  clinic      Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  type        TransactionType
+  category    String        @db.VarChar(80)
+  amount      Decimal       @db.Decimal(12, 2)
+  currency    String        @default("COP") @db.VarChar(3)
+  invoiceId   String?       @map("invoice_id") @db.Uuid
+  invoice     Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  paidAt      DateTime      @map("paid_at") @db.Timestamptz(6)
+  method      PaymentMethod @default(CASH)
+  notes       String?
+  createdById String?       @map("created_by_id") @db.Uuid
+  createdBy   User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([clinicId, paidAt])
+  @@index([type, category])
+  @@map("transactions")
+}
+
+model QualitySnapshot {
+  id                String   @id @default(uuid()) @db.Uuid
+  clinicId          String   @map("clinic_id") @db.Uuid
+  clinic            Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  date              DateTime @db.Date
+  incompleteHcRate  Float    @map("incomplete_hc_rate")
+  avgCloseHours     Float    @map("avg_close_hours")
+  consentGapCount   Int      @map("consent_gap_count")
+  metadata          Json?
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([clinicId, date])
+  @@map("quality_snapshots")
+}
+
+// ─── Gestión documental / equipos / PAMEC ───────────────────────────────────
 
 model DocumentCategory {
   id        String @id @default(uuid()) @db.Uuid
@@ -397,6 +789,105 @@ model DocumentFile {
 
   @@index([requirementId])
   @@map("document_files")
+}
+
+model EquipmentResume {
+  id                 String          @id @default(uuid()) @db.Uuid
+  clinicId           String          @map("clinic_id") @db.Uuid
+  clinic             Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  name               String          @db.VarChar(160)
+  brand              String?         @db.VarChar(120)
+  serial             String?         @db.VarChar(120)
+  location           String?         @db.VarChar(120)
+  lastCalibrationAt  DateTime?       @map("last_calibration_at") @db.Timestamptz(6)
+  nextCalibrationAt  DateTime?       @map("next_calibration_at") @db.Timestamptz(6)
+  status             EquipmentStatus @default(ACTIVE)
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  maintenances EquipmentMaintenance[]
+
+  @@index([clinicId, nextCalibrationAt])
+  @@map("equipment_resumes")
+}
+
+model EquipmentMaintenance {
+  id            String          @id @default(uuid()) @db.Uuid
+  equipmentId   String          @map("equipment_id") @db.Uuid
+  equipment     EquipmentResume @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  performedAt   DateTime        @map("performed_at") @db.Timestamptz(6)
+  nextDueAt     DateTime?       @map("next_due_at") @db.Timestamptz(6)
+  notes         String?
+  attachmentKey String?         @map("attachment_key")
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([equipmentId, performedAt])
+  @@map("equipment_maintenances")
+}
+
+model SupplyItem {
+  id         String         @id @default(uuid()) @db.Uuid
+  clinicId   String         @map("clinic_id") @db.Uuid
+  clinic     Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  name       String         @db.VarChar(160)
+  lotNumber  String?        @map("lot_number") @db.VarChar(80)
+  expiresAt  DateTime?      @map("expires_at") @db.Timestamptz(6)
+  quantity   Int            @default(0)
+  category   SupplyCategory @default(CONSUMABLE)
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([clinicId, expiresAt])
+  @@map("supply_items")
+}
+
+model ExpiryAlert {
+  id         String             @id @default(uuid()) @db.Uuid
+  clinicId   String             @map("clinic_id") @db.Uuid
+  clinic     Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  entityType String             @map("entity_type") @db.VarChar(80)
+  entityId   String             @map("entity_id") @db.VarChar(80)
+  dueAt      DateTime           @map("due_at") @db.Timestamptz(6)
+  remindAt30 DateTime?          @map("remind_at_30") @db.Timestamptz(6)
+  remindAt15 DateTime?          @map("remind_at_15") @db.Timestamptz(6)
+  channel    ExpiryAlertChannel @default(UI)
+  sentAt     DateTime?          @map("sent_at") @db.Timestamptz(6)
+  status     ExpiryAlertStatus  @default(PENDING)
+  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([clinicId, status, dueAt])
+  @@index([entityType, entityId])
+  @@map("expiry_alerts")
+}
+
+model RepsChecklist {
+  id           String   @id @default(uuid()) @db.Uuid
+  clinicId     String   @map("clinic_id") @db.Uuid
+  clinic       Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  name         String   @db.VarChar(160)
+  standardCode String   @map("standard_code") @db.VarChar(60)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  items RepsChecklistItem[]
+
+  @@index([clinicId, standardCode])
+  @@map("reps_checklists")
+}
+
+model RepsChecklistItem {
+  id             String     @id @default(uuid()) @db.Uuid
+  checklistId    String     @map("checklist_id") @db.Uuid
+  checklist      RepsChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  itemCode       String     @map("item_code") @db.VarChar(60)
+  title          String     @db.VarChar(255)
+  result         RepsResult @default(NA)
+  evidenceFileId String?    @map("evidence_file_id") @db.Uuid
+  evaluatedAt    DateTime?  @map("evaluated_at") @db.Timestamptz(6)
+  notes          String?
+
+  @@unique([checklistId, itemCode])
+  @@map("reps_checklist_items")
 }
 
 model AuditLog {

@@ -10,6 +10,7 @@ import {
   Patient,
   ProcedureRow,
 } from './clinical.models';
+import { ConsentTemplate, PatientConsentRecord } from './consent.models';
 
 const API = 'http://localhost:3000/api';
 
@@ -68,5 +69,34 @@ export class ClinicalApiService {
     },
   ) {
     return this.http.put<Encounter>(`${API}/clinical-records/${encounterId}`, payload);
+  }
+
+  listConsentTemplates() {
+    return this.http.get<ConsentTemplate[]>(`${API}/consent-templates`);
+  }
+
+  listPatientConsents(opts: { patientId?: string; encounterId?: string }) {
+    let params = new HttpParams();
+    if (opts.patientId) params = params.set('patientId', opts.patientId);
+    if (opts.encounterId) params = params.set('encounterId', opts.encounterId);
+    return this.http.get<PatientConsentRecord[]>(`${API}/patient-consents`, { params });
+  }
+
+  signPatientConsent(body: {
+    patientId: string;
+    templateId: string;
+    encounterId?: string;
+    signerName?: string;
+    signerDocumentType?: string;
+    signerDocument?: string;
+    signatureBase64: string;
+  }) {
+    return this.http.post<PatientConsentRecord>(`${API}/patient-consents`, body);
+  }
+
+  downloadPatientConsentPdf(id: string) {
+    return this.http.get(`${API}/patient-consents/${id}/pdf`, {
+      responseType: 'blob',
+    });
   }
 }

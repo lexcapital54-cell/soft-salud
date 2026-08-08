@@ -1,0 +1,61 @@
+
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+    h2 { text-align: center; font-size: 16px; font-weight: bold; }
+    h3 { font-size: 14px; font-weight: bold; margin-top: 30px; text-decoration: underline; }
+    p, li { font-size: 12px; text-align: justify; }
+    .signature-box { margin-top: 40px; width: 100%; }
+    .signature-line { border-top: 1px solid black; width: 85%; margin-top: 40px; }
+</style>
+</head>
+<body>
+    <h2>CONSENTIMIENTO INFORMADO PARA EVALUACIÓN Y TRATAMIENTO PSICOLÓGICO DE NIÑOS, NIÑAS Y ADOLESCENTES (NNA)</h2>
+    <p><strong>Ciudad y Fecha:</strong> ___________________________</p>
+    
+    <p>Nosotros (o Yo), ________________________________________________, identificado(a) con C.C. No. _________________, y ________________________________________________, identificado(a) con C.C. No. _________________, obrando en calidad de padres y/o representantes legales del(la) menor ________________________________________________, de ______ años de edad, identificado(a) con documento No. _________________, declaramos que el/la psicólogo(a) _____________________________________, con Tarjeta Profesional No. ______________, nos ha informado sobre el proceso psicológico a seguir:</p>
+    
+    <ol>
+        <li><strong>Naturaleza de la Intervención:</strong> Entendemos que el objetivo es realizar una evaluación y/o intervención psicológica a nuestro(a) hijo(a)/representado(a). Nos comprometemos a asistir a las citaciones del profesional, participar activamente y facilitar el proceso clínico.</li>
+        <li><strong>Confidencialidad y Secreto Profesional (Ley 1090 de 2006):</strong> Entendemos que para fomentar un espacio terapéutico seguro y de confianza, la información que el/la menor comparta en las sesiones es <strong>confidencial</strong>. El/la psicólogo(a) nos brindará retroalimentación general sobre el estado emocional y lineamientos de crianza, pero <em>no revelará detalles literales o específicos</em> de lo conversado, a menos que exista un riesgo inminente para su vida, su integridad (abuso, maltrato) o la de terceros.</li>
+        <li><strong>Tratamiento de Datos Personales (Ley 1581 de 2012):</strong> Autorizamos expresamente el tratamiento de los datos personales y sensibles (historia clínica) de nuestro(a) representado(a), de manera segura y exclusiva para los fines del proceso clínico, terapéutico y administrativo.</li>
+        <li><strong>Asentimiento del Menor:</strong> Entendemos que el proceso requiere la participación voluntaria del/la menor (asentimiento). Si el/la menor manifiesta una negativa persistente y rotunda a participar, la intervención no podrá ser forzada y el profesional discutirá las alternativas con nosotros.</li>
+    </ol>
+    
+    <p>Habiendo leído y comprendido lo anterior, y tras resolver nuestras inquietudes, autorizamos el inicio del proceso psicológico.</p>
+    
+    <table class="signature-box">
+        <tr>
+            <td style="width: 33%;">
+                <div class="signature-line"></div>
+                <strong>Firma Padre/Madre/Tutor 1</strong><br>
+                C.C.:
+            </td>
+            <td style="width: 33%;">
+                <div class="signature-line"></div>
+                <strong>Firma Padre/Madre/Tutor 2</strong><br>
+                C.C.:
+            </td>
+            <td style="width: 33%;">
+                <div class="signature-line"></div>
+                <strong>Firma del Profesional</strong><br>
+                T.P.:
+            </td>
+        </tr>
+    </table>
+    
+    <h3>ASENTIMIENTO DEL MENOR (Para ser diligenciado con el menor si tiene capacidad de comprensión)</h3>
+    <p>El/la psicólogo(a) me ha explicado de qué se tratan las sesiones. Entiendo que vengo a este espacio para hablar, dibujar, jugar o hacer actividades que me ayuden a sentirme mejor. Sé que lo que yo diga es privado y secreto, pero si me encuentro en peligro o alguien me hace daño, el/la psicólogo(a) hablará con los adultos encargados para cuidarme y protegerme. Acepto participar en las sesiones.</p>
+    
+    <table class="signature-box" style="margin-top: 10px;">
+        <tr>
+            <td style="width: 50%;">
+                <div class="signature-line"></div>
+                <strong>Firma o nombre escrito por el/la menor</strong>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -201,11 +201,11 @@ export class EncountersService {
 
       if (dto.consents) {
         for (const c of dto.consents) {
-          const existing = await tx.consent.findFirst({
+          const existing = await tx.clinicalConsent.findFirst({
             where: { encounterId, consentType: c.consentType },
           });
           if (existing) {
-            await tx.consent.update({
+            await tx.clinicalConsent.update({
               where: { id: existing.id },
               data: {
                 granted: c.granted,
@@ -217,7 +217,7 @@ export class EncountersService {
               },
             });
           } else {
-            await tx.consent.create({
+            await tx.clinicalConsent.create({
               data: {
                 encounterId,
                 consentType: c.consentType,
