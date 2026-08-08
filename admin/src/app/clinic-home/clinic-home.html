@@ -1,0 +1,53 @@
+<section class="home">
+  <header>
+    <a class="brand" href="http://localhost:5173/" (click)="goHome(); $event.preventDefault()">
+      HABILISALUD
+    </a>
+    <div class="header-actions">
+      <div class="user-chip">
+        <p class="session-name">{{ user()?.fullName }}</p>
+        <p class="session-email">{{ user()?.email }}</p>
+      </div>
+      <button type="button" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <div class="card">
+    <p class="eyebrow">Dashboard del consultorio</p>
+    <h1>{{ user()?.clinicName || 'Consultorio' }}</h1>
+    <p>
+      Especialidad:
+      {{ user()?.specialty ? labels[user()!.specialty!] : 'Sin asignar' }}
+    </p>
+
+    @if (hasDashboard()) {
+      <p class="dashboard-type">
+        Plan activo: {{ dashboardLabels[user()!.dashboardType!] }}
+      </p>
+
+      <div class="modules">
+        @if (hasClinicalHistory()) {
+          <article class="module">
+            <h2>Historia clínica</h2>
+            <p>Gestione historias clínicas de sus pacientes según la especialidad del consultorio.</p>
+          </article>
+        }
+        @if (hasDocuments()) {
+          <article class="module">
+            <h2>Gestión documental</h2>
+            <p>
+              Documentación, evidencias y requisitos de habilitación alineados a la normativa
+              vigente.
+            </p>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="muted">
+        Hola, {{ user()?.fullName }}. Su consultorio aún no tiene dashboard asignado. El
+        superadmin de HABILISALUD debe crear el dashboard (Historia clínica o Historia clínica con
+        gestión documental).
+      </p>
+    }
+  </div>
+</section>

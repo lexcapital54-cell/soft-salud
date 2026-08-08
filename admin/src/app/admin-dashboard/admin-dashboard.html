@@ -1,0 +1,235 @@
+<div class="shell">
+  <aside>
+    <div>
+      <a class="brand" href="http://localhost:5173/" (click)="goHome(); $event.preventDefault()">
+        HABILISALUD
+      </a>
+      <p class="role">Superadmin</p>
+    </div>
+    <nav>
+      <a class="active">Administración</a>
+    </nav>
+    <div class="session">
+      <div class="session-user">
+        <p class="session-name">{{ user()?.fullName }}</p>
+        <p class="session-email">{{ user()?.email }}</p>
+      </div>
+      <button type="button" class="ghost" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Panel de administración</p>
+        <h1>Consultorios y usuarios</h1>
+        <p class="welcome">Hola, {{ user()?.fullName }}</p>
+      </div>
+      <div class="topbar-user">
+        <div>
+          <p class="session-name">{{ user()?.fullName }}</p>
+          <p class="session-email">{{ user()?.email }}</p>
+        </div>
+        <button type="button" class="ghost compact" (click)="logout()">Cerrar sesión</button>
+      </div>
+    </header>
+
+    @if (message()) {
+      <p class="ok">{{ message() }}</p>
+    }
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <section class="grid">
+      <article class="card">
+        <h2>Crear consultorio</h2>
+        <p>Define el tipo de dashboard: Psicología, Odontología, Medicina o Medicina estética.</p>
+        <form [formGroup]="clinicForm" (ngSubmit)="createClinic()">
+          <label>
+            Nombre del consultorio
+            <input formControlName="name" />
+          </label>
+          <label>
+            Especialidad
+            <select formControlName="specialty">
+              @for (item of specialties; track item[0]) {
+                <option [value]="item[0]">{{ item[1] }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Dirección
+            <input formControlName="address" />
+          </label>
+          <label>
+            Teléfono
+            <input formControlName="phone" />
+          </label>
+          <h3>Admin inicial (opcional)</h3>
+          <label>
+            Nombre del admin
+            <input formControlName="adminFullName" />
+          </label>
+          <label>
+            Correo del admin
+            <input type="email" formControlName="adminEmail" />
+          </label>
+          <label>
+            Contraseña del admin
+            <div class="password-field">
+              <input
+                [type]="showClinicAdminPassword() ? 'text' : 'password'"
+                formControlName="adminPassword"
+              />
+              <button type="button" class="toggle" (click)="toggleClinicAdminPassword()">
+                {{ showClinicAdminPassword() ? 'Ocultar' : 'Ver' }}
+              </button>
+            </div>
+          </label>
+          <button type="submit">Crear consultorio</button>
+        </form>
+      </article>
+
+      <article class="card">
+        <h2>Crear usuario admin</h2>
+        <p>Asigna un administrador a un consultorio existente.</p>
+        <form [formGroup]="adminForm" (ngSubmit)="createAdmin()">
+          <label>
+            Consultorio
+            <select formControlName="clinicId">
+              <option value="">Seleccione</option>
+              @for (clinic of clinics(); track clinic.id) {
+                <option [value]="clinic.id">
+                  {{ clinic.name }} · {{ specialtyLabel(clinic.specialty) }}
+                </option>
+              }
+            </select>
+          </label>
+          <label>
+            Nombre completo
+            <input formControlName="fullName" />
+          </label>
+          <label>
+            Correo
+            <input type="email" formControlName="email" />
+          </label>
+          <label>
+            Contraseña
+            <div class="password-field">
+              <input
+                [type]="showAdminPassword() ? 'text' : 'password'"
+                formControlName="password"
+                placeholder="Mínimo 8 caracteres"
+              />
+              <button type="button" class="toggle" (click)="toggleAdminPassword()">
+                {{ showAdminPassword() ? 'Ocultar' : 'Ver' }}
+              </button>
+            </div>
+          </label>
+          @if (adminForm.controls.clinicId.touched && adminForm.controls.clinicId.invalid) {
+            <p class="field-error">Seleccione un consultorio</p>
+          }
+          @if (adminForm.controls.password.touched && adminForm.controls.password.invalid) {
+            <p class="field-error">La contraseña debe tener mínimo 8 caracteres</p>
+          }
+          <button type="submit">Crear usuario admin</button>
+        </form>
+      </article>
+    </section>
+
+    <section class="card list">
+      <h2>Consultorios</h2>
+      @if (!clinics().length) {
+        <p class="empty">Aún no hay consultorios.</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Especialidad</th>
+              <th>Admins</th>
+              <th>Dashboard</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (clinic of clinics(); track clinic.id) {
+              <tr>
+                <td>{{ clinic.name }}</td>
+                <td>{{ specialtyLabel(clinic.specialty) }}</td>
+                <td>{{ clinic.admins?.length || 0 }}</td>
+                <td>{{ dashboardLabel(clinic.dashboardType) }}</td>
+                <td>{{ clinic.isActive ? 'Activo' : 'Inactivo' }}</td>
+                <td class="actions">
+                  <div class="menu-wrap">
+                    <button
+                      type="button"
+                      class="action-btn"
+                      (click)="toggleDashboardMenu(clinic.id)"
+                    >
+                      {{ clinic.dashboardType ? 'Cambiar dashboard' : 'Crear dashboard consultorio' }}
+                    </button>
+                    @if (openDashboardMenuId() === clinic.id) {
+                      <div class="menu">
+                        <button
+                          type="button"
+                          (click)="
+                            clinic.dashboardType
+                              ? changeDashboard(clinic.id, 'CLINICAL_HISTORY')
+                              : createDashboard(clinic.id, 'CLINICAL_HISTORY')
+                          "
+                        >
+                          1. Historia clínica
+                        </button>
+                        <button
+                          type="button"
+                          (click)="
+                            clinic.dashboardType
+                              ? changeDashboard(clinic.id, 'CLINICAL_HISTORY_WITH_DOCS')
+                              : createDashboard(clinic.id, 'CLINICAL_HISTORY_WITH_DOCS')
+                          "
+                        >
+                          2. Historia clínica con gestión documental
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+
+    <section class="card list">
+      <h2>Usuarios admin</h2>
+      @if (!admins().length) {
+        <p class="empty">Aún no hay usuarios admin de consultorio.</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Consultorio</th>
+              <th>Especialidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (admin of admins(); track admin.id) {
+              <tr>
+                <td>{{ admin.fullName }}</td>
+                <td>{{ admin.email }}</td>
+                <td>{{ admin.clinicName || '—' }}</td>
+                <td>{{ admin.specialty ? specialtyLabel(admin.specialty) : '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  </main>
+</div>

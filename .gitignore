@@ -1,0 +1,14 @@
+node_modules
+dist
+.DS_Store
+*.local
+.env
+.env.*
+!.env.example
+.angular
+admin/.angular
+admin/dist
+api/dist
+coverage
+*.log
+

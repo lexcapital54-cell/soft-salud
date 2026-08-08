@@ -1,0 +1,46 @@
+<section class="login">
+  <a
+    class="brand"
+    href="http://localhost:5173/"
+    (click)="goHome(); $event.preventDefault()"
+  >
+    HABILISALUD
+  </a>
+  <div class="card">
+    <p class="eyebrow">{{ eyebrow() }}</p>
+    <h1>{{ title() }}</h1>
+    <p class="hint">{{ hint() }}</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        Correo
+        <input type="email" formControlName="email" autocomplete="email" />
+      </label>
+      <label>
+        Contraseña
+        <div class="password-field">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            class="toggle"
+            (click)="togglePassword()"
+            [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            [attr.title]="showPassword() ? 'Ocultar' : 'Mostrar'"
+          >
+            {{ showPassword() ? 'Ocultar' : 'Ver' }}
+          </button>
+        </div>
+      </label>
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+      <button type="submit" [disabled]="loading()">
+        {{ loading() ? 'Ingresando…' : 'Entrar' }}
+      </button>
+    </form>
+  </div>
+</section>
