@@ -5,6 +5,8 @@ import { AuthModule } from './auth/auth.module';
 import { Clinic } from './clinics/clinic.entity';
 import { ClinicsModule } from './clinics/clinics.module';
 import { SeedService } from './database/seed.service';
+import { ClinicalModule } from './modules/clinical/clinical.module';
+import { PrismaModule } from './prisma/prisma.module';
 import { User } from './users/user.entity';
 import { UsersModule } from './users/users.module';
 
@@ -14,6 +16,7 @@ import { UsersModule } from './users/users.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    PrismaModule,
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -30,6 +33,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     ClinicsModule,
     AuthModule,
+    ClinicalModule,
   ],
   providers: [SeedService],
 })

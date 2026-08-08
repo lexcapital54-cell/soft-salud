@@ -1,8 +1,10 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ClinicSpecialty as PrismaClinicSpecialty } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { UserRole } from '../common/enums';
+import { FormTemplatesService } from '../modules/clinical/form-templates.service';
 import { toPublicUser, User } from '../users/user.entity';
 import { Clinic } from './clinic.entity';
 import { CreateClinicDto } from './dto/create-clinic.dto';
@@ -16,6 +18,7 @@ export class ClinicsService {
     private readonly clinicsRepository: Repository<Clinic>,
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    private readonly formTemplates: FormTemplatesService,
   ) {}
 
   async findAll() {
@@ -72,22 +75,14 @@ export class ClinicsService {
   }
 
   async createDashboard(id: string, dto: CreateDashboardDto) {
-    const clinic = await this.clinicsRepository.findOne({ where: { id } });
-    if (!clinic) {
-      throw new NotFoundException('El consultorio no existe');
-    }
-    if (clinic.dashboardType) {
-      throw new ConflictException(
-        'Este consultorio ya tiene un dashboard. Use la opción para cambiarlo.',
-      );
-    }
-
-    clinic.dashboardType = dto.dashboardType;
-    await this.clinicsRepository.save(clinic);
-    return this.findOne(id);
+    return this.assignDashboard(id, dto);
   }
 
   async updateDashboard(id: string, dto: CreateDashboardDto) {
+    return this.assignDashboard(id, dto);
+  }
+
+  private async assignDashboard(id: string, dto: CreateDashboardDto) {
     const clinic = await this.clinicsRepository.findOne({ where: { id } });
     if (!clinic) {
       throw new NotFoundException('El consultorio no existe');
@@ -95,6 +90,17 @@ export class ClinicsService {
 
     clinic.dashboardType = dto.dashboardType;
     await this.clinicsRepository.save(clinic);
+
+    try {
+      await this.formTemplates.ensureForSpecialty(
+        clinic.specialty as unknown as PrismaClinicSpecialty,
+        clinic.id,
+      );
+    } catch (error) {
+      // El dashboard ya quedó asignado; la plantilla se puede reintentar al abrir HCE.
+      console.error('No se pudo aprovisionar FormTemplate', error);
+    }
+
     return this.findOne(id);
   }
 

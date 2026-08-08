@@ -27,19 +27,21 @@
 
       <div class="modules">
         @if (hasClinicalHistory()) {
-          <article class="module">
+          <a class="module module-link" routerLink="/consultorio/historia-clinica">
             <h2>Historia clínica</h2>
             <p>Gestione historias clínicas de sus pacientes según la especialidad del consultorio.</p>
-          </article>
+            <span class="cta">Abrir HCE →</span>
+          </a>
         }
         @if (hasDocuments()) {
-          <article class="module">
+          <a class="module module-link" routerLink="/consultorio/documentos">
             <h2>Gestión documental</h2>
             <p>
               Documentación, evidencias y requisitos de habilitación alineados a la normativa
               vigente.
             </p>
-          </article>
+            <span class="cta">Ver módulo →</span>
+          </a>
         }
       </div>
     } @else {

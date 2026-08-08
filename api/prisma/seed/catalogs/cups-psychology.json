@@ -1,0 +1,17 @@
+[
+  { "code": "890201", "description": "CONSULTA DE PRIMERA VEZ POR PSICOLOGIA" },
+  { "code": "890301", "description": "CONSULTA DE CONTROL O DE SEGUIMIENTO POR PSICOLOGIA" },
+  { "code": "890101", "description": "CONSULTA DE URGENCIAS POR PSICOLOGIA" },
+  { "code": "940100", "description": "PSICOTERAPIA INDIVIDUAL" },
+  { "code": "940200", "description": "PSICOTERAPIA DE GRUPO" },
+  { "code": "940300", "description": "PSICOTERAPIA DE FAMILIA O DE PAREJA" },
+  { "code": "943101", "description": "EVALUACION DEL DESARROLLO PSICOLOGICO" },
+  { "code": "943102", "description": "EVALUACION NEUROPSICOLOGICA" },
+  { "code": "943103", "description": "APLICACION DE PRUEBAS PSICOLOGICAS" },
+  { "code": "943201", "description": "INTERVENCION EN CRISIS" },
+  { "code": "943301", "description": "ORIENTACION PSICOLOGICA" },
+  { "code": "890701", "description": "CONSULTA DE CONTROL O DE SEGUIMIENTO POR ESPECIALISTA EN PSIQUIATRIA" },
+  { "code": "890202", "description": "CONSULTA DE PRIMERA VEZ POR ESPECIALISTA EN PSIQUIATRIA" },
+  { "code": "992102", "description": "VISITA DOMICILIARIA POR PSICOLOGIA" },
+  { "code": "990101", "description": "EDUCACION INDIVIDUAL EN SALUD, POR PSICOLOGIA" }
+]

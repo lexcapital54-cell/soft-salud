@@ -63,34 +63,60 @@ export class AdminDashboard {
 
   createDashboard(clinicId: string, dashboardType: DashboardType) {
     this.openDashboardMenuId.set(null);
-    this.api.createClinicDashboard(clinicId, dashboardType).subscribe({
-      next: (clinic) => {
-        this.message.set(
-          `Dashboard creado para ${clinic.name}: ${this.dashboardLabel(clinic.dashboardType)}`,
-        );
-        this.error.set('');
-        this.refresh();
-      },
-      error: (err: { status?: number; error?: { message?: string | string[] } }) => {
-        this.message.set('');
-        this.error.set(this.readError(err, 'No se pudo crear el dashboard.'));
-      },
-    });
+    this.assignDashboard(clinicId, dashboardType, 'creado');
   }
 
   changeDashboard(clinicId: string, dashboardType: DashboardType) {
     this.openDashboardMenuId.set(null);
-    this.api.updateClinicDashboard(clinicId, dashboardType).subscribe({
+    this.assignDashboard(clinicId, dashboardType, 'actualizado');
+  }
+
+  private assignDashboard(
+    clinicId: string,
+    dashboardType: DashboardType,
+    actionLabel: 'creado' | 'actualizado',
+  ) {
+    const request$ = this.clinics()
+      .find((c) => c.id === clinicId)
+      ?.dashboardType
+      ? this.api.updateClinicDashboard(clinicId, dashboardType)
+      : this.api.createClinicDashboard(clinicId, dashboardType);
+
+    request$.subscribe({
       next: (clinic) => {
         this.message.set(
-          `Dashboard actualizado para ${clinic.name}: ${this.dashboardLabel(clinic.dashboardType)}`,
+          `Dashboard ${actionLabel} para ${clinic.name}: ${this.dashboardLabel(clinic.dashboardType)}`,
         );
         this.error.set('');
         this.refresh();
       },
       error: (err: { status?: number; error?: { message?: string | string[] } }) => {
+        // Si ya existía, reintenta con PATCH.
+        if (err.status === 409) {
+          this.api.updateClinicDashboard(clinicId, dashboardType).subscribe({
+            next: (clinic) => {
+              this.message.set(
+                `Dashboard actualizado para ${clinic.name}: ${this.dashboardLabel(clinic.dashboardType)}`,
+              );
+              this.error.set('');
+              this.refresh();
+            },
+            error: (retryErr) => {
+              this.message.set('');
+              this.error.set(this.readError(retryErr, 'No se pudo actualizar el dashboard.'));
+            },
+          });
+          return;
+        }
         this.message.set('');
-        this.error.set(this.readError(err, 'No se pudo actualizar el dashboard.'));
+        this.error.set(
+          this.readError(
+            err,
+            actionLabel === 'creado'
+              ? 'No se pudo crear el dashboard.'
+              : 'No se pudo actualizar el dashboard.',
+          ),
+        );
       },
     });
   }

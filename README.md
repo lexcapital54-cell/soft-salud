@@ -5,15 +5,29 @@ Landing, API NestJS y dashboard Angular. PostgreSQL local (pgAdmin), sin Docker.
 ## Estructura
 
 - `/` landing (React + Vite)
-- `/api` backend NestJS
+- `/api` backend NestJS + Prisma (`api/prisma/schema.prisma`)
 - `/admin` dashboard Angular
 - `/database` scripts SQL de referencia
+- `/docs/ARCHITECTURE_MVP.md` arquitectura MVP (agenda, HCE/RDA, documental)
+
+Variables Prisma/storage en `api/.env.example`: `DATABASE_URL`, `STORAGE_ROOT`.
 
 ## 1. Base de datos (pgAdmin)
 
 Crea la base `habilisalud` en pgAdmin. Ver `database/README.md`.
 
 Ajusta `api/.env` con tu usuario y contraseña de Postgres.
+
+Tras crear la BD, aplica tablas clínicas y seed (Paso 2):
+
+```bash
+cd api
+# si aún no están las tablas clínicas:
+# node -e "..." o reutiliza prisma/migrations/20260808_paso2_clinical_tables/migration.sql
+npm run prisma:seed
+```
+
+El seed carga CIE/CUPS de psicología (MVP) y requisitos del Excel `Checklist_Habilitacion_Consultorio_Psicologico_Base2.xlsx`.
 
 ## 2. API
 

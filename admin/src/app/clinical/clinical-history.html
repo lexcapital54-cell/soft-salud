@@ -1,0 +1,523 @@
+<section class="hce-page">
+  <header class="topbar">
+    <div class="topbar-left">
+      <a routerLink="/consultorio">← Consultorio</a>
+      <a class="brand" href="http://localhost:5173/" (click)="goHome(); $event.preventDefault()"
+        >HABILISALUD</a
+      >
+    </div>
+    <div class="topbar-actions">
+      <button type="button" class="ghost" (click)="newAttention()">Nueva atención</button>
+      <button type="button" class="primary" [disabled]="saving()" (click)="saveDraft()">
+        {{ saving() ? 'Guardando…' : 'Guardar borrador' }}
+      </button>
+    </div>
+  </header>
+
+  @if (message()) {
+    <p class="banner ok">{{ message() }}</p>
+  }
+  @if (error()) {
+    <p class="banner err">{{ error() }}</p>
+  }
+
+  <div class="setup card">
+    <h2>Paciente y atención</h2>
+    <div class="row">
+      <label>
+        Modo
+        <select [(ngModel)]="patientMode">
+          <option value="select">Seleccionar existente</option>
+          <option value="create">Crear paciente</option>
+        </select>
+      </label>
+      @if (patientMode === 'select') {
+        <label class="grow">
+          Paciente
+          <select [(ngModel)]="selectedPatientId">
+            <option value="">— Seleccione —</option>
+            @for (p of patients(); track p.id) {
+              <option [value]="p.id">
+                {{ p.lastName }} {{ p.firstName }} · {{ p.documentType }} {{ p.documentNumber }}
+              </option>
+            }
+          </select>
+        </label>
+        <button type="button" class="primary" (click)="startEncounter()" [disabled]="loading()">
+          Abrir atención
+        </button>
+      }
+    </div>
+
+    @if (patientMode === 'create') {
+      <div class="grid-4">
+        <label>Tipo doc. <input [(ngModel)]="patientForm.documentType" /></label>
+        <label>Número <input [(ngModel)]="patientForm.documentNumber" /></label>
+        <label>Nombres <input [(ngModel)]="patientForm.firstName" /></label>
+        <label>Apellidos <input [(ngModel)]="patientForm.lastName" /></label>
+        <label>Fecha nac. <input type="date" [(ngModel)]="patientForm.birthDate" /></label>
+        <label>Ciudad <input [(ngModel)]="patientForm.city" /></label>
+        <label>Departamento <input [(ngModel)]="patientForm.department" /></label>
+        <label>Teléfono <input [(ngModel)]="patientForm.phone" /></label>
+      </div>
+      <button type="button" class="primary" (click)="createPatient()">Crear paciente</button>
+    }
+
+    @if (encounters().length) {
+      <div class="recent">
+        <p class="label">Atenciones recientes</p>
+        <div class="chips">
+          @for (e of encounters(); track e.id) {
+            <button type="button" class="chip" (click)="loadEncounter(e.id)">
+              {{ e.externalCode || e.id.slice(0, 8) }} ·
+              {{ e.patient.lastName }} {{ e.patient.firstName }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <article class="doc">
+    <div class="doc-header">
+      <div>
+        <h1>HISTORIA CLÍNICA ELECTRÓNICA – PSICOLOGÍA</h1>
+        <p class="regs">
+          Cumple Ley 2015 de 2020, Resolución 866 de 2021, Resolución 1888 de 2025 y marco de
+          protección de datos personales.
+        </p>
+      </div>
+      <div class="gen-box">
+        <span>Fecha y hora de generación</span>
+        <strong>{{ now | date: 'dd/MM/yyyy HH:mm:ss' }}</strong>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="main">
+        <section class="block">
+          <h3>1. Datos de identificación del paciente</h3>
+          <div class="grid-4">
+            <label>Tipo documento <input [(ngModel)]="patientForm.documentType" /></label>
+            <label>Número <input [(ngModel)]="patientForm.documentNumber" /></label>
+            <label>Nombres <input [(ngModel)]="patientForm.firstName" /></label>
+            <label>Apellidos <input [(ngModel)]="patientForm.lastName" /></label>
+            <label>Fecha nacimiento <input type="date" [(ngModel)]="patientForm.birthDate" /></label>
+            <label>Edad <input [ngModel]="ageFrom(patientForm.birthDate)" readonly /></label>
+            <label
+              >Sexo al nacer
+              <select [(ngModel)]="patientForm.sexAtBirth">
+                <option value="">—</option>
+                <option>Femenino</option>
+                <option>Masculino</option>
+                <option>Intersexual</option>
+              </select>
+            </label>
+            <label
+              >Identidad de género
+              <select [(ngModel)]="patientForm.genderIdentity">
+                <option value="">—</option>
+                <option>Mujer</option>
+                <option>Hombre</option>
+                <option>No binario</option>
+                <option>Otro</option>
+              </select>
+            </label>
+            <label
+              >Orientación sexual
+              <select [(ngModel)]="patientForm.sexualOrientation">
+                <option value="">—</option>
+                <option>Heterosexual</option>
+                <option>Homosexual</option>
+                <option>Bisexual</option>
+                <option>Otro</option>
+              </select>
+            </label>
+            <label
+              >Estado civil
+              <select [(ngModel)]="patientForm.maritalStatus">
+                <option value="">—</option>
+                <option>Soltero(a)</option>
+                <option>Casado(a)</option>
+                <option>Unión libre</option>
+                <option>Divorciado(a)</option>
+                <option>Viudo(a)</option>
+              </select>
+            </label>
+            <label class="span-2">Dirección <input [(ngModel)]="patientForm.address" /></label>
+            <label>Ciudad <input [(ngModel)]="patientForm.city" /></label>
+            <label>Departamento <input [(ngModel)]="patientForm.department" /></label>
+            <label>Teléfono <input [(ngModel)]="patientForm.phone" /></label>
+            <label>Correo <input [(ngModel)]="patientForm.email" /></label>
+            <label>EPS <input [(ngModel)]="patientForm.eps" /></label>
+            <label
+              >Régimen
+              <select [(ngModel)]="patientForm.regime">
+                <option value="">—</option>
+                <option>Contributivo</option>
+                <option>Subsidiado</option>
+                <option>Especial</option>
+                <option>Particular</option>
+              </select>
+            </label>
+            <label>N° afiliación <input [(ngModel)]="patientForm.affiliationNumber" /></label>
+            <label>Ocupación <input [(ngModel)]="patientForm.occupation" /></label>
+            <label>Escolaridad <input [(ngModel)]="patientForm.educationLevel" /></label>
+            <label>Contacto emergencia <input [(ngModel)]="patientForm.emergencyContactName" /></label>
+            <label>Tel. emergencia <input [(ngModel)]="patientForm.emergencyContactPhone" /></label>
+            <label>Parentesco <input [(ngModel)]="patientForm.emergencyRelationship" /></label>
+          </div>
+        </section>
+
+        <section class="block">
+          <h3>2. Datos de la atención</h3>
+          <div class="grid-4">
+            <label
+              >ID historia
+              <input [ngModel]="encounter()?.externalCode || '—'" readonly
+            /></label>
+            <label
+              >Apertura
+              <input
+                [ngModel]="encounter()?.startedAt | date: 'dd/MM/yyyy HH:mm'"
+                readonly
+            /></label>
+            <label>Servicio <input [(ngModel)]="serviceType" /></label>
+            <label
+              >Modalidad
+              <select [(ngModel)]="modality">
+                <option value="IN_PERSON">Presencial</option>
+                <option value="VIRTUAL">Virtual</option>
+              </select>
+            </label>
+            <label>IPS / entidad <input [ngModel]="user()?.clinicName" readonly /></label>
+            <label
+              >Profesional
+              <input
+                [ngModel]="encounter()?.professional?.fullName || user()?.fullName"
+                readonly
+            /></label>
+            <label>Ubicación <input [(ngModel)]="location" /></label>
+            <label>Finalidad <input [(ngModel)]="purpose" /></label>
+            <label class="span-2">Causa externa <input [(ngModel)]="externalCause" /></label>
+          </div>
+        </section>
+
+        <section class="block">
+          <h3>3. Datos mínimos de atención (Res. 866)</h3>
+          <label
+            >Motivo de consulta
+            <textarea rows="2" [(ngModel)]="content.careMinimum.motive"></textarea>
+          </label>
+          <label
+            >Enfermedad actual
+            <textarea rows="3" [(ngModel)]="content.careMinimum.presentIllness"></textarea>
+          </label>
+          <label
+            >Antecedentes
+            <textarea rows="3" [(ngModel)]="content.careMinimum.antecedents"></textarea>
+          </label>
+          <label
+            >Revisión por sistemas
+            <textarea rows="2" [(ngModel)]="content.careMinimum.systemsReview"></textarea>
+          </label>
+
+          <h4>Examen mental</h4>
+          <div class="grid-3">
+            <label
+              >Apariencia <textarea rows="2" [(ngModel)]="content.mentalExam.appearance"></textarea>
+            </label>
+            <label
+              >Conducta <textarea rows="2" [(ngModel)]="content.mentalExam.behavior"></textarea>
+            </label>
+            <label>Lenguaje <textarea rows="2" [(ngModel)]="content.mentalExam.speech"></textarea></label>
+            <label>Ánimo <textarea rows="2" [(ngModel)]="content.mentalExam.mood"></textarea></label>
+            <label>Afecto <textarea rows="2" [(ngModel)]="content.mentalExam.affect"></textarea></label>
+            <label
+              >Pensamiento <textarea rows="2" [(ngModel)]="content.mentalExam.thought"></textarea>
+            </label>
+            <label
+              >Percepción
+              <textarea rows="2" [(ngModel)]="content.mentalExam.perception"></textarea>
+            </label>
+            <label
+              >Juicio <textarea rows="2" [(ngModel)]="content.mentalExam.judgment"></textarea>
+            </label>
+            <label
+              >Insight <textarea rows="2" [(ngModel)]="content.mentalExam.insight"></textarea>
+            </label>
+          </div>
+
+          <label
+            >Impresión diagnóstica (narrativa)
+            <textarea rows="3" [(ngModel)]="content.assessment.impressionNarrative"></textarea>
+          </label>
+          <label
+            >Observaciones
+            <textarea rows="2" [(ngModel)]="content.assessment.observations"></textarea>
+          </label>
+          <label
+            >Plan de manejo (una línea por ítem)
+            <textarea rows="3" [(ngModel)]="managementPlanText"></textarea>
+          </label>
+
+          <h4>Diagnósticos (CIE-10)</h4>
+          <div class="search-row">
+            <input
+              placeholder="Buscar CIE…"
+              [(ngModel)]="cieQuery"
+              (ngModelChange)="searchCie()"
+            />
+            @if (cieResults().length) {
+              <ul class="suggest">
+                @for (item of cieResults(); track item.id) {
+                  <li>
+                    <button type="button" (click)="addDiagnosis(item)">
+                      {{ item.code }} — {{ item.description }}
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Tipo</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of diagnoses; track $index) {
+                <tr>
+                  <td>{{ d.cieCode }}</td>
+                  <td>{{ d.description }}</td>
+                  <td>
+                    <select [(ngModel)]="d.type">
+                      <option value="PRINCIPAL">Principal</option>
+                      <option value="RELATED">Relacionado</option>
+                      <option value="IMPRESSION">Impresión</option>
+                    </select>
+                  </td>
+                  <td>
+                    <button type="button" class="linkish" (click)="removeDiagnosis($index)">
+                      Quitar
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="empty">Sin diagnósticos</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <h4>Procedimientos / intervenciones (CUPS)</h4>
+          <div class="search-row">
+            <input
+              placeholder="Buscar CUPS…"
+              [(ngModel)]="cupsQuery"
+              (ngModelChange)="searchCups()"
+            />
+            @if (cupsResults().length) {
+              <ul class="suggest">
+                @for (item of cupsResults(); track item.id) {
+                  <li>
+                    <button type="button" (click)="addProcedure(item)">
+                      {{ item.code }} — {{ item.description }}
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of procedures; track $index) {
+                <tr>
+                  <td>{{ p.cupsCode }}</td>
+                  <td>{{ p.description }}</td>
+                  <td>
+                    <button type="button" class="linkish" (click)="removeProcedure($index)">
+                      Quitar
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3" class="empty">Sin procedimientos</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <div class="grid-3">
+            <label
+              >Medicamentos (separar por coma)
+              <textarea rows="2" [(ngModel)]="medicationsText"></textarea>
+            </label>
+            <label
+              >Alergias (separar por coma)
+              <textarea rows="2" [(ngModel)]="allergiesText"></textarea>
+            </label>
+            <label
+              >Signos vitales
+              <textarea rows="2" [(ngModel)]="content.vitals.notes"></textarea>
+            </label>
+          </div>
+          <div class="grid-2">
+            <label
+              >Riesgo suicida / alertas
+              <input [(ngModel)]="content.risks.suicideRisk" />
+            </label>
+            <label>Notas de riesgo <input [(ngModel)]="content.risks.notes" /></label>
+          </div>
+        </section>
+
+        <section class="block">
+          <h3>4. Registro Digital de Atención (RDA) — Res. 1888 de 2025</h3>
+          <div class="grid-3">
+            <label
+              >ID RDA
+              <input
+                [ngModel]="
+                  encounter()?.externalCode
+                    ? encounter()!.externalCode + '-01'
+                    : '—'
+                "
+                readonly
+            /></label>
+            <label>Device ID <input [(ngModel)]="content.rdaMeta.deviceId" /></label>
+            <label>Ubicación física <input [(ngModel)]="content.rdaMeta.physicalLocation" /></label>
+          </div>
+          <div class="checks">
+            <label
+              ><input type="checkbox" [(ngModel)]="rdaEvents.anamnesis" /> Anamnesis</label
+            >
+            <label
+              ><input type="checkbox" [(ngModel)]="rdaEvents.mentalExam" /> Examen mental</label
+            >
+            <label
+              ><input type="checkbox" [(ngModel)]="rdaEvents.evaluation" /> Evaluación</label
+            >
+            <label
+              ><input type="checkbox" [(ngModel)]="rdaEvents.managementPlan" /> Plan de
+              manejo</label
+            >
+            <label
+              ><input type="checkbox" [(ngModel)]="rdaEvents.education" /> Educación</label
+            >
+            <label
+              ><input type="checkbox" [(ngModel)]="rdaEvents.consents" /> Consentimientos</label
+            >
+          </div>
+        </section>
+
+        <section class="block">
+          <h3>5. Consentimientos</h3>
+          <div class="checks">
+            <label>
+              <input
+                type="checkbox"
+                [ngModel]="consentGranted('INFORMED')"
+                (ngModelChange)="setConsent('INFORMED', $event)"
+              />
+              Consentimiento informado
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                [ngModel]="consentGranted('DATA_PROCESSING')"
+                (ngModelChange)="setConsent('DATA_PROCESSING', $event)"
+              />
+              Autorización tratamiento de datos
+            </label>
+          </div>
+        </section>
+
+        <section class="block">
+          <h3>6. Control de acceso y auditoría</h3>
+          <p class="muted">
+            Los guardados de borrador quedan registrados en auditoría del sistema (usuario, acción,
+            fecha).
+          </p>
+        </section>
+
+        <section class="block">
+          <h3>7. Anexos</h3>
+          <p class="muted">
+            Carga de anexos (consentimientos PDF, escalas GAD-7, evoluciones) se habilitará en el
+            siguiente paso.
+          </p>
+        </section>
+      </div>
+
+      <aside class="side">
+        <section class="side-card">
+          <h3>Cumplimiento normativo</h3>
+          <ul>
+            <li>HCE interoperable (Ley 2015 / Res. 866)</li>
+            <li>Datos mínimos de atención</li>
+            <li>RDA Res. 1888 de 2025</li>
+            <li>Protección de datos personales</li>
+            <li>Firma electrónica Ley 527</li>
+          </ul>
+        </section>
+        <section class="side-card">
+          <h3>Protección de datos</h3>
+          <label class="check-line">
+            <input
+              type="checkbox"
+              [ngModel]="consentGranted('DATA_PROCESSING')"
+              (ngModelChange)="setConsent('DATA_PROCESSING', $event)"
+            />
+            Autorización de tratamiento registrada
+          </label>
+        </section>
+        <section class="side-card">
+          <h3>Firma digital (Ley 527)</h3>
+          <label
+            >Profesional <input [(ngModel)]="content.signature.professionalName"
+          /></label>
+          <label
+            >TP / tarjeta <input [(ngModel)]="content.signature.professionalCard"
+          /></label>
+          <label
+            >Código verificación
+            <input [(ngModel)]="content.signature.verificationCode" placeholder="Se genera al firmar"
+          /></label>
+          <p class="muted small">Firma criptográfica real y PDF legal: paso posterior.</p>
+        </section>
+        <section class="side-card">
+          <h3>Retención y custodia</h3>
+          <p>Retención mínima documental: 15 años.</p>
+        </section>
+        <section class="side-card">
+          <h3>Interoperabilidad</h3>
+          <p>HL7 FHIR R4 · RIPS · CIE-10 · CUPS</p>
+          <p class="status">Listo para interoperar (borrador)</p>
+        </section>
+      </aside>
+    </div>
+
+    <footer class="doc-footer">
+      <div class="pill">Confidencialidad</div>
+      <div class="pill">Conservación</div>
+      <div class="pill">Seguridad</div>
+      <p>
+        Documento electrónico con validez legal bajo Ley 527 de 1999. Uso exclusivo del personal
+        autorizado de HABILISALUD.
+      </p>
+    </footer>
+  </article>
+</section>

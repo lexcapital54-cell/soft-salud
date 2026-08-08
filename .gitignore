@@ -9,6 +9,8 @@ dist
 admin/.angular
 admin/dist
 api/dist
+api/storage/**
+!api/storage/**/.gitkeep
 coverage
 *.log
 
