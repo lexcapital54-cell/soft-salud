@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { ClinicalApiService } from './clinical-api.service';
 import { ConsentSigner } from './consent-signer';
@@ -68,6 +68,7 @@ function emptyContent(): ClinicalContent {
 export class ClinicalHistory implements OnInit {
   private readonly api = inject(ClinicalApiService);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
   readonly documentTypes = DOCUMENT_TYPES;
 
@@ -320,6 +321,46 @@ export class ClinicalHistory implements OnInit {
     return !!this.consents.find((c) => c.consentType === type)?.granted;
   }
 
+  /** Paciente efectivo para consentimientos (atención o selección). */
+  consentPatientId(): string | null {
+    return this.encounter()?.patient?.id || this.selectedPatientId || null;
+  }
+
+  consentPatientName(): string {
+    const enc = this.encounter()?.patient;
+    if (enc) return `${enc.firstName || ''} ${enc.lastName || ''}`.trim();
+    const listed = this.patients().find((p) => p.id === this.selectedPatientId);
+    if (listed) return `${listed.firstName || ''} ${listed.lastName || ''}`.trim();
+    return `${this.patientForm.firstName || ''} ${this.patientForm.lastName || ''}`.trim();
+  }
+
+  consentPatientDocument(): string {
+    return (
+      this.encounter()?.patient?.documentNumber ||
+      this.patients().find((p) => p.id === this.selectedPatientId)?.documentNumber ||
+      this.patientForm.documentNumber ||
+      ''
+    );
+  }
+
+  consentPatientDocType(): string {
+    return (
+      this.encounter()?.patient?.documentType ||
+      this.patients().find((p) => p.id === this.selectedPatientId)?.documentType ||
+      this.patientForm.documentType ||
+      'CC'
+    );
+  }
+
+  consentPatientCity(): string {
+    return (
+      this.encounter()?.patient?.city ||
+      this.patients().find((p) => p.id === this.selectedPatientId)?.city ||
+      this.patientForm.city ||
+      'Manizales'
+    );
+  }
+
   setConsent(type: string, granted: boolean) {
     const next = this.consents.map((c) =>
       c.consentType === type
@@ -471,5 +512,10 @@ export class ClinicalHistory implements OnInit {
 
   goHome() {
     this.auth.goToWebsite();
+  }
+
+  logout() {
+    this.auth.logout();
+    void this.router.navigateByUrl('/login');
   }
 }

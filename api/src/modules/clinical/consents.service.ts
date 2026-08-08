@@ -2,16 +2,20 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ClinicSpecialty } from '@prisma/client';
 import { User } from '../../users/user.entity';
 import { PrismaService } from '../../prisma/prisma.module';
+import { fillConsentPlaceholders } from './consent-placeholders';
 import { ConsentPdfService } from './consent-pdf.service';
 import { CreatePatientConsentDto } from './dto/consent.dto';
 
 @Injectable()
 export class ConsentsService {
+  private readonly logger = new Logger(ConsentsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly consentPdf: ConsentPdfService,
@@ -149,26 +153,49 @@ export class ConsentsService {
 
     const template = await this.getTemplate(user, dto.templateId);
 
+    let professionalName = user.fullName?.trim() || '';
+    let professionalCard = user.professionalCard?.trim() || '';
     if (dto.encounterId) {
       const encounter = await this.prisma.encounter.findFirst({
         where: { id: dto.encounterId, clinicId, patientId: dto.patientId },
+        include: {
+          professional: {
+            select: { fullName: true, professionalCard: true },
+          },
+        },
       });
       if (!encounter) {
         throw new NotFoundException(
           'Atención no encontrada para este paciente',
         );
       }
+      if (encounter.professional) {
+        professionalName =
+          encounter.professional.fullName?.trim() || professionalName;
+        professionalCard =
+          encounter.professional.professionalCard?.trim() || professionalCard;
+      }
     }
 
     const signedAt = new Date();
-    const signerName =
-      dto.signerName?.trim() ||
-      `${patient.firstName} ${patient.lastName}`.trim();
+    const patientName = `${patient.firstName} ${patient.lastName}`.trim();
+    const signerName = dto.signerName?.trim() || patientName;
     const docType =
       dto.signerDocumentType?.trim() || patient.documentType || 'CC';
     const docNumber =
       dto.signerDocument?.trim() || patient.documentNumber;
     const signerDocument = `${docType} ${docNumber}`.slice(0, 40);
+
+    const filledBodyHtml = fillConsentPlaceholders(template.bodyHtml, {
+      signerName,
+      signerDocumentType: docType,
+      signerDocumentNumber: docNumber,
+      city: patient.city || 'Manizales',
+      patientName,
+      professionalName,
+      professionalCard,
+      signedAt,
+    });
 
     const consent = await this.prisma.patientConsent.create({
       data: {
@@ -193,26 +220,41 @@ export class ConsentsService {
       },
     });
 
-    const sealed = await this.consentPdf.seal({
-      consentId: consent.id,
-      clinicId,
-      clinicName: clinic.name,
-      clinicAddress: clinic.address,
-      clinicPhone: clinic.phone,
-      templateCode: template.code,
-      templateTitle: template.title,
-      templateVersion: template.version,
-      bodyHtml: template.bodyHtml,
-      patientName: `${patient.firstName} ${patient.lastName}`.trim(),
-      patientDocument: patient.documentNumber,
-      patientDocumentType: patient.documentType,
-      signerName,
-      signerDocument,
-      signatureBase64: dto.signatureBase64,
-      signedAt,
-      ipAddress: meta.ipAddress,
-      encounterId: dto.encounterId ?? null,
-    });
+    let sealed;
+    try {
+      sealed = await this.consentPdf.seal({
+        consentId: consent.id,
+        clinicId,
+        clinicName: clinic.name,
+        clinicAddress: clinic.address,
+        clinicPhone: clinic.phone,
+        templateCode: template.code,
+        templateTitle: template.title,
+        templateVersion: template.version,
+        bodyHtml: filledBodyHtml,
+        patientName,
+        patientDocument: patient.documentNumber,
+        patientDocumentType: patient.documentType,
+        signerName,
+        signerDocument,
+        signatureBase64: dto.signatureBase64,
+        signedAt,
+        ipAddress: meta.ipAddress,
+        userAgent: meta.userAgent,
+        encounterId: dto.encounterId ?? null,
+        professionalName,
+        professionalCard,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Fallo sellado PDF consentimiento ${consent.id}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      await this.prisma.patientConsent.delete({ where: { id: consent.id } });
+      throw new BadRequestException(
+        'No se pudo generar el PDF sellado. Intente firmar de nuevo.',
+      );
+    }
 
     const updated = await this.prisma.patientConsent.update({
       where: { id: consent.id },

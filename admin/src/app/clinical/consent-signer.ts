@@ -11,7 +11,6 @@ import {
   input,
   output,
   signal,
-  untracked,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -39,8 +38,10 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
   readonly patientName = input<string>('');
   readonly patientDocument = input<string>('');
   readonly patientDocumentType = input<string>('CC');
+  readonly patientCity = input<string>('Manizales');
   readonly professionalName = input<string>('');
   readonly professionalCard = input<string>('');
+  readonly userFullName = input<string>('');
 
   readonly sealed = output<PatientConsentRecord>();
   readonly flagsChanged = output<void>();
@@ -87,13 +88,14 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
     effect(() => {
       const pid = this.patientId();
       const eid = this.encounterId();
+      const name = this.patientName();
+      const doc = this.patientDocument();
+      const docType = this.patientDocumentType();
       void eid;
-      untracked(() => {
-        this.signerName = this.patientName() || this.signerName;
-        this.signerDocument = this.patientDocument() || this.signerDocument;
-        this.signerDocumentType =
-          this.patientDocumentType() || this.signerDocumentType || 'CC';
-      });
+      // Siempre sincronizar con el paciente de la atención / selección.
+      this.signerName = (name || '').trim();
+      this.signerDocument = (doc || '').trim();
+      this.signerDocumentType = docType || 'CC';
       if (pid) {
         void this.loadSigned(pid);
       } else {
@@ -246,46 +248,87 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * Rellena guiones del texto legal con datos del paciente/firmante para lectura.
-   * No edita la plantilla en BD; solo la vista previa.
+   * Rellena guiones del texto legal con datos del paciente/firmante (vista previa).
+   * Misma lógica que api/.../consent-placeholders.ts para el PDF sellado.
    */
   private fillTemplatePlaceholders(html: string): string {
-    const name = this.signerName.trim() || this.patientName() || '________________';
+    const name = (
+      this.signerName.trim() ||
+      this.patientName().trim() ||
+      ''
+    ).replace(/\s+/g, ' ');
     const docType = this.signerDocumentType || this.patientDocumentType() || 'CC';
-    const docNum = this.signerDocument.trim() || this.patientDocument() || '________________';
-    const professional = this.professionalName().trim() || '________________';
-    const card = this.professionalCard().trim() || '________';
+    const docNum = this.signerDocument.trim() || this.patientDocument().trim() || '';
+    const city = (this.patientCity().trim() || 'Manizales').replace(/\s+/g, ' ');
+    const patient =
+      this.patientName().trim().replace(/\s+/g, ' ') || name;
+    const professional =
+      this.professionalName().trim() || this.userFullName().trim() || '';
+    const card = this.professionalCard().trim() || 'Pendiente';
     const today = new Date().toLocaleDateString('es-CO', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
 
+    const missing = !name || !docNum;
     let out = html;
-    // Ciudad y Fecha
+
     out = out.replace(
-      /(<strong>Ciudad y Fecha:<\/strong>\s*)_{3,}/gi,
-      `$1Manizales, ${today}`,
+      /(<strong>Ciudad y Fecha:<\/strong>\s*)_+/gi,
+      `$1<strong>${this.escapeHtml(city)}, ${this.escapeHtml(today)}</strong>`,
     );
-    // Primer bloque largo de nombre (paciente / firmante)
+
     out = out.replace(
       /(Yo,\s*|Nosotros \(o Yo\),\s*)_{10,}/i,
-      `$1<strong>${this.escapeHtml(name)}</strong>`,
+      `$1<strong class="filled">${this.escapeHtml(name || '[Nombre del firmante]')}</strong>`,
     );
-    // Documento del firmante principal
     out = out.replace(
-      /(C\.C\. \/ C\.E\. \/ T\.I\. No\.|C\.C\. \/ C\.E\. No\.|C\.C\. No\.)\s*_{5,}/i,
-      `$1 <strong>${this.escapeHtml(docType)} ${this.escapeHtml(docNum)}</strong>`,
+      /(C\.C\. \/ C\.E\. \/ T\.I\. No\.|C\.C\. \/ C\.E\. No\.|C\.C\. No\.|documento No\.)\s*_{5,}/gi,
+      `$1 <strong class="filled">${this.escapeHtml(`${docType} ${docNum || '[Número]'}`)}</strong>`,
     );
-    // Psicólogo
     out = out.replace(
-      /(psicólogo\(a\)\s*)_{10,}/gi,
-      `$1<strong>${this.escapeHtml(professional)}</strong>`,
+      /(\bde\s)_{5,}(,|\s)/gi,
+      `$1<strong class="filled">${this.escapeHtml(city)}</strong>$2`,
+    );
+    out = out.replace(
+      /(menor\/paciente|menor|representado\(a\))\s*_{10,}/gi,
+      `$1 <strong class="filled">${this.escapeHtml(patient || '[Paciente / menor]')}</strong>`,
+    );
+    out = out.replace(
+      /(psicólogo\(a\)\s*)_{5,}/gi,
+      `$1<strong class="filled">${this.escapeHtml(professional || '[Profesional]')}</strong>`,
     );
     out = out.replace(
       /(Tarjeta Profesional No\.\s*)_{5,}/gi,
-      `$1<strong>${this.escapeHtml(card)}</strong>`,
+      `$1<strong class="filled">${this.escapeHtml(card)}</strong>`,
     );
+
+    const queue = [
+      name || '[Nombre]',
+      `${docType} ${docNum || '[Número]'}`,
+      city,
+      patient || name || '[Paciente]',
+      professional || '[Profesional]',
+      card,
+      name || '[Nombre]',
+      `${docType} ${docNum || '[Número]'}`,
+      professional || '[Profesional]',
+      card,
+    ];
+    let i = 0;
+    out = out.replace(/_{5,}/g, () => {
+      const value = queue[Math.min(i, queue.length - 1)] || '—';
+      i += 1;
+      return `<strong class="filled">${this.escapeHtml(value)}</strong>`;
+    });
+
+    if (missing) {
+      out =
+        `<p style="color:#8a1f1f;font-size:12px;margin:0 0 10px"><strong>Faltan datos del paciente.</strong> Abra una atención arriba o complete nombre y documento del firmante.</p>` +
+        out;
+    }
+
     return out;
   }
 

@@ -66,9 +66,12 @@
   font-weight: 600;
 }
 
-.legal-doc h2 {
-  font-size: 15px;
-  text-align: center;
+.legal-doc strong.filled,
+:host ::ng-deep .legal-doc strong.filled {
+  color: #003d4c;
+  background: #e8f6f6;
+  padding: 0 3px;
+  border-radius: 3px;
 }
 
 .legal-doc p,

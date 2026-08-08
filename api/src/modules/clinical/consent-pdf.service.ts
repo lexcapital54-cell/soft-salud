@@ -23,6 +23,7 @@ export type ConsentPdfInput = {
   templateCode: string;
   templateTitle: string;
   templateVersion: number;
+  /** HTML ya diligenciado (placeholders rellenados) que el paciente aceptó. */
   bodyHtml: string;
   patientName: string;
   patientDocument: string;
@@ -32,7 +33,10 @@ export type ConsentPdfInput = {
   signatureBase64: string;
   signedAt: Date;
   ipAddress?: string | null;
+  userAgent?: string | null;
   encounterId?: string | null;
+  professionalName?: string | null;
+  professionalCard?: string | null;
 };
 
 export type ConsentPdfResult = {
@@ -177,6 +181,16 @@ export class ConsentPdfService {
               ],
               ['Firmante', input.signerName],
               ['Documento firmante', input.signerDocument],
+              [
+                'Profesional tratante',
+                input.professionalName
+                  ? `${input.professionalName}${
+                      input.professionalCard
+                        ? ` · TP ${input.professionalCard}`
+                        : ''
+                    }`
+                  : 'N/A',
+              ],
               ['Atención (encounter)', input.encounterId || 'N/A'],
             ],
           },
@@ -235,6 +249,7 @@ export class ConsentPdfService {
             `Fecha/hora (America/Bogota): ${signedAtLocal}`,
             `Timestamp UTC: ${signedAtIso}`,
             `IP de firma: ${input.ipAddress || 'no registrada'}`,
+            `User-Agent: ${(input.userAgent || 'no registrado').slice(0, 160)}`,
             `Hash SHA-256 del contenido: ${contentHash}`,
             `ID consentimiento: ${input.consentId}`,
           ],

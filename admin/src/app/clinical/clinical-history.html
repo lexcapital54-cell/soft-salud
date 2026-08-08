@@ -11,6 +11,7 @@
       <button type="button" class="primary" [disabled]="saving()" (click)="saveDraft()">
         {{ saving() ? 'Guardando…' : 'Guardar borrador' }}
       </button>
+      <button type="button" class="ghost logout" (click)="logout()">Cerrar sesión</button>
     </div>
   </header>
 
@@ -444,63 +445,48 @@
         <section class="block">
           <h3>5. Consentimientos (plantilla legal + firma)</h3>
           <div class="consent-help">
-            <p><strong>Cómo funciona (importante):</strong></p>
+            <p><strong>No marque checks a mano.</strong> Solo haga esto:</p>
             <ol>
-              <li>
-                La <strong>plantilla legal</strong> es un texto de solo lectura (Habeas Data, Adultos,
-                NNA o Telepsicología). <em>No se digita dentro de la HCE</em>; solo se lee y se firma.
-              </li>
-              <li>
-                Los datos del paciente ya vienen de la atención. Abajo solo confirme
-                <strong>quién firma</strong> (paciente o acudiente) y el documento.
-              </li>
-              <li>
-                Trace la firma → <strong>Aceptar y sellar</strong>. Eso crea el PDF legal. Es
-                independiente de “Guardar borrador”.
-              </li>
-              <li>
-                “Guardar borrador” guarda la historia clínica (motivo, examen, CIE/CUPS). No firma
-                consentimientos.
-              </li>
+              <li>Abra una atención con el paciente (arriba).</li>
+              <li>Elija la plantilla legal (Habeas Data, Adultos, NNA o Telepsicología).</li>
+              <li>Verifique que el texto muestre el nombre y documento del paciente en negrita.</li>
+              <li>Si firma un acudiente, cambie nombre/documento abajo.</li>
+              <li>Firme en el canvas → <strong>Aceptar y sellar</strong> (crea el PDF).</li>
             </ol>
-          </div>
-          <div class="checks">
-            <label>
-              <input
-                type="checkbox"
-                [ngModel]="consentGranted('INFORMED')"
-                (ngModelChange)="setConsent('INFORMED', $event)"
-              />
-              Flag HCE: consentimiento informado (se marca solo al sellar, o manual)
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                [ngModel]="consentGranted('DATA_PROCESSING')"
-                (ngModelChange)="setConsent('DATA_PROCESSING', $event)"
-              />
-              Flag HCE: autorización de datos (se marca al sellar Habeas Data)
-            </label>
+            <p class="muted small" style="margin: 8px 0 0">
+              Estado automático:
+              @if (consentGranted('DATA_PROCESSING')) {
+                <span class="pill ok">Habeas Data sellado / marcado</span>
+              } @else {
+                <span class="pill">Habeas Data pendiente</span>
+              }
+              @if (consentGranted('INFORMED')) {
+                <span class="pill ok">Consentimiento informado sellado / marcado</span>
+              } @else {
+                <span class="pill">Consentimiento informado pendiente</span>
+              }
+            </p>
           </div>
           <div class="consent-signer-embed">
             <app-consent-signer
-              [patientId]="encounter()?.patient?.id || selectedPatientId || null"
+              [patientId]="consentPatientId()"
               [encounterId]="encounter()?.id || null"
-              [patientName]="
-                encounter()?.patient
-                  ? encounter()!.patient.firstName + ' ' + encounter()!.patient.lastName
-                  : ''
-              "
-              [patientDocument]="encounter()?.patient?.documentNumber || ''"
-              [patientDocumentType]="encounter()?.patient?.documentType || 'CC'"
+              [patientName]="consentPatientName()"
+              [patientDocument]="consentPatientDocument()"
+              [patientDocumentType]="consentPatientDocType()"
+              [patientCity]="consentPatientCity()"
               [professionalName]="
-                encounter()?.professional?.fullName || content.signature.professionalName || ''
+                encounter()?.professional?.fullName ||
+                content.signature.professionalName ||
+                user()?.fullName ||
+                ''
               "
               [professionalCard]="
                 encounter()?.professional?.professionalCard ||
                 content.signature.professionalCard ||
                 ''
               "
+              [userFullName]="user()?.fullName || ''"
               (sealed)="onConsentSealed()"
               (flagsChanged)="onConsentFlagsChanged()"
             />
