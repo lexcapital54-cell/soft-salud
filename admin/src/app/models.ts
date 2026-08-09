@@ -1,4 +1,9 @@
-export type UserRole = 'SUPER_ADMIN' | 'CLINIC_ADMIN';
+export type UserRole =
+  | 'SUPER_ADMIN'
+  | 'ADMIN'
+  | 'HEALTH_PROFESSIONAL'
+  | 'RECEPTIONIST'
+  | 'AUDITOR';
 
 export type ClinicSpecialty = 'PSYCHOLOGY' | 'DENTISTRY' | 'MEDICINE' | 'AESTHETIC';
 

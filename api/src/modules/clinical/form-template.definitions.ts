@@ -19,6 +19,7 @@ export const HCE_PSI_SCHEMA = {
     'attachments',
   ],
   contentDefaults: {
+    profile: 'FULL',
     careMinimum: {
       motive: '',
       presentIllness: '',
@@ -41,7 +42,7 @@ export const HCE_PSI_SCHEMA = {
       observations: '',
       managementPlan: [],
     },
-    vitals: { notes: 'No aplica' },
+    vitals: { notes: '' },
     allergies: [],
     medications: [],
     risks: { suicideRisk: '', notes: '' },
@@ -56,6 +57,23 @@ export const HCE_PSI_SCHEMA = {
       signedAt: null,
       verificationCode: '',
     },
+  },
+};
+
+/** Nota de evolución SOAP (FOLLOW_UP) — vive en ClinicalRecord.content JSONB */
+export const SOAP_CONTENT_DEFAULTS = {
+  profile: 'SOAP',
+  soap: {
+    subjective: '',
+    objective: '',
+    assessment: '',
+    plan: '',
+  },
+  signature: {
+    professionalName: '',
+    professionalCard: '',
+    signedAt: null,
+    verificationCode: '',
   },
 };
 

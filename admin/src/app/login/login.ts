@@ -69,10 +69,16 @@ export class Login {
         this.loading.set(false);
 
         if (this.isProfessional()) {
-          if (res.user.role !== 'CLINIC_ADMIN') {
+          const allowed = [
+            'ADMIN',
+            'HEALTH_PROFESSIONAL',
+            'RECEPTIONIST',
+            'AUDITOR',
+          ];
+          if (!allowed.includes(res.user.role)) {
             this.auth.logout();
             this.error.set(
-              'Este acceso es solo para profesionales de consultorio. Use Iniciar sesión para administración.',
+              'Este acceso es solo para personal del consultorio. Use Iniciar sesión para administración.',
             );
             return;
           }

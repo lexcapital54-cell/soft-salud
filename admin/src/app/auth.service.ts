@@ -2,10 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, signal } from '@angular/core';
 import { tap } from 'rxjs';
 import { AuthUser } from './models';
+import { API } from './api.config';
 
 const TOKEN_KEY = 'habilisalud_token';
 const USER_KEY = 'habilisalud_user';
-const API = 'http://localhost:3000/api';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -14,7 +14,31 @@ export class AuthService {
   readonly user = this.userSignal.asReadonly();
   readonly isLoggedIn = computed(() => !!this.userSignal());
   readonly isSuperAdmin = computed(() => this.userSignal()?.role === 'SUPER_ADMIN');
-  readonly isClinicAdmin = computed(() => this.userSignal()?.role === 'CLINIC_ADMIN');
+  readonly isClinicAdmin = computed(() => this.userSignal()?.role === 'ADMIN');
+  readonly isClinicStaff = computed(() => {
+    const role = this.userSignal()?.role;
+    return (
+      role === 'ADMIN' ||
+      role === 'HEALTH_PROFESSIONAL' ||
+      role === 'RECEPTIONIST' ||
+      role === 'AUDITOR'
+    );
+  });
+  readonly canWriteClinical = computed(() => {
+    const role = this.userSignal()?.role;
+    return role === 'ADMIN' || role === 'HEALTH_PROFESSIONAL';
+  });
+  /** Recepción incluida: puede mover estados de cita y registrar admisión. */
+  readonly canManageAgenda = computed(() => {
+    const role = this.userSignal()?.role;
+    return role === 'ADMIN' || role === 'HEALTH_PROFESSIONAL' || role === 'RECEPTIONIST';
+  });
+  readonly canAuditSivigila = computed(() => {
+    const role = this.userSignal()?.role;
+    return role === 'ADMIN' || role === 'AUDITOR' || role === 'HEALTH_PROFESSIONAL';
+  });
+  readonly isReceptionist = computed(() => this.userSignal()?.role === 'RECEPTIONIST');
+  readonly isAuditor = computed(() => this.userSignal()?.role === 'AUDITOR');
 
   constructor(private readonly http: HttpClient) {}
 

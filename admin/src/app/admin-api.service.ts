@@ -1,8 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Clinic, ClinicAdmin, ClinicSpecialty, DashboardType } from './models';
-
-const API = 'http://localhost:3000/api';
+import { API } from './api.config';
 
 @Injectable({ providedIn: 'root' })
 export class AdminApiService {
@@ -27,7 +26,7 @@ export class AdminApiService {
   }
 
   updateClinicDashboard(clinicId: string, dashboardType: DashboardType) {
-    return this.http.patch<Clinic>(`${API}/clinics/${clinicId}/dashboard`, { dashboardType });
+    return this.http.post<Clinic>(`${API}/clinics/${clinicId}/dashboard`, { dashboardType });
   }
 
   listClinicAdmins() {

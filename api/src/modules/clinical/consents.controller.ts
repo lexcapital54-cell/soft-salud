@@ -21,7 +21,7 @@ import { CreatePatientConsentDto } from './dto/consent.dto';
 
 @Controller()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.CLINIC_ADMIN)
+@Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
 export class ConsentsController {
   constructor(private readonly consentsService: ConsentsService) {}
 

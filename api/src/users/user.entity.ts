@@ -43,6 +43,9 @@ export class User {
   @Column({ name: 'professional_card', type: 'varchar', length: 80, nullable: true })
   professionalCard: string | null;
 
+  @Column({ name: 'professional_signature_base64', type: 'text', nullable: true })
+  professionalSignatureBase64: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 

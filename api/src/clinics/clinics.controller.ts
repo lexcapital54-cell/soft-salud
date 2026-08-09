@@ -39,6 +39,12 @@ export class ClinicsController {
     return this.clinicsService.updateDashboard(id, dto);
   }
 
+  /** Alias en POST para redes que descartan PATCH. */
+  @Post(':id/dashboard')
+  updateDashboardViaPost(@Param('id') id: string, @Body() dto: CreateDashboardDto) {
+    return this.clinicsService.updateDashboard(id, dto);
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateClinicDto) {
     return this.clinicsService.update(id, dto);

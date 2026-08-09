@@ -8,14 +8,50 @@ import {
   MinLength,
 } from 'class-validator';
 
-export class CreatePatientDto {
+/** Registro rápido desde la agenda: lo mínimo para poder llamar al paciente. */
+export class QuickPatientDto {
   @IsString()
-  @MaxLength(20)
-  documentType: string;
+  @MinLength(1)
+  @MaxLength(80)
+  firstName: string;
 
   @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  lastName: string;
+
+  @IsString()
+  @MinLength(7)
   @MaxLength(40)
-  documentNumber: string;
+  phone: string;
+
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(180)
+  email?: string;
+
+  /// Si la recepción ya tiene la cédula, la ficha nace identificada.
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  documentType?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  documentNumber?: string;
+}
+
+export class CreatePatientDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  documentType?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  documentNumber?: string;
 
   @IsString()
   @MinLength(1)
@@ -37,8 +73,9 @@ export class CreatePatientDto {
   @MaxLength(80)
   secondLastName?: string;
 
+  @IsOptional()
   @IsDateString()
-  birthDate: string;
+  birthDate?: string;
 
   @IsOptional()
   @IsString()
@@ -74,6 +111,12 @@ export class CreatePatientDto {
   @MaxLength(80)
   department?: string;
 
+  /** Código DIVIPOLA de 5 dígitos del municipio de residencia (RIPS). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(5)
+  municipalityCode?: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(40)
@@ -93,11 +136,6 @@ export class CreatePatientDto {
   @IsString()
   @MaxLength(40)
   regime?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(60)
-  affiliationNumber?: string;
 
   @IsOptional()
   @IsString()

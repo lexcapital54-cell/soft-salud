@@ -35,4 +35,9 @@ export class CreatePatientConsentDto {
   @IsString()
   @MinLength(32)
   signatureBase64: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(32)
+  professionalSignatureBase64?: string;
 }

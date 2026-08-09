@@ -1,6 +1,9 @@
 export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
-  CLINIC_ADMIN = 'CLINIC_ADMIN',
+  ADMIN = 'ADMIN',
+  HEALTH_PROFESSIONAL = 'HEALTH_PROFESSIONAL',
+  RECEPTIONIST = 'RECEPTIONIST',
+  AUDITOR = 'AUDITOR',
 }
 
 export enum ClinicSpecialty {

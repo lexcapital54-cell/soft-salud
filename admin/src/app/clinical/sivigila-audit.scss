@@ -1,0 +1,148 @@
+.sivigila-page {
+  min-height: 100svh;
+  padding: 20px 24px 48px;
+  background: linear-gradient(180deg, #f7fbfb 0%, #ffffff 220px);
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbar-left a {
+  color: #0d7377;
+  text-decoration: none;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+  border: 1px solid #d8d8d8;
+  background: #fff;
+  padding: 10px 16px;
+}
+
+button.primary {
+  background: #003d4c;
+  border-color: #003d4c;
+  color: #fff;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e4ecec;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #405a5f;
+}
+
+input {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid #d0dbdb;
+  border-radius: 10px;
+  min-width: 140px;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  color: #0d7377;
+  margin: 0 0 4px;
+}
+
+.summary h1 {
+  margin: 0 0 12px;
+  font-size: 1.6rem;
+  color: #003d4c;
+}
+
+.chips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+}
+
+.chip {
+  background: #e8f6f6;
+  color: #003d4c;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid #eef3f3;
+  vertical-align: top;
+  font-size: 0.92rem;
+}
+
+th {
+  color: #5a7277;
+  font-weight: 500;
+}
+
+.muted {
+  color: #6a8085;
+}
+
+.small {
+  font-size: 0.8rem;
+}
+
+.empty {
+  text-align: center;
+  color: #6a8085;
+  padding: 24px !important;
+}
+
+.banner.err {
+  background: #fdecec;
+  color: #8a1f1f;
+  padding: 10px 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}

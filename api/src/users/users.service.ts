@@ -37,7 +37,7 @@ export class UsersService {
 
   async listClinicAdmins() {
     const users = await this.usersRepository.find({
-      where: { role: UserRole.CLINIC_ADMIN },
+      where: { role: UserRole.ADMIN },
       relations: { clinic: true },
       order: { createdAt: 'DESC' },
     });
@@ -65,7 +65,7 @@ export class UsersService {
       email,
       fullName: dto.fullName,
       passwordHash: await bcrypt.hash(dto.password, 10),
-      role: UserRole.CLINIC_ADMIN,
+      role: UserRole.ADMIN,
       clinicId: clinic.id,
       isActive: true,
     });

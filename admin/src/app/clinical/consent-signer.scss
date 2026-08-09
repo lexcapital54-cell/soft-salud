@@ -79,11 +79,23 @@
   text-align: justify;
 }
 
+.pads-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
 .pad-wrap {
   display: grid;
   gap: 8px;
   position: relative;
   z-index: 2;
+}
+
+@media (max-width: 720px) {
+  .pads-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .pad-label {

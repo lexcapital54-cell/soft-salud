@@ -1,0 +1,750 @@
+<section class="agenda-page">
+  <header class="topbar">
+    <div class="topbar-left">
+      <a routerLink="/consultorio">← Consultorio</a>
+      <strong>Agenda del día</strong>
+    </div>
+    <div class="topbar-actions">
+      @if (canManage()) {
+        <button type="button" class="primary" (click)="toggleBooking()">
+          {{ showBooking() ? 'Cerrar' : 'Nueva cita' }}
+        </button>
+      }
+      <button type="button" class="ghost" (click)="refresh()" [disabled]="loading()">
+        {{ loading() ? 'Actualizando…' : 'Actualizar' }}
+      </button>
+    </div>
+  </header>
+
+  @if (showBooking()) {
+    <div class="modal-backdrop" (click)="closeBooking()"></div>
+    <div class="modal booking-modal" role="dialog" aria-label="Programar cita">
+      <header class="modal-head">
+        <div>
+          <h2>Programar cita</h2>
+          <p class="muted small">{{ bookingSlotLabel() }}</p>
+        </div>
+        <button type="button" class="icon-close" (click)="closeBooking()" aria-label="Cerrar">×</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="modal-col">
+        <section class="step">
+          <h3><span class="step-num">1</span> Paciente</h3>
+
+          @if (selectedPatient(); as p) {
+            <div class="picked-patient">
+              <div>
+                <strong>{{ patientLabel(p) }}</strong>
+                <p class="muted small">
+                  @if (p.documentNumber) {
+                    {{ p.documentType }} {{ p.documentNumber }}
+                  } @else {
+                    Ficha por completar
+                  }
+                  @if (p.phone) {
+                    · {{ p.phone }}
+                  }
+                </p>
+                @if (p.hasClinicalHistory) {
+                  <p class="muted small">
+                    Ya tiene historia clínica: esta atención se registrará como nota de
+                    evolución.
+                  </p>
+                }
+              </div>
+              <button type="button" class="linkish" (click)="clearPatient()">Cambiar</button>
+            </div>
+          } @else {
+            <div class="tabs">
+              <button
+                type="button"
+                [class.active]="patientTab() === 'search'"
+                (click)="setPatientTab('search')"
+              >
+                Buscar
+              </button>
+              <button
+                type="button"
+                [class.active]="patientTab() === 'new'"
+                (click)="setPatientTab('new')"
+              >
+                Nuevo paciente
+              </button>
+            </div>
+
+            @if (patientTab() === 'search') {
+              <label>
+                Buscar paciente por nombre o cédula
+                <input
+                  [(ngModel)]="patientQuery"
+                  (ngModelChange)="onPatientQueryChange()"
+                  placeholder="Nombre, cédula o teléfono…"
+                  autocomplete="off"
+                />
+              </label>
+              <p class="muted small">
+                Si el paciente ya vino antes, búsquelo aquí: se reutiliza su ficha y su
+                historia clínica.
+              </p>
+              @if (patientSearching()) {
+                <p class="muted small">Buscando…</p>
+              } @else if (patientResults().length) {
+                <ul class="patient-results">
+                  @for (p of patientResults(); track p.id) {
+                    <li>
+                      <button type="button" (click)="choosePatient(p)">
+                        <span class="pr-name">{{ patientLabel(p) }}</span>
+                        <span class="muted small">
+                          @if (p.documentNumber) {
+                            {{ p.documentType }} {{ p.documentNumber }}
+                          } @else {
+                            Ficha por completar
+                          }
+                          @if (p.phone) {
+                            · {{ p.phone }}
+                          }
+                          @if (p.hasClinicalHistory) {
+                            · Con historia clínica
+                          }
+                        </span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              } @else if (patientQuery.trim().length > 1) {
+                <p class="muted small">
+                  Sin resultados. Regístrelo en «Nuevo paciente».
+                </p>
+              }
+            } @else {
+              <p class="muted small">
+                Solo para pacientes nuevos. Si el nombre o la cédula ya existen se
+                reutiliza esa ficha en vez de crear una segunda.
+              </p>
+              <div class="new-patient-grid">
+                <label>
+                  Nombre
+                  <input [(ngModel)]="newPatient.firstName" placeholder="Nombre" />
+                </label>
+                <label>
+                  Apellido
+                  <input [(ngModel)]="newPatient.lastName" placeholder="Apellido" />
+                </label>
+                <label>
+                  Teléfono / WhatsApp
+                  <input [(ngModel)]="newPatient.phone" placeholder="300 123 4567" />
+                </label>
+                <label>
+                  Cédula (opcional)
+                  <input [(ngModel)]="newPatient.documentNumber" placeholder="1.020.304.050" />
+                </label>
+                <label>
+                  Correo (opcional)
+                  <input [(ngModel)]="newPatient.email" placeholder="correo@email.com" />
+                </label>
+              </div>
+              <button
+                type="button"
+                class="ghost full"
+                [disabled]="creatingPatient()"
+                (click)="registerPatient()"
+              >
+                {{ creatingPatient() ? 'Registrando…' : 'Registrar paciente' }}
+              </button>
+            }
+          }
+        </section>
+
+        <section class="step">
+          <h3><span class="step-num">2</span> Quién atiende</h3>
+          <div class="pro-list">
+            @for (pro of professionals(); track pro.id; let i = $index) {
+              <button
+                type="button"
+                class="pro-card"
+                [class.active]="bookingForm.professionalId === pro.id"
+                (click)="chooseProfessional(pro.id)"
+              >
+                <span class="pro-dot" [style.background]="accentFor(i)"></span>
+                <span class="pro-name">{{ pro.fullName }}</span>
+                <span class="muted small">
+                  {{ pro.professionalCard ? 'TP ' + pro.professionalCard : pro.role }}
+                </span>
+              </button>
+            } @empty {
+              <p class="muted small">No hay profesionales habilitados.</p>
+            }
+          </div>
+        </section>
+        </div>
+
+        <div class="modal-col">
+        <section class="step">
+          <h3><span class="step-num">3</span> Detalles de la cita</h3>
+          <div class="detail-grid">
+            <label>
+              Hora
+              <input type="time" [(ngModel)]="bookingForm.time" />
+            </label>
+            <label>
+              Duración (min)
+              <input
+                type="number"
+                min="5"
+                max="480"
+                step="5"
+                [(ngModel)]="bookingForm.durationMinutes"
+              />
+            </label>
+            <label>
+              Modalidad
+              <select [(ngModel)]="bookingForm.modality">
+                <option value="IN_PERSON">Presencial</option>
+                <option value="VIRTUAL">Telemedicina</option>
+              </select>
+            </label>
+            @if (isVirtualBooking()) {
+              <label class="grow">
+                Link de videollamada
+                <input [(ngModel)]="bookingForm.meetingUrl" placeholder="https://meet…" />
+              </label>
+            }
+          </div>
+        </section>
+
+        <section class="step">
+          <h3><span class="step-num">4</span> Notas</h3>
+          <textarea
+            rows="3"
+            [(ngModel)]="bookingForm.notes"
+            placeholder="Observaciones opcionales…"
+          ></textarea>
+        </section>
+        </div>
+      </div>
+
+      @if (error()) {
+        <p class="banner err modal-banner">{{ error() }}</p>
+      }
+      @if (message()) {
+        <p class="banner ok modal-banner">{{ message() }}</p>
+      }
+
+      <footer class="modal-foot">
+        <button type="button" class="ghost" (click)="closeBooking()">Cerrar</button>
+        <button
+          type="button"
+          class="primary"
+          [disabled]="booking()"
+          (click)="createAppointment()"
+        >
+          {{ booking() ? 'Programando…' : 'Programar' }}
+        </button>
+      </footer>
+    </div>
+  }
+
+  @if (message()) {
+    <p class="banner ok">{{ message() }}</p>
+  }
+  @if (error()) {
+    <p class="banner err">{{ error() }}</p>
+  }
+
+  <div class="card filters">
+    <div class="row">
+      <label class="grow">
+        Buscar
+        <input
+          [(ngModel)]="q"
+          (ngModelChange)="onSearchChange()"
+          placeholder="Nombre o número de documento…"
+          autocomplete="off"
+        />
+      </label>
+      <label>
+        Fecha
+        <input type="date" [ngModel]="date()" (ngModelChange)="setDate($event)" />
+      </label>
+    </div>
+    <div class="chips filter-chips">
+      @for (f of statusFilters; track f.value) {
+        <button
+          type="button"
+          class="chip"
+          [class.active]="statusFilter === f.value"
+          (click)="setStatusFilter(f.value)"
+        >
+          {{ f.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="card agenda-nav">
+    <div class="nav-left">
+      <button type="button" class="nav-arrow" (click)="shiftPeriod(-1)" aria-label="Periodo anterior">‹</button>
+      <button type="button" class="chip" (click)="goToday()">Hoy</button>
+      <button type="button" class="nav-arrow" (click)="shiftPeriod(1)" aria-label="Periodo siguiente">›</button>
+      <strong class="period-label">{{ periodLabel() }}</strong>
+    </div>
+    <div class="nav-right">
+      <div class="switch">
+        <button type="button" [class.active]="rangeMode() === 'day'" (click)="setRange('day')">Día</button>
+        <button type="button" [class.active]="rangeMode() === 'week'" (click)="setRange('week')">Semana</button>
+      </div>
+      <div class="switch">
+        <button type="button" [class.active]="viewMode() === 'grid'" (click)="setView('grid')">Rejilla</button>
+        <button type="button" [class.active]="viewMode() === 'list'" (click)="setView('list')">Lista</button>
+      </div>
+    </div>
+  </div>
+
+  @if (rangeMode() === 'day') {
+    <div class="week-strip">
+      @for (day of weekDays(); track day.key) {
+        <button
+          type="button"
+          class="week-day"
+          [class.active]="day.key === date()"
+          [class.today]="isToday(day.key)"
+          (click)="setDate(day.key)"
+        >
+          <span class="week-name">{{ day.weekday }}</span>
+          <span class="week-number">{{ day.dayNumber }}</span>
+        </button>
+      }
+    </div>
+  }
+
+  <div class="counters">
+    <div class="counter">
+      <span class="counter-value">{{ counters().total }}</span>
+      <span class="counter-label">Citas del día</span>
+    </div>
+    <div class="counter">
+      <span class="counter-value">{{ counters().inWaiting }}</span>
+      <span class="counter-label">En sala de espera</span>
+    </div>
+    <div class="counter">
+      <span class="counter-value">{{ counters().completed }}</span>
+      <span class="counter-label">Atendidas</span>
+    </div>
+    <div class="counter" [class.warn]="counters().pendingHabeas > 0">
+      <span class="counter-value">{{ counters().pendingHabeas }}</span>
+      <span class="counter-label">Sin Habeas Data</span>
+    </div>
+  </div>
+
+  @if (viewMode() === 'grid') {
+    <div class="agenda-layout">
+      <div class="card grid-card">
+        @if (columns().length) {
+          <div class="grid-scroll">
+            <div class="grid-board" [style.--cols]="columns().length">
+              <div class="grid-corner"></div>
+              @for (col of columns(); track col.id) {
+                <div class="grid-head">
+                  <span class="head-dot" [style.background]="col.accent"></span>
+                  <span class="head-title">{{ col.title }}</span>
+                  @if (col.subtitle) {
+                    <span class="head-sub">{{ col.subtitle }}</span>
+                  }
+                </div>
+              }
+
+              @for (slot of slots; track slot.minutes; let i = $index) {
+                <div class="grid-time" [style.grid-row]="i + 2">{{ slot.label }}</div>
+              }
+
+              @for (cell of cells(); track cell.columnIndex + ':' + cell.slotIndex) {
+                <div
+                  class="grid-cell"
+                  [class.free]="cell.state === 'free'"
+                  [class.past]="cell.state === 'past'"
+                  [class.booked]="cell.state === 'booked'"
+                  [class.reopened]="cell.state === 'reopened'"
+                  [class.closed]="cell.state === 'closed'"
+                  [class.compact]="cell.span === 1"
+                  [style.grid-column]="cell.column"
+                  [style.grid-row]="cell.row + ' / span ' + cell.span"
+                >
+                  @if (cell.state === 'booked') {
+                    @for (appt of cell.appointments; track appt.id) {
+                      <button
+                        type="button"
+                        class="slot-appt"
+                        [attr.data-status]="appt.status"
+                        [class.selected]="selected()?.id === appt.id"
+                        (click)="selectAppointment(appt)"
+                      >
+                        <span class="slot-time">{{ appt.startsAt | date: 'HH:mm' }}</span>
+                        <span class="slot-name">{{ appt.patient.fullName }}</span>
+                        <span class="slot-meta">
+                          {{ appt.isTelemedicine ? 'Telemedicina' : 'Presencial' }}
+                          @if (rangeMode() === 'week') {
+                            · {{ appt.professional.fullName }}
+                          }
+                        </span>
+                      </button>
+                    }
+                  } @else if (cell.state === 'reopened') {
+                    <button
+                      type="button"
+                      class="slot-reopened"
+                      [disabled]="!canManage()"
+                      (click)="openSlot(cell)"
+                    >
+                      <span class="slot-time">Cita cancelada</span>
+                      <span class="slot-name">Reagendar</span>
+                      <span class="slot-meta">Quedan {{ cell.minutesLeft }} min</span>
+                    </button>
+                  } @else if (cell.state === 'closed') {
+                    <span class="slot-closed">Franja cerrada</span>
+                  } @else if (cell.state === 'free' && canManage()) {
+                    <button type="button" class="slot-free" (click)="openSlot(cell)">
+                      <span>+</span>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        } @else {
+          <p class="empty-grid">
+            No hay profesionales habilitados para dibujar la rejilla.
+          </p>
+        }
+      </div>
+
+      <aside class="card day-panel">
+        <h3>{{ rangeMode() === 'week' ? 'Citas de la semana' : 'Citas del día' }}</h3>
+
+        @if (selected(); as appt) {
+          <div class="panel-detail">
+            <strong>{{ appt.patient.fullName }}</strong>
+            <p class="muted small">
+              {{ appt.startsAt | date: 'EEEE d MMM, HH:mm' }} — {{ appt.endsAt | date: 'HH:mm' }}
+            </p>
+            <p class="muted small">
+              @if (appt.patient.documentNumber) {
+                {{ appt.patient.documentType }} {{ appt.patient.documentNumber }}
+              } @else {
+                {{ appt.patient.phone || 'Sin documento registrado' }}
+              }
+              · {{ appt.professional.fullName }}
+            </p>
+            <div class="badges">
+              <span class="status-badge" [attr.data-status]="appt.status">
+                {{ statusLabels[appt.status] }}
+              </span>
+              @if (!appt.habeasDataSigned) {
+                <span class="status-badge habeas-missing">Habeas Data pendiente</span>
+              }
+              @if (!appt.patient.profileComplete) {
+                <span class="status-badge profile-missing">Ficha por completar</span>
+              }
+            </div>
+            @if (appt.reason) {
+              <p class="reason">{{ appt.reason }}</p>
+            }
+            <div class="panel-actions">
+              @if (appt.isTelemedicine && appt.meetingUrl) {
+                <button type="button" class="primary" (click)="joinMeeting(appt)">
+                  Unirse a consulta
+                </button>
+              }
+              @if (appt.encounterId) {
+                <a
+                  class="linkish"
+                  routerLink="/consultorio/historia-clinica"
+                  [queryParams]="{ patientId: appt.patient.id }"
+                >
+                  Abrir HC
+                </a>
+              }
+              @if (canManage()) {
+                @for (target of appt.allowedTransitions; track target) {
+                  <button
+                    type="button"
+                    class="ghost"
+                    [disabled]="busyId() === appt.id"
+                    (click)="changeStatus(appt, target)"
+                  >
+                    {{ transitionLabels[target] }}
+                  </button>
+                }
+                @if (appt.status === 'CANCELLED') {
+                  <button type="button" class="ghost" (click)="startReschedule(appt)">
+                    Reagendar
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        } @else {
+          <p class="muted small">
+            Seleccione una cita en la rejilla para ver sus acciones.
+          </p>
+        }
+
+        <ul class="panel-list">
+          @for (appt of dayAgenda(); track appt.id) {
+            <li>
+              <button
+                type="button"
+                [class.active]="selected()?.id === appt.id"
+                (click)="selectAppointment(appt)"
+              >
+                <span class="panel-time">{{ appt.startsAt | date: 'HH:mm' }}</span>
+                <span class="panel-name">{{ appt.patient.fullName }}</span>
+                <span class="panel-status" [attr.data-status]="appt.status"></span>
+              </button>
+            </li>
+          } @empty {
+            <li class="muted small">
+              {{ loading() ? 'Cargando agenda…' : 'Sin citas para este periodo.' }}
+            </li>
+          }
+        </ul>
+      </aside>
+    </div>
+  }
+
+  @if (viewMode() === 'list') {
+  <div class="agenda-list">
+    @for (appt of appointments(); track appt.id) {
+      <article class="appointment" [class.busy]="busyId() === appt.id">
+        <div class="time-col">
+          <strong>{{ appt.startsAt | date: 'HH:mm' }}</strong>
+          <span class="muted small">{{ appt.endsAt | date: 'HH:mm' }}</span>
+        </div>
+
+        <div class="info-col">
+          <div class="name-row">
+            <h3>{{ appt.patient.fullName }}</h3>
+            <span
+              class="tag"
+              [class.tag-adult]="appt.patient.populationGroup === 'ADULT'"
+              [class.tag-minor]="appt.patient.populationGroup === 'MINOR'"
+            >
+              {{ appt.patient.populationGroup === 'MINOR' ? 'Menor de edad' : 'Adulto' }}
+            </span>
+            <span class="tag" [class.tag-virtual]="appt.isTelemedicine" [class.tag-inperson]="!appt.isTelemedicine">
+              {{ appt.isTelemedicine ? 'Telemedicina' : 'Presencial' }}
+            </span>
+          </div>
+
+          <p class="muted small">
+            @if (appt.patient.documentNumber) {
+              {{ appt.patient.documentType }} {{ appt.patient.documentNumber }}
+            } @else {
+              {{ appt.patient.phone || 'Sin documento registrado' }}
+            }
+            · {{ appt.professional.fullName }}
+            @if (appt.opportunityDays !== null) {
+              · Oportunidad: {{ appt.opportunityDays }} día(s)
+            }
+          </p>
+
+          @if (appt.reason) {
+            <p class="reason">{{ appt.reason }}</p>
+          }
+
+          <div class="badges">
+            <span class="status-badge" [attr.data-status]="appt.status">
+              {{ statusLabels[appt.status] }}
+            </span>
+            @if (!appt.habeasDataSigned) {
+              <span class="status-badge habeas-missing">Habeas Data pendiente</span>
+            }
+            @if (!appt.patient.profileComplete) {
+              <span class="status-badge profile-missing">Ficha por completar</span>
+            }
+          </div>
+        </div>
+
+        <div class="actions-col">
+          @if (appt.isTelemedicine && appt.meetingUrl) {
+            <button type="button" class="primary" (click)="joinMeeting(appt)">
+              Unirse a consulta
+            </button>
+          }
+
+          @if (appt.encounterId) {
+            <a
+              class="linkish"
+              routerLink="/consultorio/historia-clinica"
+              [queryParams]="{ patientId: appt.patient.id }"
+            >
+              Abrir HC
+            </a>
+          }
+
+          @if (canManage()) {
+            @for (target of appt.allowedTransitions; track target) {
+              <button
+                type="button"
+                class="ghost"
+                [disabled]="busyId() === appt.id"
+                (click)="changeStatus(appt, target)"
+              >
+                {{ transitionLabels[target] }}
+              </button>
+            }
+            @if (appt.status === 'CANCELLED') {
+              <button type="button" class="ghost" (click)="startReschedule(appt)">
+                Reagendar
+              </button>
+            }
+
+            <button type="button" class="linkish" (click)="toggleNotices(appt)">
+              {{ noticesFor() === appt.id ? 'Ocultar recordatorios' : 'Recordatorios' }}
+            </button>
+          }
+        </div>
+
+        @if (noticesFor() === appt.id) {
+          <div class="notices">
+            <div class="notices-head">
+              <strong>Recordatorios enviados</strong>
+              <span class="notice-actions">
+                <button
+                  type="button"
+                  class="ghost"
+                  [disabled]="!!resending()"
+                  (click)="resend(appt, 'WHATSAPP')"
+                >
+                  {{ resending() === 'WHATSAPP' ? 'Enviando…' : 'Reenviar WhatsApp' }}
+                </button>
+                <button
+                  type="button"
+                  class="ghost"
+                  [disabled]="!!resending()"
+                  (click)="resend(appt, 'EMAIL')"
+                >
+                  {{ resending() === 'EMAIL' ? 'Enviando…' : 'Reenviar correo' }}
+                </button>
+              </span>
+            </div>
+
+            @if (noticesLoading()) {
+              <p class="muted small">Cargando…</p>
+            } @else if (notices().length) {
+              <ul class="notice-list">
+                @for (n of notices(); track n.id) {
+                  <li>
+                    <span class="notice-tag" [class.failed]="n.status === 'FAILED'">
+                      {{ channelLabels[n.channel] }}
+                    </span>
+                    {{ notificationKindLabels[n.kind] }}
+                    <span class="muted">
+                      · {{ n.destination }}
+                      · {{ (n.sentAt || n.createdAt) | date: 'short' }}
+                      @if (n.status === 'FAILED') {
+                        · falló
+                      }
+                    </span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="muted small">
+                Aún no se ha enviado ningún recordatorio para esta cita.
+              </p>
+            }
+          </div>
+        }
+      </article>
+    } @empty {
+      <div class="card empty-state">
+        @if (loading()) {
+          <p>Cargando agenda…</p>
+        } @else {
+          <p>No hay citas para esta fecha con los filtros aplicados.</p>
+        }
+      </div>
+    }
+  </div>
+  }
+</section>
+
+@if (cancelFor(); as appt) {
+  <div class="modal-backdrop" (click)="closeCancel()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>Cancelar cita</h2>
+      <p class="muted">
+        {{ appt.patient.fullName }} — {{ appt.startsAt | date: 'EEEE d MMM, HH:mm' }}
+      </p>
+
+      <label>
+        Motivo de la cancelación (opcional)
+        <input [(ngModel)]="cancelReason" placeholder="El paciente no puede asistir…" />
+      </label>
+
+      <p class="muted small">
+        Si reagenda, la franja liberada queda disponible unos minutos y el paciente ya viene
+        seleccionado para darle una hora nueva.
+      </p>
+
+      <div class="modal-actions">
+        <button type="button" class="ghost" (click)="closeCancel()">Volver</button>
+        <button
+          type="button"
+          class="ghost"
+          [disabled]="busyId() === appt.id"
+          (click)="confirmCancel(false)"
+        >
+          Cancelar sin reagendar
+        </button>
+        <button
+          type="button"
+          class="primary"
+          [disabled]="busyId() === appt.id"
+          (click)="confirmCancel(true)"
+        >
+          Cancelar y reagendar
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (admissionFor(); as appt) {
+  <div class="modal-backdrop" (click)="closeAdmission()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>Admisión — Habeas Data</h2>
+      <p class="muted">
+        {{ appt.patient.fullName }} no tiene registrada la autorización de tratamiento de datos
+        personales (Ley 1581 de 2012). No se puede admitir en sala de espera sin ella.
+      </p>
+
+      <label>
+        Firmado por
+        <input [(ngModel)]="admissionName" />
+      </label>
+      <label>
+        Documento
+        <input [(ngModel)]="admissionDocument" />
+      </label>
+
+      <p class="muted small">
+        Para la firma digital con PDF sellado use el módulo de consentimientos en la historia
+        clínica. Esta opción deja constancia de la autorización firmada en el consultorio.
+      </p>
+
+      <div class="modal-actions">
+        <button type="button" class="ghost" (click)="closeAdmission()">Cancelar</button>
+        <button
+          type="button"
+          class="primary"
+          [disabled]="busyId() === appt.id"
+          (click)="confirmAdmission()"
+        >
+          Registrar y pasar a sala
+        </button>
+      </div>
+    </div>
+  </div>
+}

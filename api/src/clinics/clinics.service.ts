@@ -64,7 +64,7 @@ export class ClinicsService {
         email: dto.admin.email.toLowerCase(),
         fullName: dto.admin.fullName,
         passwordHash: await bcrypt.hash(dto.admin.password, 10),
-        role: UserRole.CLINIC_ADMIN,
+        role: UserRole.ADMIN,
         clinicId: saved.id,
         isActive: true,
       });

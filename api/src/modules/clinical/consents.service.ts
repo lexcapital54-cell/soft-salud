@@ -139,6 +139,14 @@ export class ConsentsService {
         'La firma debe enviarse como data URL de imagen (PNG/JPEG base64)',
       );
     }
+    if (
+      dto.professionalSignatureBase64 &&
+      !dto.professionalSignatureBase64.startsWith('data:image/')
+    ) {
+      throw new BadRequestException(
+        'La firma profesional debe enviarse como data URL de imagen (PNG/JPEG base64)',
+      );
+    }
 
     const [patient, clinic] = await Promise.all([
       this.prisma.patient.findFirst({ where: { id: dto.patientId, clinicId } }),
@@ -182,8 +190,12 @@ export class ConsentsService {
     const signerName = dto.signerName?.trim() || patientName;
     const docType =
       dto.signerDocumentType?.trim() || patient.documentType || 'CC';
-    const docNumber =
-      dto.signerDocument?.trim() || patient.documentNumber;
+    const docNumber = dto.signerDocument?.trim() || patient.documentNumber;
+    if (!docNumber) {
+      throw new BadRequestException(
+        'El consentimiento requiere el documento de quien firma. Complete la ficha del paciente o indique el documento del firmante.',
+      );
+    }
     const signerDocument = `${docType} ${docNumber}`.slice(0, 40);
 
     const filledBodyHtml = fillConsentPlaceholders(template.bodyHtml, {
@@ -233,8 +245,8 @@ export class ConsentsService {
         templateVersion: template.version,
         bodyHtml: filledBodyHtml,
         patientName,
-        patientDocument: patient.documentNumber,
-        patientDocumentType: patient.documentType,
+        patientDocument: patient.documentNumber ?? docNumber,
+        patientDocumentType: patient.documentType ?? docType,
         signerName,
         signerDocument,
         signatureBase64: dto.signatureBase64,
@@ -244,6 +256,7 @@ export class ConsentsService {
         encounterId: dto.encounterId ?? null,
         professionalName,
         professionalCard,
+        professionalSignatureBase64: dto.professionalSignatureBase64,
       });
     } catch (error) {
       this.logger.error(
@@ -254,6 +267,17 @@ export class ConsentsService {
       throw new BadRequestException(
         'No se pudo generar el PDF sellado. Intente firmar de nuevo.',
       );
+    }
+
+    if (dto.professionalSignatureBase64) {
+      await this.prisma.user
+        .update({
+          where: { id: user.id },
+          data: {
+            professionalSignatureBase64: dto.professionalSignatureBase64,
+          },
+        })
+        .catch(() => undefined);
     }
 
     const updated = await this.prisma.patientConsent.update({

@@ -43,10 +43,18 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
   readonly professionalCard = input<string>('');
   readonly userFullName = input<string>('');
 
+  /** Firma de la profesional compartida con el panel «Firma digital (Ley 527)». */
+  readonly professionalSignature = input<string | null>(null);
+
   readonly sealed = output<PatientConsentRecord>();
   readonly flagsChanged = output<void>();
+  /** Avisa a la HC del trazo de la Dra para reflejarlo en el otro panel. */
+  readonly professionalSigned = output<string>();
 
-  @ViewChild('padCanvas') private padCanvas?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('patientPadCanvas')
+  private patientPadCanvas?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('professionalPadCanvas')
+  private professionalPadCanvas?: ElementRef<HTMLCanvasElement>;
 
   readonly templates = signal<ConsentTemplate[]>([]);
   readonly signed = signal<PatientConsentRecord[]>([]);
@@ -55,7 +63,8 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
   readonly error = signal('');
   readonly message = signal('');
   readonly selectedId = signal('');
-  readonly hasStroke = signal(false);
+  readonly hasPatientStroke = signal(false);
+  readonly hasProfessionalStroke = signal(false);
 
   readonly documentTypes = DOCUMENT_TYPES;
 
@@ -63,25 +72,35 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
   signerDocumentType = 'CC';
   signerDocument = '';
 
-  private pad: SignaturePad | null = null;
-  private resizeHandler = () => this.fitCanvas();
+  private patientPad: SignaturePad | null = null;
+  private professionalPad: SignaturePad | null = null;
+  private resizeHandler = () => this.fitCanvases();
   private ready = false;
+  /** Evita reaplicar en bucle la firma que llega desde la HC. */
+  private appliedProfessionalSignature: string | null = null;
 
   readonly selected = computed(
     () => this.templates().find((t) => t.id === this.selectedId()) ?? null,
   );
 
+  /** Hay consentimiento por sellar: paciente, plantilla y firma del paciente. */
   readonly canSeal = computed(
-    () => !!this.patientId() && !!this.selected() && this.hasStroke(),
+    () => !!this.patientId() && !!this.selected() && this.hasPatientStroke(),
   );
+
+  hasPatientSignature() {
+    return this.hasPatientStroke();
+  }
+
+  hasProfessionalSignature() {
+    return this.hasProfessionalStroke() || !!this.professionalSignature();
+  }
 
   /** Vista previa diligenciada (se recalcula en cada CD al editar firmante). */
   previewHtml(): SafeHtml | null {
     const t = this.selected();
     if (!t) return null;
-    return this.sanitizer.bypassSecurityTrustHtml(
-      this.fillTemplatePlaceholders(t.bodyHtml),
-    );
+    return this.sanitizer.bypassSecurityTrustHtml(this.fillTemplatePlaceholders(t.bodyHtml));
   }
 
   constructor() {
@@ -102,6 +121,30 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
         this.signed.set([]);
       }
     });
+
+    effect(() => {
+      const incoming = this.professionalSignature();
+      if (!incoming || incoming === this.appliedProfessionalSignature) return;
+      this.appliedProfessionalSignature = incoming;
+      this.drawProfessionalSignature(incoming);
+    });
+  }
+
+  /** Pinta en el lienzo de la Dra la firma hecha en el panel Ley 527. */
+  private drawProfessionalSignature(dataUrl: string) {
+    const apply = () => {
+      const pad = this.professionalPad;
+      const canvas = this.professionalPadCanvas?.nativeElement;
+      if (!pad || !canvas) return;
+      pad.clear();
+      void pad.fromDataURL(dataUrl, {
+        width: canvas.clientWidth,
+        height: canvas.clientHeight,
+      });
+      this.hasProfessionalStroke.set(true);
+    };
+    if (this.professionalPad) apply();
+    else setTimeout(apply, 80);
   }
 
   ngOnInit() {
@@ -111,19 +154,19 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     this.ready = true;
     window.addEventListener('resize', this.resizeHandler);
-    setTimeout(() => this.initPad(), 50);
+    setTimeout(() => this.initPads(), 50);
   }
 
   ngOnDestroy() {
     window.removeEventListener('resize', this.resizeHandler);
-    this.destroyPad();
+    this.destroyPads();
   }
 
   async reload() {
     await this.loadTemplates();
     const pid = this.patientId();
     if (pid) await this.loadSigned(pid);
-    if (this.ready) setTimeout(() => this.initPad(), 0);
+    if (this.ready) setTimeout(() => this.initPads(), 0);
   }
 
   async loadTemplates() {
@@ -133,13 +176,8 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
       const templates = await firstValueFrom(this.api.listConsentTemplates());
       this.templates.set(templates);
       if (!templates.length) {
-        this.error.set(
-          'No hay plantillas en el servidor. En api ejecute: npm run prisma:seed',
-        );
-      } else if (
-        !this.selectedId() ||
-        !templates.some((t) => t.id === this.selectedId())
-      ) {
+        this.error.set('No hay plantillas en el servidor. En api ejecute: npm run prisma:seed');
+      } else if (!this.selectedId() || !templates.some((t) => t.id === this.selectedId())) {
         this.selectedId.set(templates[0].id);
       }
     } catch (err) {
@@ -154,7 +192,7 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
       this.error.set(`No se pudieron cargar las plantillas (${detail}).`);
     } finally {
       this.loading.set(false);
-      if (this.ready) setTimeout(() => this.initPad(), 0);
+      if (this.ready) setTimeout(() => this.initPads(), 0);
     }
   }
 
@@ -175,35 +213,54 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
   onSelectTemplate(id: string) {
     this.selectedId.set(id);
     this.message.set('');
-    this.clearSignature();
+    this.clearSignatures();
+    // La firma de la Dra es una sola para toda la atención: se conserva.
+    const shared = this.professionalSignature();
+    if (shared) this.drawProfessionalSignature(shared);
   }
 
-  clearSignature() {
-    this.pad?.clear();
-    this.hasStroke.set(false);
+  clearSignatures() {
+    this.patientPad?.clear();
+    this.professionalPad?.clear();
+    this.hasPatientStroke.set(false);
+    this.hasProfessionalStroke.set(false);
+    this.appliedProfessionalSignature = null;
   }
 
-  async acceptAndSeal() {
+  /**
+   * Sella el consentimiento. Lo dispara el botón único «Guardar historia
+   * clínica»; este componente ya no tiene acción propia de sellado.
+   */
+  async seal(): Promise<boolean> {
     this.error.set('');
     this.message.set('');
     const template = this.selected();
     const patientId = this.patientId();
     if (!patientId) {
       this.error.set('Abra o cree una atención con paciente antes de sellar.');
-      return;
+      return false;
     }
     if (!template) {
       this.error.set('Seleccione una plantilla legal.');
-      return;
+      return false;
     }
-    if (!this.pad || this.pad.isEmpty()) {
-      this.error.set('Debe trazar la firma en el canvas.');
-      return;
+    if (!this.patientPad || this.patientPad.isEmpty()) {
+      this.error.set('Falta la firma del paciente.');
+      return false;
+    }
+    const professionalSignature =
+      this.professionalPad && !this.professionalPad.isEmpty()
+        ? this.professionalPad.toDataURL('image/png')
+        : this.professionalSignature();
+    if (!professionalSignature) {
+      this.error.set('Falta la firma de la Dra / profesional.');
+      return false;
     }
 
     this.submitting.set(true);
     try {
-      const signatureBase64 = this.pad.toDataURL('image/png');
+      const signatureBase64 = this.patientPad.toDataURL('image/png');
+      const professionalSignatureBase64 = professionalSignature;
       const result = await firstValueFrom(
         this.api.signPatientConsent({
           patientId,
@@ -213,23 +270,25 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
           signerDocumentType: this.signerDocumentType || undefined,
           signerDocument: this.signerDocument.trim() || undefined,
           signatureBase64,
+          professionalSignatureBase64,
         }),
       );
 
       this.message.set(
-        result.message ||
-          'Documento aceptado, firmado y sellado como PDF inalterable.',
+        result.message || 'Documento aceptado, firmado y sellado como PDF inalterable.',
       );
       this.sealed.emit(result);
       this.flagsChanged.emit();
-      this.clearSignature();
+      this.clearSignatures();
       await this.reload();
+      return true;
     } catch (err) {
       const http = err as HttpErrorResponse;
       this.error.set(
         http?.error?.message ||
           'No se pudo sellar el documento. Verifique la atención y vuelva a intentar.',
       );
+      return false;
     } finally {
       this.submitting.set(false);
     }
@@ -252,18 +311,12 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
    * Misma lógica que api/.../consent-placeholders.ts para el PDF sellado.
    */
   private fillTemplatePlaceholders(html: string): string {
-    const name = (
-      this.signerName.trim() ||
-      this.patientName().trim() ||
-      ''
-    ).replace(/\s+/g, ' ');
+    const name = (this.signerName.trim() || this.patientName().trim() || '').replace(/\s+/g, ' ');
     const docType = this.signerDocumentType || this.patientDocumentType() || 'CC';
     const docNum = this.signerDocument.trim() || this.patientDocument().trim() || '';
     const city = (this.patientCity().trim() || 'Manizales').replace(/\s+/g, ' ');
-    const patient =
-      this.patientName().trim().replace(/\s+/g, ' ') || name;
-    const professional =
-      this.professionalName().trim() || this.userFullName().trim() || '';
+    const patient = this.patientName().trim().replace(/\s+/g, ' ') || name;
+    const professional = this.professionalName().trim() || this.userFullName().trim() || '';
     const card = this.professionalCard().trim() || 'Pendiente';
     const today = new Date().toLocaleDateString('es-CO', {
       year: 'numeric',
@@ -340,19 +393,39 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
       .replace(/"/g, '&quot;');
   }
 
-  private destroyPad() {
-    this.pad?.off();
-    this.pad = null;
+  private destroyPads() {
+    this.patientPad?.off();
+    this.professionalPad?.off();
+    this.patientPad = null;
+    this.professionalPad = null;
   }
 
-  private initPad() {
-    const canvas = this.padCanvas?.nativeElement;
-    if (!canvas) return;
+  private initPads() {
+    this.destroyPads();
+    this.patientPad = this.createPad(this.patientPadCanvas?.nativeElement, (has) =>
+      this.hasPatientStroke.set(has),
+    );
+    this.professionalPad = this.createPad(this.professionalPadCanvas?.nativeElement, (has) => {
+      this.hasProfessionalStroke.set(has);
+      const pad = this.professionalPad;
+      if (!has || !pad || pad.isEmpty()) return;
+      const dataUrl = pad.toDataURL('image/png');
+      this.appliedProfessionalSignature = dataUrl;
+      this.professionalSigned.emit(dataUrl);
+    });
+    const incoming = this.professionalSignature();
+    if (incoming) this.drawProfessionalSignature(incoming);
+  }
 
-    this.destroyPad();
-    this.fitCanvas();
+  private createPad(
+    canvas: HTMLCanvasElement | undefined,
+    setHasStroke: (has: boolean) => void,
+  ): SignaturePad | null {
+    if (!canvas) return null;
 
-    this.pad = new SignaturePad(canvas, {
+    this.fitCanvas(canvas);
+
+    const pad = new SignaturePad(canvas, {
       backgroundColor: 'rgb(255, 255, 255)',
       penColor: 'rgb(16, 24, 40)',
       minWidth: 0.8,
@@ -360,20 +433,29 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
       throttle: 0,
     });
 
-    this.pad.addEventListener('beginStroke', () => this.hasStroke.set(true));
-    this.pad.addEventListener('endStroke', () => {
-      this.hasStroke.set(!this.pad?.isEmpty());
-    });
-    this.hasStroke.set(false);
+    pad.addEventListener('beginStroke', () => setHasStroke(true));
+    pad.addEventListener('endStroke', () => setHasStroke(!pad.isEmpty()));
+    setHasStroke(false);
+    return pad;
   }
 
-  private fitCanvas() {
-    const canvas = this.padCanvas?.nativeElement;
-    if (!canvas) return;
+  private fitCanvases() {
+    if (this.patientPadCanvas?.nativeElement) {
+      this.fitCanvas(this.patientPadCanvas.nativeElement);
+      this.patientPad?.clear();
+      this.hasPatientStroke.set(false);
+    }
+    if (this.professionalPadCanvas?.nativeElement) {
+      this.fitCanvas(this.professionalPadCanvas.nativeElement);
+      this.professionalPad?.clear();
+      this.hasProfessionalStroke.set(false);
+    }
+  }
 
+  private fitCanvas(canvas: HTMLCanvasElement) {
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
     const rect = canvas.getBoundingClientRect();
-    const cssWidth = Math.max(Math.floor(rect.width), canvas.clientWidth, 320);
+    const cssWidth = Math.max(Math.floor(rect.width), canvas.clientWidth, 280);
     const cssHeight = Math.max(Math.floor(rect.height), 180);
 
     canvas.width = Math.floor(cssWidth * ratio);
@@ -386,8 +468,5 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(ratio, ratio);
     }
-
-    this.pad?.clear();
-    this.hasStroke.set(false);
   }
 }

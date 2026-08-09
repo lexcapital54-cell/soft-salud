@@ -26,14 +26,31 @@
       </p>
 
       <div class="modules">
-        @if (hasClinicalHistory()) {
+        <a class="module module-link" routerLink="/consultorio/agenda">
+          <h2>Agenda del día</h2>
+          <p>Citas de hoy, admisión con Habeas Data, sala de espera y consultas de telemedicina.</p>
+          <span class="cta">Abrir agenda →</span>
+        </a>
+        <a class="module module-link" routerLink="/consultorio/pacientes">
+          <h2>Pacientes</h2>
+          <p>Busque pacientes y consulte por calendario las historias clínicas creadas cada día.</p>
+          <span class="cta">Ver pacientes →</span>
+        </a>
+        @if (hasClinicalHistory() && canWriteClinical()) {
           <a class="module module-link" routerLink="/consultorio/historia-clinica">
             <h2>Historia clínica</h2>
             <p>Gestione historias clínicas de sus pacientes según la especialidad del consultorio.</p>
             <span class="cta">Abrir HCE →</span>
           </a>
         }
-        @if (hasDocuments()) {
+        @if (hasClinicalHistory() && !canWriteClinical()) {
+          <a class="module module-link" routerLink="/consultorio/historia-clinica">
+            <h2>Historia clínica (lectura)</h2>
+            <p>Consulta de atenciones y metadatos según su rol (recepción / auditoría).</p>
+            <span class="cta">Abrir →</span>
+          </a>
+        }
+        @if (hasDocuments() && canWriteClinical()) {
           <a class="module module-link" routerLink="/consultorio/documentos">
             <h2>Gestión documental</h2>
             <p>

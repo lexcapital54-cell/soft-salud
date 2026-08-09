@@ -26,6 +26,7 @@ export class ClinicHome {
   readonly hasDocuments = computed(
     () => this.user()?.dashboardType === 'CLINICAL_HISTORY_WITH_DOCS',
   );
+  readonly canWriteClinical = this.auth.canWriteClinical;
 
   constructor() {
     this.auth.refreshMe().subscribe({ error: () => undefined });

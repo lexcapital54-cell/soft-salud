@@ -1,0 +1,180 @@
+<section class="patients-page">
+  <header class="topbar">
+    <div class="crumbs">
+      <a routerLink="/consultorio">Consultorio</a>
+      <span>›</span>
+      <span>Historias por fecha</span>
+      <h1>Pacientes</h1>
+    </div>
+    @if (canWrite()) {
+      <button type="button" class="primary" (click)="toggleNew()">
+        {{ showNew() ? 'Cerrar' : '+ Nuevo paciente' }}
+      </button>
+    }
+  </header>
+
+  @if (message()) {
+    <p class="banner ok">{{ message() }}</p>
+  }
+  @if (error()) {
+    <p class="banner err">{{ error() }}</p>
+  }
+
+  <div class="card search-card">
+    <label class="grow">
+      Buscar paciente por nombre o cédula
+      <input
+        [(ngModel)]="query"
+        (ngModelChange)="onQueryChange()"
+        placeholder="Escriba al menos 2 caracteres…"
+        autocomplete="off"
+      />
+    </label>
+    @if (!query.trim()) {
+      <p class="muted small">
+        Los pacientes de cada día aparecen en el calendario: pulse un día para
+        abrir su historia clínica.
+      </p>
+    } @else if (searching()) {
+      <p class="muted small">Buscando…</p>
+    } @else if (results().length) {
+      <ul class="result-list">
+        @for (p of results(); track p.id) {
+          <li>
+            <div>
+              <strong>{{ patientName(p) }}</strong>
+              <span class="muted small">
+                {{ documentLabel(p) }}
+                @if (p.phone) {
+                  · {{ p.phone }}
+                }
+              </span>
+            </div>
+            <a
+              class="linkish"
+              routerLink="/consultorio/historia-clinica"
+              [queryParams]="{ patientId: p.id }"
+            >
+              {{ p.profileComplete ? 'Abrir HC' : 'Completar ficha y abrir HC' }}
+            </a>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="muted small">Ningún paciente coincide con la búsqueda.</p>
+    }
+  </div>
+
+  @if (showNew()) {
+    <div class="card new-patient">
+      <h2>Nuevo paciente</h2>
+      <p class="muted small">
+        Solo para pacientes nuevos: si el nombre o la cédula ya existen se reutiliza esa
+        ficha, porque la historia clínica es única por paciente.
+      </p>
+      <div class="new-grid">
+        <label>
+          Nombre
+          <input [(ngModel)]="newPatient.firstName" placeholder="Nombre" />
+        </label>
+        <label>
+          Apellido
+          <input [(ngModel)]="newPatient.lastName" placeholder="Apellido" />
+        </label>
+        <label>
+          Teléfono / WhatsApp
+          <input [(ngModel)]="newPatient.phone" placeholder="300 123 4567" />
+        </label>
+        <label>
+          Cédula (opcional)
+          <input [(ngModel)]="newPatient.documentNumber" placeholder="1.020.304.050" />
+        </label>
+        <label>
+          Correo (opcional)
+          <input [(ngModel)]="newPatient.email" placeholder="correo@email.com" />
+        </label>
+      </div>
+      <div class="new-actions">
+        <button type="button" class="ghost" (click)="toggleNew()">Cancelar</button>
+        <button
+          type="button"
+          class="primary"
+          [disabled]="creating()"
+          (click)="registerPatient()"
+        >
+          {{ creating() ? 'Registrando…' : 'Registrar paciente' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="board">
+    <div class="card calendar">
+      <div class="cal-head">
+        <div class="cal-nav">
+          <button type="button" class="nav-arrow" (click)="shiftMonth(-1)" aria-label="Mes anterior">←</button>
+          <strong>{{ monthLabel() }}</strong>
+          <button type="button" class="nav-arrow" (click)="shiftMonth(1)" aria-label="Mes siguiente">→</button>
+          <button type="button" class="chip" (click)="goToday()">Hoy</button>
+        </div>
+        <span class="muted small">
+          {{ loading() ? 'Cargando…' : 'Pulse un día para ver sus historias y pacientes nuevos' }}
+        </span>
+      </div>
+
+      <div class="cal-weekdays">
+        @for (name of weekdayNames; track name) {
+          <span>{{ name }}</span>
+        }
+      </div>
+
+      <div class="cal-grid">
+        @for (cell of monthGrid(); track cell.key) {
+          <button
+            type="button"
+            class="cal-day"
+            [class.out]="!cell.inMonth"
+            [class.today]="isToday(cell.key)"
+            [class.active]="cell.key === selectedDay()"
+            (click)="selectDay(cell.key)"
+          >
+            <span class="cal-number">{{ cell.dayNumber }}</span>
+            @for (entry of cell.entries.slice(0, 3); track entry.patientId) {
+              <span class="cal-chip" [class.new]="!entry.encounterId">
+                {{ entry.name }}
+              </span>
+            }
+            @if (cell.entries.length > 3) {
+              <span class="cal-more">+{{ cell.entries.length - 3 }} más</span>
+            }
+          </button>
+        }
+      </div>
+    </div>
+
+    <aside class="card day-card">
+      <h2>{{ selectedDayLabel() }}</h2>
+      <p class="muted small">Pacientes con actividad este día</p>
+
+      <ul class="day-list">
+        @for (entry of dayEntries(); track entry.patientId) {
+          <li>
+            <div>
+              <strong>{{ entry.name }}</strong>
+              <span class="muted small">{{ entry.detail }} · {{ entry.note }}</span>
+            </div>
+            <a
+              class="linkish"
+              routerLink="/consultorio/historia-clinica"
+              [queryParams]="{ patientId: entry.patientId }"
+            >
+              {{ entry.profileComplete ? 'Abrir HC' : 'Completar ficha y abrir HC' }}
+            </a>
+          </li>
+        } @empty {
+          <li class="muted small">Sin movimientos este día.</li>
+        }
+      </ul>
+    </aside>
+  </div>
+</section>

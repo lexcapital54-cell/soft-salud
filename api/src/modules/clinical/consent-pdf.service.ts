@@ -37,6 +37,7 @@ export type ConsentPdfInput = {
   encounterId?: string | null;
   professionalName?: string | null;
   professionalCard?: string | null;
+  professionalSignatureBase64?: string | null;
 };
 
 export type ConsentPdfResult = {
@@ -103,6 +104,7 @@ export class ConsentPdfService {
       input.signerName,
       input.signerDocument,
       signatureDataUrl.slice(0, 128),
+      (input.professionalSignatureBase64 || '').slice(0, 128),
       signedAtIso,
       input.ipAddress || '',
     ].join('|');
@@ -211,33 +213,102 @@ export class ConsentPdfService {
         },
         ...bodyBlocks,
         {
-          text: 'Firma biométrica del titular / representante',
+          text: 'Firmas',
           style: 'section',
           margin: [0, 18, 0, 8],
         },
         {
-          image: signatureDataUrl,
-          width: 220,
-          height: 90,
-          margin: [0, 0, 0, 6],
-        },
-        {
-          canvas: [
+          columns: [
             {
-              type: 'line',
-              x1: 0,
-              y1: 0,
-              x2: 220,
-              y2: 0,
-              lineWidth: 0.8,
-              lineColor: '#9ca3af',
+              width: '*',
+              stack: [
+                {
+                  text: 'Firma paciente',
+                  style: 'muted',
+                  margin: [0, 0, 0, 6],
+                },
+                {
+                  image: signatureDataUrl,
+                  width: 200,
+                  height: 80,
+                  margin: [0, 0, 0, 6],
+                },
+                {
+                  canvas: [
+                    {
+                      type: 'line',
+                      x1: 0,
+                      y1: 0,
+                      x2: 200,
+                      y2: 0,
+                      lineWidth: 0.8,
+                      lineColor: '#9ca3af',
+                    },
+                  ],
+                },
+                {
+                  text: `${input.signerName} · Doc. ${input.signerDocument}`,
+                  style: 'muted',
+                  margin: [0, 4, 0, 0],
+                },
+              ],
+            },
+            {
+              width: '*',
+              stack: [
+                {
+                  text: 'Firma Dra',
+                  style: 'muted',
+                  margin: [0, 0, 0, 6],
+                },
+                ...(input.professionalSignatureBase64
+                  ? ([
+                      {
+                        image: input.professionalSignatureBase64.startsWith(
+                          'data:',
+                        )
+                          ? input.professionalSignatureBase64
+                          : `data:image/png;base64,${input.professionalSignatureBase64}`,
+                        width: 200,
+                        height: 80,
+                        margin: [0, 0, 0, 6],
+                      },
+                      {
+                        canvas: [
+                          {
+                            type: 'line',
+                            x1: 0,
+                            y1: 0,
+                            x2: 200,
+                            y2: 0,
+                            lineWidth: 0.8,
+                            lineColor: '#9ca3af',
+                          },
+                        ],
+                      },
+                    ] as Content[])
+                  : ([
+                      {
+                        text: '(Sin firma profesional en este sello)',
+                        style: 'muted',
+                        margin: [0, 28, 0, 12],
+                      },
+                    ] as Content[])),
+                {
+                  text: input.professionalName
+                    ? `${input.professionalName}${
+                        input.professionalCard
+                          ? ` · TP ${input.professionalCard}`
+                          : ''
+                      }`
+                    : 'Profesional tratante',
+                  style: 'muted',
+                  margin: [0, 4, 0, 0],
+                },
+              ],
             },
           ],
-        },
-        {
-          text: `${input.signerName} · Doc. ${input.signerDocument}`,
-          style: 'muted',
-          margin: [0, 4, 0, 0],
+          columnGap: 24,
         },
         {
           text: 'Sello de tiempo y trazabilidad',

@@ -50,8 +50,8 @@
   @if (previewHtml(); as html) {
     <article class="legal-doc" [innerHTML]="html"></article>
     <p class="muted small">
-      Vista previa: los datos en negrita se toman del paciente/firmante. El PDF final también incluye
-      firma, fecha, IP y hash.
+      Vista previa: los datos en negrita se toman del paciente/firmante. El PDF final también
+      incluye firma, fecha, IP y hash.
     </p>
   }
 
@@ -74,26 +74,36 @@
     </label>
   </div>
 
-  <div class="pad-wrap">
-    <p class="pad-label">Trazo de firma</p>
-    <canvas #padCanvas class="pad" aria-label="Canvas de firma"></canvas>
-    <p class="muted small">
-      Use el dedo o el mouse para firmar. El sello de tiempo e IP se capturan al aceptar.
-    </p>
+  <div class="pads-grid">
+    <div class="pad-wrap">
+      <p class="pad-label">Firma paciente</p>
+      <canvas #patientPadCanvas class="pad" aria-label="Firma paciente"></canvas>
+      <p class="muted small">Firma del paciente o acudiente / representante legal.</p>
+    </div>
+    <div class="pad-wrap">
+      <p class="pad-label">Firma Dra</p>
+      <canvas #professionalPadCanvas class="pad" aria-label="Firma profesional"></canvas>
+      <p class="muted small">
+        Firma de
+        {{ professionalName() || userFullName() || 'la profesional tratante' }}. Es la misma del
+        panel «Firma digital (Ley 527)»: firme aquí o allá, se refleja en ambos.
+      </p>
+    </div>
   </div>
+  <p class="muted small">Use el dedo o el mouse. El sello de tiempo e IP se capturan al aceptar.</p>
 
   <div class="actions">
-    <button type="button" class="ghost" (click)="clearSignature()" [disabled]="submitting()">
-      Limpiar firma
+    <button type="button" class="ghost" (click)="clearSignatures()" [disabled]="submitting()">
+      Limpiar firmas
     </button>
-    <button
-      type="button"
-      class="primary"
-      (click)="acceptAndSeal()"
-      [disabled]="submitting() || !canSeal()"
-    >
-      {{ submitting() ? 'Sellando…' : 'Aceptar y sellar documento' }}
-    </button>
+    <p class="muted small seal-hint">
+      @if (submitting()) {
+        Sellando el documento…
+      } @else {
+        El documento se sella con el botón <strong>Guardar historia clínica</strong> de la barra
+        inferior.
+      }
+    </p>
   </div>
 
   @if (!patientId()) {

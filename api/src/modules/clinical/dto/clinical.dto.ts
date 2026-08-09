@@ -7,10 +7,32 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CareModality, DiagnosisType } from '@prisma/client';
+import {
+  CareModality,
+  ClinicalNoteFormat,
+  DiagnosisType,
+} from '@prisma/client';
+
+/** Filtros del calendario de historias por fecha. */
+export class ListEncountersQueryDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  from?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  to?: string;
+
+  @IsOptional()
+  @IsUUID()
+  patientId?: string;
+}
 
 export class CreateEncounterDto {
   @IsUUID()
@@ -74,9 +96,40 @@ export class ConsentInputDto {
   grantedAt?: string;
 }
 
+export class SignClinicalRecordDto {
+  /** Firma recién dibujada. Si se omite se usa la guardada en el perfil. */
+  @IsOptional()
+  @IsString()
+  signatureBase64?: string;
+}
+
+export class CreateEvolutionDto {
+  @IsString()
+  @MinLength(5)
+  note: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  reason?: string;
+
+  @IsOptional()
+  @IsString()
+  signatureBase64?: string;
+}
+
+export class UpdateProfessionalSignatureDto {
+  @IsString()
+  signatureBase64: string;
+}
+
 export class SaveClinicalRecordDto {
   @IsObject()
   content: Record<string, unknown>;
+
+  @IsOptional()
+  @IsEnum(ClinicalNoteFormat)
+  noteFormat?: ClinicalNoteFormat;
 
   @IsOptional()
   @IsArray()

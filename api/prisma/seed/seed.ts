@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { seedDocumentRequirements } from './document-requirements.seed';
 import { seedConsents } from './seedConsents';
+import { seedDiagnosisCatalog } from './seedDiagnosisCatalog';
 
 const prisma = new PrismaClient();
 
@@ -68,6 +69,10 @@ async function main() {
   console.log('→ Sembrando CIE (MVP psicología)...');
   const cieCount = await seedCie(path.join(catalogsDir, 'cie-psychology.json'));
   console.log(`  CIE: ${cieCount}`);
+
+  console.log('→ Sembrando DiagnosisCatalog (Psicología/Psiquiatría CIE-10/11)...');
+  const diagnosisCatalogCount = await seedDiagnosisCatalog(prisma);
+  console.log(`  DiagnosisCatalog: ${diagnosisCatalogCount}`);
 
   console.log('→ Sembrando CUPS (MVP psicología)...');
   const cupsCount = await seedCups(

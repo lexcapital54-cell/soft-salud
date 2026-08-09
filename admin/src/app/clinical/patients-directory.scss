@@ -1,0 +1,310 @@
+.patients-page {
+  min-height: 100svh;
+  padding: 20px 24px 48px;
+  background: linear-gradient(180deg, #f7fbfb 0%, #ffffff 220px);
+}
+
+.topbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #6a8085;
+}
+
+.crumbs a {
+  color: #0d7377;
+  text-decoration: none;
+}
+
+.crumbs h1 {
+  flex-basis: 100%;
+  margin: 4px 0 0;
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #003d4c;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+  border: 1px solid #d8d8d8;
+  background: #fff;
+  padding: 9px 15px;
+}
+
+button.primary {
+  background: #003d4c;
+  border-color: #003d4c;
+  color: #fff;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e4ecec;
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #405a5f;
+}
+
+input {
+  font: inherit;
+  padding: 9px 11px;
+  border: 1px solid #d0dbdb;
+  border-radius: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.muted {
+  color: #6a8085;
+}
+
+.small {
+  font-size: 0.8rem;
+}
+
+.banner {
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+}
+
+.banner.ok {
+  background: #e5f6ec;
+  color: #1d6b41;
+}
+
+.banner.err {
+  background: #fdecec;
+  color: #8a1f1f;
+}
+
+.linkish {
+  border: none;
+  background: none;
+  color: #0d7377;
+  text-decoration: none;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.search-card .grow {
+  max-width: 520px;
+}
+
+.search-card p {
+  margin: 6px 0 0;
+}
+
+.result-list,
+.day-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.result-list li,
+.day-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid #f0f5f5;
+}
+
+.result-list li div,
+.day-list li div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.new-patient h2 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #003d4c;
+}
+
+.new-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.new-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ---- Calendario mensual ---- */
+
+.board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
+
+.cal-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #003d4c;
+}
+
+.nav-arrow {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  line-height: 1;
+  color: #003d4c;
+}
+
+.chip {
+  background: #f2f7f7;
+  color: #47656b;
+  border: 1px solid transparent;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+}
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  color: #6a8085;
+  padding: 0 2px;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.cal-day {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  min-height: 92px;
+  padding: 6px;
+  border: 1px solid #eef4f4;
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  overflow: hidden;
+}
+
+.cal-day.out {
+  background: #fafcfc;
+}
+
+.cal-day.out .cal-number {
+  color: #b6c9cc;
+}
+
+.cal-day.today {
+  border-color: #0d7377;
+}
+
+.cal-day.active {
+  border-color: #003d4c;
+  box-shadow: inset 0 0 0 1px #003d4c;
+}
+
+.cal-number {
+  font-size: 0.78rem;
+  color: #47656b;
+}
+
+.cal-chip {
+  font-size: 0.66rem;
+  line-height: 1.5;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: #f2fafa;
+  border: 1px solid #dbeced;
+  color: #17323a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Alta de paciente: se distingue de la historia clínica creada ese día. */
+.cal-chip.new {
+  background: #fdf6ec;
+  border-color: #f0dcbd;
+  color: #7a5520;
+}
+
+.section-title {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #eef4f4;
+}
+
+.cal-more {
+  font-size: 0.66rem;
+  color: #6a8085;
+}
+
+.day-card h2 {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 500;
+  color: #003d4c;
+}
+
+.day-card p {
+  margin: 4px 0 0;
+}
+
+@media (max-width: 1000px) {
+  .board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

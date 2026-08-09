@@ -1,0 +1,94 @@
+<section class="sivigila-page">
+  <header class="topbar">
+    <div class="topbar-left">
+      <a routerLink="/consultorio">← Consultorio</a>
+      <strong>Auditoría SIVIGILA</strong>
+    </div>
+    <div class="topbar-actions">
+      <button type="button" class="ghost" (click)="exportCsv()">Exportar CSV</button>
+      <button type="button" class="primary" (click)="exportExcel()">Exportar Excel</button>
+    </div>
+  </header>
+
+  @if (error()) {
+    <p class="banner err">{{ error() }}</p>
+  }
+
+  <div class="card filters">
+    <h2>Filtros</h2>
+    <div class="row">
+      <label
+        >Desde
+        <input type="date" [(ngModel)]="from"
+      /></label>
+      <label
+        >Hasta
+        <input type="date" [(ngModel)]="to"
+      /></label>
+      <label
+        >CIE-10
+        <input [(ngModel)]="cieCode" placeholder="Ej. A09"
+      /></label>
+      <button type="button" class="primary" (click)="refresh()" [disabled]="loading()">
+        {{ loading() ? 'Cargando…' : 'Aplicar' }}
+      </button>
+    </div>
+  </div>
+
+  @if (summary(); as s) {
+    <div class="card summary">
+      <p class="eyebrow">Resumen</p>
+      <h1>{{ s.totalCases }} casos notificables</h1>
+      @if (s.byCieCode.length) {
+        <ul class="chips">
+          @for (row of s.byCieCode; track row.cieCode) {
+            <li class="chip">{{ row.cieCode }} · {{ row.count }}</li>
+          }
+        </ul>
+      }
+    </div>
+  }
+
+  <div class="card">
+    <h2>Casos con diagnóstico SIVIGILA</h2>
+    <p class="muted">
+      Encuentros cuyo CIE está marcado como notificable en el catálogo
+      (<code>sivigila_notifiable</code>).
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Atención</th>
+          <th>Fecha</th>
+          <th>Paciente</th>
+          <th>CIE</th>
+          <th>Diagnóstico</th>
+          <th>Evento</th>
+          <th>Profesional</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of cases(); track c.diagnosisId) {
+          <tr>
+            <td>{{ c.encounterCode || c.encounterId.slice(0, 8) }}</td>
+            <td>{{ c.startedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td>
+              {{ c.patientName }}
+              <div class="muted small">{{ c.patientDocument }}</div>
+            </td>
+            <td><strong>{{ c.cieCode }}</strong></td>
+            <td>{{ c.diagnosisDescription }}</td>
+            <td>{{ c.sivigilaEventCode || '—' }}</td>
+            <td>{{ c.professionalName }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="7" class="empty">
+              Sin casos notificables en el rango. Verifique diagnósticos y flags SIVIGILA en CIE.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { Clinic } from './clinics/clinic.entity';
 import { ClinicsModule } from './clinics/clinics.module';
 import { SeedService } from './database/seed.service';
+import { AgendaModule } from './modules/agenda/agenda.module';
 import { ClinicalModule } from './modules/clinical/clinical.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { User } from './users/user.entity';
 import { UsersModule } from './users/users.module';
@@ -16,6 +19,7 @@ import { UsersModule } from './users/users.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -35,6 +39,8 @@ import { UsersModule } from './users/users.module';
     ClinicsModule,
     AuthModule,
     ClinicalModule,
+    NotificationsModule,
+    AgendaModule,
   ],
   providers: [SeedService],
 })
