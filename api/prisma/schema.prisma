@@ -230,6 +230,21 @@ enum EquipmentStatus {
   OUT_OF_SERVICE
 }
 
+/// Los siete estándares de habilitación (Res. 3100 de 2019) más el pilar de
+/// SG-SST (Dec. 1072 de 2015). DOCUMENTACION_LEGAL agrupa lo administrativo
+/// que el checklist del consultorio exige pero no cae en ningún estándar.
+enum DocumentPillar {
+  DOCUMENTACION_LEGAL
+  TALENTO_HUMANO
+  INFRAESTRUCTURA
+  DOTACION
+  MEDICAMENTOS_INSUMOS
+  PROCESOS_PRIORITARIOS
+  HISTORIA_CLINICA
+  INTERDEPENDENCIA
+  SG_SST
+}
+
 enum SupplyCategory {
   AESTHETIC
   CONSUMABLE
@@ -262,6 +277,26 @@ enum AuditAction {
   DOWNLOAD
   SIGN
   CLOSE
+}
+
+/// Ciclo de vida de una versión documental. Nunca se sobrescribe el archivo:
+/// una carga nueva crea otra versión; retirar solo marca RETIRED.
+enum DocumentFileStatus {
+  PENDING_SIGNATURE
+  PARTIALLY_SIGNED
+  SIGNED
+  RETIRED
+}
+
+/// Roles de firma en documentos administrativos / SG-SST.
+/// Elaboró–Revisó–Aprobó para documentos generales;
+/// Capacitador–Asistente para actas de capacitación.
+enum DocumentSignerRole {
+  ELABORO
+  REVISO
+  APROBO
+  CAPACITADOR
+  ASISTENTE
 }
 
 // ─── Models ────────────────────────────────────────────────────────────────
@@ -323,6 +358,7 @@ model User {
   clinicalEvolutionsAuthored ClinicalEvolution[]
   clarificationNotesAuthored ClarificationNote[]
   uploadedDocuments          DocumentFile[]
+  documentSignatures         DocumentSignature[]
   uploadedAttachments        ClinicalAttachment[]
   transactionsCreated        Transaction[]
   auditLogs                  AuditLog[]
@@ -964,13 +1000,16 @@ model QualitySnapshot {
 // ─── Gestión documental / equipos / PAMEC ───────────────────────────────────
 
 model DocumentCategory {
-  id        String @id @default(uuid()) @db.Uuid
-  code      String @unique @db.VarChar(40)
-  name      String @db.VarChar(160)
-  sortOrder Int    @default(0) @map("sort_order")
+  id        String         @id @default(uuid()) @db.Uuid
+  code      String         @unique @db.VarChar(40)
+  name      String         @db.VarChar(160)
+  /// Estándar de habilitación (Res. 3100) o pilar SG-SST al que se agrupa en el dashboard.
+  pillar    DocumentPillar @default(PROCESOS_PRIORITARIOS)
+  sortOrder Int            @default(0) @map("sort_order")
 
   requirements DocumentRequirement[]
 
+  @@index([pillar])
   @@map("document_categories")
 }
 
@@ -996,21 +1035,53 @@ model DocumentRequirement {
 }
 
 model DocumentFile {
-  id            String              @id @default(uuid()) @db.Uuid
-  requirementId String              @map("requirement_id") @db.Uuid
+  id            String             @id @default(uuid()) @db.Uuid
+  requirementId String             @map("requirement_id") @db.Uuid
   requirement   DocumentRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
-  uploadedById  String              @map("uploaded_by_id") @db.Uuid
-  uploadedBy    User                @relation(fields: [uploadedById], references: [id])
-  originalName  String              @map("original_name") @db.VarChar(255)
-  storageKey    String              @map("storage_key")
-  mimeType      String              @map("mime_type") @db.VarChar(80)
-  sizeBytes     Int                 @map("size_bytes")
-  checksum      String?             @db.VarChar(128)
-  expiresAt     DateTime?           @map("expires_at") @db.Timestamptz(6)
-  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  uploadedById  String             @map("uploaded_by_id") @db.Uuid
+  uploadedBy    User               @relation(fields: [uploadedById], references: [id])
+  /// Número de versión dentro del requisito (1, 2, 3…). Nunca se reutiliza.
+  version       Int                @default(1)
+  /// Etiqueta de periodo opcional (ej. "2026-08") para actas mensuales.
+  periodLabel   String?            @map("period_label") @db.VarChar(40)
+  status        DocumentFileStatus @default(PENDING_SIGNATURE)
+  originalName  String             @map("original_name") @db.VarChar(255)
+  storageKey    String             @map("storage_key")
+  mimeType      String             @map("mime_type") @db.VarChar(80)
+  sizeBytes     Int                @map("size_bytes")
+  checksum      String?            @db.VarChar(128)
+  expiresAt     DateTime?          @map("expires_at") @db.Timestamptz(6)
+  notes         String?
+  /// Campos diligenciados (líneas punteadas / formulario) de esta versión.
+  formData      Json?              @map("form_data")
+  retiredAt     DateTime?          @map("retired_at") @db.Timestamptz(6)
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@index([requirementId])
+  signatures DocumentSignature[]
+
+  @@unique([requirementId, version])
+  @@index([requirementId, status])
   @@map("document_files")
+}
+
+model DocumentSignature {
+  id               String             @id @default(uuid()) @db.Uuid
+  documentFileId   String             @map("document_file_id") @db.Uuid
+  documentFile     DocumentFile       @relation(fields: [documentFileId], references: [id], onDelete: Cascade)
+  role             DocumentSignerRole
+  signerUserId     String?            @map("signer_user_id") @db.Uuid
+  signerUser       User?              @relation(fields: [signerUserId], references: [id], onDelete: SetNull)
+  signerName       String             @map("signer_name") @db.VarChar(160)
+  signatureBase64  String             @map("signature_base64")
+  contentHash      String?            @map("content_hash") @db.VarChar(128)
+  ipAddress        String?            @map("ip_address") @db.VarChar(60)
+  userAgent        String?            @map("user_agent")
+  signedAt         DateTime           @default(now()) @map("signed_at") @db.Timestamptz(6)
+
+  @@unique([documentFileId, role])
+  @@index([documentFileId])
+  @@map("document_signatures")
 }
 
 model EquipmentResume {
@@ -1129,4 +1200,20 @@ model AuditLog {
   @@index([clinicId, createdAt])
   @@index([entityType, entityId])
   @@map("audit_logs")
+}
+
+/// Binarios de documentos/adjuntos/PDFs en Postgres (fuente de verdad).
+/// El disco `storage/` se usa como espejo local; al leer se prioriza esta tabla.
+model StoredFile {
+  id          String   @id @default(uuid()) @db.Uuid
+  storageKey  String   @unique @map("storage_key")
+  mimeType    String   @map("mime_type") @db.VarChar(80)
+  sizeBytes   Int      @map("size_bytes")
+  contentHash String?  @map("content_hash") @db.VarChar(128)
+  data        Bytes
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([createdAt])
+  @@map("stored_files")
 }

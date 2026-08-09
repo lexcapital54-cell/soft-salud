@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fillConsentPlaceholders } from '../src/modules/clinical/consent-placeholders';
+import { ClinicalStorageService } from '../src/modules/clinical/clinical-storage.service';
 import { ConsentPdfService } from '../src/modules/clinical/consent-pdf.service';
 
 async function main() {
@@ -14,7 +15,12 @@ async function main() {
     get: (key: string) => (key === 'STORAGE_ROOT' ? storageRoot : undefined),
   } as ConfigService;
 
-  const pdf = new ConsentPdfService(config);
+  const storage = {
+    persistExisting: async () => ({ contentHash: 'smoke', sizeBytes: 0 }),
+    readBuffer: async (key: string) => fs.promises.readFile(path.join(storageRoot, key)),
+  } as unknown as ClinicalStorageService;
+
+  const pdf = new ConsentPdfService(config, storage);
   const consentId = '00000000-0000-4000-8000-000000000099';
   const clinicId = '_smoke';
 

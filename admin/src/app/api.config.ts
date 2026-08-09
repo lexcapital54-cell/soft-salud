@@ -1,6 +1,7 @@
-/**
- * Ruta relativa a propósito: el dev server hace de proxy hacia NestJS
- * (ver proxy.conf.json), así el navegador ve todo como mismo origen y no hay
- * preflight de CORS que los filtros de red o las extensiones puedan descartar.
- */
-export const API = '/api';
+import { environment } from '../environments/environment';
+
+/** Base de la API. Ver la nota sobre el proxy en environment.ts. */
+export const API = environment.apiBase;
+
+/** Landing pública de HABILISALUD, destino del logo y del cierre de sesión. */
+export const WEBSITE_URL = environment.websiteUrl;

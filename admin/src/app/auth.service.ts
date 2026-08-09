@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, signal } from '@angular/core';
 import { tap } from 'rxjs';
 import { AuthUser } from './models';
-import { API } from './api.config';
+import { API, WEBSITE_URL } from './api.config';
 
 const TOKEN_KEY = 'habilisalud_token';
 const USER_KEY = 'habilisalud_user';
@@ -75,7 +75,7 @@ export class AuthService {
 
   goToWebsite() {
     this.logout();
-    window.location.href = 'http://localhost:5173/';
+    window.location.href = WEBSITE_URL;
   }
 
   private readStoredUser(): AuthUser | null {

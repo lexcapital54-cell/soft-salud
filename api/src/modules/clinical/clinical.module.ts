@@ -45,6 +45,7 @@ import { SivigilaService } from './sivigila.service';
     FormTemplatesService,
     ConsentsService,
     ConsentPdfService,
+    ClinicalStorageService,
     EncountersService,
     ProfessionalSignatureService,
   ],

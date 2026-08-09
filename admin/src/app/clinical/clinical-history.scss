@@ -699,9 +699,19 @@ button.full {
   font-size: 0.95rem;
 }
 
-.save-bar button.primary {
-  padding: 12px 24px;
+.save-bar button.primary,
+.save-bar button.ghost {
+  padding: 12px 20px;
   font-weight: 600;
+}
+
+.save-bar button.ghost {
+  border: 1px solid #c5d4d4;
+  background: #fff;
+  color: #003d4c;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
 }
 
 .modal-backdrop {

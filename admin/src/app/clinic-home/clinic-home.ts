@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { DASHBOARD_TYPE_LABELS, SPECIALTY_LABELS } from '../models';
+import { WEBSITE_URL } from '../api.config';
 
 @Component({
   selector: 'app-clinic-home',
@@ -36,6 +37,8 @@ export class ClinicHome {
     this.auth.logout();
     void this.router.navigateByUrl('/login');
   }
+
+  readonly websiteUrl = WEBSITE_URL;
 
   goHome() {
     this.auth.goToWebsite();

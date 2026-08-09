@@ -1,7 +1,7 @@
 <div class="shell">
   <aside>
     <div>
-      <a class="brand" href="http://localhost:5173/" (click)="goHome(); $event.preventDefault()">
+      <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()">
         HABILISALUD
       </a>
       <p class="role">Superadmin</p>

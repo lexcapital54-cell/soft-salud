@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { WEBSITE_URL } from '../api.config';
 
 @Component({
   selector: 'app-login',
@@ -49,6 +50,8 @@ export class Login {
   togglePassword() {
     this.showPassword.update((value) => !value);
   }
+
+  readonly websiteUrl = WEBSITE_URL;
 
   goHome() {
     this.auth.goToWebsite();

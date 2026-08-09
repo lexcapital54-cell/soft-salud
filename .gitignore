@@ -14,3 +14,7 @@ api/storage/**
 coverage
 *.log
 
+habilisalud-web.zip
+
+# Office lock/temp files
+~$*

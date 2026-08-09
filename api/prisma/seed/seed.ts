@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
 import { seedDocumentRequirements } from './document-requirements.seed';
+import { seedSgsstRequirements } from './sgsst-requirements.seed';
 import { seedConsents } from './seedConsents';
 import { seedDiagnosisCatalog } from './seedDiagnosisCatalog';
 
@@ -85,6 +86,12 @@ async function main() {
   const docs = await seedDocumentRequirements(prisma, excelPath);
   console.log(
     `  Categorías: ${docs.categories} | Requisitos plantilla: ${docs.requirements} | Clínicas: ${docs.clinics} | Upserts: ${docs.upserted}`,
+  );
+
+  console.log('→ Sembrando requisitos SG-SST (Dec. 1072 / Res. 0312)...');
+  const sgsst = await seedSgsstRequirements(prisma);
+  console.log(
+    `  Categorías: ${sgsst.categories} | Requisitos: ${sgsst.requirements} | Upserts: ${sgsst.upserted}`,
   );
 
   console.log('→ Sembrando plantillas de consentimiento (Psicología v1)...');

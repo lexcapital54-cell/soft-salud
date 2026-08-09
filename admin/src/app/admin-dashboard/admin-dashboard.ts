@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { AdminApiService } from '../admin-api.service';
 import { AuthService } from '../auth.service';
 import { Clinic, ClinicAdmin, ClinicSpecialty, DashboardType, DASHBOARD_TYPE_LABELS, SPECIALTY_LABELS } from '../models';
+import { WEBSITE_URL } from '../api.config';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -251,6 +252,8 @@ export class AdminDashboard {
     this.auth.logout();
     void this.router.navigateByUrl('/login');
   }
+
+  readonly websiteUrl = WEBSITE_URL;
 
   goHome() {
     this.auth.goToWebsite();

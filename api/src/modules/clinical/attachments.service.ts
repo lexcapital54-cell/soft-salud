@@ -65,6 +65,7 @@ export class AttachmentsService {
       `encounters/${encounter.id}`,
       fileName,
       file.buffer,
+      file.mimetype || 'application/octet-stream',
     );
 
     return this.prisma.clinicalAttachment.create({

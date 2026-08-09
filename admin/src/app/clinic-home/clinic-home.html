@@ -1,6 +1,6 @@
 <section class="home">
   <header>
-    <a class="brand" href="http://localhost:5173/" (click)="goHome(); $event.preventDefault()">
+    <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()">
       HABILISALUD
     </a>
     <div class="header-actions">

@@ -13,6 +13,7 @@ const PdfPrinter = require('pdfmake') as new (fonts: Record<string, unknown>) =>
   };
 };
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
+import { ClinicalStorageService } from './clinical-storage.service';
 
 export type ConsentPdfInput = {
   consentId: string;
@@ -52,7 +53,10 @@ export class ConsentPdfService {
   private readonly logger = new Logger(ConsentPdfService.name);
   private readonly printer: InstanceType<typeof PdfPrinter>;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly storage: ClinicalStorageService,
+  ) {
     // Fuentes estándar PDF (sin TTF embebidos) — pdfmake 0.2.x
     this.printer = new PdfPrinter({
       Helvetica: {
@@ -387,10 +391,13 @@ export class ConsentPdfService {
     };
 
     await this.writePdf(docDefinition, absolutePath);
-    this.logger.log(`PDF sellado: ${relativeKey}`);
+    const pdfStorageKey = relativeKey.replace(/\\/g, '/');
+    // Fuente de verdad en Postgres (además del espejo en disco).
+    await this.storage.persistExisting(pdfStorageKey, 'application/pdf');
+    this.logger.log(`PDF sellado y guardado en BD: ${pdfStorageKey}`);
 
     return {
-      pdfStorageKey: relativeKey.replace(/\\/g, '/'),
+      pdfStorageKey,
       absolutePath,
       contentHash,
       immutableAt: new Date(),
@@ -416,11 +423,7 @@ export class ConsentPdfService {
   }
 
   async readPdfBuffer(storageKey: string): Promise<Buffer> {
-    const absolutePath = this.resolveAbsolutePath(storageKey);
-    if (!existsSync(absolutePath)) {
-      throw new Error(`PDF no encontrado en storage: ${storageKey}`);
-    }
-    return fs.readFile(absolutePath);
+    return this.storage.readBuffer(storageKey);
   }
 
   /** Convierte HTML simple de plantillas a bloques pdfmake. */

@@ -13,7 +13,7 @@ import { ClinicalHistory } from './clinical/clinical-history';
 import { PatientsDirectory } from './clinical/patients-directory';
 import { SivigilaAudit } from './clinical/sivigila-audit';
 import { ClinicHome } from './clinic-home/clinic-home';
-import { DocumentsPlaceholder } from './documents/documents-placeholder';
+import { DocumentsDashboard } from './documents/documents-dashboard';
 import { Login } from './login/login';
 
 export const routes: Routes = [
@@ -51,7 +51,7 @@ export const routes: Routes = [
   },
   {
     path: 'consultorio/documentos',
-    component: DocumentsPlaceholder,
+    component: DocumentsDashboard,
     canActivate: [authGuard, clinicalWriteGuard],
   },
   { path: '**', redirectTo: 'login' },

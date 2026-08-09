@@ -8,6 +8,7 @@ import { ClinicsModule } from './clinics/clinics.module';
 import { SeedService } from './database/seed.service';
 import { AgendaModule } from './modules/agenda/agenda.module';
 import { ClinicalModule } from './modules/clinical/clinical.module';
+import { DocumentsModule } from './modules/documents/documents.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { User } from './users/user.entity';
@@ -41,6 +42,7 @@ import { UsersModule } from './users/users.module';
     ClinicalModule,
     NotificationsModule,
     AgendaModule,
+    DocumentsModule,
   ],
   providers: [SeedService],
 })

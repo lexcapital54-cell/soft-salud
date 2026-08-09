@@ -1,0 +1,683 @@
+<section class="wrap">
+  <header class="topbar">
+    <div class="header-left">
+      <a routerLink="/consultorio">← Volver al consultorio</a>
+      <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()"
+        >HABILISALUD</a
+      >
+    </div>
+    <button type="button" class="logout" (click)="logout()">Cerrar sesión</button>
+  </header>
+
+  <div class="intro">
+    <p class="eyebrow">Gestión documental</p>
+    <h1>Expediente de habilitación y SG-SST</h1>
+    <p class="muted">
+      En el pilar SG-SST todos los documentos se pueden
+      <strong>llenar y firmar</strong> con imagen. Cada diligenciamiento crea una versión PDF
+      nueva; el histórico no se sobrescribe.
+    </p>
+  </div>
+
+  <nav class="tabs" aria-label="Secciones del expediente">
+    <button
+      type="button"
+      class="tab"
+      [class.active]="mainTab() === 'expediente'"
+      (click)="setMainTab('expediente')"
+    >
+      Expediente
+    </button>
+    <button
+      type="button"
+      class="tab"
+      [class.active]="mainTab() === 'historico'"
+      (click)="setMainTab('historico')"
+    >
+      Histórico auditoría
+    </button>
+  </nav>
+
+  @if (error()) {
+    <p class="banner error">{{ error() }}</p>
+  }
+  @if (notice()) {
+    <p class="banner ok">{{ notice() }}</p>
+  }
+
+  @if (mainTab() === 'historico') {
+    <section class="archive">
+      <div class="archive-head">
+        <div>
+          <h2>Archivos firmados por mes</h2>
+          <p class="muted">
+            Para auditoría: consulte y descargue las versiones firmadas del periodo
+            seleccionado. El histórico no se sobrescribe.
+          </p>
+        </div>
+        <div class="archive-tools">
+          <label class="expiry">
+            Mes
+            <input
+              type="month"
+              [ngModel]="archivePeriod()"
+              (ngModelChange)="selectArchiveMonth($event)"
+            />
+          </label>
+          <button
+            type="button"
+            class="primary"
+            [disabled]="archiveDownloadingAll() || !archiveFiles().length"
+            (click)="downloadAllArchive()"
+          >
+            {{
+              archiveDownloadingAll()
+                ? 'Descargando…'
+                : 'Descargar todos del mes'
+            }}
+          </button>
+        </div>
+      </div>
+
+      @if (archiveLoading()) {
+        <p class="muted">Cargando histórico…</p>
+      } @else if (archive(); as arch) {
+        <div class="month-chips">
+          @for (m of arch.months; track m.period) {
+            <button
+              type="button"
+              class="month-chip"
+              [class.active]="m.period === arch.selectedPeriod"
+              (click)="selectArchiveMonth(m.period)"
+            >
+              {{ m.label }}
+              <strong>{{ m.count }}</strong>
+            </button>
+          } @empty {
+            <p class="muted">Aún no hay documentos firmados.</p>
+          }
+        </div>
+
+        <div class="archive-filters">
+          <input
+            type="search"
+            placeholder="Buscar en el mes (documento, firmante, código)…"
+            [ngModel]="archiveQuery()"
+            (ngModelChange)="archiveQuery.set($event)"
+          />
+          <p class="muted archive-count">
+            {{ archiveFiles().length }} archivo(s) · {{ arch.selectedLabel }}
+            · total histórico {{ arch.totalSigned }}
+          </p>
+        </div>
+
+        <ul class="archive-list">
+          @for (file of archiveFiles(); track file.id) {
+            <li [class.retired]="file.status === 'RETIRED'">
+              <div>
+                <p class="vfile">{{ file.requirementTitle }}</p>
+                <p class="vmeta">
+                  <span class="tag">{{ file.pillarLabel }}</span>
+                  <code>{{ file.requirementCode }}</code>
+                  · v{{ file.version }}
+                  @if (file.periodLabel) {
+                    · {{ file.periodLabel }}
+                  }
+                  · {{ fileStatusLabel(file.status) }}
+                </p>
+                <p class="vmeta">
+                  {{ file.originalName }} ·
+                  {{ file.createdAt | date: 'dd/MM/yyyy HH:mm' }} ·
+                  {{ fileSize(file.sizeBytes) }}
+                </p>
+                <p class="vmeta">
+                  Firmas:
+                  @for (sig of file.signatures; track sig.id) {
+                    <span class="sig-chip ok">
+                      {{ roleLabels[sig.role] }}: {{ sig.signerName }}
+                    </span>
+                  }
+                </p>
+              </div>
+              <div class="vactions">
+                <button
+                  type="button"
+                  class="primary"
+                  (click)="openArchiveFile(file)"
+                >
+                  Ver
+                </button>
+                <button
+                  type="button"
+                  class="ghost"
+                  (click)="download(file.id, file.originalName)"
+                >
+                  Descargar
+                </button>
+              </div>
+            </li>
+          } @empty {
+            <li class="muted">
+              No hay archivos firmados en {{ arch.selectedLabel }}.
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  } @else if (loading()) {
+    <p class="muted">Cargando expediente…</p>
+  } @else if (overview(); as data) {
+    <div class="summary">
+      <div class="gauge" [class]="'st-' + data.summary.status">
+        <strong>{{ data.summary.compliance }}%</strong>
+        <span>firmado y vigente</span>
+      </div>
+      <div class="counters">
+        <button type="button" class="counter all" (click)="setStatusFilter('ALL')">
+          <strong>{{ data.summary.total }}</strong> requisitos
+        </button>
+        <button type="button" class="counter red" (click)="setStatusFilter('RED')">
+          <strong>{{ data.summary.red }}</strong> sin evidencia / vencidos
+        </button>
+        <button type="button" class="counter yellow" (click)="setStatusFilter('YELLOW')">
+          <strong>{{ data.summary.yellow }}</strong> por firmar / por vencer
+        </button>
+        <button type="button" class="counter green" (click)="setStatusFilter('GREEN')">
+          <strong>{{ data.summary.green }}</strong> firmados
+        </button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <input
+        type="search"
+        placeholder="Buscar por documento o código…"
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+      />
+      <label class="expiry">
+        Periodo
+        <input
+          type="month"
+          [ngModel]="pendingPeriod()"
+          (ngModelChange)="pendingPeriod.set($event)"
+          title="Se aplica a la próxima versión (ej. actas mensuales)."
+        />
+      </label>
+      <label class="expiry">
+        Vence el
+        <input
+          type="date"
+          [ngModel]="pendingExpiry()"
+          (ngModelChange)="pendingExpiry.set($event)"
+        />
+      </label>
+      @if (statusFilter() !== 'ALL') {
+        <button type="button" class="chip clear" (click)="setStatusFilter('ALL')">
+          Quitar filtro de estado
+        </button>
+      }
+    </div>
+
+    @for (pillar of visiblePillars(); track pillar.pillar) {
+      <article class="pillar">
+        <button type="button" class="pillar-head" (click)="togglePillar(pillar.pillar)">
+          <span class="dot" [class]="'st-' + pillar.summary.status"></span>
+          <span class="pillar-name">{{ pillar.label }}</span>
+          <span class="pillar-meta">
+            {{ pillar.summary.green }} firmados · {{ pillar.summary.yellow }} por firmar ·
+            {{ pillar.summary.red }} pendientes
+          </span>
+          <span class="pct">{{ pillar.summary.compliance }}%</span>
+          <span class="caret">{{ isOpen(pillar.pillar) ? '▾' : '▸' }}</span>
+        </button>
+
+        @if (isOpen(pillar.pillar)) {
+          <div class="pillar-body">
+            @for (category of pillar.categories; track category.id) {
+              <h3 class="category">{{ category.name }}</h3>
+              <ul class="reqs">
+                @for (req of category.requirements; track req.id) {
+                  <li class="req" [class]="'st-' + req.status">
+                    <span class="dot" [class]="'st-' + req.status"></span>
+                    <div class="req-main">
+                      <p class="req-title">{{ req.title }}</p>
+                      <p class="req-meta">
+                        <code>{{ req.code }}</code>
+                        @if (periodicity(req); as period) {
+                          <span class="tag">{{ period }}</span>
+                        }
+                        @if (req.fillable) {
+                          <span class="tag soft">Llenable</span>
+                        }
+                        @if (!req.isMandatory) {
+                          <span class="tag soft">Opcional</span>
+                        }
+                        <span class="expiry-text">{{ expiryLabel(req) }}</span>
+                      </p>
+                      @if (req.latestFile; as file) {
+                        <p class="req-file">
+                          v{{ file.version }}
+                          @if (file.periodLabel) {
+                            · {{ file.periodLabel }}
+                          }
+                          · {{ file.originalName }} · {{ fileStatusLabel(file.status) }}
+                        </p>
+                      }
+                    </div>
+                    <div class="req-actions">
+                      @if (req.fillable) {
+                        <button
+                          type="button"
+                          class="primary"
+                          (click)="openFillSgsst(req)"
+                        >
+                          Llenar y firmar
+                        </button>
+                      }
+                      @if (req.latestFile) {
+                        <button type="button" class="ghost" (click)="openLatest(req)">
+                          Ver
+                        </button>
+                      }
+                      <button type="button" class="ghost" (click)="openDetail(req.id)">
+                        Historial ({{ req.fileCount }})
+                      </button>
+                      <label class="upload" [class.busy]="uploading() === req.id">
+                        {{
+                          uploading() === req.id
+                            ? 'Subiendo…'
+                            : req.latestFile
+                              ? 'Nueva versión'
+                              : 'Cargar'
+                        }}
+                        <input
+                          type="file"
+                          hidden
+                          [disabled]="uploading() === req.id"
+                          (change)="onPickFile($event, req.id)"
+                        />
+                      </label>
+                    </div>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      </article>
+    } @empty {
+      <p class="muted">Ningún requisito coincide con la búsqueda.</p>
+    }
+  }
+</section>
+
+@if (detail(); as info) {
+  <div class="modal-backdrop" (click)="closeDetail()">
+    <div class="modal history" (click)="$event.stopPropagation()">
+      <h2>{{ info.requirement.title }}</h2>
+      <p class="muted">{{ info.requirement.category }} · {{ info.requirement.code }}</p>
+      <p class="desc">
+        Historial de versiones. Retirar no borra: la versión queda archivada para auditoría.
+      </p>
+
+      <ul class="versions">
+        @for (file of info.files; track file.id) {
+          <li [class.retired]="file.status === 'RETIRED'">
+            <div>
+              <p class="vfile">
+                v{{ file.version }}
+                @if (file.periodLabel) {
+                  · {{ file.periodLabel }}
+                }
+                · {{ file.originalName }}
+              </p>
+              <p class="vmeta">
+                {{ fileStatusLabel(file.status) }} ·
+                {{ file.createdAt | date: 'dd/MM/yyyy HH:mm' }} ·
+                {{ fileSize(file.sizeBytes) }} · {{ file.uploadedBy || 'Sin responsable' }}
+              </p>
+              <p class="vmeta">
+                Firmas:
+                @for (role of signRoles(); track role) {
+                  <span class="sig-chip" [class.ok]="hasRole(file, role)">
+                    {{ roleLabels[role] }}
+                  </span>
+                }
+              </p>
+            </div>
+            <div class="vactions">
+              <button
+                type="button"
+                class="primary"
+                (click)="openViewer(file, info.requirement.title)"
+              >
+                {{ file.status === 'SIGNED' || file.status === 'RETIRED' ? 'Ver' : 'Ver / firmar' }}
+              </button>
+              <button
+                type="button"
+                class="ghost"
+                (click)="download(file.id, file.originalName)"
+              >
+                Descargar
+              </button>
+              @if (file.status !== 'RETIRED') {
+                <button type="button" class="danger" (click)="retireFile(file.id)">
+                  Retirar
+                </button>
+              }
+            </div>
+          </li>
+        } @empty {
+          <li class="muted">Sin versiones cargadas.</li>
+        }
+      </ul>
+
+      <button type="button" class="close" (click)="closeDetail()">Cerrar</button>
+    </div>
+  </div>
+}
+
+@if (fillOpen()) {
+  <div class="modal-backdrop fill-backdrop" (click)="closeFillSgsst()">
+    <div class="modal fill-modal" (click)="$event.stopPropagation()">
+      <h2>Llenar y firmar — {{ fillRequirementTitle() }}</h2>
+      <p class="desc">
+        Complete <strong>fecha</strong>, <strong>nombres</strong> y cargue las
+        <strong>imágenes de firma</strong>. Se genera un PDF nuevo; el histórico se conserva.
+      </p>
+
+      <fieldset class="fill-fieldset">
+        <legend>Datos del documento</legend>
+        <div class="fill-grid">
+          @if (fillIsTraining()) {
+            <label class="full">
+              Tema de la capacitación
+              <input
+                name="tema"
+                type="text"
+                [(ngModel)]="fillModel.tema"
+                placeholder="Ej. Socialización del SG-SST"
+                autocomplete="off"
+              />
+            </label>
+          }
+          <label>
+            Fecha
+            <input name="fecha" type="date" [(ngModel)]="fillModel.fecha" required />
+          </label>
+          <label>
+            Periodo (histórico mensual)
+            <input name="periodo" type="month" [(ngModel)]="fillModel.periodLabel" />
+          </label>
+          @if (fillIsTraining()) {
+            <label class="full">
+              Objetivo
+              <textarea
+                name="objetivo"
+                rows="2"
+                [(ngModel)]="fillModel.objetivo"
+                placeholder="Capacitar al personal sobre…"
+              ></textarea>
+            </label>
+          }
+          <label class="full">
+            Contenido / observaciones
+            <textarea
+              name="contenido"
+              rows="3"
+              [(ngModel)]="fillModel.contenido"
+              placeholder="Texto que completa las líneas punteadas…"
+            ></textarea>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="fill-fieldset">
+        <legend>Personas y firmas</legend>
+        <div class="fill-sigs" [class.three]="!fillIsTraining()">
+          <div class="fill-sig">
+            <p class="pad-label">
+              {{
+                fillIsTraining()
+                  ? '1. Quien evalúa / capacitador'
+                  : '1. Elaboró'
+              }}
+            </p>
+            <label>
+              Nombre completo
+              <input
+                name="nombre1"
+                type="text"
+                [(ngModel)]="fillModel.nombre1"
+                placeholder="Nombre de quien evalúa o elabora"
+                autocomplete="name"
+              />
+            </label>
+            @if (fillModel.firma1) {
+              <img class="sig-img" [src]="fillModel.firma1" alt="Firma 1" />
+              <button type="button" class="ghost tiny" (click)="clearFillSignature(1)">
+                Quitar imagen
+              </button>
+            } @else {
+              <p class="vmeta">Falta imagen de firma</p>
+            }
+            <label class="ghost file-btn">
+              Cargar imagen de firma
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                hidden
+                (change)="onFillSignatureImage($event, 1)"
+              />
+            </label>
+          </div>
+
+          <div class="fill-sig">
+            <p class="pad-label">
+              {{
+                fillIsTraining()
+                  ? '2. Persona evaluada / asistente'
+                  : '2. Revisó'
+              }}
+            </p>
+            <label>
+              Nombre completo
+              <input
+                name="nombre2"
+                type="text"
+                [(ngModel)]="fillModel.nombre2"
+                placeholder="Nombre de la persona evaluada o quien revisa"
+                autocomplete="off"
+              />
+            </label>
+            @if (fillModel.firma2) {
+              <img class="sig-img" [src]="fillModel.firma2" alt="Firma 2" />
+              <button type="button" class="ghost tiny" (click)="clearFillSignature(2)">
+                Quitar imagen
+              </button>
+            } @else {
+              <p class="vmeta">Falta imagen de firma</p>
+            }
+            <label class="ghost file-btn">
+              Cargar imagen de firma
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                hidden
+                (change)="onFillSignatureImage($event, 2)"
+              />
+            </label>
+          </div>
+
+          @if (!fillIsTraining()) {
+            <div class="fill-sig">
+              <p class="pad-label">3. Aprobó</p>
+              <label>
+                Nombre completo
+                <input
+                  name="nombre3"
+                  type="text"
+                  [(ngModel)]="fillModel.nombre3"
+                  placeholder="Nombre de quien aprueba"
+                  autocomplete="off"
+                />
+              </label>
+              @if (fillModel.firma3) {
+                <img class="sig-img" [src]="fillModel.firma3" alt="Firma 3" />
+                <button type="button" class="ghost tiny" (click)="clearFillSignature(3)">
+                  Quitar imagen
+                </button>
+              } @else {
+                <p class="vmeta">Falta imagen de firma</p>
+              }
+              <label class="ghost file-btn">
+                Cargar imagen de firma
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  hidden
+                  (change)="onFillSignatureImage($event, 3)"
+                />
+              </label>
+            </div>
+          }
+        </div>
+      </fieldset>
+
+      <div class="pad-actions">
+        <button type="button" class="ghost" (click)="closeFillSgsst()">Cancelar</button>
+        <button
+          type="button"
+          class="primary"
+          [disabled]="fillSaving()"
+          (click)="submitFillSgsst()"
+        >
+          {{ fillSaving() ? 'Generando…' : 'Generar PDF firmado' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (viewing(); as file) {
+  <div class="modal-backdrop viewer-backdrop" (click)="closeViewer()">
+    <div class="modal viewer" (click)="$event.stopPropagation()">
+      <header class="viewer-head">
+        <div>
+          <p class="eyebrow">{{ viewRequirementTitle() }}</p>
+          <h2>
+            v{{ file.version }}
+            @if (file.periodLabel) {
+              · {{ file.periodLabel }}
+            }
+            · {{ file.originalName }}
+          </h2>
+          <p class="muted">{{ fileStatusLabel(file.status) }}</p>
+        </div>
+        <button type="button" class="close" (click)="closeViewer()">Cerrar</button>
+      </header>
+
+      <div class="viewer-grid">
+        <div class="preview-pane">
+          @if (previewLoading()) {
+            <p class="muted">Cargando vista previa…</p>
+          } @else if (previewKind() === 'pdf' && previewUrl(); as url) {
+            <iframe [src]="url" title="Vista del documento"></iframe>
+          } @else if (previewKind() === 'image' && previewImageSrc(); as src) {
+            <img [src]="src" alt="Vista del documento" />
+          } @else if (previewKind() === 'html' && previewHtml(); as html) {
+            <div class="html-preview" [innerHTML]="html"></div>
+          } @else {
+            <p class="muted">
+              No hay vista previa para este tipo de archivo. Puede firmar igual o descargar una
+              copia de consulta.
+            </p>
+            <button
+              type="button"
+              class="ghost"
+              (click)="download(file.id, file.originalName)"
+            >
+              Descargar copia
+            </button>
+          }
+        </div>
+
+        <aside class="sign-pane">
+          <h3>Firmas</h3>
+          <div class="sign-slots">
+            @for (role of signRoles(); track role) {
+              <div class="sign-slot">
+                <div class="slot-head">
+                  <strong>{{ roleLabels[role] }}</strong>
+                  @if (signatureOf(file, role); as sig) {
+                    <span class="ok-tag">Firmado</span>
+                  } @else {
+                    <button
+                      type="button"
+                      class="ghost tiny"
+                      [class.active]="activeSignRole() === role"
+                      [disabled]="file.status === 'SIGNED' || file.status === 'RETIRED'"
+                      (click)="selectSignRole(role)"
+                    >
+                      Firmar
+                    </button>
+                  }
+                </div>
+                @if (signatureOf(file, role); as sig) {
+                  <img class="sig-img" [src]="sig.signatureBase64" [alt]="roleLabels[role]" />
+                  <p class="vmeta">
+                    {{ sig.signerName }} · {{ sig.signedAt | date: 'dd/MM/yyyy HH:mm' }}
+                  </p>
+                } @else {
+                  <p class="vmeta">Pendiente</p>
+                }
+              </div>
+            }
+          </div>
+
+          @if (file.status !== 'SIGNED' && file.status !== 'RETIRED') {
+            <div class="pad-box">
+              <p class="pad-label">
+                Firma de <strong>{{ roleLabels[activeSignRole()] }}</strong>
+                — dibuje o cargue una imagen
+              </p>
+              <canvas
+                #signPad
+                class="sign-pad"
+                (pointerenter)="ensureSignPad()"
+                (pointerdown)="ensureSignPad()"
+              ></canvas>
+              <div class="pad-actions">
+                <label class="ghost file-btn">
+                  Cargar imagen
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    hidden
+                    (change)="onSignatureImageSelected($event)"
+                  />
+                </label>
+                <button type="button" class="ghost" (click)="clearSignPad()">Limpiar</button>
+                <button
+                  type="button"
+                  class="primary"
+                  [disabled]="signing()"
+                  (click)="submitSignature()"
+                >
+                  {{ signing() ? 'Sellando…' : 'Aceptar y sellar firma' }}
+                </button>
+              </div>
+            </div>
+          } @else if (file.status === 'SIGNED') {
+            <p class="banner ok compact">
+              Versión sellada. Para corregir, use
+              <strong>Llenar y firmar</strong> o cargue una nueva versión; esta queda en el
+              histórico.
+            </p>
+          }
+        </aside>
+      </div>
+    </div>
+  </div>
+}

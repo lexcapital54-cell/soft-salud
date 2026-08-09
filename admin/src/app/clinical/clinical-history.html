@@ -2,7 +2,7 @@
   <header class="topbar">
     <div class="topbar-left">
       <a routerLink="/consultorio">← Consultorio</a>
-      <a class="brand" href="http://localhost:5173/" (click)="goHome(); $event.preventDefault()"
+      <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()"
         >HABILISALUD</a
       >
     </div>
@@ -1127,10 +1127,11 @@
             evolución.
           </span>
         } @else {
-          <strong>Guardado definitivo</strong>
+          <strong>Guardado en base de datos</strong>
           <span class="muted small">
-            Al guardar, la historia se firma y se cierra. Después solo podrá corregir la
-            identificación del paciente o añadir notas de evolución.
+            Use <em>Guardar borrador</em> para persistir sin cerrar. Con
+            <em>Guardar historia clínica</em> se firma, se sella y solo quedan editables
+            la identificación y las notas de evolución.
           </span>
         }
       </div>
@@ -1144,6 +1145,14 @@
           {{ saving() ? 'Guardando…' : 'Guardar datos del paciente' }}
         </button>
       } @else {
+        <button
+          type="button"
+          class="ghost"
+          [disabled]="saving() || !encounter()"
+          (click)="saveDraftOnly()"
+        >
+          {{ saving() ? 'Guardando…' : 'Guardar borrador' }}
+        </button>
         <button
           type="button"
           class="primary"

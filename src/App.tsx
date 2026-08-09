@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { loginUrl } from './config'
 
 const WHATSAPP =
   'https://wa.me/573177000568?text=Hola%20HABILISALUD%2C%20quiero%20información%20sobre%20habilitación%20e%20interoperabilidad'
@@ -175,7 +176,7 @@ export default function App() {
               </a>
             </div>
             <a
-              href="http://localhost:4200/login?tipo=profesional"
+              href={loginUrl('profesional')}
               className="inline-flex shrink-0 items-center justify-center rounded-[30px] border border-teal-dark bg-teal-dark px-3 py-2.5 text-center text-[12px] leading-tight tracking-[-0.012em] text-white transition hover:bg-[#002a34] sm:px-[18px] sm:text-[14px]"
             >
               Ingreso del profesional en salud
@@ -183,7 +184,7 @@ export default function App() {
           </nav>
 
           <a
-            href="http://localhost:4200/login?tipo=admin"
+            href={loginUrl('admin')}
             className="inline-flex shrink-0 items-center justify-center rounded-[30px] border border-ink bg-paper/95 px-4 py-2.5 text-[13px] tracking-[-0.012em] text-ink shadow-[var(--shadow-nav)] backdrop-blur-md transition hover:bg-vellum sm:px-5 sm:text-[14px]"
           >
             Iniciar sesión
@@ -221,7 +222,7 @@ export default function App() {
             <div className="animate-fade-up delay-3 mt-10 flex flex-wrap gap-3">
               <OutlineButton href={WHATSAPP}>Solicitar diagnóstico</OutlineButton>
               <a
-                href="http://localhost:4200/login?tipo=profesional"
+                href={loginUrl('profesional')}
                 className="inline-flex items-center justify-center rounded-[30px] border border-teal-dark bg-teal-dark px-[22px] py-4 text-[16px] tracking-[-0.012em] text-white transition hover:bg-[#002a34]"
               >
                 Ingreso del profesional en salud

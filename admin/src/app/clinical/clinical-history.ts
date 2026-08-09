@@ -17,6 +17,7 @@ import { AuthService } from '../auth.service';
 import { ClinicalApiService } from './clinical-api.service';
 import { ConsentSigner } from './consent-signer';
 import { DOCUMENT_TYPES } from './document-types';
+import { WEBSITE_URL } from '../api.config';
 import {
   CatalogCode,
   ClinicalAttachment,
@@ -1047,6 +1048,45 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     this.confirmSave.set(true);
   }
 
+  /**
+   * Guarda en BD sin firmar ni cerrar: contenido clínico, diagnósticos,
+   * procedimientos y datos del paciente quedan persistidos como borrador.
+   */
+  saveDraftOnly() {
+    const enc = this.encounter();
+    if (!enc || !this.canWrite() || this.isLocked()) return;
+
+    this.collectContent();
+    this.saving.set(true);
+    this.error.set('');
+    this.persistPatientDemographics()
+      .pipe(
+        switchMap(() =>
+          this.api.saveDraft(enc.id, {
+            content: this.content,
+            noteFormat: this.noteFormat(),
+            ...this.editableRows(),
+            modality: this.modality,
+            serviceType: this.serviceType,
+            location: this.location,
+            purpose: this.purpose,
+            externalCause: this.externalCause || null,
+          }),
+        ),
+      )
+      .subscribe({
+        next: (updated) => {
+          this.applyEncounter(updated);
+          this.saving.set(false);
+          this.message.set('Borrador guardado en la base de datos.');
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.error.set(err?.error?.message || 'No se pudo guardar el borrador.');
+        },
+      });
+  }
+
   closeMissingSignatures() {
     this.missingSignatures.set(null);
   }
@@ -1396,6 +1436,8 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     );
     this.scheduleSignaturePadInit();
   }
+
+  readonly websiteUrl = WEBSITE_URL;
 
   goHome() {
     this.auth.goToWebsite();
