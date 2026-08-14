@@ -22,35 +22,52 @@ function retryOnDisconnect<T>() {
 
 @Injectable({ providedIn: 'root' })
 export class DocumentsApiService {
+  /** Cuando el superadmin administra un consultorio concreto. */
+  clinicId: string | null = null;
+
   constructor(private readonly http: HttpClient) {}
+
+  private withClinic(url: string, extra?: Record<string, string | undefined>) {
+    const params = new URLSearchParams();
+    if (this.clinicId) params.set('clinicId', this.clinicId);
+    if (extra) {
+      for (const [key, value] of Object.entries(extra)) {
+        if (value) params.set(key, value);
+      }
+    }
+    const qs = params.toString();
+    if (!qs) return url;
+    return url.includes('?') ? `${url}&${qs}` : `${url}?${qs}`;
+  }
 
   overview() {
     return this.http
-      .get<DocumentsOverview>(`${API}/documents/overview`)
+      .get<DocumentsOverview>(this.withClinic(`${API}/documents/overview`))
       .pipe(retryOnDisconnect());
   }
 
-  /** Histórico mensual de firmados para auditoría. */
   signedArchive(period?: string) {
-    const q = period ? `?period=${encodeURIComponent(period)}` : '';
     return this.http
-      .get<SignedArchive>(`${API}/documents/signed-archive${q}`)
+      .get<SignedArchive>(
+        this.withClinic(`${API}/documents/signed-archive`, { period }),
+      )
       .pipe(retryOnDisconnect());
   }
 
   listFiles(requirementId: string) {
     return this.http
-      .get<RequirementDetail>(`${API}/documents/requirements/${requirementId}/files`)
+      .get<RequirementDetail>(
+        this.withClinic(`${API}/documents/requirements/${requirementId}/files`),
+      )
       .pipe(retryOnDisconnect());
   }
 
   getFile(fileId: string) {
     return this.http
-      .get<DocumentFileDetail>(`${API}/documents/files/${fileId}`)
+      .get<DocumentFileDetail>(this.withClinic(`${API}/documents/files/${fileId}`))
       .pipe(retryOnDisconnect());
   }
 
-  /** CREATE: nueva versión (no sobrescribe). */
   upload(
     requirementId: string,
     file: File,
@@ -62,55 +79,76 @@ export class DocumentsApiService {
     if (meta?.periodLabel) form.append('periodLabel', meta.periodLabel);
     if (meta?.notes) form.append('notes', meta.notes);
     return this.http.post<RequirementDetail>(
-      `${API}/documents/requirements/${requirementId}/files`,
+      this.withClinic(`${API}/documents/requirements/${requirementId}/files`),
       form,
     );
   }
 
-  sign(fileId: string, role: DocumentSignerRole, signatureBase64: string, signerName?: string) {
-    return this.http.post<DocumentFileDetail>(`${API}/documents/files/${fileId}/sign`, {
-      role,
-      signatureBase64,
-      signerName,
-    });
+  sign(
+    fileId: string,
+    role: DocumentSignerRole,
+    signatureBase64: string,
+    signerName?: string,
+  ) {
+    return this.http.post<DocumentFileDetail>(
+      this.withClinic(`${API}/documents/files/${fileId}/sign`),
+      { role, signatureBase64, signerName },
+    );
   }
 
-  /** Llena cualquier documento SG-SST y genera PDF con firmas pegadas. */
   fillSgsst(requirementId: string, payload: FillSgsstPayload) {
     return this.http.post<DocumentFileDetail>(
-      `${API}/documents/requirements/${requirementId}/fill-sgsst`,
+      this.withClinic(`${API}/documents/requirements/${requirementId}/fill-sgsst`),
       payload,
     );
   }
 
-  /** Alias de actas (Capacitador + Asistente). */
   fillTrainingActa(requirementId: string, payload: FillTrainingActaPayload) {
     return this.http.post<DocumentFileDetail>(
-      `${API}/documents/requirements/${requirementId}/fill-training-acta`,
+      this.withClinic(
+        `${API}/documents/requirements/${requirementId}/fill-training-acta`,
+      ),
       payload,
     );
   }
 
-  /** Blob para ver inline (PDF / imagen). */
   viewBlob(fileId: string) {
-    return this.http.get(`${API}/documents/files/${fileId}/view`, {
+    return this.http.get(this.withClinic(`${API}/documents/files/${fileId}/view`), {
       responseType: 'blob',
     });
   }
 
   previewHtml(fileId: string) {
     return this.http.get<{ html: string; originalName: string; version: number }>(
-      `${API}/documents/files/${fileId}/preview-html`,
+      this.withClinic(`${API}/documents/files/${fileId}/preview-html`),
     );
   }
 
   downloadBlob(fileId: string) {
-    return this.http.get(`${API}/documents/files/${fileId}/download`, {
-      responseType: 'blob',
-    });
+    return this.http.get(
+      this.withClinic(`${API}/documents/files/${fileId}/download`),
+      { responseType: 'blob' },
+    );
   }
 
   retire(fileId: string) {
-    return this.http.post<RequirementDetail>(`${API}/documents/files/${fileId}/remove`, {});
+    return this.http.post<RequirementDetail>(
+      this.withClinic(`${API}/documents/files/${fileId}/remove`),
+      {},
+    );
+  }
+
+  setRequirementEnabled(requirementId: string, enabled: boolean) {
+    return this.http.post<DocumentsOverview>(
+      this.withClinic(`${API}/documents/requirements/${requirementId}/enabled`),
+      { enabled },
+    );
+  }
+
+  setAllEnabled(enabled: boolean) {
+    return this.http.post<DocumentsOverview>(
+      this.withClinic(`${API}/documents/requirements/enable-all`),
+      { enabled },
+    );
   }
 }

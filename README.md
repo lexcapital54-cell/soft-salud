@@ -42,6 +42,8 @@ Al arrancar se crea el superadmin si no existe:
 
 ## 3. Dashboard admin
 
+Desarrollo:
+
 ```bash
 cd admin
 npm install
@@ -49,6 +51,14 @@ npm start
 ```
 
 Abre [http://localhost:4200/login](http://localhost:4200/login).
+
+Producción en este Mac (Docker: Angular + Nest, Postgres local):
+
+```bash
+docker compose up -d --build
+```
+
+Abre [http://localhost:8080/login](http://localhost:8080/login). Guía completa: [`docs/MAC_MINI_DEPLOY.md`](docs/MAC_MINI_DEPLOY.md).
 
 El superadmin entra a **Administración**, crea consultorios (4 especialidades) y usuarios admin.
 

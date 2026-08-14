@@ -1,26 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand: #0d7377;
-  --color-brand-soft: #14919b;
-  --color-teal-dark: #003d4c;
-  --color-ink: #000000;
-  --color-graphite: #2e2e2e;
-  --color-stone: #8f8f8f;
-  --color-linen: #e0e0e0;
-  --color-vellum: #f0f0f0;
+  --color-navy: #002b5c;
+  --color-navy-deep: #001a3a;
+  --color-teal: #2ec4b6;
+  --color-teal-dark: #1a9e92;
+  --color-ink: #0a1f3d;
+  --color-muted: #5a6b7d;
+  --color-line: #e4eaf0;
+  --color-soft: #f4f7fb;
   --color-paper: #ffffff;
+  --color-ok: #1f9d6a;
 
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
 
-  --radius-card: 30px;
-  --radius-feature: 45px;
-  --radius-nav: 52px;
-
-  --shadow-card: 0 27px 104px rgba(0, 0, 0, 0.12);
-  --shadow-feature: 0 8px 127px rgba(0, 0, 0, 0.11);
-  --shadow-nav: 0 8px 30px rgba(0, 0, 0, 0.06);
-  --shadow-media: 0 9px 46px rgba(0, 0, 0, 0.25);
+  --shadow-card: 0 18px 50px rgba(0, 43, 92, 0.08);
+  --shadow-nav: 0 10px 30px rgba(0, 43, 92, 0.06);
+  --shadow-float: 0 20px 60px rgba(0, 43, 92, 0.14);
 }
 
 html {
@@ -30,21 +26,21 @@ html {
 body {
   margin: 0;
   font-family: var(--font-sans);
-  font-weight: 400;
-  letter-spacing: -0.012em;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   color: var(--color-ink);
   background: var(--color-paper);
   -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-brand) 25%, white);
+  background: color-mix(in srgb, var(--color-teal) 35%, white);
 }
 
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(28px);
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
@@ -61,38 +57,38 @@ body {
   }
 }
 
-@keyframes nav-in {
+@keyframes slide-in {
   from {
     opacity: 0;
-    transform: translateY(-12px);
+    transform: translateX(24px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
 }
 
 .animate-fade-up {
-  animation: fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fade-up 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .animate-fade-in {
-  animation: fade-in 1.1s ease both;
+  animation: fade-in 1s ease both;
 }
 
-.animate-nav-in {
-  animation: nav-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+.animate-slide-in {
+  animation: slide-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .delay-1 {
-  animation-delay: 0.12s;
+  animation-delay: 0.1s;
 }
 .delay-2 {
-  animation-delay: 0.24s;
+  animation-delay: 0.2s;
 }
 .delay-3 {
-  animation-delay: 0.36s;
+  animation-delay: 0.32s;
 }
 .delay-4 {
-  animation-delay: 0.5s;
+  animation-delay: 0.44s;
 }

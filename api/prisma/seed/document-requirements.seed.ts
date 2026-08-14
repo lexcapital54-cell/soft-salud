@@ -1,71 +1,83 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as XLSX from 'xlsx';
-import { PrismaClient } from '@prisma/client';
+import { DocumentPillar, PrismaClient } from '@prisma/client';
 
 export const SHEET_CATEGORIES: Record<
   string,
-  { code: string; name: string; sortOrder: number }
+  { code: string; name: string; sortOrder: number; pillar: DocumentPillar }
 > = {
   '1. Documentación Legal': {
     code: '01_DOCUMENTACION_LEGAL',
     name: 'Documentación Legal',
     sortOrder: 1,
+    pillar: DocumentPillar.DOCUMENTACION_LEGAL,
   },
   '2. Talento Humano': {
     code: '02_TALENTO_HUMANO',
     name: 'Talento Humano',
     sortOrder: 2,
+    pillar: DocumentPillar.TALENTO_HUMANO,
   },
   '3. Infraestructura': {
     code: '03_INFRAESTRUCTURA',
     name: 'Infraestructura',
     sortOrder: 3,
+    pillar: DocumentPillar.INFRAESTRUCTURA,
   },
   '4. Dotación': {
     code: '04_DOTACION',
     name: 'Dotación',
     sortOrder: 4,
+    pillar: DocumentPillar.DOTACION,
   },
   '5. Medicamentos y Dispositivos': {
     code: '05_MEDICAMENTOS_DISPOSITIVOS',
     name: 'Medicamentos y Dispositivos',
     sortOrder: 5,
+    pillar: DocumentPillar.MEDICAMENTOS_INSUMOS,
   },
   '6. Procesos Prioritarios': {
     code: '06_PROCESOS_PRIORITARIOS',
     name: 'Procesos Prioritarios',
     sortOrder: 6,
+    pillar: DocumentPillar.PROCESOS_PRIORITARIOS,
   },
   '7. Historia Clínica': {
     code: '07_HISTORIA_CLINICA',
     name: 'Historia Clínica',
     sortOrder: 7,
+    pillar: DocumentPillar.HISTORIA_CLINICA,
   },
   '8. Seguridad Paciente': {
     code: '08_SEGURIDAD_PACIENTE',
     name: 'Seguridad del Paciente',
     sortOrder: 8,
+    pillar: DocumentPillar.PROCESOS_PRIORITARIOS,
   },
   '9. PGIRASA': {
     code: '09_PGIRASA',
     name: 'PGIRASA',
     sortOrder: 9,
+    pillar: DocumentPillar.MEDICAMENTOS_INSUMOS,
   },
   '10. Emergencias': {
     code: '10_EMERGENCIAS',
     name: 'Emergencias',
     sortOrder: 10,
+    pillar: DocumentPillar.PROCESOS_PRIORITARIOS,
   },
   '11. Indicadores y PAMEC': {
     code: '11_INDICADORES_PAMEC',
     name: 'Indicadores y PAMEC',
     sortOrder: 11,
+    pillar: DocumentPillar.PROCESOS_PRIORITARIOS,
   },
   '12. Interdependencia': {
     code: '12_INTERDEPENDENCIA',
     name: 'Interdependencia',
     sortOrder: 12,
+    pillar: DocumentPillar.INTERDEPENDENCIA,
   },
 };
 
@@ -98,7 +110,12 @@ export type ParsedRequirement = {
 };
 
 export function parseChecklistExcel(excelPath: string): {
-  categories: Array<{ code: string; name: string; sortOrder: number }>;
+  categories: Array<{
+    code: string;
+    name: string;
+    sortOrder: number;
+    pillar: DocumentPillar;
+  }>;
   requirements: ParsedRequirement[];
 } {
   if (!fs.existsSync(excelPath)) {
@@ -188,7 +205,7 @@ export function parseChecklistExcel(excelPath: string): {
   return { categories, requirements };
 }
 
-export async function seedDocumentRequirements(
+async function upsertChecklistCategories(
   prisma: PrismaClient,
   excelPath: string,
 ) {
@@ -201,6 +218,7 @@ export async function seedDocumentRequirements(
       update: {
         name: category.name,
         sortOrder: category.sortOrder,
+        pillar: category.pillar,
       },
     });
   }
@@ -208,48 +226,86 @@ export async function seedDocumentRequirements(
   const categoryRows = await prisma.documentCategory.findMany();
   const categoryIdByCode = new Map(categoryRows.map((c) => [c.code, c.id]));
 
+  return { categories, requirements, categoryIdByCode };
+}
+
+export async function seedDocumentRequirementsForClinic(
+  prisma: PrismaClient,
+  clinicId: string,
+  excelPath: string,
+) {
+  const { categories, requirements, categoryIdByCode } =
+    await upsertChecklistCategories(prisma, excelPath);
+
+  let upserted = 0;
+  for (const req of requirements) {
+    const categoryId = categoryIdByCode.get(req.categoryCode);
+    if (!categoryId) continue;
+
+    await prisma.documentRequirement.upsert({
+      where: {
+        clinicId_code: {
+          clinicId,
+          code: req.code,
+        },
+      },
+      create: {
+        clinicId,
+        categoryId,
+        code: req.code,
+        title: req.title,
+        description: req.description,
+        isMandatory: req.isMandatory,
+      },
+      update: {
+        categoryId,
+        title: req.title,
+        description: req.description,
+        isMandatory: req.isMandatory,
+      },
+    });
+    upserted += 1;
+  }
+
+  return {
+    categories: categories.length,
+    requirements: requirements.length,
+    upserted,
+  };
+}
+
+export async function seedDocumentRequirements(
+  prisma: PrismaClient,
+  excelPath: string,
+) {
+  const { categories, requirements } = await upsertChecklistCategories(
+    prisma,
+    excelPath,
+  );
+
   const clinics = await prisma.clinic.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      dashboardType: 'CLINICAL_HISTORY_WITH_DOCS',
+    },
     select: { id: true, name: true },
   });
 
   if (clinics.length === 0) {
     console.warn(
-      'No hay clínicas activas: se sembraron categorías, pero no requisitos por clínica.',
+      'No hay clínicas con gestión documental: se sembraron categorías, pero no requisitos por clínica.',
     );
     return { categories: categories.length, requirements: 0, clinics: 0 };
   }
 
   let upserted = 0;
   for (const clinic of clinics) {
-    for (const req of requirements) {
-      const categoryId = categoryIdByCode.get(req.categoryCode);
-      if (!categoryId) continue;
-
-      await prisma.documentRequirement.upsert({
-        where: {
-          clinicId_code: {
-            clinicId: clinic.id,
-            code: req.code,
-          },
-        },
-        create: {
-          clinicId: clinic.id,
-          categoryId,
-          code: req.code,
-          title: req.title,
-          description: req.description,
-          isMandatory: req.isMandatory,
-        },
-        update: {
-          categoryId,
-          title: req.title,
-          description: req.description,
-          isMandatory: req.isMandatory,
-        },
-      });
-      upserted += 1;
-    }
+    const result = await seedDocumentRequirementsForClinic(
+      prisma,
+      clinic.id,
+      excelPath,
+    );
+    upserted += result.upserted;
   }
 
   return {

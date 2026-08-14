@@ -52,10 +52,19 @@
         }
         @if (hasDocuments() && canWriteClinical()) {
           <a class="module module-link" routerLink="/consultorio/documentos">
-            <h2>Gestión documental</h2>
+            <h2>
+              Gestión documental
+              @if (canCountersign() && pendingDocSignatures() > 0) {
+                <span class="badge">{{ pendingDocSignatures() }} por firmar</span>
+              }
+            </h2>
             <p>
-              Documentación, evidencias y requisitos de habilitación alineados a la normativa
-              vigente.
+              @if (canCountersign() && pendingDocSignatures() > 0) {
+                HABILISALUD ya firmó documentos que esperan su firma de contraparte.
+              } @else {
+                Documentación, evidencias y requisitos de habilitación alineados a la
+                normativa vigente.
+              }
             </p>
             <span class="cta">Ver módulo →</span>
           </a>

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AdminApiService } from '../admin-api.service';
 import { AuthService } from '../auth.service';
 import { Clinic, ClinicAdmin, ClinicSpecialty, DashboardType, DASHBOARD_TYPE_LABELS, SPECIALTY_LABELS } from '../models';
@@ -9,7 +9,7 @@ import { WEBSITE_URL } from '../api.config';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })

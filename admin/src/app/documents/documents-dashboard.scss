@@ -222,6 +222,45 @@ h1 {
     background: #e8f6ee;
     color: var(--green);
   }
+
+  &.warn {
+    background: #fff6e5;
+    color: var(--amber);
+  }
+}
+
+.pending-sign {
+  h2 {
+    margin: 0 0 8px;
+    font-size: 1.05rem;
+  }
+
+  ul {
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+  }
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    align-items: baseline;
+  }
+
+  .linkish {
+    border: 0;
+    background: transparent;
+    color: var(--teal);
+    font: inherit;
+    font-weight: 600;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    text-decoration: underline;
+  }
 }
 
 /* ── Resumen ───────────────────────────────────────────── */
@@ -974,4 +1013,40 @@ h1 {
   .fill-sigs {
     grid-template-columns: 1fr;
   }
+}
+
+.no-copy,
+.no-copy * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.no-copy img,
+.no-copy iframe {
+  pointer-events: auto;
+}
+.clinic-pick,
+.bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 14px;
+}
+.clinic-pick select {
+  margin-left: 8px;
+  min-width: 220px;
+}
+.enable-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.req.disabled-doc {
+  opacity: 0.72;
+}
+.tag.warn {
+  background: #fff3cd;
+  color: #856404;
 }

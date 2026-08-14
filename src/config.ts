@@ -1,7 +1,7 @@
 /**
  * URL del admin clínico (Angular). En desarrollo apunta al `ng serve` local y
- * en el build de producción al subdominio de Netlify. Se puede sobrescribir
- * con VITE_ADMIN_URL sin recompilar la configuración.
+ * en producción al Mac mini (Caddy + Cloudflare Tunnel). Sobrescribe con
+ * VITE_ADMIN_URL al hacer el build de la landing para el hosting.
  */
 const ADMIN_URL =
   import.meta.env.VITE_ADMIN_URL ??

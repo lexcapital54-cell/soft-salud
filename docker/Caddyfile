@@ -1,0 +1,22 @@
+# Sirve el admin Angular y reenvía /api al contenedor Nest.
+# Cloudflare Tunnel (o el puerto publicado) apunta aquí.
+:80 {
+	encode gzip
+
+	# API Nest (prefijo global /api ya incluido en Nest)
+	handle /api* {
+		reverse_proxy api:3000
+	}
+
+	# SPA Angular
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+}

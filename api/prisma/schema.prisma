@@ -289,14 +289,16 @@ enum DocumentFileStatus {
 }
 
 /// Roles de firma en documentos administrativos / SG-SST.
-/// Elaboró–Revisó–Aprobó para documentos generales;
-/// Capacitador–Asistente para actas de capacitación.
+/// Elaboró–Revisó–Aprobó / Capacitador–Asistente = firmas de contenido (PDF).
+/// HABILISALUD + CLINIC_ADMIN = doble sello de aprobación (superadmin → admin consultorio).
 enum DocumentSignerRole {
   ELABORO
   REVISO
   APROBO
   CAPACITADOR
   ASISTENTE
+  HABILISALUD
+  CLINIC_ADMIN
 }
 
 // ─── Models ────────────────────────────────────────────────────────────────
@@ -1023,6 +1025,8 @@ model DocumentRequirement {
   title        String           @db.VarChar(255)
   description  String?
   isMandatory  Boolean          @default(true) @map("is_mandatory")
+  /// Si está deshabilitado, el consultorio solo puede verlo (sin editar/firmar).
+  isEnabled    Boolean          @default(true) @map("is_enabled")
   validityDays Int?             @map("validity_days")
   createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)

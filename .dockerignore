@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/.angular
+**/.git
+**/.DS_Store
+**/coverage
+**/*.log
+backups
+DOCUMENOS PDF PSICOLOGIA
+*.mp4
+api/storage/**
+!api/storage/**/.gitkeep

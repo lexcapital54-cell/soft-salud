@@ -1,7 +1,7 @@
 <section class="wrap">
   <header class="topbar">
     <div class="header-left">
-      <a routerLink="/consultorio">← Volver al consultorio</a>
+      <a [routerLink]="homeLink()">← Volver</a>
       <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()"
         >HABILISALUD</a
       >
@@ -12,12 +12,93 @@
   <div class="intro">
     <p class="eyebrow">Gestión documental</p>
     <h1>Expediente de habilitación y SG-SST</h1>
-    <p class="muted">
-      En el pilar SG-SST todos los documentos se pueden
-      <strong>llenar y firmar</strong> con imagen. Cada diligenciamiento crea una versión PDF
-      nueva; el histórico no se sobrescribe.
-    </p>
+    @if (canManage()) {
+      <p class="muted">
+        Modo <strong>superadministrador</strong>: habilita, carga y firma primero
+        (sello HABILISALUD). Luego el administrador del consultorio debe firmar la
+        contraparte.
+      </p>
+      @if (clinics().length) {
+        <label class="clinic-pick">
+          Consultorio
+          <select
+            [ngModel]="selectedClinicId()"
+            (ngModelChange)="selectClinic($event)"
+          >
+            @for (c of clinics(); track c.id) {
+              <option [value]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </label>
+        <div class="bulk-actions">
+          <button type="button" class="primary" (click)="setAllEnabled(true)">
+            Habilitar todos
+          </button>
+          <button type="button" class="ghost" (click)="setAllEnabled(false)">
+            Deshabilitar todos
+          </button>
+        </div>
+      }
+    } @else if (canFill() || canUpload()) {
+      <p class="muted">
+        Como <strong>administrador del consultorio</strong> puede
+        <strong>cargar documentos</strong>, diligenciar
+        (<strong>Llenar y firmar</strong>), ver el PDF y firmar la contraparte cuando
+        HABILISALUD ya haya sellado. No puede descargar archivos del expediente.
+      </p>
+    } @else {
+      <p class="muted">
+        Acceso de <strong>solo lectura</strong>. No puede modificar, firmar, cargar ni
+        descargar estos documentos.
+      </p>
+    }
   </div>
+
+  @if (canCountersign() && pendingCountersignatures().length) {
+    <aside class="banner warn pending-sign">
+      <h2>Documentos por firmar</h2>
+      <p>
+        HABILISALUD ya firmó {{ pendingCountersignatures().length }} documento(s).
+        Debe registrar su firma de contraparte:
+      </p>
+      <ul>
+        @for (item of pendingCountersignatures(); track item.fileId) {
+          <li>
+            <button type="button" class="linkish" (click)="openPendingCountersign(item)">
+              {{ item.requirementTitle }} · v{{ item.version }}
+            </button>
+            <span class="vmeta">
+              Firmó {{ item.habilisaludSignerName }} ·
+              {{ item.habilisaludSignedAt | date: 'dd/MM/yyyy HH:mm' }}
+            </span>
+          </li>
+        }
+      </ul>
+    </aside>
+  }
+
+  @if (canFill() && !canManage() && fillableRequirements().length) {
+    <aside class="banner pending-sign">
+      <h2>Llenar y firmar (SG-SST)</h2>
+      <p>
+        Tiene {{ fillableRequirements().length }} documento(s) del pilar
+        <strong>Seguridad y salud en el trabajo</strong> listos para diligenciar.
+        Abra el pilar SG-SST y use el botón <strong>Llenar y firmar</strong>.
+      </p>
+      <button type="button" class="primary" (click)="focusSgsstPillar()">
+        Ir a SG-SST
+      </button>
+    </aside>
+  }
+
+  @if (canManage() && pendingCountersignatures().length) {
+    <aside class="banner ok pending-sign">
+      <p>
+        {{ pendingCountersignatures().length }} documento(s) esperan la firma del
+        administrador del consultorio.
+      </p>
+    </aside>
+  }
 
   <nav class="tabs" aria-label="Secciones del expediente">
     <button
@@ -51,8 +132,13 @@
         <div>
           <h2>Archivos firmados por mes</h2>
           <p class="muted">
-            Para auditoría: consulte y descargue las versiones firmadas del periodo
-            seleccionado. El histórico no se sobrescribe.
+            @if (canDownload()) {
+              Para auditoría: consulte y descargue las versiones firmadas del periodo
+              seleccionado. El histórico no se sobrescribe.
+            } @else {
+              Consulte las versiones firmadas del periodo seleccionado. La descarga
+              está reservada al superadministrador.
+            }
           </p>
         </div>
         <div class="archive-tools">
@@ -64,18 +150,20 @@
               (ngModelChange)="selectArchiveMonth($event)"
             />
           </label>
-          <button
-            type="button"
-            class="primary"
-            [disabled]="archiveDownloadingAll() || !archiveFiles().length"
-            (click)="downloadAllArchive()"
-          >
-            {{
-              archiveDownloadingAll()
-                ? 'Descargando…'
-                : 'Descargar todos del mes'
-            }}
-          </button>
+          @if (canDownload()) {
+            <button
+              type="button"
+              class="primary"
+              [disabled]="archiveDownloadingAll() || !archiveFiles().length"
+              (click)="downloadAllArchive()"
+            >
+              {{
+                archiveDownloadingAll()
+                  ? 'Descargando…'
+                  : 'Descargar todos del mes'
+              }}
+            </button>
+          }
         </div>
       </div>
 
@@ -147,13 +235,15 @@
                 >
                   Ver
                 </button>
-                <button
-                  type="button"
-                  class="ghost"
-                  (click)="download(file.id, file.originalName)"
-                >
-                  Descargar
-                </button>
+                @if (canDownload()) {
+                  <button
+                    type="button"
+                    class="ghost"
+                    (click)="download(file.id, file.originalName)"
+                  >
+                    Descargar
+                  </button>
+                }
               </div>
             </li>
           } @empty {
@@ -238,16 +328,26 @@
               <h3 class="category">{{ category.name }}</h3>
               <ul class="reqs">
                 @for (req of category.requirements; track req.id) {
-                  <li class="req" [class]="'st-' + req.status">
+                  <li
+                    class="req"
+                    [class]="'st-' + req.status"
+                    [class.disabled-doc]="req.isEnabled === false"
+                  >
                     <span class="dot" [class]="'st-' + req.status"></span>
                     <div class="req-main">
                       <p class="req-title">{{ req.title }}</p>
                       <p class="req-meta">
                         <code>{{ req.code }}</code>
+                        @if (req.isEnabled === false) {
+                          <span class="tag warn">Deshabilitado</span>
+                        }
                         @if (periodicity(req); as period) {
                           <span class="tag">{{ period }}</span>
                         }
-                        @if (req.fillable) {
+                        @if (req.awaitingClinicSignature) {
+                        <span class="tag warn">Espera firma consultorio</span>
+                      }
+                      @if (req.fillable) {
                           <span class="tag soft">Llenable</span>
                         }
                         @if (!req.isMandatory) {
@@ -266,13 +366,32 @@
                       }
                     </div>
                     <div class="req-actions">
-                      @if (req.fillable) {
+                      @if (canManage()) {
+                        <label class="enable-toggle" title="Habilitar / deshabilitar">
+                          <input
+                            type="checkbox"
+                            [checked]="req.isEnabled !== false"
+                            (change)="toggleRequirementEnabled(req, $any($event.target).checked)"
+                          />
+                          <span>{{ req.isEnabled !== false ? 'Habilitado' : 'Off' }}</span>
+                        </label>
+                      }
+                      @if (canFill() && req.fillable) {
                         <button
                           type="button"
                           class="primary"
                           (click)="openFillSgsst(req)"
                         >
                           Llenar y firmar
+                        </button>
+                      }
+                      @if (canCountersign() && !canManage() && req.canClinicSign && req.latestFile) {
+                        <button
+                          type="button"
+                          class="primary"
+                          (click)="openViewer(req.latestFile!, req.title)"
+                        >
+                          Firmar contraparte
                         </button>
                       }
                       @if (req.latestFile) {
@@ -283,21 +402,23 @@
                       <button type="button" class="ghost" (click)="openDetail(req.id)">
                         Historial ({{ req.fileCount }})
                       </button>
-                      <label class="upload" [class.busy]="uploading() === req.id">
-                        {{
-                          uploading() === req.id
-                            ? 'Subiendo…'
-                            : req.latestFile
-                              ? 'Nueva versión'
-                              : 'Cargar'
-                        }}
-                        <input
-                          type="file"
-                          hidden
-                          [disabled]="uploading() === req.id"
-                          (change)="onPickFile($event, req.id)"
-                        />
-                      </label>
+                      @if (canUpload() && req.isEnabled !== false) {
+                        <label class="upload" [class.busy]="uploading() === req.id">
+                          {{
+                            uploading() === req.id
+                              ? 'Subiendo…'
+                              : req.latestFile
+                                ? 'Nueva versión'
+                                : 'Cargar'
+                          }}
+                          <input
+                            type="file"
+                            hidden
+                            [disabled]="uploading() === req.id"
+                            (change)="onPickFile($event, req.id)"
+                          />
+                        </label>
+                      }
                     </div>
                   </li>
                 }
@@ -352,19 +473,23 @@
                 class="primary"
                 (click)="openViewer(file, info.requirement.title)"
               >
-                {{ file.status === 'SIGNED' || file.status === 'RETIRED' ? 'Ver' : 'Ver / firmar' }}
+                {{ file.status === 'SIGNED' || file.status === 'RETIRED' ? 'Ver' : (canSign() ? 'Ver / firmar' : 'Ver') }}
               </button>
-              <button
-                type="button"
-                class="ghost"
-                (click)="download(file.id, file.originalName)"
-              >
-                Descargar
-              </button>
-              @if (file.status !== 'RETIRED') {
-                <button type="button" class="danger" (click)="retireFile(file.id)">
-                  Retirar
+              @if (canDownload()) {
+                <button
+                  type="button"
+                  class="ghost"
+                  (click)="download(file.id, file.originalName)"
+                >
+                  Descargar
                 </button>
+              }
+              @if (canManage()) {
+                @if (file.status !== 'RETIRED') {
+                  <button type="button" class="danger" (click)="retireFile(file.id)">
+                    Retirar
+                  </button>
+                }
               }
             </div>
           </li>
@@ -578,33 +703,58 @@
         <button type="button" class="close" (click)="closeViewer()">Cerrar</button>
       </header>
 
-      <div class="viewer-grid">
+      <div
+        class="viewer-grid no-copy"
+        (copy)="blockClipboard($event)"
+        (cut)="blockClipboard($event)"
+        (paste)="blockClipboard($event)"
+        (contextmenu)="blockClipboard($event)"
+      >
         <div class="preview-pane">
           @if (previewLoading()) {
             <p class="muted">Cargando vista previa…</p>
           } @else if (previewKind() === 'pdf' && previewUrl(); as url) {
             <iframe [src]="url" title="Vista del documento"></iframe>
           } @else if (previewKind() === 'image' && previewImageSrc(); as src) {
-            <img [src]="src" alt="Vista del documento" />
+            <img [src]="src" alt="Vista del documento" draggable="false" />
           } @else if (previewKind() === 'html' && previewHtml(); as html) {
             <div class="html-preview" [innerHTML]="html"></div>
           } @else {
             <p class="muted">
-              No hay vista previa para este tipo de archivo. Puede firmar igual o descargar una
-              copia de consulta.
+              No hay vista previa para este tipo de archivo.
+              @if (canDownload()) {
+                Puede firmar o descargar una copia de consulta.
+              }
             </p>
-            <button
-              type="button"
-              class="ghost"
-              (click)="download(file.id, file.originalName)"
-            >
-              Descargar copia
-            </button>
+            @if (canDownload()) {
+              <button
+                type="button"
+                class="ghost"
+                (click)="download(file.id, file.originalName)"
+              >
+                Descargar copia
+              </button>
+            }
           }
         </div>
 
         <aside class="sign-pane">
-          <h3>Firmas</h3>
+          <h3>Firmas de aprobación</h3>
+          <p class="muted">
+            Orden: 1) HABILISALUD · 2) Administrador del consultorio. El documento solo
+            queda sellado con ambas firmas.
+          </p>
+          @if (canCountersign() && !canManage() && !file.hasHabilisaludSignature) {
+            <p class="banner warn compact">
+              Puede diligenciar con <strong>Llenar y firmar</strong>. La contraparte
+              del pad solo se habilita cuando HABILISALUD ya haya sellado.
+            </p>
+          }
+          @if (canCountersign() && file.canClinicSign) {
+            <p class="banner ok compact">
+              HABILISALUD ya firmó. Registre su firma de contraparte abajo.
+            </p>
+          }
           <div class="sign-slots">
             @for (role of signRoles(); track role) {
               <div class="sign-slot">
@@ -612,20 +762,28 @@
                   <strong>{{ roleLabels[role] }}</strong>
                   @if (signatureOf(file, role); as sig) {
                     <span class="ok-tag">Firmado</span>
-                  } @else {
+                  } @else if (canSignRole(file, role)) {
                     <button
                       type="button"
                       class="ghost tiny"
                       [class.active]="activeSignRole() === role"
-                      [disabled]="file.status === 'SIGNED' || file.status === 'RETIRED'"
                       (click)="selectSignRole(role)"
                     >
                       Firmar
                     </button>
+                  } @else if (role === 'CLINIC_ADMIN' && !file.hasHabilisaludSignature) {
+                    <span class="vmeta">Bloqueado</span>
+                  } @else {
+                    <span class="vmeta">Pendiente</span>
                   }
                 </div>
                 @if (signatureOf(file, role); as sig) {
-                  <img class="sig-img" [src]="sig.signatureBase64" [alt]="roleLabels[role]" />
+                  <img
+                    class="sig-img"
+                    [src]="sig.signatureBase64"
+                    [alt]="roleLabels[role]"
+                    draggable="false"
+                  />
                   <p class="vmeta">
                     {{ sig.signerName }} · {{ sig.signedAt | date: 'dd/MM/yyyy HH:mm' }}
                   </p>
@@ -636,7 +794,7 @@
             }
           </div>
 
-          @if (file.status !== 'SIGNED' && file.status !== 'RETIRED') {
+          @if (canSignFile(file)) {
             <div class="pad-box">
               <p class="pad-label">
                 Firma de <strong>{{ roleLabels[activeSignRole()] }}</strong>
@@ -671,10 +829,12 @@
             </div>
           } @else if (file.status === 'SIGNED') {
             <p class="banner ok compact">
-              Versión sellada. Para corregir, use
-              <strong>Llenar y firmar</strong> o cargue una nueva versión; esta queda en el
-              histórico.
+              Versión sellada con ambas firmas. Para corregir, use
+              <strong>Llenar y firmar</strong> o cargue una nueva versión (solo
+              superadmin).
             </p>
+          } @else if (!canSign()) {
+            <p class="muted">Este expediente es de solo lectura para su rol.</p>
           }
         </aside>
       </div>

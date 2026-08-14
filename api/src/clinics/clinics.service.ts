@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { UserRole } from '../common/enums';
 import { FormTemplatesService } from '../modules/clinical/form-templates.service';
+import { DocumentProvisionService } from '../modules/documents/document-provision.service';
 import { toPublicUser, User } from '../users/user.entity';
 import { Clinic } from './clinic.entity';
 import { CreateClinicDto } from './dto/create-clinic.dto';
@@ -19,6 +20,7 @@ export class ClinicsService {
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
     private readonly formTemplates: FormTemplatesService,
+    private readonly documentProvision: DocumentProvisionService,
   ) {}
 
   async findAll() {
@@ -99,6 +101,15 @@ export class ClinicsService {
     } catch (error) {
       // El dashboard ya quedó asignado; la plantilla se puede reintentar al abrir HCE.
       console.error('No se pudo aprovisionar FormTemplate', error);
+    }
+
+    try {
+      await this.documentProvision.ensureForClinic(
+        clinic.id,
+        clinic.dashboardType,
+      );
+    } catch (error) {
+      console.error('No se pudo aprovisionar gestión documental', error);
     }
 
     return this.findOne(id);

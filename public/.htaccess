@@ -1,20 +1,49 @@
-# Configuración de Apache para el hosting de la landing (cPanel).
+# Landing HABILISALUD — cPanel / LiteSpeed
 # Vite copia este archivo a dist/ en cada build.
+
+DirectoryIndex index.html
+
+# --- Redirecciones (LiteSpeed / Apache) ---
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Cualquier petición a /index.html o /index.html/ → raíz del dominio
+  # (evita 404 en tablets/otros navegadores que agregan la / final)
+  RewriteCond %{THE_REQUEST} \s/+index\.html[?\s/] [NC]
+  RewriteRule ^index\.html/?$ / [R=301,L]
+
+  RewriteRule ^index\.html/$ / [R=301,L]
+
+  # HTTP → HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+</IfModule>
+
+# Fallback si rewrite no aplica igual en todos los planes
+<IfModule mod_alias.c>
+  RedirectMatch 301 ^/index\.html/?$ /
+</IfModule>
 
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml
 </IfModule>
 
+# MIME types (LiteSpeed a veces no sirve .mp4/.jpg sin esto)
+<IfModule mod_mime.c>
+  AddType video/mp4 .mp4
+  AddType image/jpeg .jpg .jpeg
+  AddType image/svg+xml .svg
+  AddType image/webp .webp
+</IfModule>
+
 <IfModule mod_expires.c>
   ExpiresActive On
-
-  # Los assets llevan hash en el nombre, así que se pueden cachear para siempre.
   ExpiresByType text/css "access plus 1 year"
   ExpiresByType application/javascript "access plus 1 year"
   ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
   ExpiresByType video/mp4 "access plus 1 month"
-
-  # index.html no: es quien apunta a los assets nuevos tras cada despliegue.
   ExpiresByType text/html "access plus 0 seconds"
 </IfModule>
 
@@ -26,11 +55,3 @@
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 </IfModule>
-
-# Activar solo cuando cPanel ya haya emitido el certificado SSL del dominio;
-# antes de eso el navegador mostraría una advertencia de certificado.
-# <IfModule mod_rewrite.c>
-#   RewriteEngine On
-#   RewriteCond %{HTTPS} off
-#   RewriteRule ^(.*)$ https://www.habilisalud.com/$1 [R=301,L]
-# </IfModule>

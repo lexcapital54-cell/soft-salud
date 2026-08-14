@@ -1,4 +1,5 @@
 import { AppointmentStatus, CareModality } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
@@ -66,6 +67,7 @@ export class CreateAppointmentDto {
 
   /** Alternativa a endsAt; por defecto 40 minutos */
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(5)
   @Max(480)
@@ -114,6 +116,7 @@ export class UpdateAppointmentDto {
   endsAt?: string;
 
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(5)
   @Max(480)

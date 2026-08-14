@@ -28,6 +28,31 @@ export class AuthService {
     const role = this.userSignal()?.role;
     return role === 'ADMIN' || role === 'HEALTH_PROFESSIONAL';
   });
+  /** Solo superadmin habilita, retira y descarga. */
+  readonly canManageDocuments = computed(() => this.userSignal()?.role === 'SUPER_ADMIN');
+  /**
+   * Llenar / firmar / ver el expediente SG-SST:
+   * superadmin + admin del consultorio (mismo flujo de diligenciamiento).
+   */
+  readonly canFillDocuments = computed(() => {
+    const role = this.userSignal()?.role;
+    return role === 'SUPER_ADMIN' || role === 'ADMIN';
+  });
+  /** Cargar archivos al expediente: superadmin o admin del consultorio. */
+  readonly canUploadDocuments = computed(() => {
+    const role = this.userSignal()?.role;
+    return role === 'SUPER_ADMIN' || role === 'ADMIN';
+  });
+  /** Descarga de archivos: solo superadmin (el consultorio solo ve/firma). */
+  readonly canDownloadDocuments = computed(() => this.userSignal()?.role === 'SUPER_ADMIN');
+  /** Contraparte tras sello HABILISALUD (admin o profesional). */
+  readonly canCountersignDocuments = computed(() => {
+    const role = this.userSignal()?.role;
+    return role === 'ADMIN' || role === 'HEALTH_PROFESSIONAL';
+  });
+  readonly canSignDocuments = computed(
+    () => this.canFillDocuments() || this.canCountersignDocuments(),
+  );
   /** Recepción incluida: puede mover estados de cita y registrar admisión. */
   readonly canManageAgenda = computed(() => {
     const role = this.userSignal()?.role;

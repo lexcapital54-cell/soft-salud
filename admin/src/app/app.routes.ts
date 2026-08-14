@@ -5,6 +5,7 @@ import {
   auditorGuard,
   clinicStaffGuard,
   clinicalWriteGuard,
+  documentsReadGuard,
   guestGuard,
   superAdminGuard,
 } from './auth.guard';
@@ -22,6 +23,11 @@ export const routes: Routes = [
   {
     path: 'admin',
     component: AdminDashboard,
+    canActivate: [authGuard, superAdminGuard],
+  },
+  {
+    path: 'admin/documentos',
+    component: DocumentsDashboard,
     canActivate: [authGuard, superAdminGuard],
   },
   {
@@ -52,7 +58,7 @@ export const routes: Routes = [
   {
     path: 'consultorio/documentos',
     component: DocumentsDashboard,
-    canActivate: [authGuard, clinicalWriteGuard],
+    canActivate: [authGuard, documentsReadGuard],
   },
   { path: '**', redirectTo: 'login' },
 ];

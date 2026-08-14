@@ -164,6 +164,13 @@
                 <td>{{ clinic.isActive ? 'Activo' : 'Inactivo' }}</td>
                 <td class="actions">
                   <div class="menu-wrap">
+                    <a
+                      class="action-btn"
+                      [routerLink]="['/admin/documentos']"
+                      [queryParams]="{ clinicId: clinic.id }"
+                    >
+                      Documentos
+                    </a>
                     <button
                       type="button"
                       class="action-btn"

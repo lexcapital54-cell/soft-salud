@@ -1,0 +1,57 @@
+# HABILISALUD — admin (Angular) + API (Nest) en este Mac mini.
+# Postgres queda FUERA de Docker (pgAdmin / servicio local ya restaurado).
+#
+# Uso:
+#   docker compose up -d --build
+#   Abrir http://localhost:8080/login
+#
+# Exponer al mundo: Cloudflare Tunnel → http://localhost:8080
+# Ver docs/MAC_MINI_DEPLOY.md
+
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: habilisalud-api
+    restart: unless-stopped
+    env_file:
+      - ./api/.env
+    environment:
+      # Desde el contenedor, localhost es el propio container: usar el host Mac.
+      DB_HOST: host.docker.internal
+      DATABASE_URL: postgresql://postgres:root@host.docker.internal:5432/habilisalud?schema=public
+      PORT: "3000"
+      STORAGE_ROOT: /app/storage
+      # Colombia (sin DST). Evita que la agenda oculte citas de la tarde.
+      TZ: America/Bogota
+    volumes:
+      - ./api/storage:/app/storage
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    container_name: habilisalud-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "8080:80"

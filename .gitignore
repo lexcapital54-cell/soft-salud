@@ -18,3 +18,7 @@ habilisalud-web.zip
 
 # Office lock/temp files
 ~$*
+
+scripts/.public-admin-url
+
+dist-landing.zip

@@ -11,7 +11,9 @@ export type DocumentSignerRole =
   | 'REVISO'
   | 'APROBO'
   | 'CAPACITADOR'
-  | 'ASISTENTE';
+  | 'ASISTENTE'
+  | 'HABILISALUD'
+  | 'CLINIC_ADMIN';
 
 export type DocumentPillar =
   | 'DOCUMENTACION_LEGAL'
@@ -58,8 +60,13 @@ export interface DocumentFileRow {
   createdAt: string;
   uploadedBy: string | null;
   requiredRoles?: DocumentSignerRole[];
+  contentRoles?: DocumentSignerRole[];
   fillable?: boolean;
   fillableTraining?: boolean;
+  hasHabilisaludSignature?: boolean;
+  hasClinicAdminSignature?: boolean;
+  canClinicSign?: boolean;
+  awaitingClinicSignature?: boolean;
   canPreview: boolean;
   signatures: DocumentSignatureRow[];
   missingRoles: DocumentSignerRole[];
@@ -71,6 +78,8 @@ export interface RequirementRow {
   title: string;
   description: string | null;
   isMandatory: boolean;
+  /** Controlado solo por superadmin. */
+  isEnabled: boolean;
   validityDays: number | null;
   status: ComplianceStatus;
   expiresAt: string | null;
@@ -80,6 +89,10 @@ export interface RequirementRow {
   fillable?: boolean;
   fillableTraining?: boolean;
   requiredRoles?: DocumentSignerRole[];
+  contentRoles?: DocumentSignerRole[];
+  hasHabilisaludSignature?: boolean;
+  awaitingClinicSignature?: boolean;
+  canClinicSign?: boolean;
 }
 
 export interface CategoryNode {
@@ -97,10 +110,23 @@ export interface PillarNode {
   summary: ComplianceSummary;
 }
 
+export interface PendingCountersign {
+  fileId: string;
+  requirementId: string;
+  requirementCode: string;
+  requirementTitle: string;
+  version: number;
+  originalName: string;
+  habilisaludSignerName: string;
+  habilisaludSignedAt: string;
+  message: string;
+}
+
 export interface DocumentsOverview {
   generatedAt: string;
   pillars: PillarNode[];
   summary: ComplianceSummary;
+  pendingCountersignatures?: PendingCountersign[];
 }
 
 export interface RequirementDetail {
@@ -120,6 +146,7 @@ export interface RequirementDetail {
   fillable?: boolean;
   fillableTraining?: boolean;
   requiredRoles?: DocumentSignerRole[];
+  contentRoles?: DocumentSignerRole[];
   files: DocumentFileRow[];
 }
 

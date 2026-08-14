@@ -79,16 +79,31 @@ export class AppointmentsService {
     return user.clinicId;
   }
 
+  /**
+   * Día calendario en America/Bogota (sin DST). El contenedor Docker suele ir
+   * en UTC: si se usa medianoche local del server, las citas de la tarde en
+   * Colombia caen en el “día UTC siguiente” y desaparecen de la agenda.
+   */
   private dayRange(date?: string) {
-    const base = date ? new Date(`${date}T00:00:00`) : new Date();
-    if (Number.isNaN(base.getTime())) {
+    const key = date?.trim() || this.bogotaDateKey();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) {
       throw new BadRequestException('Fecha inválida (use YYYY-MM-DD)');
     }
-    const start = new Date(base);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(base);
-    end.setHours(23, 59, 59, 999);
+    const start = new Date(`${key}T00:00:00.000-05:00`);
+    const end = new Date(`${key}T23:59:59.999-05:00`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      throw new BadRequestException('Fecha inválida (use YYYY-MM-DD)');
+    }
     return { start, end };
+  }
+
+  private bogotaDateKey(at = new Date()) {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Bogota',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(at);
   }
 
   /** Rango cerrado de días para la vista semanal de la agenda. */

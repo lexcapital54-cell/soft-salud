@@ -233,9 +233,8 @@ const SGSST_REQUIREMENTS: SgsstRequirement[] = [
   },
 ];
 
-export async function seedSgsstRequirements(prisma: PrismaClient) {
+async function upsertSgsstCategories(prisma: PrismaClient) {
   const categoryIdByCode = new Map<string, string>();
-
   for (const category of SGSST_CATEGORIES) {
     const saved = await prisma.documentCategory.upsert({
       where: { code: category.code },
@@ -248,39 +247,60 @@ export async function seedSgsstRequirements(prisma: PrismaClient) {
     });
     categoryIdByCode.set(category.code, saved.id);
   }
+  return categoryIdByCode;
+}
 
+export async function seedSgsstRequirementsForClinic(
+  prisma: PrismaClient,
+  clinicId: string,
+) {
+  const categoryIdByCode = await upsertSgsstCategories(prisma);
+  let upserted = 0;
+  for (const req of SGSST_REQUIREMENTS) {
+    const categoryId = categoryIdByCode.get(req.categoryCode);
+    if (!categoryId) continue;
+
+    await prisma.documentRequirement.upsert({
+      where: { clinicId_code: { clinicId, code: req.code } },
+      create: {
+        clinicId,
+        categoryId,
+        code: req.code,
+        title: req.title,
+        description: req.description,
+        isMandatory: req.isMandatory ?? true,
+        validityDays: req.validityDays,
+      },
+      update: {
+        categoryId,
+        title: req.title,
+        description: req.description,
+        isMandatory: req.isMandatory ?? true,
+        validityDays: req.validityDays,
+      },
+    });
+    upserted += 1;
+  }
+  return {
+    categories: SGSST_CATEGORIES.length,
+    requirements: SGSST_REQUIREMENTS.length,
+    upserted,
+  };
+}
+
+export async function seedSgsstRequirements(prisma: PrismaClient) {
   const clinics = await prisma.clinic.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      dashboardType: 'CLINICAL_HISTORY_WITH_DOCS',
+    },
     select: { id: true },
   });
 
   let upserted = 0;
   for (const clinic of clinics) {
-    for (const req of SGSST_REQUIREMENTS) {
-      const categoryId = categoryIdByCode.get(req.categoryCode);
-      if (!categoryId) continue;
-
-      await prisma.documentRequirement.upsert({
-        where: { clinicId_code: { clinicId: clinic.id, code: req.code } },
-        create: {
-          clinicId: clinic.id,
-          categoryId,
-          code: req.code,
-          title: req.title,
-          description: req.description,
-          isMandatory: req.isMandatory ?? true,
-          validityDays: req.validityDays,
-        },
-        update: {
-          categoryId,
-          title: req.title,
-          description: req.description,
-          isMandatory: req.isMandatory ?? true,
-          validityDays: req.validityDays,
-        },
-      });
-      upserted += 1;
-    }
+    const result = await seedSgsstRequirementsForClinic(prisma, clinic.id);
+    upserted += result.upserted;
   }
 
   return {

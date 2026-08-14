@@ -15,6 +15,8 @@ const ROLE_TITLE: Record<DocumentSignerRole, string> = {
   APROBO: 'Firma Aprobó',
   CAPACITADOR: 'Firma Capacitador',
   ASISTENTE: 'Firma Asistente / Evaluado',
+  HABILISALUD: 'Firma HABILISALUD',
+  CLINIC_ADMIN: 'Firma administrador del consultorio',
 };
 
 export type SgsstFillSignature = {

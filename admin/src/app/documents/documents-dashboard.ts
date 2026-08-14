@@ -9,10 +9,12 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import SignaturePad from 'signature_pad';
 import { WEBSITE_URL } from '../api.config';
+import { AdminApiService } from '../admin-api.service';
 import { AuthService } from '../auth.service';
+import { Clinic } from '../models';
 import { DocumentsApiService } from './documents-api.service';
 import {
   ComplianceStatus,
@@ -20,6 +22,7 @@ import {
   DocumentFileStatus,
   DocumentSignerRole,
   DocumentsOverview,
+  PendingCountersign,
   PillarNode,
   RequirementDetail,
   RequirementRow,
@@ -35,6 +38,8 @@ const ROLE_LABELS: Record<DocumentSignerRole, string> = {
   APROBO: 'Aprobó',
   CAPACITADOR: 'Firma Capacitador',
   ASISTENTE: 'Firma Asistente / Evaluado',
+  HABILISALUD: 'HABILISALUD (superadmin)',
+  CLINIC_ADMIN: 'Administrador del consultorio',
 };
 
 function describeError(error: unknown): string {
@@ -55,12 +60,27 @@ function describeError(error: unknown): string {
 })
 export class DocumentsDashboard {
   private readonly api = inject(DocumentsApiService);
+  private readonly adminApi = inject(AdminApiService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly sanitizer = inject(DomSanitizer);
 
   readonly websiteUrl = WEBSITE_URL;
   readonly roleLabels = ROLE_LABELS;
+  readonly canManage = this.auth.canManageDocuments;
+  readonly canFill = this.auth.canFillDocuments;
+  readonly canUpload = this.auth.canUploadDocuments;
+  readonly canDownload = this.auth.canDownloadDocuments;
+  readonly canCountersign = this.auth.canCountersignDocuments;
+  readonly canSign = this.auth.canSignDocuments;
+  readonly homeLink = computed(() =>
+    this.auth.isSuperAdmin() ? '/admin' : '/consultorio',
+  );
+
+  readonly clinics = signal<Clinic[]>([]);
+  readonly selectedClinicId = signal('');
+  readonly selectedClinicName = signal('');
 
   readonly overview = signal<DocumentsOverview | null>(null);
   readonly loading = signal(true);
@@ -91,7 +111,7 @@ export class DocumentsDashboard {
   readonly previewHtml = signal<SafeHtml | null>(null);
   readonly previewLoading = signal(false);
 
-  readonly activeSignRole = signal<DocumentSignerRole>('ELABORO');
+  readonly activeSignRole = signal<DocumentSignerRole>('HABILISALUD');
   readonly signing = signal(false);
 
   readonly uploading = signal<string | null>(null);
@@ -131,14 +151,55 @@ export class DocumentsDashboard {
   private signaturePad: SignaturePad | null = null;
   private objectUrl: string | null = null;
 
-  /** Roles de firma según el documento abierto (generales o capacitación). */
+  /** Roles de sello dual: HABILISALUD → admin consultorio. */
   readonly signRoles = computed<DocumentSignerRole[]>(() => {
     const file = this.viewing();
     if (file?.requiredRoles?.length) return file.requiredRoles;
     const detail = this.detail();
     if (detail?.requiredRoles?.length) return detail.requiredRoles;
-    return ['ELABORO', 'REVISO', 'APROBO'];
+    return ['HABILISALUD', 'CLINIC_ADMIN'];
   });
+
+  readonly pendingCountersignatures = computed<PendingCountersign[]>(() => {
+    return this.overview()?.pendingCountersignatures ?? [];
+  });
+
+  /** Docs SG-SST listos para diligenciar (admin consultorio / superadmin). */
+  readonly fillableRequirements = computed(() => {
+    const data = this.overview();
+    if (!data || !this.canFill()) return [];
+    const rows: Array<{ id: string; title: string; code: string }> = [];
+    for (const pillar of data.pillars) {
+      for (const category of pillar.categories) {
+        for (const req of category.requirements) {
+          if (req.fillable && req.isEnabled !== false) {
+            rows.push({ id: req.id, title: req.title, code: req.code });
+          }
+        }
+      }
+    }
+    return rows;
+  });
+
+  /** El usuario actual puede usar el pad sobre el archivo abierto. */
+  canSignFile(file: DocumentFileRow): boolean {
+    if (file.status === 'SIGNED' || file.status === 'RETIRED') return false;
+    if (this.canManage()) {
+      return !file.hasHabilisaludSignature;
+    }
+    if (this.canCountersign()) {
+      return !!file.canClinicSign;
+    }
+    return false;
+  }
+
+  canSignRole(file: DocumentFileRow, role: DocumentSignerRole): boolean {
+    if (this.hasRole(file, role)) return false;
+    if (!this.canSignFile(file)) return false;
+    if (this.canManage()) return role === 'HABILISALUD';
+    if (this.canCountersign()) return role === 'CLINIC_ADMIN';
+    return false;
+  }
 
   readonly archiveFiles = computed(() => {
     const data = this.archive();
@@ -156,7 +217,83 @@ export class DocumentsDashboard {
   });
 
   constructor() {
+    if (this.auth.isSuperAdmin()) {
+      const fromQuery = this.route.snapshot.queryParamMap.get('clinicId') || '';
+      this.adminApi.listClinics().subscribe({
+        next: (clinics) => {
+          this.clinics.set(clinics);
+          const pick =
+            clinics.find((c) => c.id === fromQuery)?.id || clinics[0]?.id || '';
+          if (pick) this.selectClinic(pick);
+          else {
+            this.loading.set(false);
+            this.error.set('No hay consultorios para administrar documentos.');
+          }
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.error.set(describeError(err));
+        },
+      });
+      return;
+    }
+    this.api.clinicId = null;
     this.load();
+  }
+
+  selectClinic(clinicId: string) {
+    this.selectedClinicId.set(clinicId);
+    this.api.clinicId = clinicId;
+    const clinic = this.clinics().find((c) => c.id === clinicId);
+    this.selectedClinicName.set(clinic?.name || '');
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { clinicId },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+    this.load();
+    if (this.mainTab() === 'historico') this.loadArchive();
+  }
+
+  setAllEnabled(enabled: boolean) {
+    if (!this.canManage()) return;
+    const label = enabled ? 'habilitar' : 'deshabilitar';
+    if (!confirm(`¿${label.charAt(0).toUpperCase() + label.slice(1)} TODOS los documentos de este consultorio?`)) {
+      return;
+    }
+    this.api.setAllEnabled(enabled).subscribe({
+      next: (data) => {
+        this.overview.set(data);
+        this.notice.set(
+          enabled
+            ? 'Todos los documentos quedaron habilitados.'
+            : 'Todos los documentos quedaron deshabilitados para el consultorio.',
+        );
+      },
+      error: (err) => this.error.set(describeError(err)),
+    });
+  }
+
+  toggleRequirementEnabled(req: RequirementRow, enabled: boolean) {
+    if (!this.canManage()) return;
+    this.api.setRequirementEnabled(req.id, enabled).subscribe({
+      next: (data) => {
+        this.overview.set(data);
+        this.notice.set(
+          enabled
+            ? `«${req.title}» habilitado.`
+            : `«${req.title}» deshabilitado (solo lectura en el consultorio).`,
+        );
+      },
+      error: (err) => this.error.set(describeError(err)),
+    });
+  }
+
+  /** Bloquea copiar/pegar/menú contextual sobre el visor documental. */
+  blockClipboard(event: Event) {
+    event.preventDefault();
+    return false;
   }
 
   setMainTab(tab: MainTab) {
@@ -197,6 +334,10 @@ export class DocumentsDashboard {
   }
 
   downloadAllArchive() {
+    if (!this.canDownload()) {
+      this.error.set('Solo el superadministrador puede descargar documentos.');
+      return;
+    }
     const files = this.archiveFiles();
     if (!files.length) return;
     this.archiveDownloadingAll.set(true);
@@ -236,8 +377,16 @@ export class DocumentsDashboard {
         this.overview.set(data);
         this.loading.set(false);
         if (!this.openPillars().size) {
-          const worst = [...data.pillars].sort((a, b) => b.summary.red - a.summary.red)[0];
-          if (worst) this.openPillars.set(new Set([worst.pillar]));
+          // Preferir SG-SST si puede diligenciar (botón «Llenar y firmar»).
+          const sgsst = data.pillars.find((p) => p.pillar === 'SG_SST');
+          if (this.canFill() && sgsst) {
+            this.openPillars.set(new Set(['SG_SST']));
+          } else {
+            const worst = [...data.pillars].sort(
+              (a, b) => b.summary.red - a.summary.red,
+            )[0];
+            if (worst) this.openPillars.set(new Set([worst.pillar]));
+          }
         }
       },
       error: (err) => {
@@ -290,6 +439,13 @@ export class DocumentsDashboard {
     this.openPillars.set(next);
   }
 
+  focusSgsstPillar() {
+    this.openPillars.set(new Set(['SG_SST']));
+    this.query.set('');
+    this.statusFilter.set('ALL');
+    this.mainTab.set('expediente');
+  }
+
   setStatusFilter(value: StatusFilter) {
     this.statusFilter.set(value);
   }
@@ -332,6 +488,10 @@ export class DocumentsDashboard {
   }
 
   onPickFile(event: Event, requirementId: string) {
+    if (!this.canUpload()) {
+      this.error.set('No tiene permiso para cargar documentos.');
+      return;
+    }
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
@@ -390,8 +550,14 @@ export class DocumentsDashboard {
     if (title) this.viewRequirementTitle.set(title);
     else if (this.detail()) this.viewRequirementTitle.set(this.detail()!.requirement.title);
 
-    const missing = file.missingRoles;
-    this.activeSignRole.set(missing[0] ?? 'ELABORO');
+    if (this.canManage() && !file.hasHabilisaludSignature) {
+      this.activeSignRole.set('HABILISALUD');
+    } else if (this.canCountersign() && file.canClinicSign) {
+      this.activeSignRole.set('CLINIC_ADMIN');
+    } else {
+      const missing = file.missingRoles;
+      this.activeSignRole.set(missing[0] ?? 'HABILISALUD');
+    }
 
     this.previewLoading.set(true);
     const name = file.originalName.toLowerCase();
@@ -540,11 +706,24 @@ export class DocumentsDashboard {
   }
 
   openFillSgsst(req: RequirementRow) {
-    const training = !!req.fillableTraining || req.code === 'SST_ACTAS_CAPACITACION';
+    if (!this.canFill()) {
+      this.error.set('No tiene permiso para diligenciar documentos.');
+      return;
+    }
+    const training =
+      !!req.fillableTraining ||
+      req.code === 'SST_ACTAS_CAPACITACION' ||
+      req.code === 'SST_PAUSAS_ACTIVAS';
+    // Firmas de contenido del PDF (no confundir con el sello dual HABILISALUD / CLINIC_ADMIN).
+    const content = (req.contentRoles ?? []).filter(
+      (r) => r !== 'HABILISALUD' && r !== 'CLINIC_ADMIN',
+    );
     const roles: DocumentSignerRole[] = training
-      ? ['CAPACITADOR', 'ASISTENTE']
-      : req.requiredRoles?.length
-        ? req.requiredRoles
+      ? content.length
+        ? content
+        : ['CAPACITADOR', 'ASISTENTE']
+      : content.length
+        ? content
         : ['ELABORO', 'REVISO', 'APROBO'];
 
     this.fillRequirementId.set(req.id);
@@ -637,7 +816,8 @@ export class DocumentsDashboard {
       );
       return;
     }
-    if (!this.fillIsTraining() && roles.includes('APROBO') && !m.nombre3.trim()) {
+    const needsAprobo = !this.fillIsTraining() && roles.includes('APROBO');
+    if (needsAprobo && !m.nombre3.trim()) {
       this.error.set('Indique el nombre de quien aprobó.');
       return;
     }
@@ -645,7 +825,7 @@ export class DocumentsDashboard {
       this.error.set('Cargue la imagen de firma de ambas personas.');
       return;
     }
-    if (!this.fillIsTraining() && roles.includes('APROBO') && !m.firma3) {
+    if (needsAprobo && !m.firma3) {
       this.error.set('Cargue la imagen de firma de quien aprobó.');
       return;
     }
@@ -678,7 +858,7 @@ export class DocumentsDashboard {
             signerName: m.nombre2.trim(),
             signatureBase64: m.firma2,
           },
-          ...(roles.includes('APROBO') && m.firma3
+          ...(needsAprobo && m.firma3
             ? [
                 {
                   role: 'APROBO' as const,
@@ -705,7 +885,9 @@ export class DocumentsDashboard {
           this.fillSaving.set(false);
           this.fillOpen.set(false);
           this.notice.set(
-            `Documento v${res.file.version} generado con fechas, nombres y firmas en el PDF.`,
+            this.canManage()
+              ? `Documento v${res.file.version} generado. Queda pendiente la firma del administrador del consultorio.`
+              : `Documento v${res.file.version} generado. Queda pendiente el sello de HABILISALUD para cerrar el expediente.`,
           );
           this.load();
           if (this.archive() || this.mainTab() === 'historico') {
@@ -728,9 +910,19 @@ export class DocumentsDashboard {
       this.error.set('Esta versión ya está sellada o retirada. Cargue una nueva versión.');
       return;
     }
+    if (!this.canSignFile(file)) {
+      if (this.canCountersign() && !file.hasHabilisaludSignature) {
+        this.error.set(
+          'Aún no puede firmar: el superadministrador de HABILISALUD debe firmar primero.',
+        );
+      } else {
+        this.error.set('No tiene permiso para firmar este documento.');
+      }
+      return;
+    }
     const role = this.activeSignRole();
-    if (!file.missingRoles.includes(role)) {
-      this.error.set(`El rol ${ROLE_LABELS[role]} ya firmó esta versión.`);
+    if (!this.canSignRole(file, role)) {
+      this.error.set(`No puede firmar el rol ${ROLE_LABELS[role]} en este momento.`);
       return;
     }
     if (!this.signaturePad || this.signaturePad.isEmpty()) {
@@ -747,8 +939,10 @@ export class DocumentsDashboard {
         this.viewing.set(res.file);
         this.notice.set(
           res.file.status === 'SIGNED'
-            ? `Versión v${res.file.version} sellada con las tres firmas.`
-            : `Firma de ${ROLE_LABELS[role]} registrada.`,
+            ? `Versión v${res.file.version} sellada (HABILISALUD + consultorio).`
+            : role === 'HABILISALUD'
+              ? `Firma de HABILISALUD registrada. Se notificó al administrador del consultorio para la contraparte.`
+              : `Contraparte del consultorio registrada.`,
         );
         this.clearSignPad();
         const next = res.file.missingRoles[0];
@@ -763,7 +957,20 @@ export class DocumentsDashboard {
     });
   }
 
+  openPendingCountersign(item: PendingCountersign) {
+    this.api.getFile(item.fileId).subscribe({
+      next: (res) => {
+        this.openViewer(res.file, item.requirementTitle);
+      },
+      error: (err) => this.error.set(describeError(err)),
+    });
+  }
+
   download(fileId: string, fileName: string) {
+    if (!this.canDownload()) {
+      this.error.set('Solo el superadministrador puede descargar documentos.');
+      return;
+    }
     this.api.downloadBlob(fileId).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
@@ -797,9 +1004,9 @@ export class DocumentsDashboard {
   }
 
   openLatest(req: RequirementRow) {
-    // Si es SG-SST y aún no hay versión firmada, abrir el formulario completo
-    // (fechas + nombres + firmas), no solo el pad de firma.
+    // Llenable y aún no sellado → formulario (superadmin o admin consultorio).
     if (
+      this.canFill() &&
       req.fillable &&
       (!req.latestFile || req.latestFile.status !== 'SIGNED')
     ) {

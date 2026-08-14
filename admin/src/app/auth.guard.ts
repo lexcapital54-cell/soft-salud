@@ -66,6 +66,22 @@ export const auditorGuard: CanActivateFn = () => {
   return router.createUrlTree(['/login'], { queryParams: { tipo: 'profesional' } });
 };
 
+/** Lectura del expediente documental (consultorio). Escritura = solo /admin/documentos. */
+export const documentsReadGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (auth.canWriteClinical() || auth.canAuditSivigila()) {
+    return true;
+  }
+  if (auth.isSuperAdmin()) {
+    return router.createUrlTree(['/admin']);
+  }
+  if (auth.isClinicStaff()) {
+    return router.createUrlTree(['/consultorio']);
+  }
+  return router.createUrlTree(['/login'], { queryParams: { tipo: 'profesional' } });
+};
+
 /** @deprecated usar clinicStaffGuard */
 export const clinicAdminGuard = clinicStaffGuard;
 
