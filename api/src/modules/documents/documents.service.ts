@@ -21,6 +21,8 @@ import { ClinicalStorageService } from '../clinical/clinical-storage.service';
 import { SignDocumentDto, UpdateDocumentMetaDto } from './dto/document.dto';
 import { FillSgsstDto } from './dto/fill-sgsst.dto';
 import { FillTrainingActaDto } from './dto/fill-training-acta.dto';
+import { HabilitationPackImportService } from './habilitation-pack-import.service';
+import { PdfBrandService } from './pdf-brand.service';
 import { SgsstFillPdfService } from './sgsst-fill-pdf.service';
 
 export type ComplianceStatus = 'GREEN' | 'YELLOW' | 'RED' | 'OPTIONAL';
@@ -146,6 +148,8 @@ export class DocumentsService {
     private readonly prisma: PrismaService,
     private readonly storage: ClinicalStorageService,
     private readonly sgsstFillPdf: SgsstFillPdfService,
+    private readonly packImport: HabilitationPackImportService,
+    private readonly pdfBrand: PdfBrandService,
   ) {}
 
   private requireClinicId(user: User) {
@@ -457,6 +461,7 @@ export class DocumentsService {
 
   async overview(user: User, pillar?: DocumentPillar, clinicIdParam?: string) {
     const clinicId = this.clinicScope(user, clinicIdParam);
+    await this.packImport.importForClinic(clinicId).catch(() => undefined);
     const now = new Date();
 
     const requirements = await this.prisma.documentRequirement.findMany({
@@ -918,6 +923,8 @@ export class DocumentsService {
     try {
       pdfBuffer = await this.sgsstFillPdf.build({
         clinicName: requirement.clinic.name,
+        professionalName: user.fullName,
+        professionalCard: user.professionalCard,
         documentTitle: requirement.title,
         documentCode: requirement.code,
         fecha: formData.fecha,
@@ -1217,14 +1224,20 @@ export class DocumentsService {
     if (!file) throw new NotFoundException('Documento no encontrado');
 
     const buffer = await this.storage.readBuffer(file.storageKey);
+    const brand = await this.pdfBrand.resolveBrand(user, clinicId);
+    const isPdf =
+      file.mimeType === 'application/pdf' ||
+      file.originalName.toLowerCase().endsWith('.pdf');
+    const output = isPdf ? await this.pdfBrand.brandPdf(buffer, brand) : buffer;
 
     await this.recordAudit(clinicId, user, AuditAction.VIEW, file.id, context, {
       requirementCode: file.requirement.code,
       originalName: file.originalName,
       version: file.version,
+      branded: isPdf,
     });
 
-    return new StreamableFile(buffer, {
+    return new StreamableFile(output, {
       type: file.mimeType,
       disposition: `inline; filename="${file.originalName.replace(/"/g, '')}"`,
     });
@@ -1255,6 +1268,9 @@ export class DocumentsService {
       convertToHtml: (input: { buffer: Buffer }) => Promise<{ value: string }>;
     };
     const { value } = await mammoth.convertToHtml({ buffer });
+    const brand = await this.pdfBrand.resolveBrand(user, clinicId);
+    const filled = this.pdfBrand.fillProfessionalPlaceholders(value, brand);
+    const html = `${this.pdfBrand.bannerHtml(brand)}${filled}`;
 
     await this.recordAudit(clinicId, user, AuditAction.VIEW, file.id, context, {
       requirementCode: file.requirement.code,
@@ -1266,7 +1282,7 @@ export class DocumentsService {
       fileId: file.id,
       originalName: file.originalName,
       version: file.version,
-      html: value,
+      html,
     };
   }
 

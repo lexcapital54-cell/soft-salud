@@ -27,6 +27,8 @@ export type SgsstFillSignature = {
 
 export type SgsstFillPdfInput = {
   clinicName: string;
+  professionalName?: string | null;
+  professionalCard?: string | null;
   documentTitle: string;
   documentCode: string;
   fecha: string;
@@ -65,17 +67,80 @@ export class SgsstFillPdfService {
       margin: [0, 2, 0, 10],
     });
 
+    const professionalLine = [
+      input.professionalName?.trim(),
+      input.professionalCard?.trim()
+        ? `TP ${input.professionalCard.trim()}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+
     const content: Content[] = [
+      {
+        columns: [
+          {
+            width: 44,
+            canvas: [
+              {
+                type: 'rect',
+                x: 0,
+                y: 0,
+                w: 40,
+                h: 40,
+                r: 6,
+                color: '#0d7377',
+              },
+              {
+                type: 'rect',
+                x: 17,
+                y: 8,
+                w: 6,
+                h: 24,
+                color: '#ffffff',
+              },
+              {
+                type: 'rect',
+                x: 8,
+                y: 17,
+                w: 24,
+                h: 6,
+                color: '#ffffff',
+              },
+            ],
+          },
+          {
+            width: '*',
+            stack: [
+              {
+                text: 'HABILISALUD',
+                fontSize: 8,
+                bold: true,
+                color: '#0d7377',
+                characterSpacing: 1.2,
+              },
+              {
+                text: input.clinicName,
+                fontSize: 12,
+                bold: true,
+                color: '#003d4c',
+                margin: [0, 2, 0, 0],
+              },
+              {
+                text: professionalLine || 'Profesional responsable',
+                fontSize: 9,
+                color: '#47656b',
+              },
+            ],
+          },
+        ],
+        columnGap: 10,
+        margin: [0, 0, 0, 16],
+      },
       {
         text: input.documentTitle.toUpperCase(),
         style: 'title',
         alignment: 'center',
-        margin: [0, 0, 0, 4],
-      },
-      {
-        text: input.clinicName,
-        alignment: 'center',
-        color: '#47656b',
         margin: [0, 0, 0, 4],
       },
       {
@@ -179,6 +244,12 @@ export class SgsstFillPdfService {
     const docDefinition: TDocumentDefinitions = {
       pageSize: 'LETTER',
       pageMargins: [48, 48, 48, 48],
+      info: {
+        title: input.documentTitle,
+        author: input.professionalName || input.clinicName,
+        subject: 'HABILISALUD-FILLED',
+        creator: 'HABILISALUD',
+      },
       content,
       styles: {
         title: { fontSize: 13, bold: true, color: '#003d4c' },

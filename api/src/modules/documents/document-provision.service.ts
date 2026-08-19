@@ -4,12 +4,16 @@ import { seedDocumentRequirementsForClinic } from '../../../prisma/seed/document
 import { seedSgsstRequirementsForClinic } from '../../../prisma/seed/sgsst-requirements.seed';
 import { DashboardType } from '../../common/enums';
 import { PrismaService } from '../../prisma/prisma.module';
+import { HabilitationPackImportService } from './habilitation-pack-import.service';
 
 @Injectable()
 export class DocumentProvisionService {
   private readonly logger = new Logger(DocumentProvisionService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly packImport: HabilitationPackImportService,
+  ) {}
 
   async ensureForClinic(clinicId: string, dashboardType: string | null) {
     if (dashboardType !== DashboardType.CLINICAL_HISTORY_WITH_DOCS) {
@@ -32,6 +36,17 @@ export class DocumentProvisionService {
     this.logger.log(
       `Gestión documental lista para ${clinicId}: ${excel.upserted} requisitos de habilitación + ${sgsst.upserted} SG-SST`,
     );
+
+    try {
+      await this.packImport.importForClinic(clinicId);
+    } catch (error) {
+      this.logger.warn(
+        `No se importó el paquete PDF de psicología para ${clinicId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+
     return { skipped: false as const, excel, sgsst };
   }
 }

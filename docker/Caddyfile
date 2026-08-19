@@ -5,7 +5,11 @@
 
 	# API Nest (prefijo global /api ya incluido en Nest)
 	handle /api* {
-		reverse_proxy api:3000
+		reverse_proxy api:3000 {
+			transport http {
+				read_timeout 120s
+			}
+		}
 	}
 
 	# SPA Angular

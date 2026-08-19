@@ -14,6 +14,7 @@ import SignaturePad from 'signature_pad';
 import { WEBSITE_URL } from '../api.config';
 import { AdminApiService } from '../admin-api.service';
 import { AuthService } from '../auth.service';
+import { ClinicalApiService } from '../clinical/clinical-api.service';
 import { Clinic } from '../models';
 import { DocumentsApiService } from './documents-api.service';
 import {
@@ -61,6 +62,7 @@ function describeError(error: unknown): string {
 export class DocumentsDashboard {
   private readonly api = inject(DocumentsApiService);
   private readonly adminApi = inject(AdminApiService);
+  private readonly clinicalApi = inject(ClinicalApiService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -739,14 +741,35 @@ export class DocumentsDashboard {
       objetivo: '',
       contenido: '',
       nombre1: me,
-      nombre2: '',
-      nombre3: '',
+      nombre2: training ? '' : me,
+      nombre3: training ? '' : me,
       firma1: null,
       firma2: null,
       firma3: null,
     };
     this.fillOpen.set(true);
     this.error.set('');
+    this.clinicalApi.getMySignature().subscribe({
+      next: (sig) => {
+        if (this.fillRequirementId() !== req.id) return;
+        const name = sig.professionalName?.trim() || me;
+        const stamp = sig.signatureBase64;
+        this.fillModel = {
+          ...this.fillModel,
+          nombre1: this.fillModel.nombre1 || name,
+          nombre2: training
+            ? this.fillModel.nombre2
+            : this.fillModel.nombre2 || name,
+          nombre3: training
+            ? this.fillModel.nombre3
+            : this.fillModel.nombre3 || name,
+          firma1: stamp || this.fillModel.firma1,
+          firma2: training ? this.fillModel.firma2 : stamp || this.fillModel.firma2,
+          firma3: training ? this.fillModel.firma3 : stamp || this.fillModel.firma3,
+        };
+      },
+      error: () => undefined,
+    });
   }
 
   closeFillSgsst() {

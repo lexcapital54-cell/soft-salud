@@ -23,10 +23,12 @@ services:
       DATABASE_URL: postgresql://postgres:root@host.docker.internal:5432/habilisalud?schema=public
       PORT: "3000"
       STORAGE_ROOT: /app/storage
+      HABILITATION_PACK_PATH: /app/habilitation-pack
       # Colombia (sin DST). Evita que la agenda oculte citas de la tarde.
       TZ: America/Bogota
     volumes:
       - ./api/storage:/app/storage
+      - "./DOCUMENOS PDF PSICOLOGIA:/app/habilitation-pack:ro"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
