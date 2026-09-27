@@ -1026,11 +1026,13 @@
               </p>
             }
           </div>
-          @if (attendanceMetaDisabled() && !isLocked()) {
+          @if (!canEditAttendanceMeta() && canWrite()) {
             <p class="muted small">Seleccione un paciente para editar modalidad y datos RIPS.</p>
-          } @else if (isLocked()) {
+          } @else if (isLocked() && canWrite()) {
             <p class="muted small">
-              Historia sellada: estos datos quedan de referencia. La modalidad ya no se modifica.
+              Historia sellada: la <strong>fecha de digitación</strong> y la
+              <strong>modalidad</strong> se pueden corregir; cada cambio se guarda al instante y
+              queda en auditoría.
             </p>
           }
         </section>
