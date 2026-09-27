@@ -1,14 +1,19 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
@@ -40,6 +45,39 @@ export class PatientsController {
     @Query('to') to?: string,
   ) {
     return this.patientsService.list(req.user, q, { from, to });
+  }
+
+  @Get(':id/photo')
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.HEALTH_PROFESSIONAL,
+    UserRole.RECEPTIONIST,
+    UserRole.AUDITOR,
+  )
+  getPhoto(@Req() req: { user: User }, @Param('id') id: string) {
+    return this.patientsService.getPhoto(req.user, id);
+  }
+
+  @Post(':id/photo')
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 8 * 1024 * 1024 },
+    }),
+  )
+  uploadPhoto(
+    @Req() req: { user: User },
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.patientsService.uploadPhoto(req.user, id, file);
+  }
+
+  @Delete(':id/photo')
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  removePhoto(@Req() req: { user: User }, @Param('id') id: string) {
+    return this.patientsService.removePhoto(req.user, id);
   }
 
   @Get(':id')
@@ -88,5 +126,11 @@ export class PatientsController {
     @Body() dto: UpdatePatientDto,
   ) {
     return this.patientsService.update(req.user, id, dto);
+  }
+
+  @Post(':id/therapeutic-frame')
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
+  sendTherapeuticFrame(@Req() req: { user: User }, @Param('id') id: string) {
+    return this.patientsService.sendTherapeuticFrame(req.user, id);
   }
 }

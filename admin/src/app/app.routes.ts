@@ -3,6 +3,7 @@ import { AdminDashboard } from './admin-dashboard/admin-dashboard';
 import {
   authGuard,
   auditorGuard,
+  agendaOnlyGuard,
   clinicStaffGuard,
   clinicalWriteGuard,
   documentsReadGuard,
@@ -10,11 +11,16 @@ import {
   superAdminGuard,
 } from './auth.guard';
 import { TodayAppointmentsDashboard } from './agenda/today-appointments';
-import { ClinicalHistory } from './clinical/clinical-history';
+import { HceExport } from './clinical/hce-export';
+import { HceWorkspace } from './clinical/hce-workspace';
 import { PatientsDirectory } from './clinical/patients-directory';
 import { SivigilaAudit } from './clinical/sivigila-audit';
 import { ClinicHome } from './clinic-home/clinic-home';
+import { ClinicSettings } from './clinic-settings/clinic-settings';
 import { DocumentsDashboard } from './documents/documents-dashboard';
+import { BillingDashboard } from './billing/billing-dashboard';
+import { PlatformBillingPage } from './platform-billing/platform-billing';
+import { PasswordAdminPage } from './password-admin/password-admin';
 import { Login } from './login/login';
 
 export const routes: Routes = [
@@ -26,14 +32,31 @@ export const routes: Routes = [
     canActivate: [authGuard, superAdminGuard],
   },
   {
+    path: 'admin/contrasenas',
+    component: PasswordAdminPage,
+    canActivate: [authGuard, superAdminGuard],
+  },
+  {
     path: 'admin/documentos',
     component: DocumentsDashboard,
     canActivate: [authGuard, superAdminGuard],
   },
   {
+    path: 'admin/ingresos',
+    component: PlatformBillingPage,
+    canActivate: [authGuard, superAdminGuard],
+  },
+  // Redirect old users module URL
+  { path: 'admin/usuarios', redirectTo: 'admin/contrasenas', pathMatch: 'full' },
+  {
     path: 'consultorio',
     component: ClinicHome,
     canActivate: [authGuard, clinicStaffGuard],
+  },
+  {
+    path: 'consultorio/configuracion',
+    component: ClinicSettings,
+    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard],
   },
   {
     path: 'consultorio/agenda',
@@ -43,12 +66,17 @@ export const routes: Routes = [
   {
     path: 'consultorio/pacientes',
     component: PatientsDirectory,
-    canActivate: [authGuard, clinicStaffGuard],
+    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard],
   },
   {
     path: 'consultorio/historia-clinica',
-    component: ClinicalHistory,
-    canActivate: [authGuard, clinicStaffGuard],
+    component: HceWorkspace,
+    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard],
+  },
+  {
+    path: 'consultorio/historias-pdf',
+    component: HceExport,
+    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard],
   },
   {
     path: 'consultorio/sivigila',
@@ -58,7 +86,13 @@ export const routes: Routes = [
   {
     path: 'consultorio/documentos',
     component: DocumentsDashboard,
-    canActivate: [authGuard, documentsReadGuard],
+    canActivate: [authGuard, documentsReadGuard, agendaOnlyGuard],
   },
-  { path: '**', redirectTo: 'login' },
+  {
+    path: 'consultorio/recibos',
+    component: BillingDashboard,
+    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard],
+  },
+  // Rutas desconocidas: no mandar al login administrativo por defecto.
+  { path: '**', redirectTo: 'login', pathMatch: 'full' },
 ];

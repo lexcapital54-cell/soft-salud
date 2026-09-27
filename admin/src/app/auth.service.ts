@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, signal } from '@angular/core';
 import { tap } from 'rxjs';
-import { AuthUser } from './models';
+import { AccessibleClinic, AuthUser } from './models';
 import { API, WEBSITE_URL } from './api.config';
 
 const TOKEN_KEY = 'habilisalud_token';
@@ -28,30 +28,43 @@ export class AuthService {
     const role = this.userSignal()?.role;
     return role === 'ADMIN' || role === 'HEALTH_PROFESSIONAL';
   });
-  /** Solo superadmin habilita, retira y descarga. */
+  /** Solo superadmin: estructura del expediente (asignar, habilitar, descargar). */
   readonly canManageDocuments = computed(() => this.userSignal()?.role === 'SUPER_ADMIN');
   /**
-   * Llenar / firmar / ver el expediente SG-SST:
-   * superadmin + admin del consultorio (mismo flujo de diligenciamiento).
+   * Diligenciar SG-SST: solo SUPER_ADMIN.
    */
-  readonly canFillDocuments = computed(() => {
-    const role = this.userSignal()?.role;
-    return role === 'SUPER_ADMIN' || role === 'ADMIN';
-  });
-  /** Cargar archivos al expediente: superadmin o admin del consultorio. */
+  readonly canFillDocuments = computed(() => this.userSignal()?.role === 'SUPER_ADMIN');
+  /**
+   * Cargar/editar archivos: SUPER_ADMIN en todos los pilares;
+   * ADMIN y profesional del consultorio: Documentación legal, Talento humano,
+   * uso de suelo y concepto sanitario (UI filtra por pilar/código).
+   */
   readonly canUploadDocuments = computed(() => {
     const role = this.userSignal()?.role;
-    return role === 'SUPER_ADMIN' || role === 'ADMIN';
+    return (
+      role === 'SUPER_ADMIN' ||
+      role === 'ADMIN' ||
+      role === 'HEALTH_PROFESSIONAL'
+    );
   });
-  /** Descarga de archivos: solo superadmin (el consultorio solo ve/firma). */
+  /** Descarga de archivos: solo superadmin. */
   readonly canDownloadDocuments = computed(() => this.userSignal()?.role === 'SUPER_ADMIN');
-  /** Contraparte tras sello HABILISALUD (admin o profesional). */
+  /** Contraparte tras sello HABILISALUD (admin o profesional del consultorio). */
   readonly canCountersignDocuments = computed(() => {
     const role = this.userSignal()?.role;
     return role === 'ADMIN' || role === 'HEALTH_PROFESSIONAL';
   });
+  /** CRUD de archivos en Legal / Talento / uso suelo / concepto (admin o profesional). */
+  readonly canClinicDocCrud = computed(() => {
+    const role = this.userSignal()?.role;
+    return (
+      role === 'SUPER_ADMIN' ||
+      role === 'ADMIN' ||
+      role === 'HEALTH_PROFESSIONAL'
+    );
+  });
   readonly canSignDocuments = computed(
-    () => this.canFillDocuments() || this.canCountersignDocuments(),
+    () => this.canManageDocuments() || this.canCountersignDocuments() || this.canClinicDocCrud(),
   );
   /** Recepción incluida: puede mover estados de cita y registrar admisión. */
   readonly canManageAgenda = computed(() => {
@@ -64,6 +77,11 @@ export class AuthService {
   });
   readonly isReceptionist = computed(() => this.userSignal()?.role === 'RECEPTIONIST');
   readonly isAuditor = computed(() => this.userSignal()?.role === 'AUDITOR');
+  /** Admin del consultorio (gestiona accesos multi-sede). */
+  readonly canManageClinicAccess = computed(() => {
+    const role = this.userSignal()?.role;
+    return role === 'ADMIN' || role === 'SUPER_ADMIN';
+  });
 
   constructor(private readonly http: HttpClient) {}
 
@@ -89,6 +107,18 @@ export class AuthService {
     this.userSignal.set(null);
   }
 
+  /** Cierra sesión y abre el login del consultorio (admin / profesional). */
+  logoutToClinicLogin() {
+    this.logout();
+    window.location.replace(`/login-profesional.html?_=${Date.now()}`);
+  }
+
+  /** Cierra sesión y abre el login de superadmin HABILISALUD. */
+  logoutToAdminLogin() {
+    this.logout();
+    window.location.replace(`/login-admin.html?_=${Date.now()}`);
+  }
+
   refreshMe() {
     return this.http.get<AuthUser>(`${API}/auth/me`).pipe(
       tap((user) => {
@@ -96,6 +126,33 @@ export class AuthService {
         this.userSignal.set(user);
       }),
     );
+  }
+
+  listAccessibleClinics() {
+    return this.http.get<AccessibleClinic[]>(`${API}/auth/clinics`);
+  }
+
+  switchClinic(clinicId: string) {
+    return this.http
+      .post<{ accessToken: string; user: AuthUser }>(`${API}/auth/switch-clinic`, {
+        clinicId,
+      })
+      .pipe(
+        tap((res) => {
+          localStorage.setItem(TOKEN_KEY, res.accessToken);
+          localStorage.setItem(USER_KEY, JSON.stringify(res.user));
+          this.userSignal.set(res.user);
+        }),
+      );
+  }
+
+  /** Actualiza campos del usuario en sesión (p. ej. ripsEnabled) sin re-login. */
+  patchSessionUser(partial: Partial<AuthUser>) {
+    const current = this.userSignal();
+    if (!current) return;
+    const next = { ...current, ...partial };
+    localStorage.setItem(USER_KEY, JSON.stringify(next));
+    this.userSignal.set(next);
   }
 
   goToWebsite() {

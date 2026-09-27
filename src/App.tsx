@@ -7,7 +7,7 @@ const HERO_POSTER = '/assets/media/hero-poster.jpg'
 const ALLY_POSTER = '/assets/media/ally-poster.jpg'
 
 const WHATSAPP =
-  'https://wa.me/573177000568?text=Hola%20HABILISALUD%2C%20quiero%20información%20sobre%20habilitación%20e%20interoperabilidad'
+  'https://wa.me/573126639980?text=Hola%20HABILISALUD%2C%20quiero%20información%20sobre%20habilitación%20e%20interoperabilidad'
 const EMAIL = 'mailto:dankojimenez@habilisalud.com'
 const EMAIL_SERVICIO = 'mailto:servicioalcliente@habilisalud.com'
 
@@ -500,7 +500,7 @@ export default function App() {
           </div>
           <p className="mx-auto mt-4 max-w-[1180px] px-1 text-center text-[13px] text-muted sm:text-left">
             También: <a href={EMAIL_SERVICIO} className="font-semibold text-navy">servicioalcliente@habilisalud.com</a>
-            {' · '}Danko Jimenez Londoño · 317 700 0568
+            {' · '}Danko Jimenez Londoño · 312 663 9980
           </p>
         </section>
       </main>

@@ -1,7 +1,7 @@
 <section class="wrap">
   <header class="topbar">
     <div class="header-left">
-      <a [routerLink]="homeLink()">← Volver</a>
+      <a [attr.href]="homeLink()">← Volver</a>
       <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()"
         >HABILISALUD</a
       >
@@ -14,9 +14,11 @@
     <h1>Expediente de habilitación y SG-SST</h1>
     @if (canManage()) {
       <p class="muted">
-        Modo <strong>superadministrador</strong>: habilita, carga y firma primero
-        (sello HABILISALUD). Luego el administrador del consultorio debe firmar la
-        contraparte.
+        Modo <strong>superadministrador</strong>: puede
+        <strong>asignar, cargar, modificar y eliminar</strong> documentos.
+        La firma HABILISALUD aplica <strong>solo en SG-SST</strong>; en el resto
+        del expediente firma el profesional del consultorio (perfil y firma de
+        su historia clínica en «Aprobó»).
       </p>
       @if (clinics().length) {
         <label class="clinic-pick">
@@ -31,72 +33,323 @@
           </select>
         </label>
         <div class="bulk-actions">
+          <button type="button" class="primary" (click)="openAssignPanel()">
+            Asignar documentos
+          </button>
           <button type="button" class="primary" (click)="setAllEnabled(true)">
             Habilitar todos
           </button>
           <button type="button" class="ghost" (click)="setAllEnabled(false)">
             Deshabilitar todos
           </button>
+          <button type="button" class="ghost" (click)="clearClinicDocs()">
+            Vaciar expediente
+          </button>
+          <button type="button" class="primary" (click)="replicateToSameSpecialty()">
+            Replicar a misma especialidad
+          </button>
+          <button type="button" class="primary" (click)="openMasterPackPanel()">
+            Subir carpeta maestra
+          </button>
         </div>
+
+        @if (masterPackOpen()) {
+          <section class="assign-panel master-pack-panel">
+            <div class="assign-head">
+              <div>
+                <h2>Subir carpeta maestra</h2>
+                <p class="muted small">
+                  Opción aparte de replicar: cargue una carpeta con subcarpetas
+                  (o un ZIP) con toda la documentación. Se mapea a los requisitos
+                  del expediente del consultorio destino (existente o nuevo).
+                </p>
+              </div>
+              <button type="button" class="ghost" (click)="closeMasterPackPanel()">
+                Cerrar
+              </button>
+            </div>
+
+            <div class="master-pack-targets">
+              <label class="master-radio">
+                <input
+                  type="radio"
+                  name="masterTarget"
+                  [checked]="masterPackTarget() === 'existing'"
+                  (change)="masterPackTarget.set('existing')"
+                />
+                Consultorio ya creado
+                <span class="muted small">
+                  ({{ selectedClinicName() || 'seleccione arriba' }})
+                </span>
+              </label>
+              <label class="master-radio">
+                <input
+                  type="radio"
+                  name="masterTarget"
+                  [checked]="masterPackTarget() === 'new'"
+                  (change)="masterPackTarget.set('new')"
+                />
+                Crear consultorio nuevo e importar
+              </label>
+            </div>
+
+            @if (masterPackTarget() === 'new') {
+              <div class="create-req-grid master-new-clinic">
+                <label>
+                  Nombre del consultorio
+                  <input [(ngModel)]="masterPackNew.name" placeholder="Ej. Consultorio Norte" />
+                </label>
+                <label>
+                  Especialidad
+                  <select [(ngModel)]="masterPackNew.specialty">
+                    @for (s of specialties; track s[0]) {
+                      <option [value]="s[0]">{{ s[1] }}</option>
+                    }
+                  </select>
+                </label>
+                <label>
+                  Dirección
+                  <input [(ngModel)]="masterPackNew.address" />
+                </label>
+                <label>
+                  Teléfono
+                  <input [(ngModel)]="masterPackNew.phone" />
+                </label>
+                <label>
+                  Admin (opcional) — nombre
+                  <input [(ngModel)]="masterPackNew.adminFullName" />
+                </label>
+                <label>
+                  Admin — correo
+                  <input type="email" [(ngModel)]="masterPackNew.adminEmail" />
+                </label>
+                <label class="full">
+                  Admin — contraseña (mín. 8)
+                  <input type="password" [(ngModel)]="masterPackNew.adminPassword" />
+                </label>
+              </div>
+            }
+
+            <div class="master-pack-upload">
+              <label class="upload folder-pick">
+                Elegir carpeta con subcarpetas
+                <input
+                  type="file"
+                  hidden
+                  multiple
+                  webkitdirectory
+                  directory
+                  (change)="onMasterPackFolderPick($event)"
+                />
+              </label>
+              <label class="upload ghost-upload">
+                O subir ZIP
+                <input
+                  type="file"
+                  hidden
+                  accept=".zip,application/zip"
+                  (change)="onMasterPackZipPick($event)"
+                />
+              </label>
+              <p class="muted small" style="margin: 0; flex: 1 1 100%">
+                @if (masterPackFileCount() === 0) {
+                  Estructura esperada: carpetas tipo
+                  <code>1. TALENTO HUMANO</code>,
+                  <code>SSST PSICOLOGIA</code>, etc., con PDF/DOCX dentro.
+                } @else if (masterPackMode() === 'zip') {
+                  ZIP listo ({{ masterPackZipName() }}).
+                } @else {
+                  {{ masterPackFileCount() }} archivo(s) de la carpeta listos para importar.
+                }
+              </p>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="masterPackImporting() || masterPackFileCount() === 0"
+                (click)="submitMasterPack()"
+              >
+                {{
+                  masterPackImporting()
+                    ? 'Importando…'
+                    : masterPackTarget() === 'new'
+                      ? 'Crear e importar carpeta maestra'
+                      : 'Importar carpeta maestra'
+                }}
+              </button>
+            </div>
+          </section>
+        }
+
+        @if (assignOpen()) {
+          <section class="assign-panel">
+            <div class="assign-head">
+              <div>
+                <h2>Asignar documentos a {{ selectedClinicName() }}</h2>
+                <p class="muted small">
+                  Marque los documentos que este consultorio necesita. Al guardar se
+                  crean/habilitan los seleccionados y se deshabilitan los demás (sin
+                  borrar archivos).
+                </p>
+              </div>
+              <button type="button" class="ghost" (click)="closeAssignPanel()">
+                Cerrar
+              </button>
+            </div>
+
+            <div class="assign-tools">
+              <label>
+                Plantilla / origen
+                <select
+                  [ngModel]="assignSourceClinicId()"
+                  (ngModelChange)="onAssignSourceChange($event)"
+                >
+                  @if (!assignPeerClinics().length) {
+                    <option value="">— Sin plantillas —</option>
+                  }
+                  @for (c of assignPeerClinics(); track c.id) {
+                    <option [value]="c.id">{{ c.name }}</option>
+                  }
+                </select>
+              </label>
+              <label class="assign-search">
+                Buscar
+                <input
+                  [ngModel]="assignQuery()"
+                  (ngModelChange)="assignQuery.set($event)"
+                  placeholder="Título, código o categoría"
+                />
+              </label>
+              <button type="button" class="ghost" (click)="selectAllAssignVisible()">
+                Seleccionar visibles
+              </button>
+              <button type="button" class="ghost" (click)="clearAssignSelection()">
+                Limpiar selección
+              </button>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="assignSaving() || assignLoading()"
+                (click)="saveAssignment()"
+              >
+                {{ assignSaving() ? 'Guardando…' : 'Guardar asignación' }}
+                ({{ assignSelected().size }})
+              </button>
+            </div>
+
+            @if (assignLoading()) {
+              <p class="muted">Cargando catálogo…</p>
+            } @else if (!assignItems().length) {
+              <p class="banner warn">
+                No hay plantilla de documentos. Cree requisitos en un consultorio de la
+                misma especialidad (o use «Agregar requisito») y vuelva a abrir este
+                panel.
+              </p>
+            } @else {
+              <div class="assign-groups">
+                @for (group of assignCatalogGroups(); track group.name) {
+                  <details class="assign-group" open>
+                    <summary>
+                      {{ group.name }}
+                      <span class="muted small">({{ group.items.length }})</span>
+                    </summary>
+                    <ul>
+                      @for (item of group.items; track item.code) {
+                        <li>
+                          <label class="assign-item">
+                            <input
+                              type="checkbox"
+                              [checked]="assignSelected().has(item.code)"
+                              (change)="
+                                toggleAssignCode(
+                                  item.code,
+                                  $any($event.target).checked
+                                )
+                              "
+                            />
+                            <span class="assign-item-text">
+                              <strong>{{ item.title }}</strong>
+                              <span class="muted small">{{ item.code }}</span>
+                              @if (item.alreadyAssigned && item.assignedEnabled) {
+                                <span class="pill ok">Activo</span>
+                              } @else if (item.alreadyAssigned) {
+                                <span class="pill">Deshabilitado</span>
+                              }
+                            </span>
+                          </label>
+                        </li>
+                      }
+                    </ul>
+                  </details>
+                }
+              </div>
+            }
+          </section>
+        }
+
+        <details class="create-req">
+          <summary>Agregar requisito (cargar estructura)</summary>
+          <div class="create-req-grid">
+            <label>
+              Categoría
+              <select [(ngModel)]="newReq.categoryId">
+                <option value="">— Seleccione —</option>
+                @for (cat of categories(); track cat.id) {
+                  <option [value]="cat.id">{{ cat.name }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              Código
+              <input [(ngModel)]="newReq.code" placeholder="FT_PROTOCOLO_X" />
+            </label>
+            <label>
+              Título
+              <input [(ngModel)]="newReq.title" placeholder="Nombre del documento" />
+            </label>
+            <label class="full">
+              Descripción
+              <input [(ngModel)]="newReq.description" />
+            </label>
+            <button type="button" class="primary" (click)="createRequirement()">
+              Crear requisito
+            </button>
+          </div>
+          <p class="muted small">
+            Cree la estructura, cargue los PDF en cada requisito y luego use
+            <strong>Replicar a misma especialidad</strong> para copiarlos a los demás
+            consultorios (p. ej. fisioterapia).
+          </p>
+        </details>
       }
-    } @else if (canFill() || canUpload()) {
+    } @else if (canClinicDocCrud() || canCountersign()) {
       <p class="muted">
-        Como <strong>administrador del consultorio</strong> puede
-        <strong>cargar documentos</strong>, diligenciar
-        (<strong>Llenar y firmar</strong>), ver el PDF y firmar la contraparte cuando
-        HABILISALUD ya haya sellado. No puede descargar archivos del expediente.
+        Como <strong>administrador o profesional del consultorio</strong> puede
+        <strong>cargar y reemplazar</strong> sus archivos de
+        <strong>Documentación legal</strong>, <strong>Talento humano</strong>,
+        <strong>uso de suelo</strong> y <strong>concepto sanitario</strong>.
+        En cada documento: <strong>Elaboró/Revisó = HabiliSalud</strong> y
+        <strong>Aprobó = el profesional de este consultorio</strong> (sin mezclar sedes).
+        Los documentos no quedan pendientes de firma.
       </p>
     } @else {
       <p class="muted">
-        Acceso de <strong>solo lectura</strong>. No puede modificar, firmar, cargar ni
+        Acceso de <strong>solo lectura</strong>. No puede modificar, cargar ni
         descargar estos documentos.
       </p>
     }
   </div>
 
-  @if (canCountersign() && pendingCountersignatures().length) {
-    <aside class="banner warn pending-sign">
-      <h2>Documentos por firmar</h2>
-      <p>
-        HABILISALUD ya firmó {{ pendingCountersignatures().length }} documento(s).
-        Debe registrar su firma de contraparte:
-      </p>
-      <ul>
-        @for (item of pendingCountersignatures(); track item.fileId) {
-          <li>
-            <button type="button" class="linkish" (click)="openPendingCountersign(item)">
-              {{ item.requirementTitle }} · v{{ item.version }}
-            </button>
-            <span class="vmeta">
-              Firmó {{ item.habilisaludSignerName }} ·
-              {{ item.habilisaludSignedAt | date: 'dd/MM/yyyy HH:mm' }}
-            </span>
-          </li>
-        }
-      </ul>
-    </aside>
-  }
-
   @if (canFill() && !canManage() && fillableRequirements().length) {
     <aside class="banner pending-sign">
-      <h2>Llenar y firmar (SG-SST)</h2>
+      <h2>Llenar documentos (SG-SST)</h2>
       <p>
         Tiene {{ fillableRequirements().length }} documento(s) del pilar
         <strong>Seguridad y salud en el trabajo</strong> listos para diligenciar.
-        Abra el pilar SG-SST y use el botón <strong>Llenar y firmar</strong>.
+        Abra el pilar SG-SST y use el botón <strong>Llenar</strong>.
       </p>
       <button type="button" class="primary" (click)="focusSgsstPillar()">
         Ir a SG-SST
       </button>
-    </aside>
-  }
-
-  @if (canManage() && pendingCountersignatures().length) {
-    <aside class="banner ok pending-sign">
-      <p>
-        {{ pendingCountersignatures().length }} documento(s) esperan la firma del
-        administrador del consultorio.
-      </p>
     </aside>
   }
 
@@ -270,10 +523,10 @@
           <strong>{{ data.summary.red }}</strong> sin evidencia / vencidos
         </button>
         <button type="button" class="counter yellow" (click)="setStatusFilter('YELLOW')">
-          <strong>{{ data.summary.yellow }}</strong> por firmar / por vencer
+          <strong>{{ data.summary.yellow }}</strong> por vencer
         </button>
         <button type="button" class="counter green" (click)="setStatusFilter('GREEN')">
-          <strong>{{ data.summary.green }}</strong> firmados
+          <strong>{{ data.summary.green }}</strong> vigentes
         </button>
       </div>
     </div>
@@ -315,7 +568,7 @@
           <span class="dot" [class]="'st-' + pillar.summary.status"></span>
           <span class="pillar-name">{{ pillar.label }}</span>
           <span class="pillar-meta">
-            {{ pillar.summary.green }} firmados · {{ pillar.summary.yellow }} por firmar ·
+            {{ pillar.summary.green }} vigentes · {{ pillar.summary.yellow }} por vencer ·
             {{ pillar.summary.red }} pendientes
           </span>
           <span class="pct">{{ pillar.summary.compliance }}%</span>
@@ -328,6 +581,7 @@
               <h3 class="category">{{ category.name }}</h3>
               <ul class="reqs">
                 @for (req of category.requirements; track req.id) {
+                  @if (canManage() || req.isEnabled !== false) {
                   <li
                     class="req"
                     [class]="'st-' + req.status"
@@ -344,10 +598,7 @@
                         @if (periodicity(req); as period) {
                           <span class="tag">{{ period }}</span>
                         }
-                        @if (req.awaitingClinicSignature) {
-                        <span class="tag warn">Espera firma consultorio</span>
-                      }
-                      @if (req.fillable) {
+                        @if (req.fillable) {
                           <span class="tag soft">Llenable</span>
                         }
                         @if (!req.isMandatory) {
@@ -357,6 +608,9 @@
                       </p>
                       @if (req.latestFile; as file) {
                         <p class="req-file">
+                          @if (req.fileCount > 1) {
+                            {{ req.fileCount }} archivos ·
+                          }
                           v{{ file.version }}
                           @if (file.periodLabel) {
                             · {{ file.periodLabel }}
@@ -376,22 +630,13 @@
                           <span>{{ req.isEnabled !== false ? 'Habilitado' : 'Off' }}</span>
                         </label>
                       }
-                      @if (canFill() && req.fillable) {
+                      @if (canFill() && req.fillable && (canManage() || req.isEnabled !== false)) {
                         <button
                           type="button"
                           class="primary"
                           (click)="openFillSgsst(req)"
                         >
-                          Llenar y firmar
-                        </button>
-                      }
-                      @if (canCountersign() && !canManage() && req.canClinicSign && req.latestFile) {
-                        <button
-                          type="button"
-                          class="primary"
-                          (click)="openViewer(req.latestFile!, req.title)"
-                        >
-                          Firmar contraparte
+                          Llenar
                         </button>
                       }
                       @if (req.latestFile) {
@@ -402,25 +647,74 @@
                       <button type="button" class="ghost" (click)="openDetail(req.id)">
                         Historial ({{ req.fileCount }})
                       </button>
-                      @if (canUpload() && req.isEnabled !== false) {
-                        <label class="upload" [class.busy]="uploading() === req.id">
-                          {{
-                            uploading() === req.id
-                              ? 'Subiendo…'
-                              : req.latestFile
-                                ? 'Nueva versión'
-                                : 'Cargar'
-                          }}
-                          <input
-                            type="file"
-                            hidden
-                            [disabled]="uploading() === req.id"
-                            (change)="onPickFile($event, req.id)"
-                          />
-                        </label>
+
+                      @if (canManage() || (canUpload() && canCrudRequirement(req) && req.isEnabled !== false)) {
+                        <div class="doc-crud" role="group" aria-label="Gestionar archivo">
+                          <label
+                            class="doc-crud__btn doc-crud__btn--load"
+                            [class.is-busy]="uploading() === req.id"
+                            title="Cargar un archivo nuevo (nueva versión)"
+                          >
+                            <span>{{ uploading() === req.id ? 'Subiendo…' : 'Cargar' }}</span>
+                            <input
+                              type="file"
+                              hidden
+                              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
+                              [disabled]="uploading() === req.id"
+                              (change)="onPickFile($event, req.id)"
+                            />
+                          </label>
+                          <label
+                            class="doc-crud__btn doc-crud__btn--replace"
+                            [class.is-disabled]="!req.latestFile || req.latestFile.status === 'RETIRED'"
+                            [class.is-busy]="uploading() === req.id"
+                            [attr.title]="
+                              req.latestFile && req.latestFile.status !== 'RETIRED'
+                                ? 'Reemplazar el documento actual'
+                                : 'Primero cargue un documento'
+                            "
+                          >
+                            <span>Reemplazar</span>
+                            <input
+                              type="file"
+                              hidden
+                              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
+                              [disabled]="
+                                uploading() === req.id ||
+                                !req.latestFile ||
+                                req.latestFile.status === 'RETIRED'
+                              "
+                              (change)="
+                                req.latestFile
+                                  ? onReplaceFile($event, req.id, req.latestFile!.id)
+                                  : null
+                              "
+                            />
+                          </label>
+                          @if (canManage()) {
+                            <button
+                              type="button"
+                              class="doc-crud__btn doc-crud__btn--delete"
+                              [disabled]="
+                                uploading() === req.id ||
+                                !req.latestFile ||
+                                req.latestFile.status === 'RETIRED'
+                              "
+                              [attr.title]="
+                                req.latestFile && req.latestFile.status !== 'RETIRED'
+                                  ? 'Eliminar el documento actual'
+                                  : 'No hay documento para eliminar'
+                              "
+                              (click)="deleteLatestFile(req)"
+                            >
+                              Eliminar
+                            </button>
+                          }
+                        </div>
                       }
                     </div>
                   </li>
+                  }
                 }
               </ul>
             }
@@ -439,8 +733,73 @@
       <h2>{{ info.requirement.title }}</h2>
       <p class="muted">{{ info.requirement.category }} · {{ info.requirement.code }}</p>
       <p class="desc">
-        Historial de versiones. Retirar no borra: la versión queda archivada para auditoría.
+        @if (canManage()) {
+          Gestión de versiones (SUPER_ADMIN). Puede cargar, editar metadatos o
+          eliminar un archivo para reemplazarlo.
+        } @else {
+          Puede cargar o reemplazar el documento vigente de este requisito.
+        }
       </p>
+
+      @if (canCrudRequirement(info.requirement)) {
+        <div class="crud-bar">
+          <p class="muted small" style="margin: 0; flex: 1 1 100%">
+            @if (canManage()) {
+              Documento actual — Cargar, Reemplazar o Eliminar el archivo vigente.
+            } @else {
+              Documento actual — Cargar o Reemplazar el archivo vigente.
+            }
+          </p>
+          <div class="doc-crud" role="group" aria-label="Gestionar archivo actual">
+            <label
+              class="doc-crud__btn doc-crud__btn--load"
+              [class.is-busy]="uploading() === info.requirement.id"
+            >
+              <span>{{ uploading() === info.requirement.id ? 'Subiendo…' : 'Cargar' }}</span>
+              <input
+                type="file"
+                hidden
+                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
+                [disabled]="uploading() === info.requirement.id"
+                (change)="onPickFile($event, info.requirement.id)"
+              />
+            </label>
+            <label
+              class="doc-crud__btn doc-crud__btn--replace"
+              [class.is-disabled]="!latestActiveFile(info)"
+              [class.is-busy]="uploading() === info.requirement.id"
+              title="Reemplazar el documento vigente"
+            >
+              <span>Reemplazar</span>
+              <input
+                type="file"
+                hidden
+                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
+                [disabled]="uploading() === info.requirement.id || !latestActiveFile(info)"
+                (change)="
+                  latestActiveFile(info)
+                    ? onReplaceFile($event, info.requirement.id, latestActiveFile(info)!.id)
+                    : null
+                "
+              />
+            </label>
+            @if (canManage()) {
+              <button
+                type="button"
+                class="doc-crud__btn doc-crud__btn--delete"
+                [disabled]="uploading() === info.requirement.id || !latestActiveFile(info)"
+                title="Eliminar el documento vigente"
+                (click)="deleteFileFromDetail(info)"
+              >
+                Eliminar
+              </button>
+            }
+          </div>
+          <p class="muted small" style="margin: 0; flex: 1 1 100%">
+            Periodo / vencimiento de la barra superior se aplican a la próxima carga.
+          </p>
+        </div>
+      }
 
       <ul class="versions">
         @for (file of info.files; track file.id) {
@@ -459,21 +818,49 @@
                 {{ fileSize(file.sizeBytes) }} · {{ file.uploadedBy || 'Sin responsable' }}
               </p>
               <p class="vmeta">
-                Firmas:
-                @for (role of signRoles(); track role) {
-                  <span class="sig-chip" [class.ok]="hasRole(file, role)">
-                    {{ roleLabels[role] }}
-                  </span>
+                @if (file.signatures.length) {
+                  Firmas:
+                  @for (sig of file.signatures; track sig.id) {
+                    <span class="sig-chip ok">
+                      {{ roleLabels[sig.role] }}: {{ sig.signerName }}
+                    </span>
+                  }
+                } @else {
+                  Sin sello de imagen · vigente en expediente
                 }
               </p>
+              @if (canCrudPillar(info.requirement.pillar) && editingFileId() === file.id) {
+                <div class="meta-edit">
+                  <label>
+                    Periodo
+                    <input type="month" [(ngModel)]="editMeta.periodLabel" />
+                  </label>
+                  <label>
+                    Vence
+                    <input type="date" [(ngModel)]="editMeta.expiresAt" />
+                  </label>
+                  <label class="full">
+                    Notas
+                    <input type="text" [(ngModel)]="editMeta.notes" />
+                  </label>
+                  <div class="meta-edit-actions">
+                    <button type="button" class="primary" (click)="saveFileMeta(file.id)">
+                      Guardar
+                    </button>
+                    <button type="button" class="ghost" (click)="cancelEditFileMeta()">
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              }
             </div>
             <div class="vactions">
               <button
                 type="button"
                 class="primary"
-                (click)="openViewer(file, info.requirement.title)"
+                (click)="openViewer(file, info.requirement.title, info.files)"
               >
-                {{ file.status === 'SIGNED' || file.status === 'RETIRED' ? 'Ver' : (canSign() ? 'Ver / firmar' : 'Ver') }}
+                Ver
               </button>
               @if (canDownload()) {
                 <button
@@ -484,17 +871,35 @@
                   Descargar
                 </button>
               }
-              @if (canManage()) {
-                @if (file.status !== 'RETIRED') {
-                  <button type="button" class="danger" (click)="retireFile(file.id)">
-                    Retirar
+              @if (canCrudRequirement(info.requirement)) {
+                @if (file.status !== 'RETIRED' && editingFileId() !== file.id) {
+                  @if (canManage()) {
+                    <button type="button" class="ghost" (click)="startEditFileMeta(file)">
+                      Editar
+                    </button>
+                  }
+                  <div class="doc-crud" role="group" aria-label="Reemplazar archivo">
+                    <label class="doc-crud__btn doc-crud__btn--replace">
+                      <span>Reemplazar</span>
+                      <input
+                        type="file"
+                        hidden
+                        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
+                        (change)="onReplaceFile($event, info.requirement.id, file.id)"
+                      />
+                    </label>
+                  </div>
+                }
+                @if (canManage()) {
+                  <button type="button" class="danger" (click)="deleteFilePermanent(file.id)">
+                    Eliminar
                   </button>
                 }
               }
             </div>
           </li>
         } @empty {
-          <li class="muted">Sin versiones cargadas.</li>
+          <li class="muted">Sin versiones cargadas. Use «Cargar» arriba para subir el documento.</li>
         }
       </ul>
 
@@ -506,11 +911,11 @@
 @if (fillOpen()) {
   <div class="modal-backdrop fill-backdrop" (click)="closeFillSgsst()">
     <div class="modal fill-modal" (click)="$event.stopPropagation()">
-      <h2>Llenar y firmar — {{ fillRequirementTitle() }}</h2>
+      <h2>Llenar documento — {{ fillRequirementTitle() }}</h2>
       <p class="desc">
         El documento se diligencia con el <strong>nombre del profesional</strong>
-        y su <strong>firma guardada</strong>. Puede ajustar los campos antes de
-        generar el PDF; el histórico se conserva.
+        (Aprobó) y HabiliSalud (Elaboró / Revisó). Puede ajustar los campos antes de
+        generar el PDF; el archivo anterior se reemplaza por completo.
       </p>
 
       <fieldset class="fill-fieldset">
@@ -706,11 +1111,34 @@
 
       <div
         class="viewer-grid no-copy"
+        [class.has-siblings]="viewerSiblings().length > 1"
         (copy)="blockClipboard($event)"
         (cut)="blockClipboard($event)"
         (paste)="blockClipboard($event)"
         (contextmenu)="blockClipboard($event)"
       >
+        @if (viewerSiblings().length > 1) {
+          <aside class="viewer-files" aria-label="Documentos de esta carpeta">
+            <p class="viewer-files-title">Documentos en esta carpeta</p>
+            <ul>
+              @for (sib of viewerSiblings(); track sib.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="viewer-file-btn"
+                    [class.active]="sib.id === file.id"
+                    (click)="selectViewerSibling(sib)"
+                  >
+                    <span class="vf-name">{{ sib.originalName }}</span>
+                    <span class="vf-meta">
+                      v{{ sib.version }} · {{ fileStatusLabel(sib.status) }}
+                    </span>
+                  </button>
+                </li>
+              }
+            </ul>
+          </aside>
+        }
         <div class="preview-pane">
           @if (previewLoading()) {
             <p class="muted">Cargando vista previa…</p>
@@ -738,106 +1166,6 @@
             }
           }
         </div>
-
-        <aside class="sign-pane">
-          <h3>Firmas de aprobación</h3>
-          <p class="muted">
-            Orden: 1) HABILISALUD · 2) Administrador del consultorio. El documento solo
-            queda sellado con ambas firmas.
-          </p>
-          @if (canCountersign() && !canManage() && !file.hasHabilisaludSignature) {
-            <p class="banner warn compact">
-              Puede diligenciar con <strong>Llenar y firmar</strong>. La contraparte
-              del pad solo se habilita cuando HABILISALUD ya haya sellado.
-            </p>
-          }
-          @if (canCountersign() && file.canClinicSign) {
-            <p class="banner ok compact">
-              HABILISALUD ya firmó. Registre su firma de contraparte abajo.
-            </p>
-          }
-          <div class="sign-slots">
-            @for (role of signRoles(); track role) {
-              <div class="sign-slot">
-                <div class="slot-head">
-                  <strong>{{ roleLabels[role] }}</strong>
-                  @if (signatureOf(file, role); as sig) {
-                    <span class="ok-tag">Firmado</span>
-                  } @else if (canSignRole(file, role)) {
-                    <button
-                      type="button"
-                      class="ghost tiny"
-                      [class.active]="activeSignRole() === role"
-                      (click)="selectSignRole(role)"
-                    >
-                      Firmar
-                    </button>
-                  } @else if (role === 'CLINIC_ADMIN' && !file.hasHabilisaludSignature) {
-                    <span class="vmeta">Bloqueado</span>
-                  } @else {
-                    <span class="vmeta">Pendiente</span>
-                  }
-                </div>
-                @if (signatureOf(file, role); as sig) {
-                  <img
-                    class="sig-img"
-                    [src]="sig.signatureBase64"
-                    [alt]="roleLabels[role]"
-                    draggable="false"
-                  />
-                  <p class="vmeta">
-                    {{ sig.signerName }} · {{ sig.signedAt | date: 'dd/MM/yyyy HH:mm' }}
-                  </p>
-                } @else {
-                  <p class="vmeta">Pendiente</p>
-                }
-              </div>
-            }
-          </div>
-
-          @if (canSignFile(file)) {
-            <div class="pad-box">
-              <p class="pad-label">
-                Firma de <strong>{{ roleLabels[activeSignRole()] }}</strong>
-                — dibuje o cargue una imagen
-              </p>
-              <canvas
-                #signPad
-                class="sign-pad"
-                (pointerenter)="ensureSignPad()"
-                (pointerdown)="ensureSignPad()"
-              ></canvas>
-              <div class="pad-actions">
-                <label class="ghost file-btn">
-                  Cargar imagen
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    hidden
-                    (change)="onSignatureImageSelected($event)"
-                  />
-                </label>
-                <button type="button" class="ghost" (click)="clearSignPad()">Limpiar</button>
-                <button
-                  type="button"
-                  class="primary"
-                  [disabled]="signing()"
-                  (click)="submitSignature()"
-                >
-                  {{ signing() ? 'Sellando…' : 'Aceptar y sellar firma' }}
-                </button>
-              </div>
-            </div>
-          } @else if (file.status === 'SIGNED') {
-            <p class="banner ok compact">
-              Versión sellada con ambas firmas. Para corregir, use
-              <strong>Llenar y firmar</strong> o cargue una nueva versión (solo
-              superadmin).
-            </p>
-          } @else if (!canSign()) {
-            <p class="muted">Este expediente es de solo lectura para su rol.</p>
-          }
-        </aside>
       </div>
     </div>
   </div>

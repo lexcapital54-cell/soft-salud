@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import {
   Component,
+  HostListener,
   OnDestroy,
   OnInit,
   computed,
@@ -10,7 +11,9 @@ import {
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { UnsavedWorkService } from '../unsaved-work.service';
 import { AgendaApiService } from './agenda-api.service';
+import { ClinicSwitcher } from '../clinic-switcher';
 import {
   AgendaCell,
   AgendaColumn,
@@ -77,18 +80,45 @@ function buildSlots(): AgendaSlot[] {
   return slots;
 }
 
+function minutesToTime(minutes: number) {
+  const hour = String(Math.floor(minutes / 60)).padStart(2, '0');
+  const minute = String(minutes % 60).padStart(2, '0');
+  return `${hour}:${minute}`;
+}
+
+function timeToMinutes(time: string) {
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + m;
+}
+
+/** Opciones HH:mm cada SLOT_MINUTES entre from y to (inclusive). */
+function buildTimeOptions(fromMinutes: number, toMinutes: number) {
+  const out: string[] = [];
+  for (let m = fromMinutes; m <= toMinutes; m += SLOT_MINUTES) {
+    out.push(minutesToTime(m));
+  }
+  return out;
+}
+
 @Component({
   selector: 'app-today-appointments',
-  imports: [FormsModule, RouterLink, DatePipe],
+  imports: [FormsModule, RouterLink, DatePipe, ClinicSwitcher],
   templateUrl: './today-appointments.html',
   styleUrl: './today-appointments.scss',
 })
 export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
   private readonly api = inject(AgendaApiService);
   private readonly auth = inject(AuthService);
+  private readonly unsaved = inject(UnsavedWorkService);
 
   readonly user = this.auth.user;
   readonly canManage = this.auth.canManageAgenda;
+  readonly isReceptionist = this.auth.isReceptionist;
+  /** Solo doctoras/profesionales bloquean; secretaría recibe aviso. */
+  readonly canBlockAgenda = computed(() => {
+    const role = this.user()?.role;
+    return role === 'ADMIN' || role === 'HEALTH_PROFESSIONAL';
+  });
 
   readonly statusLabels = APPOINTMENT_STATUS_LABELS;
   readonly transitionLabels = TRANSITION_LABELS;
@@ -151,6 +181,22 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
     email: '',
     documentNumber: '',
   };
+
+  /** Panel de bloqueo junto a la fecha (franja o jornada completa). */
+  readonly showDayBlock = signal(false);
+  readonly dayBlockSaving = signal(false);
+  dayBlockScope: 'full' | 'range' = 'full';
+  dayBlockFrom = minutesToTime(DAY_START_MINUTES);
+  dayBlockTo = minutesToTime(DAY_END_MINUTES);
+  dayBlockReason = '';
+  dayBlockProfessionalId = '';
+  readonly dayStartLabel = minutesToTime(DAY_START_MINUTES);
+  readonly dayEndLabel = minutesToTime(DAY_END_MINUTES);
+  readonly blockTimeOptions = buildTimeOptions(DAY_START_MINUTES, DAY_END_MINUTES - SLOT_MINUTES);
+  readonly blockEndTimeOptions = buildTimeOptions(
+    DAY_START_MINUTES + SLOT_MINUTES,
+    DAY_END_MINUTES,
+  );
 
   bookingForm: {
     professionalId: string;
@@ -246,9 +292,8 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
   });
 
   /**
-   * Coloca cada cita en la rejilla CSS. En vista Día se estira según duración
-   * (el backend impide solapes por profesional); en Semana se agrupa por franja
-   * porque varios profesionales pueden coincidir en la misma hora.
+   * Coloca cada cita en la rejilla CSS. Día y semana estiran la celda según
+   * duración, para que un bloqueo (franja u jornada) ocupe todas las horas.
    */
   readonly cells = computed<AgendaCell[]>(() => {
     const columns = this.columns();
@@ -262,6 +307,8 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
       const booked = new Map<number, TodayAppointment[]>();
 
       for (const appt of this.appointments()) {
+        // Un bloqueo liberado deja la franja libre de inmediato.
+        if (appt.eventType === 'BLOQUEO' && appt.status === 'CANCELLED') continue;
         const startsAt = new Date(appt.startsAt);
         if (toDateKey(startsAt) !== column.date) continue;
         if (!byWeek && appt.professional.id !== column.professionalId) continue;
@@ -279,7 +326,7 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
       }
 
       for (const [slotIndex, appts] of booked) {
-        const span = byWeek ? 1 : this.slotSpan(appts[0], slotIndex, slots.length);
+        const span = this.maxSlotSpan(appts, slotIndex, slots.length);
         const reopenUntil = this.reopenUntil(appts, now);
         out.push({
           column: columnIndex + 2,
@@ -331,6 +378,11 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
     let latest: number | null = null;
     for (const appt of appts) {
       if (appt.status !== 'CANCELLED') return null;
+      // Los bloqueos liberan la franja de inmediato; no hay ventana de reagende.
+      if (appt.eventType === 'BLOQUEO') {
+        if (latest === null) latest = now - 1;
+        continue;
+      }
       const until = appt.slotReopenUntil
         ? new Date(appt.slotReopenUntil).getTime()
         : now - 1;
@@ -348,6 +400,11 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
     return Math.min(span, total - slotIndex);
   }
 
+  /** En una celda con varias citas, usa la duración más larga (p. ej. un bloqueo). */
+  private maxSlotSpan(appts: TodayAppointment[], slotIndex: number, total: number) {
+    return Math.max(...appts.map((a) => this.slotSpan(a, slotIndex, total)), 1);
+  }
+
   /** Citas del día visible, en orden, para el panel lateral. */
   readonly dayAgenda = computed(() =>
     [...this.appointments()].sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
@@ -360,10 +417,20 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
       inWaiting: rows.filter((a) => a.status === 'IN_WAITING').length,
       completed: rows.filter((a) => a.status === 'COMPLETED').length,
       pendingHabeas: rows.filter(
-        (a) => !a.habeasDataSigned && a.status !== 'CANCELLED',
+        (a) =>
+          a.eventType !== 'BLOQUEO' &&
+          !a.habeasDataSigned &&
+          a.status !== 'CANCELLED',
       ).length,
     };
   });
+
+  /** Bloqueos activos en el rango visible (día o semana). */
+  readonly agendaBlocks = computed(() =>
+    this.appointments()
+      .filter((a) => a.eventType === 'BLOQUEO' && a.status !== 'CANCELLED')
+      .sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+  );
 
   ngOnInit() {
     this.refresh();
@@ -382,6 +449,26 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     clearInterval(this.clock);
+    this.unsaved.setDirty(false);
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.showBooking() && this.bookingLooksDirty()) {
+      this.unsaved.setDirty(true);
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+
+  private bookingLooksDirty() {
+    return !!(
+      this.selectedPatient() ||
+      this.patientQuery.trim() ||
+      this.newPatient.firstName.trim() ||
+      this.newPatient.lastName.trim() ||
+      this.bookingForm.notes.trim()
+    );
   }
 
   setView(mode: 'grid' | 'list') {
@@ -461,9 +548,131 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
     this.showBooking.set(true);
   }
 
+  setShowDayBlock(on: boolean) {
+    this.showDayBlock.set(on);
+    this.error.set('');
+    if (on) {
+      this.dayBlockProfessionalId = this.defaultProfessionalId();
+      this.dayBlockScope = 'full';
+      this.dayBlockFrom = minutesToTime(DAY_START_MINUTES);
+      this.dayBlockTo = minutesToTime(DAY_END_MINUTES);
+      this.dayBlockReason = '';
+    }
+  }
+
+  blockDateLabel() {
+    return parseDateKey(this.date()).toLocaleDateString('es-CO', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
+  }
+
+  /** Crea un BLOQUEO para la fecha seleccionada (jornada completa o franja). */
+  applyDayBlock() {
+    if (!this.canManage()) return;
+    const reason = this.dayBlockReason.trim();
+    if (!reason) {
+      this.error.set('Indique el motivo del bloqueo.');
+      return;
+    }
+    if (!this.dayBlockProfessionalId) {
+      this.error.set('Seleccione el profesional cuya agenda se bloquea.');
+      return;
+    }
+
+    const dateKey = this.date();
+    let from = this.dayBlockFrom;
+    let to = this.dayBlockTo;
+    if (this.dayBlockScope === 'full') {
+      from = minutesToTime(DAY_START_MINUTES);
+      to = minutesToTime(DAY_END_MINUTES);
+    }
+
+    const fromMin = timeToMinutes(from);
+    const toMin = timeToMinutes(to);
+    if (
+      Number.isNaN(fromMin) ||
+      Number.isNaN(toMin) ||
+      toMin <= fromMin
+    ) {
+      this.error.set('La hora «Hasta» debe ser posterior a «Desde».');
+      return;
+    }
+
+    const startsAt = new Date(`${dateKey}T${from}:00`);
+    const endsAt = new Date(`${dateKey}T${to}:00`);
+    if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
+      this.error.set('Horario inválido.');
+      return;
+    }
+
+    this.dayBlockSaving.set(true);
+    this.error.set('');
+    this.message.set('');
+
+    this.api
+      .create({
+        eventType: 'BLOQUEO',
+        blockReason: reason,
+        professionalId: this.dayBlockProfessionalId,
+        startsAt: startsAt.toISOString(),
+        endsAt: endsAt.toISOString(),
+        modality: 'IN_PERSON',
+      })
+      .subscribe({
+        next: (created) => {
+          this.dayBlockSaving.set(false);
+          this.showDayBlock.set(false);
+          this.message.set(
+            this.dayBlockScope === 'full'
+              ? `Jornada bloqueada: ${created.blockReason}.`
+              : `Franja ${from}–${to} bloqueada: ${created.blockReason}.`,
+          );
+          this.refresh();
+        },
+        error: (err) => {
+          this.dayBlockSaving.set(false);
+          this.error.set(
+            err?.error?.code === 'SLOT_TAKEN'
+              ? err.error.message
+              : this.describeError(err, 'No se pudo crear el bloqueo.'),
+          );
+        },
+      });
+  }
+
+  isBlock(appt: TodayAppointment) {
+    return appt.eventType === 'BLOQUEO';
+  }
+
+  blockRangeLabel(appt: TodayAppointment): string {
+    const start = new Date(appt.startsAt);
+    const end = new Date(appt.endsAt);
+    const day = start.toLocaleDateString('es-CO', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    });
+    const from = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
+    const to = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+    const fullDay =
+      start.getHours() * 60 + start.getMinutes() <= DAY_START_MINUTES &&
+      end.getHours() * 60 + end.getMinutes() >= DAY_END_MINUTES;
+    return fullDay ? `${day} · jornada completa` : `${day} · ${from}–${to}`;
+  }
+
+  appointmentTitle(appt: TodayAppointment) {
+    if (this.isBlock(appt)) {
+      return appt.blockReason?.trim() || 'Bloqueo de agenda';
+    }
+    return appt.patient?.fullName || 'Cita';
+  }
+
   closeBooking() {
     this.showBooking.set(false);
     this.booking.set(false);
+    this.unsaved.setDirty(false);
   }
 
   setPatientTab(tab: 'search' | 'new') {
@@ -607,6 +816,7 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
   createAppointment() {
     const form = this.bookingForm;
     const patient = this.selectedPatient();
+
     if (!patient) {
       this.error.set('Seleccione o registre un paciente.');
       return;
@@ -628,6 +838,7 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
 
     this.api
       .create({
+        eventType: 'CITA',
         patientId: patient.id,
         professionalId: form.professionalId,
         startsAt: startsAt.toISOString(),
@@ -642,7 +853,9 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
         next: (created) => {
           this.booking.set(false);
           this.showBooking.set(false);
-          this.message.set(`Cita agendada para ${created.patient.fullName}.`);
+          this.message.set(
+            `Cita agendada para ${created.patient?.fullName || 'el paciente'}.`,
+          );
           this.refresh();
         },
         error: (err) => {
@@ -654,6 +867,22 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
           );
         },
       });
+  }
+
+  /** Tras cambiar de sede: recarga profesionales y citas del consultorio activo. */
+  onClinicSwitched() {
+    this.selected.set(null);
+    if (this.canManage()) {
+      this.api.listProfessionals().subscribe({
+        next: (rows) => this.professionals.set(rows),
+        error: () => this.professionals.set([]),
+      });
+    }
+    this.refresh();
+  }
+
+  logout() {
+    this.auth.logoutToClinicLogin();
   }
 
   refresh() {
@@ -722,9 +951,11 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
         this.busyId.set(null);
         this.applyUpdate(updated);
         this.message.set(
-          target === 'IN_WAITING' && updated.encounterId
-            ? 'Paciente en sala de espera. Borrador de historia clínica creado.'
-            : `Cita actualizada a ${this.statusLabels[target]}.`,
+          this.isBlock(appointment) && target === 'CANCELLED'
+            ? 'Franja liberada: el bloqueo quedó cancelado.'
+            : target === 'IN_WAITING' && updated.encounterId
+              ? 'Paciente en sala de espera. Borrador de historia clínica creado.'
+              : `Cita actualizada a ${this.statusLabels[target]}.`,
         );
         onDone?.();
       },
@@ -766,7 +997,7 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
     this.closeCancel();
 
     this.applyStatus(appointment, 'CANCELLED', reason || undefined, () => {
-      if (!reschedule) return;
+      if (!reschedule || this.isBlock(appointment) || !appointment.patient) return;
       this.startReschedule(appointment);
       this.message.set(
         `Cita cancelada. Elija la nueva fecha y hora para ${appointment.patient.fullName}.`,
@@ -776,6 +1007,11 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
 
   /** Deja el modal listo con el mismo paciente para darle una hora nueva. */
   startReschedule(appointment: TodayAppointment) {
+    if (this.isBlock(appointment) || !appointment.patient) {
+      this.error.set('Un bloqueo no se reagenda: libérelo y cree uno nuevo si hace falta.');
+      return;
+    }
+    const patient = appointment.patient;
     const startsAt = new Date(appointment.startsAt);
     const hour = String(startsAt.getHours()).padStart(2, '0');
     const minute = String(startsAt.getMinutes()).padStart(2, '0');
@@ -792,21 +1028,23 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
     this.bookingDate.set(toDateKey(startsAt));
     this.openBooking();
     this.selectedPatient.set({
-      id: appointment.patient.id,
-      firstName: appointment.patient.firstName,
-      lastName: appointment.patient.lastName,
-      documentType: appointment.patient.documentType,
-      documentNumber: appointment.patient.documentNumber,
-      phone: appointment.patient.phone,
+      id: patient.id,
+      firstName: patient.firstName,
+      lastName: patient.lastName,
+      documentType: patient.documentType,
+      documentNumber: patient.documentNumber,
+      phone: patient.phone,
       email: null,
-      profileComplete: appointment.patient.profileComplete,
+      profileComplete: patient.profileComplete,
     });
-    this.message.set(
-      `Elija la nueva fecha y hora para ${appointment.patient.fullName}.`,
-    );
+    this.message.set(`Elija la nueva fecha y hora para ${patient.fullName}.`);
   }
 
   openAdmission(appointment: TodayAppointment) {
+    if (this.isBlock(appointment) || !appointment.patient) {
+      this.error.set('Un bloqueo no requiere admisión de paciente.');
+      return;
+    }
     this.admissionFor.set(appointment);
     this.admissionName = appointment.patient.fullName;
     this.admissionDocument = appointment.patient.documentNumber ?? '';

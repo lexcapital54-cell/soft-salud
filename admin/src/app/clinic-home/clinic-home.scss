@@ -29,6 +29,22 @@ header {
   gap: 12px;
 }
 
+.header-link {
+  border: 1px solid #003d4c;
+  background: #003d4c;
+  color: #fff;
+  border-radius: 30px;
+  padding: 12px 18px;
+  font: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.header-link:hover {
+  background: #0d7377;
+  border-color: #0d7377;
+}
+
 .user-chip {
   text-align: right;
 }
@@ -84,6 +100,45 @@ h1 {
   font-weight: 500;
 }
 
+.rips-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 22px 0 8px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: #003d4c;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 12px 28px rgba(0, 61, 76, 0.28);
+}
+
+.rips-banner strong {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.rips-banner span {
+  flex: 1 1 220px;
+  opacity: 0.9;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.rips-banner em {
+  font-style: normal;
+  font-weight: 600;
+  background: #fff;
+  color: #003d4c;
+  border-radius: 999px;
+  padding: 8px 14px;
+}
+
+.rips-banner:hover {
+  background: #0d7377;
+}
+
 .muted {
   color: #8f8f8f;
   line-height: 1.4;
@@ -94,6 +149,21 @@ h1 {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
   margin-top: 28px;
+}
+
+.modules-rips {
+  margin-top: 20px;
+  margin-bottom: 8px;
+}
+
+.module-settings {
+  border: 2px solid #0d7377 !important;
+  background: #e8f6f6 !important;
+}
+
+.module-settings h2 {
+  color: #003d4c;
+  font-weight: 600;
 }
 
 .module {
@@ -151,6 +221,10 @@ h1 {
   margin: 0;
   color: #8f8f8f;
   line-height: 1.4;
+}
+
+.module-settings .cta {
+  font-weight: 600;
 }
 
 @media (max-width: 720px) {

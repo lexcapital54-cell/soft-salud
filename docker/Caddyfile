@@ -1,26 +1,82 @@
 # Sirve el admin Angular y reenvía /api al contenedor Nest.
-# Cloudflare Tunnel (o el puerto publicado) apunta aquí.
 :80 {
-	encode gzip
+	encode gzip zstd
 
-	# API Nest (prefijo global /api ya incluido en Nest)
 	handle /api* {
+		header {
+			Cache-Control "no-store"
+			CDN-Cache-Control "no-store"
+			Cloudflare-CDN-Cache-Control "no-store"
+		}
+		request_body {
+			max_size 200MB
+		}
 		reverse_proxy api:3000 {
 			transport http {
-				read_timeout 120s
+				read_timeout 300s
+				write_timeout 300s
 			}
 		}
 	}
 
-	# SPA Angular
-	handle {
+	handle /consultorio.html {
 		root * /srv
-		try_files {path} /index.html
+		header Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+		file_server
+	}
+
+	handle /login-profesional.html {
+		root * /srv
+		header Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+		file_server
+	}
+
+	handle /login-admin.html {
+		root * /srv
+		header Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+		file_server
+	}
+
+	handle /firmar-consentimiento.html {
+		root * /srv
+		header Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+		file_server
+	}
+
+	@consultorioHome {
+		path /consultorio
+	}
+	redir @consultorioHome /consultorio.html 302
+
+	@adminLogin {
+		path /login
+		query tipo=admin
+	}
+	redir @adminLogin /login-admin.html 302
+
+	@clinicLogin {
+		path /login /login/
+	}
+	redir @clinicLogin /login-profesional.html 302
+
+	# Assets versionados: cachear 1 año (solo estas rutas).
+	@versionedAssets path /main.js* /styles.css* /favicon.ico
+	handle @versionedAssets {
+		root * /srv
+		header Cache-Control "public, max-age=31536000, immutable"
 		file_server
 	}
 
 	header {
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	handle {
+		root * /srv
+		@html path *.html /index.html
+		header @html Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+		try_files {path} /index.html
+		file_server
 	}
 }

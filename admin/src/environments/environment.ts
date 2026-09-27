@@ -12,4 +12,6 @@ export const environment = {
   apiBase: '/api',
   /** Landing pública (Vite) corriendo en local. */
   websiteUrl: 'http://localhost:5173',
+  /** Si cambia, la app se actualiza sola una vez (sin pedirle al usuario recargar). */
+  buildId: 'dev',
 };

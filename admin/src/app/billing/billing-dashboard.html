@@ -1,0 +1,295 @@
+<header class="top">
+  <div>
+    <a routerLink="/consultorio" class="back">← Consultorio</a>
+    <h1>Recibos de caja</h1>
+    <p class="muted">Ingresos, gastos, paquetes de sesiones y cierre diario.</p>
+  </div>
+  <button type="button" class="ghost" (click)="logout()">Cerrar sesión</button>
+</header>
+
+<nav class="tabs">
+  <button type="button" [class.active]="tab() === 'recibos'" (click)="setTab('recibos')">
+    Recibos
+  </button>
+  <button type="button" [class.active]="tab() === 'nuevo'" (click)="setTab('nuevo')">
+    Nuevo recibo
+  </button>
+  <button type="button" [class.active]="tab() === 'gastos'" (click)="setTab('gastos')">
+    Gastos
+  </button>
+  <button type="button" [class.active]="tab() === 'paquetes'" (click)="setTab('paquetes')">
+    Paquetes
+  </button>
+  <button type="button" [class.active]="tab() === 'cierre'" (click)="setTab('cierre')">
+    Cierre diario
+  </button>
+</nav>
+
+@if (error()) {
+  <p class="banner err">{{ error() }}</p>
+}
+@if (notice()) {
+  <p class="banner ok">{{ notice() }}</p>
+}
+
+@if (tab() === 'recibos') {
+  <section class="card">
+    <h2>Últimos recibos</h2>
+    @if (loading()) {
+      <p class="muted">Cargando…</p>
+    } @else if (!receipts().length) {
+      <p class="muted">Aún no hay recibos. Cree uno en la pestaña «Nuevo recibo».</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Número</th>
+            <th>Fecha</th>
+            <th>Paciente</th>
+            <th>Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of receipts(); track r.id) {
+            <tr>
+              <td>{{ r.number }}</td>
+              <td>{{ r.issuedAt | date: 'short' }}</td>
+              <td>{{ r.patient.lastName }} {{ r.patient.firstName }}</td>
+              <td>{{ r.total | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+              <td>
+                <button type="button" class="linkish" (click)="openPdf(r.id)">PDF</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+}
+
+@if (tab() === 'nuevo') {
+  <section class="card form-card">
+    <h2>Nuevo recibo de caja</h2>
+    <div class="grid">
+      <label>
+        Paciente
+        <select [(ngModel)]="receiptForm.patientId" (ngModelChange)="onPatientChange()">
+          <option value="">— Seleccione —</option>
+          @for (p of patients(); track p.id) {
+            <option [value]="p.id">{{ patientLabel(p) }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Descripción
+        <input [(ngModel)]="receiptForm.description" />
+      </label>
+      <label>
+        Cantidad
+        <input type="number" min="1" [(ngModel)]="receiptForm.quantity" />
+      </label>
+      <label>
+        Valor unitario (COP)
+        <input type="number" min="0" [(ngModel)]="receiptForm.unitPrice" />
+      </label>
+      <label>
+        Forma de pago
+        <select [(ngModel)]="receiptForm.method">
+          @for (m of methods; track m.value) {
+            <option [value]="m.value">{{ m.label }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Paquete (opcional)
+        <select [(ngModel)]="receiptForm.packageId">
+          <option value="">— Sin paquete —</option>
+          @for (pkg of packages(); track pkg.id) {
+            <option [value]="pkg.id">
+              {{ pkg.name }} ({{ pkg.remaining }} restantes)
+            </option>
+          }
+        </select>
+      </label>
+      <label class="span-2">
+        Notas
+        <input [(ngModel)]="receiptForm.notes" />
+      </label>
+    </div>
+    <button type="button" class="primary" [disabled]="loading()" (click)="createReceipt()">
+      {{ loading() ? 'Guardando…' : 'Emitir recibo' }}
+    </button>
+  </section>
+}
+
+@if (tab() === 'gastos') {
+  <section class="card form-card">
+    <h2>Registrar gasto</h2>
+    <div class="grid">
+      <label>
+        Categoría
+        <input [(ngModel)]="expenseForm.category" />
+      </label>
+      <label>
+        Monto (COP)
+        <input type="number" min="0" [(ngModel)]="expenseForm.amount" />
+      </label>
+      <label>
+        Forma de pago
+        <select [(ngModel)]="expenseForm.method">
+          @for (m of methods; track m.value) {
+            <option [value]="m.value">{{ m.label }}</option>
+          }
+        </select>
+      </label>
+      <label class="span-2">
+        Notas
+        <input [(ngModel)]="expenseForm.notes" />
+      </label>
+    </div>
+    <button type="button" class="primary" [disabled]="loading()" (click)="createExpense()">
+      Guardar gasto
+    </button>
+  </section>
+  <section class="card">
+    <h2>Gastos recientes</h2>
+    @if (!expenses().length) {
+      <p class="muted">Sin gastos registrados.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Categoría</th>
+            <th>Monto</th>
+            <th>Método</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of expenses(); track e.id) {
+            <tr>
+              <td>{{ e.paidAt | date: 'short' }}</td>
+              <td>{{ e.category }}</td>
+              <td>{{ e.amount | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+              <td>{{ e.method }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+}
+
+@if (tab() === 'paquetes') {
+  <section class="card form-card">
+    <h2>Nuevo paquete de sesiones</h2>
+    <div class="grid">
+      <label>
+        Paciente
+        <select [(ngModel)]="packageForm.patientId">
+          <option value="">— Seleccione —</option>
+          @for (p of patients(); track p.id) {
+            <option [value]="p.id">{{ patientLabel(p) }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Nombre
+        <input [(ngModel)]="packageForm.name" />
+      </label>
+      <label>
+        Sesiones
+        <input type="number" min="1" [(ngModel)]="packageForm.totalSessions" />
+      </label>
+      <label>
+        Valor por sesión (COP)
+        <input type="number" min="0" [(ngModel)]="packageForm.unitPrice" />
+      </label>
+      <label>
+        CUPS (opcional)
+        <input [(ngModel)]="packageForm.cupsCode" />
+      </label>
+    </div>
+    <button type="button" class="primary" [disabled]="loading()" (click)="createPackage()">
+      Crear paquete
+    </button>
+  </section>
+  <section class="card">
+    <h2>Paquetes</h2>
+    @if (!packages().length) {
+      <p class="muted">Sin paquetes.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Paciente</th>
+            <th>Nombre</th>
+            <th>Usadas</th>
+            <th>Valor</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (pkg of packages(); track pkg.id) {
+            <tr>
+              <td>{{ pkg.patient.lastName }} {{ pkg.patient.firstName }}</td>
+              <td>{{ pkg.name }}</td>
+              <td>{{ pkg.usedSessions }}/{{ pkg.totalSessions }}</td>
+              <td>{{ pkg.unitPrice | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+              <td>{{ pkg.status }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+}
+
+@if (tab() === 'cierre') {
+  <section class="card form-card">
+    <h2>Cierre diario</h2>
+    <label>
+      Fecha
+      <input type="date" [(ngModel)]="closeDate" (ngModelChange)="reload()" />
+    </label>
+    @if (daily(); as d) {
+      <div class="close-grid">
+        <div>
+          <p class="lbl">Ingresos</p>
+          <p class="val">{{ d.income | currency: 'COP':'symbol-narrow':'1.0-0' }}</p>
+        </div>
+        <div>
+          <p class="lbl">Gastos</p>
+          <p class="val">{{ d.expense | currency: 'COP':'symbol-narrow':'1.0-0' }}</p>
+        </div>
+        <div>
+          <p class="lbl">Neto</p>
+          <p class="val">{{ d.net | currency: 'COP':'symbol-narrow':'1.0-0' }}</p>
+        </div>
+      </div>
+      @if (d.byMethod.length) {
+        <table>
+          <thead>
+            <tr>
+              <th>Método</th>
+              <th>Ingresos</th>
+              <th>Gastos</th>
+              <th>Neto</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of d.byMethod; track m.method) {
+              <tr>
+                <td>{{ m.methodLabel }}</td>
+                <td>{{ m.income | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td>{{ m.expense | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td>{{ m.net | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    }
+  </section>
+}

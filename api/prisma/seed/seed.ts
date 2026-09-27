@@ -81,6 +81,8 @@ async function main() {
   );
   console.log(`  CUPS: ${cupsCount}`);
 
+  // Fisioterapia: catálogos estáticos en physiotherapy-*.catalog.ts (no se mezclan en cie/cups globales).
+
   console.log('→ Sembrando categorías/requisitos desde Excel...');
   console.log(`  Excel: ${excelPath}`);
   const docs = await seedDocumentRequirements(prisma, excelPath);
@@ -94,10 +96,10 @@ async function main() {
     `  Categorías: ${sgsst.categories} | Requisitos: ${sgsst.requirements} | Upserts: ${sgsst.upserted}`,
   );
 
-  console.log('→ Sembrando plantillas de consentimiento (Psicología v1)...');
+  console.log('→ Sembrando plantillas de consentimiento (Psicología + Fisioterapia)...');
   const consents = await seedConsents(prisma);
   console.log(
-    `  Plantillas: ${consents.templates} (${consents.specialty} v${consents.version})`,
+    `  Plantillas: ${consents.templates} (v${consents.version})`,
   );
 
   console.log('Seed completado.');

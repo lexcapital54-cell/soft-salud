@@ -13,6 +13,7 @@ const PdfPrinter = require('pdfmake') as new (fonts: Record<string, unknown>) =>
   };
 };
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
+import { ConsentSignerRole } from '@prisma/client';
 import { ClinicalStorageService } from './clinical-storage.service';
 
 export type ConsentPdfInput = {
@@ -39,6 +40,7 @@ export type ConsentPdfInput = {
   professionalName?: string | null;
   professionalCard?: string | null;
   professionalSignatureBase64?: string | null;
+  signerRole?: ConsentSignerRole | string | null;
 };
 
 export type ConsentPdfResult = {
@@ -114,6 +116,17 @@ export class ConsentPdfService {
     ].join('|');
     const contentHash = createHash('sha256').update(hashPayload).digest('hex');
 
+    const signerRoleLabel =
+      input.signerRole === ConsentSignerRole.LEGAL_GUARDIAN
+        ? 'Acudiente / representante legal'
+        : input.signerRole === ConsentSignerRole.ASSENT
+          ? 'Asentimiento del menor'
+          : 'Paciente';
+    const primarySignatureLabel =
+      input.signerRole === ConsentSignerRole.LEGAL_GUARDIAN
+        ? 'Firma acudiente / representante legal'
+        : 'Firma paciente';
+
     const docDefinition: TDocumentDefinitions = {
       pageMargins: [48, 56, 48, 56],
       defaultStyle: {
@@ -186,6 +199,7 @@ export class ConsentPdfService {
                 `${input.patientDocumentType} ${input.patientDocument}`,
               ],
               ['Firmante', input.signerName],
+              ['Rol del firmante', signerRoleLabel],
               ['Documento firmante', input.signerDocument],
               [
                 'Profesional tratante',
@@ -227,7 +241,7 @@ export class ConsentPdfService {
               width: '*',
               stack: [
                 {
-                  text: 'Firma paciente',
+                  text: primarySignatureLabel,
                   style: 'muted',
                   margin: [0, 0, 0, 6],
                 },

@@ -29,7 +29,10 @@ RUN apt-get update \
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY prisma ./prisma
+COPY assets ./assets
 COPY package.json ./
 EXPOSE 3000
 # nest-cli emite en dist/src cuando hay rootDir implícito
-CMD ["node", "dist/src/main.js"]
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+CMD ["/app/docker-entrypoint.sh"]

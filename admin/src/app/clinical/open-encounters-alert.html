@@ -1,0 +1,50 @@
+@if (!loading() && count() > 0) {
+  <section class="open-hce" [class.compact]="mode() === 'compact'">
+    <button type="button" class="open-hce-head" (click)="toggle()">
+      <span class="badge">{{ count() }}</span>
+      <span class="title">
+        @if (count() === 1) {
+          Historia clínica sin cerrar
+        } @else {
+          Historias clínicas sin cerrar
+        }
+      </span>
+      @if (mode() === 'full') {
+        <span class="chevron">{{ expanded() ? '▲' : '▼' }}</span>
+      }
+    </button>
+    <p class="open-hce-hint">
+      Puede abrir y guardar cualquiera de estas historias sin cerrar las demás.
+    </p>
+
+    @if (mode() === 'full' && expanded()) {
+      <ul class="open-hce-list">
+        @for (item of items(); track item.encounterId) {
+          <li [class]="urgencyClass(item.daysOpen)">
+            <div class="meta">
+              <strong>{{ item.patientName }}</strong>
+              @if (item.documentNumber) {
+                <span class="doc">{{ item.documentType }} {{ item.documentNumber }}</span>
+              }
+              <span class="dates">
+                Abierta {{ item.createdAt | date: 'dd/MM/yyyy' }}
+                @if (item.daysOpen > 0) {
+                  · hace {{ item.daysOpen }} día{{ item.daysOpen === 1 ? '' : 's' }}
+                } @else {
+                  · hoy
+                }
+              </span>
+            </div>
+            <a
+              class="link"
+              routerLink="/consultorio/historia-clinica"
+              [queryParams]="{ patientId: item.patientId }"
+            >
+              Abrir HCE →
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}

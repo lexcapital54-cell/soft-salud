@@ -15,7 +15,7 @@ import { WEBSITE_URL } from '../api.config';
 import { AdminApiService } from '../admin-api.service';
 import { AuthService } from '../auth.service';
 import { ClinicalApiService } from '../clinical/clinical-api.service';
-import { Clinic } from '../models';
+import { Clinic, ClinicSpecialty, DashboardType, SPECIALTY_LABELS } from '../models';
 import { DocumentsApiService } from './documents-api.service';
 import {
   ComplianceStatus,
@@ -40,7 +40,7 @@ const ROLE_LABELS: Record<DocumentSignerRole, string> = {
   CAPACITADOR: 'Firma Capacitador',
   ASISTENTE: 'Firma Asistente / Evaluado',
   HABILISALUD: 'HABILISALUD (superadmin)',
-  CLINIC_ADMIN: 'Administrador del consultorio',
+  CLINIC_ADMIN: 'Profesional del consultorio',
 };
 
 function describeError(error: unknown): string {
@@ -75,14 +75,65 @@ export class DocumentsDashboard {
   readonly canUpload = this.auth.canUploadDocuments;
   readonly canDownload = this.auth.canDownloadDocuments;
   readonly canCountersign = this.auth.canCountersignDocuments;
+  readonly canClinicDocCrud = this.auth.canClinicDocCrud;
   readonly canSign = this.auth.canSignDocuments;
   readonly homeLink = computed(() =>
-    this.auth.isSuperAdmin() ? '/admin' : '/consultorio',
+    this.auth.isSuperAdmin() ? '/admin' : '/consultorio.html',
   );
 
   readonly clinics = signal<Clinic[]>([]);
   readonly selectedClinicId = signal('');
   readonly selectedClinicName = signal('');
+  readonly categories = signal<
+    Array<{ id: string; code: string; name: string; pillar: string; sortOrder: number }>
+  >([]);
+  newReq = { categoryId: '', code: '', title: '', description: '' };
+
+  /** Panel SUPER_ADMIN: asignar documentos del catálogo al consultorio. */
+  readonly assignOpen = signal(false);
+  readonly assignLoading = signal(false);
+  readonly assignSaving = signal(false);
+  readonly assignSourceClinicId = signal('');
+  readonly assignPeerClinics = signal<Array<{ id: string; name: string }>>([]);
+  readonly assignItems = signal<
+    Array<{
+      code: string;
+      title: string;
+      description: string | null;
+      category: { code: string; name: string; sortOrder: number };
+      alreadyAssigned: boolean;
+      assignedEnabled: boolean;
+    }>
+  >([]);
+  readonly assignSelected = signal<Set<string>>(new Set());
+  readonly assignQuery = signal('');
+
+  /** Panel aparte: subir carpeta maestra (ZIP o carpeta con subcarpetas). */
+  readonly masterPackOpen = signal(false);
+  readonly masterPackTarget = signal<'existing' | 'new'>('existing');
+  readonly masterPackImporting = signal(false);
+  readonly masterPackFileCount = signal(0);
+  readonly masterPackMode = signal<'folder' | 'zip'>('folder');
+  readonly specialties = Object.entries(SPECIALTY_LABELS) as [
+    ClinicSpecialty,
+    string,
+  ][];
+  masterPackNew = {
+    name: '',
+    specialty: 'PSYCHOLOGY' as ClinicSpecialty,
+    address: '',
+    phone: '',
+    adminFullName: '',
+    adminEmail: '',
+    adminPassword: '',
+  };
+  private masterPackFiles: File[] = [];
+  private masterPackPaths: string[] = [];
+  private masterPackZip: File | null = null;
+
+  masterPackZipName() {
+    return this.masterPackZip?.name ?? '';
+  }
 
   readonly overview = signal<DocumentsOverview | null>(null);
   readonly loading = signal(true);
@@ -106,6 +157,8 @@ export class DocumentsDashboard {
 
   /** Versión abierta en el visor / firmador. */
   readonly viewing = signal<DocumentFileRow | null>(null);
+  /** Otros archivos activos del mismo requisito (p. ej. RETIE: certificación + tarjeta). */
+  readonly viewerSiblings = signal<DocumentFileRow[]>([]);
   readonly viewRequirementTitle = signal('');
   readonly previewKind = signal<'pdf' | 'image' | 'html' | 'none'>('none');
   readonly previewUrl = signal<SafeResourceUrl | null>(null);
@@ -115,10 +168,16 @@ export class DocumentsDashboard {
 
   readonly activeSignRole = signal<DocumentSignerRole>('HABILISALUD');
   readonly signing = signal(false);
+  /** Firma manuscrita guardada al firmar la historia clínica (perfil del profesional). */
+  readonly profileSignature = signal<string | null>(null);
+  readonly profileSignerName = signal('');
 
   readonly uploading = signal<string | null>(null);
   readonly pendingExpiry = signal('');
   readonly pendingPeriod = signal('');
+  /** Edición de metadatos de una versión (SUPER_ADMIN). */
+  readonly editingFileId = signal<string | null>(null);
+  editMeta = { periodLabel: '', expiresAt: '', notes: '' };
 
   /** Formulario de diligenciamiento SG-SST (todos los docs del pilar). */
   readonly fillOpen = signal(false);
@@ -153,13 +212,13 @@ export class DocumentsDashboard {
   private signaturePad: SignaturePad | null = null;
   private objectUrl: string | null = null;
 
-  /** Roles de sello dual: HABILISALUD → admin consultorio. */
+  /** Roles de sello: ya no se exigen pendientes de firma. */
   readonly signRoles = computed<DocumentSignerRole[]>(() => {
     const file = this.viewing();
-    if (file?.requiredRoles?.length) return file.requiredRoles;
+    if (file?.requiredRoles) return file.requiredRoles;
     const detail = this.detail();
-    if (detail?.requiredRoles?.length) return detail.requiredRoles;
-    return ['HABILISALUD', 'CLINIC_ADMIN'];
+    if (detail?.requiredRoles) return detail.requiredRoles;
+    return [];
   });
 
   readonly pendingCountersignatures = computed<PendingCountersign[]>(() => {
@@ -186,11 +245,21 @@ export class DocumentsDashboard {
   /** El usuario actual puede usar el pad sobre el archivo abierto. */
   canSignFile(file: DocumentFileRow): boolean {
     if (file.status === 'SIGNED' || file.status === 'RETIRED') return false;
+    const roles = file.requiredRoles?.length
+      ? file.requiredRoles
+      : this.signRoles();
     if (this.canManage()) {
-      return !file.hasHabilisaludSignature;
+      return roles.includes('HABILISALUD') && !file.hasHabilisaludSignature;
     }
     if (this.canCountersign()) {
-      return !!file.canClinicSign;
+      if (!roles.includes('CLINIC_ADMIN') || file.hasClinicAdminSignature) {
+        return false;
+      }
+      // SG-SST: esperar sello Habili si aplica; resto: firmar de inmediato.
+      if (roles.includes('HABILISALUD') && !file.hasHabilisaludSignature) {
+        return false;
+      }
+      return true;
     }
     return false;
   }
@@ -201,6 +270,11 @@ export class DocumentsDashboard {
     if (this.canManage()) return role === 'HABILISALUD';
     if (this.canCountersign()) return role === 'CLINIC_ADMIN';
     return false;
+  }
+
+  isSgsstFile(file: DocumentFileRow | null | undefined) {
+    if (!file) return false;
+    return !!file.fillable || (file.requiredRoles ?? []).includes('HABILISALUD');
   }
 
   readonly archiveFiles = computed(() => {
@@ -241,6 +315,32 @@ export class DocumentsDashboard {
     }
     this.api.clinicId = null;
     this.load();
+    this.loadProfileSignature();
+  }
+
+  /** Carga firma/nombre del profesional DEL consultorio (no mezclar entre sedes). */
+  private loadProfileSignature() {
+    if (!this.canCountersign() && !this.canFill() && !this.canManage()) return;
+    this.api.getBrand().subscribe({
+      next: (brand) => {
+        this.profileSignature.set(brand.signatureBase64 || null);
+        this.profileSignerName.set(brand.professionalName?.trim() || '');
+      },
+      error: () => {
+        // Fallback: firma del usuario logueado (profesional del propio consultorio).
+        if (!this.canCountersign()) {
+          this.profileSignature.set(null);
+          return;
+        }
+        this.clinicalApi.getMySignature().subscribe({
+          next: (sig) => {
+            this.profileSignature.set(sig.signatureBase64 || null);
+            this.profileSignerName.set(sig.professionalName?.trim() || '');
+          },
+          error: () => this.profileSignature.set(null),
+        });
+      },
+    });
   }
 
   selectClinic(clinicId: string) {
@@ -255,7 +355,192 @@ export class DocumentsDashboard {
       replaceUrl: true,
     });
     this.load();
+    this.loadCategories();
+    this.loadProfileSignature();
+    if (this.assignOpen()) this.loadAssignmentCatalog();
     if (this.mainTab() === 'historico') this.loadArchive();
+  }
+
+  private loadCategories() {
+    if (!this.canManage()) return;
+    this.api.listCategories().subscribe({
+      next: (rows) => this.categories.set(rows),
+      error: () => undefined,
+    });
+  }
+
+  openAssignPanel() {
+    if (!this.canManage() || !this.selectedClinicId()) return;
+    this.masterPackOpen.set(false);
+    this.assignOpen.set(true);
+    this.loadAssignmentCatalog();
+  }
+
+  closeAssignPanel() {
+    this.assignOpen.set(false);
+  }
+
+  loadAssignmentCatalog(sourceClinicId?: string) {
+    const clinicId = this.selectedClinicId();
+    if (!clinicId) return;
+    this.assignLoading.set(true);
+    this.error.set('');
+    const source =
+      sourceClinicId ?? (this.assignSourceClinicId() || undefined);
+    this.api.getAssignmentCatalog(clinicId, source).subscribe({
+      next: (res) => {
+        this.assignPeerClinics.set(res.peerClinics);
+        this.assignSourceClinicId.set(res.sourceClinic?.id || '');
+        this.assignItems.set(
+          res.items.map((i) => ({
+            code: i.code,
+            title: i.title,
+            description: i.description,
+            category: {
+              code: i.category.code,
+              name: i.category.name,
+              sortOrder: i.category.sortOrder,
+            },
+            alreadyAssigned: i.alreadyAssigned,
+            assignedEnabled: i.assignedEnabled,
+          })),
+        );
+        this.assignSelected.set(new Set(res.selectedCodes));
+        this.assignLoading.set(false);
+      },
+      error: (err) => {
+        this.assignLoading.set(false);
+        this.error.set(describeError(err));
+      },
+    });
+  }
+
+  onAssignSourceChange(sourceClinicId: string) {
+    this.assignSourceClinicId.set(sourceClinicId);
+    this.loadAssignmentCatalog(sourceClinicId);
+  }
+
+  toggleAssignCode(code: string, checked: boolean) {
+    const next = new Set(this.assignSelected());
+    if (checked) next.add(code);
+    else next.delete(code);
+    this.assignSelected.set(next);
+  }
+
+  selectAllAssignVisible() {
+    const q = this.assignQuery().trim().toLowerCase();
+    const next = new Set(this.assignSelected());
+    for (const item of this.assignItems()) {
+      if (
+        !q ||
+        item.title.toLowerCase().includes(q) ||
+        item.code.toLowerCase().includes(q) ||
+        item.category.name.toLowerCase().includes(q)
+      ) {
+        next.add(item.code);
+      }
+    }
+    this.assignSelected.set(next);
+  }
+
+  clearAssignSelection() {
+    this.assignSelected.set(new Set());
+  }
+
+  assignCatalogGroups() {
+    const q = this.assignQuery().trim().toLowerCase();
+    const groups = new Map<
+      string,
+      {
+        name: string;
+        sortOrder: number;
+        items: Array<{
+          code: string;
+          title: string;
+          description: string | null;
+          alreadyAssigned: boolean;
+          assignedEnabled: boolean;
+        }>;
+      }
+    >();
+    for (const item of this.assignItems()) {
+      if (
+        q &&
+        !item.title.toLowerCase().includes(q) &&
+        !item.code.toLowerCase().includes(q) &&
+        !item.category.name.toLowerCase().includes(q)
+      ) {
+        continue;
+      }
+      const key = item.category.code;
+      let g = groups.get(key);
+      if (!g) {
+        g = {
+          name: item.category.name,
+          sortOrder: item.category.sortOrder,
+          items: [],
+        };
+        groups.set(key, g);
+      }
+      g.items.push({
+        code: item.code,
+        title: item.title,
+        description: item.description,
+        alreadyAssigned: item.alreadyAssigned,
+        assignedEnabled: item.assignedEnabled,
+      });
+    }
+    return [...groups.values()].sort((a, b) => a.sortOrder - b.sortOrder);
+  }
+
+  saveAssignment() {
+    const clinicId = this.selectedClinicId();
+    if (!clinicId || !this.canManage()) return;
+    const codes = [...this.assignSelected()];
+    if (
+      !confirm(
+        `¿Asignar ${codes.length} documento(s) a «${this.selectedClinicName()}»?\n` +
+          `Los no seleccionados se deshabilitarán (no se borran archivos).`,
+      )
+    ) {
+      return;
+    }
+    this.assignSaving.set(true);
+    this.error.set('');
+    this.api
+      .assignRequirements(clinicId, {
+        codes,
+        syncDisabled: true,
+        sourceClinicId: this.assignSourceClinicId() || undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          this.assignSaving.set(false);
+          this.overview.set(res.overview);
+          this.assignItems.set(
+            res.catalog.items.map((i) => ({
+              code: i.code,
+              title: i.title,
+              description: i.description,
+              category: {
+                code: i.category.code,
+                name: i.category.name,
+                sortOrder: i.category.sortOrder,
+              },
+              alreadyAssigned: i.alreadyAssigned,
+              assignedEnabled: i.assignedEnabled,
+            })),
+          );
+          this.assignSelected.set(new Set(res.catalog.selectedCodes));
+          this.notice.set(
+            `Asignación guardada: ${res.created} creados, ${res.enabled} habilitados, ${res.disabled} deshabilitados.`,
+          );
+        },
+        error: (err) => {
+          this.assignSaving.set(false);
+          this.error.set(describeError(err));
+        },
+      });
   }
 
   setAllEnabled(enabled: boolean) {
@@ -277,6 +562,241 @@ export class DocumentsDashboard {
     });
   }
 
+  clearClinicDocs() {
+    if (!this.canManage() || !this.selectedClinicId()) return;
+    if (
+      !confirm(
+        `¿Vaciar TODO el expediente de «${this.selectedClinicName()}»? Se eliminarán requisitos y archivos. Esta acción no se puede deshacer.`,
+      )
+    ) {
+      return;
+    }
+    this.api.clearClinicDocuments().subscribe({
+      next: (res) => {
+        this.overview.set(res.overview);
+        this.notice.set(
+          `Expediente vaciado: ${res.deletedRequirements} requisito(s) eliminados.`,
+        );
+      },
+      error: (err) => this.error.set(describeError(err)),
+    });
+  }
+
+  replicateToSameSpecialty() {
+    if (!this.canManage() || !this.selectedClinicId()) return;
+    if (
+      !confirm(
+        `¿Replicar el expediente de «${this.selectedClinicName()}» a los demás consultorios de la misma especialidad? Los PDF se autodiligencian con el nombre y código REPS/TP de cada profesional destino.`,
+      )
+    ) {
+      return;
+    }
+    this.api
+      .replicateDocuments({
+        sourceClinicId: this.selectedClinicId(),
+        includeFiles: true,
+      })
+      .subscribe({
+        next: (res) => {
+          const n = res.targets.length;
+          const files = res.targets.reduce((s, t) => s + t.filesCopied, 0);
+          this.notice.set(
+            `Replicados ${res.requirementCount} requisitos a ${n} consultorio(s); ${files} archivo(s) autodiligenciados con datos de cada profesional.`,
+          );
+        },
+        error: (err) => this.error.set(describeError(err)),
+      });
+  }
+
+  openMasterPackPanel() {
+    if (!this.canManage()) return;
+    this.masterPackOpen.set(true);
+    this.assignOpen.set(false);
+    this.error.set('');
+  }
+
+  closeMasterPackPanel() {
+    this.masterPackOpen.set(false);
+    this.resetMasterPackSelection();
+  }
+
+  resetMasterPackSelection() {
+    this.masterPackFiles = [];
+    this.masterPackPaths = [];
+    this.masterPackZip = null;
+    this.masterPackFileCount.set(0);
+  }
+
+  onMasterPackFolderPick(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const list = input.files ? Array.from(input.files) : [];
+    const allowed = list.filter((f) =>
+      /\.(pdf|docx?|xlsx?|jpe?g|png|webp)$/i.test(f.name),
+    );
+    this.masterPackMode.set('folder');
+    this.masterPackZip = null;
+    this.masterPackFiles = allowed;
+    this.masterPackPaths = allowed.map(
+      (f) => (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name,
+    );
+    this.masterPackFileCount.set(allowed.length);
+    input.value = '';
+  }
+
+  onMasterPackZipPick(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.masterPackMode.set('zip');
+    this.masterPackFiles = [];
+    this.masterPackPaths = [];
+    this.masterPackZip = file && /\.zip$/i.test(file.name) ? file : null;
+    this.masterPackFileCount.set(this.masterPackZip ? 1 : 0);
+    if (file && !this.masterPackZip) {
+      this.error.set('Solo se acepta un archivo .zip');
+    }
+    input.value = '';
+  }
+
+  submitMasterPack() {
+    if (!this.canManage()) return;
+    const hasFolder = this.masterPackFiles.length > 0;
+    const hasZip = !!this.masterPackZip;
+    if (!hasFolder && !hasZip) {
+      this.error.set('Seleccione una carpeta con documentos o un ZIP.');
+      return;
+    }
+
+    this.masterPackImporting.set(true);
+    this.error.set('');
+    this.notice.set('');
+
+    const runImport = (clinicId: string) => {
+      this.api
+        .importMasterPack({
+          clinicId,
+          files: hasFolder ? this.masterPackFiles : undefined,
+          relativePaths: hasFolder ? this.masterPackPaths : undefined,
+          zip: hasZip ? this.masterPackZip : null,
+          ensureStructure: true,
+        })
+        .subscribe({
+          next: (res) => {
+            this.masterPackImporting.set(false);
+            this.overview.set(res.overview);
+            this.selectClinic(res.clinicId);
+            const unmapped = res.stats.unmapped.length;
+            this.notice.set(
+              `Carpeta maestra en «${res.clinicName}»: ${res.stats.imported} archivo(s) nuevos, ` +
+                `${res.stats.skippedDup} duplicados omitidos, ` +
+                `${res.stats.covered}/${res.stats.totalRequirements} requisitos con evidencia` +
+                (unmapped ? `, ${unmapped} sin mapeo` : '') +
+                '.',
+            );
+            this.resetMasterPackSelection();
+            this.masterPackOpen.set(false);
+            this.load();
+          },
+          error: (err) => {
+            this.masterPackImporting.set(false);
+            this.error.set(describeError(err));
+          },
+        });
+    };
+
+    if (this.masterPackTarget() === 'existing') {
+      if (!this.selectedClinicId()) {
+        this.masterPackImporting.set(false);
+        this.error.set('Seleccione el consultorio destino arriba.');
+        return;
+      }
+      runImport(this.selectedClinicId());
+      return;
+    }
+
+    const name = this.masterPackNew.name.trim();
+    if (!name) {
+      this.masterPackImporting.set(false);
+      this.error.set('Indique el nombre del consultorio nuevo.');
+      return;
+    }
+
+    const adminReady =
+      this.masterPackNew.adminFullName.trim() &&
+      this.masterPackNew.adminEmail.trim() &&
+      this.masterPackNew.adminPassword.trim().length >= 8;
+
+    this.adminApi
+      .createClinic({
+        name,
+        specialty: this.masterPackNew.specialty,
+        address: this.masterPackNew.address.trim() || undefined,
+        phone: this.masterPackNew.phone.trim() || undefined,
+        admin: adminReady
+          ? {
+              fullName: this.masterPackNew.adminFullName.trim(),
+              email: this.masterPackNew.adminEmail.trim(),
+              password: this.masterPackNew.adminPassword,
+            }
+          : undefined,
+      })
+      .subscribe({
+        next: (clinic) => {
+          this.adminApi
+            .createClinicDashboard(
+              clinic.id,
+              'CLINICAL_HISTORY_WITH_DOCS' as DashboardType,
+            )
+            .subscribe({
+              next: () => {
+                this.adminApi.listClinics().subscribe({
+                  next: (list) => this.clinics.set(list),
+                });
+                runImport(clinic.id);
+              },
+              error: (err) => {
+                // Si el dashboard ya existía o falló, igual intenta importar.
+                this.adminApi.listClinics().subscribe({
+                  next: (list) => this.clinics.set(list),
+                });
+                if (err?.status === 409) {
+                  runImport(clinic.id);
+                  return;
+                }
+                this.masterPackImporting.set(false);
+                this.error.set(describeError(err));
+              },
+            });
+        },
+        error: (err) => {
+          this.masterPackImporting.set(false);
+          this.error.set(describeError(err));
+        },
+      });
+  }
+
+  createRequirement() {
+    if (!this.canManage()) return;
+    if (!this.newReq.categoryId || !this.newReq.code.trim() || !this.newReq.title.trim()) {
+      this.error.set('Indique categoría, código y título.');
+      return;
+    }
+    this.api
+      .createRequirement({
+        categoryId: this.newReq.categoryId,
+        code: this.newReq.code.trim(),
+        title: this.newReq.title.trim(),
+        description: this.newReq.description.trim() || undefined,
+      })
+      .subscribe({
+        next: (data) => {
+          this.overview.set(data);
+          this.notice.set(`Requisito «${this.newReq.title}» creado.`);
+          this.newReq = { categoryId: '', code: '', title: '', description: '' };
+        },
+        error: (err) => this.error.set(describeError(err)),
+      });
+  }
+
   toggleRequirementEnabled(req: RequirementRow, enabled: boolean) {
     if (!this.canManage()) return;
     this.api.setRequirementEnabled(req.id, enabled).subscribe({
@@ -285,7 +805,22 @@ export class DocumentsDashboard {
         this.notice.set(
           enabled
             ? `«${req.title}» habilitado.`
-            : `«${req.title}» deshabilitado (solo lectura en el consultorio).`,
+            : `«${req.title}» deshabilitado (oculto en el consultorio).`,
+        );
+      },
+      error: (err) => this.error.set(describeError(err)),
+    });
+  }
+
+  toggleRequirementClinicSignature(req: RequirementRow, required: boolean) {
+    if (!this.canManage()) return;
+    this.api.setRequirementClinicSignature(req.id, required).subscribe({
+      next: (data) => {
+        this.overview.set(data);
+        this.notice.set(
+          required
+            ? `«${req.title}» exige firma del consultorio.`
+            : `«${req.title}» ya no exige firma del consultorio.`,
         );
       },
       error: (err) => this.error.set(describeError(err)),
@@ -453,23 +988,47 @@ export class DocumentsDashboard {
   }
 
   statusLabel(status: ComplianceStatus) {
-    if (status === 'GREEN') return 'Firmado y vigente';
-    if (status === 'YELLOW') return 'Pendiente de firma / por vencer';
+    if (status === 'GREEN') return 'Vigente';
+    if (status === 'YELLOW') return 'Por vencer';
     if (status === 'RED') return 'Pendiente o vencido';
     return 'Opcional';
   }
 
   fileStatusLabel(status: DocumentFileStatus) {
-    if (status === 'SIGNED') return 'Firmado';
-    if (status === 'PARTIALLY_SIGNED') return 'Firma parcial';
+    if (status === 'SIGNED') return 'Vigente';
+    if (status === 'PARTIALLY_SIGNED') return 'Vigente';
     if (status === 'RETIRED') return 'Retirado (histórico)';
-    return 'Pendiente de firma';
+    return 'Vigente';
+  }
+
+  /** SUPER_ADMIN en todos; admin/profesional: Legal, Talento (+ uso suelo/concepto por código). */
+  canCrudPillar(pillar: string | null | undefined) {
+    if (this.canManage()) return true;
+    if (!this.canClinicDocCrud()) return false;
+    return pillar === 'DOCUMENTACION_LEGAL' || pillar === 'TALENTO_HUMANO';
+  }
+
+  isLandUseOrSanitaryRequirement(req: { code?: string | null }) {
+    const c = (req.code || '').toUpperCase();
+    if (!c) return false;
+    return (
+      c.includes('USO_DEL_SUELO') ||
+      c.includes('USO_DE_SUELO') ||
+      c.includes('CONCEPTO_SANITARIO')
+    );
+  }
+
+  canCrudRequirement(req: { code?: string | null; pillar?: string | null }) {
+    if (this.canManage()) return true;
+    if (!this.canClinicDocCrud()) return false;
+    if (this.isLandUseOrSanitaryRequirement(req)) return true;
+    return this.canCrudPillar(req.pillar);
   }
 
   expiryLabel(req: RequirementRow) {
     if (req.status === 'RED' && !req.latestFile) return 'Sin evidencia cargada';
-    if (req.latestFile?.status === 'PENDING_SIGNATURE') return 'Cargado · falta firmar';
-    if (req.latestFile?.status === 'PARTIALLY_SIGNED') return 'Firma incompleta';
+    if (req.latestFile?.status === 'PENDING_SIGNATURE') return 'Evidencia cargada';
+    if (req.latestFile?.status === 'PARTIALLY_SIGNED') return 'Evidencia cargada';
     if (req.daysToExpiry === null) return 'Sin vencimiento';
     if (req.daysToExpiry < 0) return `Venció hace ${Math.abs(req.daysToExpiry)} días`;
     if (req.daysToExpiry === 0) return 'Vence hoy';
@@ -490,13 +1049,22 @@ export class DocumentsDashboard {
   }
 
   onPickFile(event: Event, requirementId: string) {
-    if (!this.canUpload()) {
+    if (!this.canUpload() && !this.canClinicDocCrud()) {
       this.error.set('No tiene permiso para cargar documentos.');
+      return;
+    }
+    if (!this.api.clinicId && this.canManage()) {
+      this.error.set('Seleccione un consultorio antes de cargar archivos.');
       return;
     }
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    if (file.size > 25 * 1024 * 1024) {
+      this.error.set('El archivo supera los 25 MB permitidos.');
+      input.value = '';
+      return;
+    }
 
     this.uploading.set(requirementId);
     this.error.set('');
@@ -546,19 +1114,32 @@ export class DocumentsDashboard {
     this.detail.set(null);
   }
 
-  openViewer(file: DocumentFileRow, title?: string) {
+  openViewer(
+    file: DocumentFileRow,
+    title?: string,
+    siblings?: DocumentFileRow[],
+  ) {
     this.clearPreview();
     this.viewing.set(file);
     if (title) this.viewRequirementTitle.set(title);
     else if (this.detail()) this.viewRequirementTitle.set(this.detail()!.requirement.title);
 
-    if (this.canManage() && !file.hasHabilisaludSignature) {
+    const fromDetail = (this.detail()?.files ?? []).filter(
+      (f) => f.status !== 'RETIRED',
+    );
+    const list =
+      siblings?.filter((f) => f.status !== 'RETIRED') ??
+      (fromDetail.some((f) => f.id === file.id) ? fromDetail : [file]);
+    // Si hay más de un documento en la carpeta, se listan todos para elegir.
+    this.viewerSiblings.set(list.length > 1 ? list : list);
+
+    if (this.canManage() && this.isSgsstFile(file) && !file.hasHabilisaludSignature) {
       this.activeSignRole.set('HABILISALUD');
-    } else if (this.canCountersign() && file.canClinicSign) {
+    } else if (this.canCountersign() && (file.canClinicSign || this.canSignFile(file))) {
       this.activeSignRole.set('CLINIC_ADMIN');
     } else {
       const missing = file.missingRoles;
-      this.activeSignRole.set(missing[0] ?? 'HABILISALUD');
+      this.activeSignRole.set(missing[0] ?? 'CLINIC_ADMIN');
     }
 
     this.previewLoading.set(true);
@@ -569,6 +1150,15 @@ export class DocumentsDashboard {
       name.endsWith('.docx') ||
       name.endsWith('.doc') ||
       file.mimeType.includes('word');
+
+    const afterPreview = () => {
+      setTimeout(() => {
+        this.ensureSignPad();
+        if (this.canSignFile(file) && this.canCountersign() && !this.canManage()) {
+          this.applyProfileSignatureToPad();
+        }
+      }, 40);
+    };
 
     if (isPdf || isImage) {
       this.api.viewBlob(file.id).subscribe({
@@ -584,13 +1174,13 @@ export class DocumentsDashboard {
             this.previewKind.set('image');
           }
           this.previewLoading.set(false);
-          setTimeout(() => this.ensureSignPad(), 40);
+          afterPreview();
         },
         error: (err) => {
           this.previewLoading.set(false);
           this.previewKind.set('none');
           this.error.set(describeError(err));
-          setTimeout(() => this.ensureSignPad(), 40);
+          afterPreview();
         },
       });
       return;
@@ -606,13 +1196,13 @@ export class DocumentsDashboard {
           );
           this.previewKind.set('html');
           this.previewLoading.set(false);
-          setTimeout(() => this.ensureSignPad(), 40);
+          afterPreview();
         },
         error: (err) => {
           this.previewLoading.set(false);
           this.previewKind.set('none');
           this.error.set(describeError(err));
-          setTimeout(() => this.ensureSignPad(), 40);
+          afterPreview();
         },
       });
       return;
@@ -620,12 +1210,19 @@ export class DocumentsDashboard {
 
     this.previewKind.set('none');
     this.previewLoading.set(false);
-    setTimeout(() => this.ensureSignPad(), 40);
+    afterPreview();
+  }
+
+  /** Cambia el archivo activo del visor sin cerrar (hermanos de la carpeta). */
+  selectViewerSibling(file: DocumentFileRow) {
+    if (this.viewing()?.id === file.id) return;
+    this.openViewer(file, this.viewRequirementTitle(), this.viewerSiblings());
   }
 
   closeViewer() {
     this.clearPreview();
     this.viewing.set(null);
+    this.viewerSiblings.set([]);
     this.signaturePad = null;
   }
 
@@ -707,6 +1304,98 @@ export class DocumentsDashboard {
     void pad.fromDataURL(dataUrl, { ratio: 1 });
   }
 
+  /** Aplica la firma guardada al firmar la historia clínica. */
+  applyProfileSignatureToPad() {
+    const stamp = this.profileSignature();
+    if (!stamp) {
+      this.loadProfileSignature();
+      this.clinicalApi.getMySignature().subscribe({
+        next: (sig) => {
+          this.profileSignature.set(sig.signatureBase64 || null);
+          this.profileSignerName.set(sig.professionalName?.trim() || '');
+          if (sig.signatureBase64) {
+            this.applyImageToPad(sig.signatureBase64);
+            this.notice.set(
+              'Se aplicó la firma de su historia clínica a este documento.',
+            );
+          } else {
+            this.error.set(
+              'Aún no tiene firma guardada. Firme una historia clínica o dibuje la firma aquí.',
+            );
+          }
+        },
+        error: () =>
+          this.error.set(
+            'No se pudo cargar la firma del perfil. Dibuje o cargue una imagen.',
+          ),
+      });
+      return;
+    }
+    this.applyImageToPad(stamp);
+  }
+
+  /** Elimina el archivo vigente del requisito (solo SUPER_ADMIN). */
+  deleteLatestFile(req: RequirementRow) {
+    if (!this.canManage()) return;
+    const file = req.latestFile;
+    if (!file) return;
+    if (
+      !confirm(
+        `¿Eliminar «${file.originalName}» de «${req.title}»? El campo queda vacío, sin rastro del archivo.`,
+      )
+    ) {
+      return;
+    }
+    this.uploading.set(req.id);
+    this.error.set('');
+    this.api.deleteFilePermanent(file.id).subscribe({
+      next: () => {
+        this.uploading.set(null);
+        this.notice.set(`Archivo de «${req.title}» eliminado.`);
+        if (this.viewing()?.id === file.id) this.closeViewer();
+        if (this.detail()?.requirement.id === req.id) this.openDetail(req.id);
+        this.load();
+      },
+      error: (err) => {
+        this.uploading.set(null);
+        this.error.set(describeError(err));
+      },
+    });
+  }
+
+  /** Último archivo no retirado del detalle (historial). */
+  latestActiveFile(info: { files: DocumentFileRow[] }) {
+    return info.files.find((f) => f.status !== 'RETIRED') ?? null;
+  }
+
+  deleteFileFromDetail(info: RequirementDetail) {
+    if (!this.canManage()) return;
+    const file = this.latestActiveFile(info);
+    if (!file) return;
+    if (
+      !confirm(
+        `¿Eliminar «${file.originalName}» de «${info.requirement.title}»? El campo queda vacío, sin rastro del archivo.`,
+      )
+    ) {
+      return;
+    }
+    this.uploading.set(info.requirement.id);
+    this.error.set('');
+    this.api.deleteFilePermanent(file.id).subscribe({
+      next: () => {
+        this.uploading.set(null);
+        this.notice.set(`Archivo de «${info.requirement.title}» eliminado.`);
+        if (this.viewing()?.id === file.id) this.closeViewer();
+        this.openDetail(info.requirement.id);
+        this.load();
+      },
+      error: (err) => {
+        this.uploading.set(null);
+        this.error.set(describeError(err));
+      },
+    });
+  }
+
   openFillSgsst(req: RequirementRow) {
     if (!this.canFill()) {
       this.error.set('No tiene permiso para diligenciar documentos.');
@@ -734,37 +1423,42 @@ export class DocumentsDashboard {
     this.fillRoles.set(roles);
 
     const me = this.auth.user()?.fullName ?? '';
+    const clinic = this.clinics().find((c) => c.id === this.selectedClinicId());
+    const clinicCreated =
+      clinic?.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10);
+    const clinicProfessional =
+      this.profileSignerName() || clinic?.name || me;
     this.fillModel = {
       tema: training ? '' : req.title,
-      fecha: new Date().toISOString().slice(0, 10),
-      periodLabel: new Date().toISOString().slice(0, 7),
+      fecha: clinicCreated,
+      periodLabel: clinicCreated.slice(0, 7),
       objetivo: '',
       contenido: '',
-      nombre1: me,
-      nombre2: training ? '' : me,
-      nombre3: training ? '' : me,
+      // 1. Elaboró = HABILISALUD · 2. Revisó = HABILISALUD · 3. Aprobó = profesional del consultorio
+      nombre1: training ? clinicProfessional : 'HABILISALUD',
+      nombre2: training ? '' : 'HABILISALUD',
+      nombre3: training ? '' : clinicProfessional,
       firma1: null,
       firma2: null,
       firma3: null,
     };
     this.fillOpen.set(true);
     this.error.set('');
-    this.clinicalApi.getMySignature().subscribe({
-      next: (sig) => {
+    this.api.getBrand().subscribe({
+      next: (brand) => {
         if (this.fillRequirementId() !== req.id) return;
-        const name = sig.professionalName?.trim() || me;
-        const stamp = sig.signatureBase64;
+        const name = brand.professionalName?.trim() || clinicProfessional;
+        const stamp = brand.signatureBase64;
+        this.profileSignature.set(stamp || null);
+        this.profileSignerName.set(name);
         this.fillModel = {
           ...this.fillModel,
-          nombre1: this.fillModel.nombre1 || name,
-          nombre2: training
-            ? this.fillModel.nombre2
-            : this.fillModel.nombre2 || name,
-          nombre3: training
-            ? this.fillModel.nombre3
-            : this.fillModel.nombre3 || name,
-          firma1: stamp || this.fillModel.firma1,
-          firma2: training ? this.fillModel.firma2 : stamp || this.fillModel.firma2,
+          nombre1: training ? this.fillModel.nombre1 || name : 'HABILISALUD',
+          nombre2: training ? this.fillModel.nombre2 : 'HABILISALUD',
+          nombre3: training ? this.fillModel.nombre3 : name,
+          // Firma del profesional solo en Aprobó.
+          firma1: training ? stamp || this.fillModel.firma1 : this.fillModel.firma1,
+          firma2: training ? this.fillModel.firma2 : this.fillModel.firma2,
           firma3: training ? this.fillModel.firma3 : stamp || this.fillModel.firma3,
         };
       },
@@ -844,14 +1538,33 @@ export class DocumentsDashboard {
       this.error.set('Indique el nombre de quien aprobó.');
       return;
     }
-    if (!m.firma1 || !m.firma2) {
-      this.error.set('Cargue la imagen de firma de ambas personas.');
+    if (
+      !m.firma1 &&
+      (this.fillIsTraining() || !/^habilisalud$/i.test(m.nombre1.trim()))
+    ) {
+      this.error.set('Cargue la imagen de firma de quien elaboró / capacitador.');
+      return;
+    }
+    if (
+      !m.firma2 &&
+      (this.fillIsTraining() || !/^habilisalud$/i.test(m.nombre2.trim()))
+    ) {
+      this.error.set(
+        this.fillIsTraining()
+          ? 'Cargue la imagen de firma de la persona evaluada / asistente.'
+          : 'Cargue la imagen de firma de quien revisó.',
+      );
       return;
     }
     if (needsAprobo && !m.firma3) {
       this.error.set('Cargue la imagen de firma de quien aprobó.');
       return;
     }
+
+    const habilisaludStamp =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5W2XQAAAAASUVORK5CYII=';
+    const elaboroStamp = m.firma1 || habilisaludStamp;
+    const revisoStamp = m.firma2 || habilisaludStamp;
 
     const signatures: Array<{
       role: DocumentSignerRole;
@@ -862,24 +1575,24 @@ export class DocumentsDashboard {
           {
             role: 'CAPACITADOR',
             signerName: m.nombre1.trim(),
-            signatureBase64: m.firma1,
+            signatureBase64: m.firma1!,
           },
           {
             role: 'ASISTENTE',
             signerName: m.nombre2.trim(),
-            signatureBase64: m.firma2,
+            signatureBase64: m.firma2!,
           },
         ]
       : [
           {
             role: 'ELABORO',
-            signerName: m.nombre1.trim(),
-            signatureBase64: m.firma1,
+            signerName: m.nombre1.trim() || 'HABILISALUD',
+            signatureBase64: elaboroStamp,
           },
           {
             role: 'REVISO',
-            signerName: m.nombre2.trim(),
-            signatureBase64: m.firma2,
+            signerName: m.nombre2.trim() || 'HABILISALUD',
+            signatureBase64: revisoStamp,
           },
           ...(needsAprobo && m.firma3
             ? [
@@ -949,8 +1662,18 @@ export class DocumentsDashboard {
       return;
     }
     if (!this.signaturePad || this.signaturePad.isEmpty()) {
-      this.error.set('Dibuje la firma antes de sellar.');
-      return;
+      const fallback = this.profileSignature();
+      if (fallback && this.canCountersign() && !this.canManage()) {
+        this.applyImageToPad(fallback);
+      }
+      if (!this.signaturePad || this.signaturePad.isEmpty()) {
+        this.error.set(
+          this.profileSignature()
+            ? 'No se pudo aplicar la firma del perfil. Dibuje o cargue una imagen.'
+            : 'Dibuje la firma, cargue una imagen, o firme primero su historia clínica para reutilizarla.',
+        );
+        return;
+      }
     }
 
     this.signing.set(true);
@@ -1008,21 +1731,110 @@ export class DocumentsDashboard {
   }
 
   retireFile(fileId: string) {
+    this.deleteFilePermanent(fileId);
+  }
+
+  deleteFilePermanent(fileId: string) {
+    if (!this.canManage()) return;
     if (
       !confirm(
-        '¿Retirar esta versión del expediente activo? Quedará en el histórico y no se borrará.',
+        '¿Eliminar este archivo? Se borra sin dejar rastro. Los demás documentos de la carpeta se conservan.',
       )
     ) {
       return;
     }
-    this.api.retire(fileId).subscribe({
+    this.api.deleteFilePermanent(fileId).subscribe({
       next: (data) => {
         this.detail.set(data);
-        this.notice.set('Versión retirada. El histórico se conserva.');
+        this.notice.set('Archivo eliminado.');
         if (this.viewing()?.id === fileId) this.closeViewer();
+        if (this.editingFileId() === fileId) this.cancelEditFileMeta();
+        const active = data.files.filter((f) => f.status !== 'RETIRED');
+        this.viewerSiblings.set(active);
         this.load();
       },
       error: (err) => this.error.set(describeError(err)),
+    });
+  }
+
+  startEditFileMeta(file: DocumentFileRow) {
+    this.editingFileId.set(file.id);
+    this.editMeta = {
+      periodLabel: file.periodLabel || '',
+      expiresAt: file.expiresAt ? file.expiresAt.slice(0, 10) : '',
+      notes: file.notes || '',
+    };
+  }
+
+  cancelEditFileMeta() {
+    this.editingFileId.set(null);
+    this.editMeta = { periodLabel: '', expiresAt: '', notes: '' };
+  }
+
+  saveFileMeta(fileId: string) {
+    this.api
+      .updateFileMeta(fileId, {
+        periodLabel: this.editMeta.periodLabel || '',
+        expiresAt: this.editMeta.expiresAt || '',
+        notes: this.editMeta.notes || '',
+      })
+      .subscribe({
+        next: (data) => {
+          this.detail.set(data);
+          this.cancelEditFileMeta();
+          this.notice.set('Metadatos actualizados.');
+          this.load();
+        },
+        error: (err) => this.error.set(describeError(err)),
+      });
+  }
+
+  /** Reemplaza un archivo concreto; los demás de la carpeta se conservan. */
+  onReplaceFile(event: Event, requirementId: string, fileId: string) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (
+      !confirm(
+        `¿Reemplazar este archivo por «${file.name}»? Solo se elimina este; los demás documentos de la carpeta se conservan.`,
+      )
+    ) {
+      input.value = '';
+      return;
+    }
+    this.uploading.set(requirementId);
+    this.error.set('');
+    this.api.deleteFilePermanent(fileId).subscribe({
+      next: () => {
+        this.api
+          .upload(requirementId, file, {
+            expiresAt: this.pendingExpiry() || undefined,
+            periodLabel: this.pendingPeriod() || undefined,
+          })
+          .subscribe({
+            next: (detail) => {
+              this.uploading.set(null);
+              input.value = '';
+              this.detail.set(detail);
+              this.notice.set(`Archivo reemplazado por «${file.name}».`);
+              this.load();
+              const active = detail.files.filter((f) => f.status !== 'RETIRED');
+              const newest = active[0];
+              if (newest) this.openViewer(newest, detail.requirement.title, active);
+            },
+            error: (err) => {
+              this.uploading.set(null);
+              input.value = '';
+              this.error.set(describeError(err));
+              this.openDetail(requirementId);
+            },
+          });
+      },
+      error: (err) => {
+        this.uploading.set(null);
+        input.value = '';
+        this.error.set(describeError(err));
+      },
     });
   }
 
@@ -1040,7 +1852,21 @@ export class DocumentsDashboard {
       this.openDetail(req.id);
       return;
     }
-    this.openDetail(req.id);
+    // Varios archivos en la carpeta (p. ej. RETIE: certificación + tarjeta):
+    // cargar todos y mostrar selector junto al visor.
+    if ((req.fileCount ?? 0) > 1) {
+      this.api.listFiles(req.id).subscribe({
+        next: (detail) => {
+          this.detail.set(detail);
+          const active = detail.files.filter((f) => f.status !== 'RETIRED');
+          const focus =
+            active.find((f) => f.id === req.latestFile?.id) ?? active[0];
+          if (focus) this.openViewer(focus, req.title, active);
+        },
+        error: (err) => this.error.set(describeError(err)),
+      });
+      return;
+    }
     this.openViewer(req.latestFile, req.title);
   }
 
@@ -1049,7 +1875,10 @@ export class DocumentsDashboard {
   }
 
   logout() {
-    this.auth.logout();
-    void this.router.navigateByUrl('/login');
+    if (this.auth.isSuperAdmin()) {
+      this.auth.logoutToAdminLogin();
+      return;
+    }
+    this.auth.logoutToClinicLogin();
   }
 }

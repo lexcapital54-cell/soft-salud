@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ClinicSpecialty, DashboardType } from '../common/enums';
+import { UserClinicAccess } from '../users/user-clinic-access.entity';
 import { User } from '../users/user.entity';
 
 @Entity('clinics')
@@ -37,8 +38,20 @@ export class Clinic {
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
+  @Column({ name: 'hosting_period_due', type: 'date', nullable: true })
+  hostingPeriodDue: Date | null;
+
+  @Column({ name: 'hosting_suspended_at', type: 'timestamptz', nullable: true })
+  hostingSuspendedAt: Date | null;
+
+  @Column({ name: 'hosting_due_notified_at', type: 'timestamptz', nullable: true })
+  hostingDueNotifiedAt: Date | null;
+
   @OneToMany(() => User, (user) => user.clinic)
   admins: User[];
+
+  @OneToMany(() => UserClinicAccess, (access) => access.clinic)
+  userAccess: UserClinicAccess[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

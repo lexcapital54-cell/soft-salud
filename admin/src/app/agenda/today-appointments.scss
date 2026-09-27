@@ -78,10 +78,85 @@ label {
 input {
   font: inherit;
   padding: 9px 11px;
-  border: 1px solid #d0dbdb;
+  border: 1px solid #d8e2e2;
   border-radius: 10px;
+  background: #fff;
   width: 100%;
   box-sizing: border-box;
+}
+
+select {
+  font: inherit;
+  padding: 9px 11px;
+  border: 1px solid #d8e2e2;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.block-toggle {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  align-self: end;
+  padding: 9px 12px;
+  border: 1px solid #e2d2b8;
+  border-radius: 12px;
+  background: #fdfaf5;
+  color: #6b4514;
+  cursor: pointer;
+  user-select: none;
+}
+
+.block-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: #a56b2d;
+  cursor: pointer;
+}
+
+.day-block-panel {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px dashed #d4b896;
+  border-radius: 14px;
+  background: #faf4ec;
+}
+
+.day-block-intro {
+  margin: 0 0 12px;
+}
+
+.day-block-row {
+  margin-bottom: 10px;
+}
+
+.day-block-scopes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-bottom: 12px;
+}
+
+.scope-option {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #47656b;
+}
+
+.scope-option input {
+  width: 16px;
+  height: 16px;
+  accent-color: #a56b2d;
+}
+
+.day-block-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 4px;
 }
 
 .booking h2 {
@@ -200,6 +275,12 @@ select {
   opacity: 0.6;
 }
 
+.appointment.block-card {
+  border-color: #e2d2b8;
+  background: #fdfaf5;
+  border-left: 3px solid #a56b2d;
+}
+
 .time-col {
   display: flex;
   flex-direction: column;
@@ -252,6 +333,11 @@ select {
   color: #5a5a5a;
 }
 
+.tag-block {
+  background: #f3ebe0;
+  color: #7a4e16;
+}
+
 .reason {
   margin: 6px 0 0;
   color: #47656b;
@@ -294,6 +380,11 @@ select {
   color: #8a1f1f;
 }
 
+.status-badge.block-badge {
+  background: #f3ebe0;
+  color: #7a4e16;
+}
+
 .habeas-missing {
   background: #fdecec;
   color: #8a1f1f;
@@ -332,20 +423,70 @@ select {
 .notices-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
   font-size: 0.9rem;
 }
 
+.notices-hint {
+  margin: 4px 0 0;
+  max-width: 420px;
+  line-height: 1.4;
+}
+
 .notice-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.notice-actions button {
-  font-size: 0.82rem;
-  padding: 5px 12px;
+.notice-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.12s ease;
+}
+
+.notice-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.notice-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.notice-btn-primary {
+  background: #003d4c;
+  border-color: #003d4c;
+  color: #fff;
+}
+
+.notice-btn-primary:hover:not(:disabled) {
+  background: #0d7377;
+  border-color: #0d7377;
+}
+
+.notice-btn-secondary {
+  background: #fff;
+  border-color: #0d7377;
+  color: #003d4c;
+}
+
+.notice-btn-secondary:hover:not(:disabled) {
+  background: #e8f6f6;
 }
 
 .notice-list {
@@ -369,6 +510,12 @@ select {
   font-size: 0.75rem;
   font-weight: 600;
   margin-right: 6px;
+}
+
+.notice-tag.sent {
+  background: #e8f6f6;
+  border-color: #9fd4d6;
+  color: #003d4c;
 }
 
 .notice-tag.failed {
@@ -405,6 +552,39 @@ select {
 .banner.err {
   background: #fdecec;
   color: #8a1f1f;
+}
+
+.banner.tip {
+  background: #eef6f7;
+  color: #003d4c;
+  border: 1px solid #c5dde0;
+}
+
+.banner.warn-blocks {
+  background: #fff8f0;
+  color: #5c3a1e;
+  border: 1px solid #e8c4a8;
+}
+
+.banner.warn-blocks.compact {
+  margin-top: 10px;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+}
+
+.banner.warn-blocks ul {
+  margin: 8px 0 0;
+  padding: 0 0 0 1.1rem;
+  display: grid;
+  gap: 4px;
+}
+
+.banner.warn-blocks .wb-pro {
+  font-weight: 600;
+}
+
+.banner.warn-blocks .muted {
+  margin: 8px 0 0;
 }
 
 .modal-backdrop {
@@ -778,6 +958,21 @@ select {
   background: #fdf0f0;
 }
 
+.slot-appt.block {
+  border-left-color: #a56b2d;
+  background: #faf4ec;
+  border-style: dashed;
+  height: 100%;
+  min-height: 100%;
+  justify-content: flex-start;
+  padding-top: 6px;
+}
+
+.slot-appt.block .slot-name {
+  color: #6b4514;
+  white-space: normal;
+}
+
 .slot-time {
   font-size: 0.72rem;
   color: #6a8085;
@@ -836,6 +1031,11 @@ select {
   margin-bottom: 14px;
 }
 
+.panel-detail.block-detail {
+  background: #faf4ec;
+  border: 1px dashed #d4b896;
+}
+
 .panel-detail p {
   margin: 4px 0;
 }
@@ -876,10 +1076,19 @@ select {
   border-color: #e4ecec;
 }
 
+.panel-list button.block-item {
+  border-left: 3px solid #a56b2d;
+}
+
+.panel-list button.block-item .panel-name {
+  color: #6b4514;
+}
+
 .panel-time {
   font-size: 0.78rem;
   color: #6a8085;
-  min-width: 42px;
+  min-width: 72px;
+  flex-shrink: 0;
 }
 
 .panel-name {

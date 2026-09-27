@@ -1,7 +1,14 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Clinic, ClinicAdmin, ClinicSpecialty, DashboardType } from './models';
+import { Clinic, ClinicAdmin, ClinicSpecialty, DashboardType, UserRole } from './models';
 import { API } from './api.config';
+
+export interface StaffUser extends ClinicAdmin {
+  professionalCard?: string | null;
+  createdAt?: string;
+  /** Última contraseña asignada por el superadmin (solo panel admin). */
+  currentPassword?: string | null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AdminApiService {
@@ -16,7 +23,12 @@ export class AdminApiService {
     specialty: ClinicSpecialty;
     address?: string;
     phone?: string;
-    admin?: { fullName: string; email: string; password: string };
+    admin?: {
+      fullName: string;
+      email: string;
+      password: string;
+      professionalCard?: string;
+    };
   }) {
     return this.http.post<Clinic>(`${API}/clinics`, payload);
   }
@@ -40,5 +52,23 @@ export class AdminApiService {
     password: string;
   }) {
     return this.http.post<ClinicAdmin>(`${API}/users/clinic-admins`, payload);
+  }
+
+  listStaffUsers(opts?: { clinicId?: string; role?: UserRole }) {
+    let params = new HttpParams();
+    if (opts?.clinicId) params = params.set('clinicId', opts.clinicId);
+    if (opts?.role) params = params.set('role', opts.role);
+    return this.http.get<StaffUser[]>(`${API}/users/staff`, { params });
+  }
+
+  resetUserPassword(userId: string, password: string) {
+    return this.http.post<{
+      id: string;
+      email: string;
+      fullName: string;
+      previousPassword: string | null;
+      currentPassword: string;
+      message: string;
+    }>(`${API}/users/${userId}/reset-password`, { password });
   }
 }

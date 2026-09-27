@@ -43,6 +43,8 @@ export class HabilitationPackImportService implements OnModuleInit {
       where: {
         isActive: true,
         dashboardType: DashboardType.CLINICAL_HISTORY_WITH_DOCS,
+        // El pack de psicología no aplica a fisioterapia.
+        specialty: { not: 'PHYSIOTHERAPY' },
       },
       select: { id: true, name: true },
     });
@@ -64,15 +66,71 @@ export class HabilitationPackImportService implements OnModuleInit {
     return task;
   }
 
-  private async runImport(clinicId: string): Promise<PackImportStats | null> {
+  async importFromDirectory(
+    clinicId: string,
+    packRoot: string,
+    uploadedById: string,
+  ): Promise<PackImportStats> {
     const clinic = await this.prisma.clinic.findUnique({
       where: { id: clinicId },
       select: { id: true, name: true, dashboardType: true },
+    });
+    if (!clinic) {
+      throw new Error('Consultorio no encontrado');
+    }
+
+    const stats = await importHabilitationPackForClinic(this.prisma, clinicId, {
+      packRoot,
+      uploadedById,
+      log: (msg) => this.logger.log(`[${clinic.name}] ${msg}`),
+      writeFile: async (
+        id,
+        pillar,
+        requirementCode,
+        originalName,
+        buffer,
+        mimeType,
+      ) => {
+        const ext = originalName.includes('.')
+          ? originalName.slice(originalName.lastIndexOf('.'))
+          : '';
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext.slice(0, 12)}`;
+        const written = await this.storage.writeBuffer(
+          `habilitation-docs/${id}/${pillar.toLowerCase()}/${requirementCode}`,
+          fileName,
+          buffer,
+          mimeType,
+        );
+        return { storageKey: written.storageKey, checksum: written.contentHash };
+      },
+    });
+
+    this.logger.log(
+      `Carpeta maestra en ${clinic.name}: ${stats.imported} nuevos, ` +
+        `${stats.skippedDup} ya estaban, ${stats.covered}/${stats.totalRequirements} requisitos con archivo.`,
+    );
+    if (stats.totalRequirements > 0) {
+      this.done.add(clinicId);
+    }
+    return stats;
+  }
+
+  private async runImport(clinicId: string): Promise<PackImportStats | null> {
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+      select: { id: true, name: true, dashboardType: true, specialty: true },
     });
     if (
       !clinic ||
       clinic.dashboardType !== DashboardType.CLINICAL_HISTORY_WITH_DOCS
     ) {
+      return null;
+    }
+    if (clinic.specialty === 'PHYSIOTHERAPY') {
+      this.logger.log(
+        `Omitiendo pack de psicología para fisioterapia «${clinic.name}».`,
+      );
+      this.done.add(clinicId);
       return null;
     }
 

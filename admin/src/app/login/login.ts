@@ -41,10 +41,8 @@ export class Login {
   });
 
   constructor() {
-    const tipo = this.route.snapshot.queryParamMap.get('tipo');
-    this.loginType.set(tipo === 'profesional' ? 'profesional' : 'admin');
-    // Evita reutilizar sesión del otro portal (ej. superadmin al entrar como profesional)
-    this.auth.logout();
+    // Este componente Angular ya no se usa: Caddy redirige /login al HTML del consultorio.
+    window.location.replace(`/login-profesional.html?_=${Date.now()}`);
   }
 
   togglePassword() {
@@ -55,6 +53,11 @@ export class Login {
 
   goHome() {
     this.auth.goToWebsite();
+  }
+
+  /** Tras login profesional → dashboard estático del consultorio. */
+  private enterConsultorioFresh() {
+    window.location.replace(`/consultorio.html?_=${Date.now()}`);
   }
 
   submit() {
@@ -85,7 +88,7 @@ export class Login {
             );
             return;
           }
-          void this.router.navigateByUrl('/consultorio');
+          void this.enterConsultorioFresh();
           return;
         }
 
@@ -97,7 +100,7 @@ export class Login {
           return;
         }
 
-        void this.router.navigateByUrl('/admin');
+        window.location.replace('/admin');
       },
       error: (err: { status?: number; error?: { message?: string | string[] } }) => {
         this.loading.set(false);

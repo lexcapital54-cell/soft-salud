@@ -30,6 +30,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user || !user.isActive) {
       throw new UnauthorizedException();
     }
+    if (user.clinic?.hostingSuspendedAt) {
+      throw new UnauthorizedException(
+        'Consultorio suspendido por falta de pago del arrendamiento mensual.',
+      );
+    }
     return user;
   }
 }

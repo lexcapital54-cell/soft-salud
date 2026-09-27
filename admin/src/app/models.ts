@@ -5,7 +5,12 @@ export type UserRole =
   | 'RECEPTIONIST'
   | 'AUDITOR';
 
-export type ClinicSpecialty = 'PSYCHOLOGY' | 'DENTISTRY' | 'MEDICINE' | 'AESTHETIC';
+export type ClinicSpecialty =
+  | 'PSYCHOLOGY'
+  | 'DENTISTRY'
+  | 'MEDICINE'
+  | 'AESTHETIC'
+  | 'PHYSIOTHERAPY';
 
 export type DashboardType = 'CLINICAL_HISTORY' | 'CLINICAL_HISTORY_WITH_DOCS';
 
@@ -16,10 +21,33 @@ export interface AuthUser {
   role: UserRole;
   clinicId: string | null;
   clinicName?: string | null;
+  clinicAddress?: string | null;
+  clinicPhone?: string | null;
   specialty?: ClinicSpecialty | null;
   dashboardType?: DashboardType | null;
+  ripsEnabled?: boolean;
+  repsExpirationDate?: string | null;
   isActive: boolean;
 }
+
+/** Sede a la que el usuario puede cambiar (multi-sede). */
+export interface AccessibleClinic {
+  id: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  specialty: string;
+  isCurrent: boolean;
+  isDefault: boolean;
+}
+
+export const ROLE_LABELS: Record<UserRole, string> = {
+  SUPER_ADMIN: 'Superadmin',
+  ADMIN: 'Administrador',
+  HEALTH_PROFESSIONAL: 'Profesional de salud',
+  RECEPTIONIST: 'Secretaría',
+  AUDITOR: 'Auditor',
+};
 
 export interface ClinicAdmin {
   id: string;
@@ -50,6 +78,7 @@ export const SPECIALTY_LABELS: Record<ClinicSpecialty, string> = {
   DENTISTRY: 'Odontología',
   MEDICINE: 'Medicina',
   AESTHETIC: 'Medicina estética',
+  PHYSIOTHERAPY: 'Fisioterapia',
 };
 
 export const DASHBOARD_TYPE_LABELS: Record<DashboardType, string> = {

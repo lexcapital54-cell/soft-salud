@@ -26,7 +26,7 @@ const HOUR = 60 * 60 * 1000;
 
 const appointmentInclude = {
   patient: true,
-  clinic: { select: { id: true, name: true } },
+  clinic: { select: { id: true, name: true, address: true } },
   professional: { select: { id: true, fullName: true } },
 } satisfies Prisma.AppointmentInclude;
 
@@ -129,6 +129,50 @@ export class NotificationsService {
     }
   }
 
+  /** Correo/WhatsApp al crear la cita (agendada), independiente de la confirmación posterior. */
+  async notifyBooking(appointmentId: string) {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: appointmentInclude,
+    });
+    if (!appointment) return;
+
+    for (const channel of Object.values(NotificationChannel)) {
+      await this.deliver(
+        appointment,
+        NotificationKind.CONFIRMATION,
+        channel,
+        {
+          dedupeKey: `${appointment.id}:BOOKING:${channel}`,
+          variant: 'booking',
+        },
+      );
+    }
+  }
+
+  /** Aviso cuando se cambia fecha/hora de una cita vigente. */
+  async notifyReschedule(appointmentId: string) {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: appointmentInclude,
+    });
+    if (!appointment) return;
+    if (!NOTIFIABLE_STATUSES.includes(appointment.status)) return;
+
+    const stamp = appointment.startsAt.toISOString();
+    for (const channel of Object.values(NotificationChannel)) {
+      await this.deliver(
+        appointment,
+        NotificationKind.MANUAL_RESEND,
+        channel,
+        {
+          dedupeKey: `${appointment.id}:RESCHEDULE:${stamp}:${channel}`,
+          variant: 'reschedule',
+        },
+      );
+    }
+  }
+
   /** Reenvío manual desde la agenda. Se puede repetir y queda historial completo. */
   async resend(user: User, appointmentId: string, channel: NotificationChannel) {
     const clinicId = this.requireClinicId(user);
@@ -172,20 +216,29 @@ export class NotificationsService {
     appointment: AppointmentForNotice,
     kind: NotificationKind,
     channel: NotificationChannel,
-    options: { dedupeKey: string | null; triggeredById?: string },
+    options: {
+      dedupeKey: string | null;
+      triggeredById?: string;
+      variant?: 'default' | 'booking' | 'reschedule';
+    },
   ) {
+    if (!appointment.patientId || !appointment.patient) return false;
     const recipient = this.resolveRecipient(appointment, channel);
     if (!recipient) return false;
 
-    const { subject, body } = buildMessage(kind, {
-      patientName: this.patientName(appointment),
-      professionalName: appointment.professional.fullName,
-      clinicName: appointment.clinic.name,
-      startsAt: appointment.startsAt,
-      modality: appointment.modality,
-      meetingUrl: appointment.meetingUrl,
-      location: null,
-    });
+    const { subject, body } = buildMessage(
+      kind,
+      {
+        patientName: this.patientName(appointment),
+        professionalName: appointment.professional.fullName,
+        clinicName: appointment.clinic.name,
+        startsAt: appointment.startsAt,
+        modality: appointment.modality,
+        meetingUrl: appointment.meetingUrl,
+        location: appointment.clinic.address ?? null,
+      },
+      options.variant ?? 'default',
+    );
 
     let log;
     try {
@@ -257,6 +310,7 @@ export class NotificationsService {
     channel: NotificationChannel,
   ) {
     const patient = appointment.patient;
+    if (!patient) return null;
     const minor = this.isMinor(appointment);
 
     if (channel === NotificationChannel.EMAIL) {
@@ -276,6 +330,7 @@ export class NotificationsService {
 
   private isMinor(appointment: AppointmentForNotice) {
     const patient = appointment.patient;
+    if (!patient) return false;
     if (patient.isMinorOverride !== null) return patient.isMinorOverride;
     if (MINOR_DOCUMENT_TYPES.has((patient.documentType ?? '').toUpperCase()))
       return true;
@@ -290,6 +345,7 @@ export class NotificationsService {
 
   private patientName(appointment: AppointmentForNotice) {
     const p = appointment.patient;
+    if (!p) return 'Paciente';
     return `${p.firstName} ${p.lastName}`.replace(/\s+/g, ' ').trim();
   }
 

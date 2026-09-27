@@ -1,4 +1,4 @@
-import { AppointmentStatus, CareModality } from '@prisma/client';
+import { AppointmentEventType, AppointmentStatus, CareModality } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -12,6 +12,7 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 
 export class TodayAppointmentsQueryDto {
@@ -54,8 +55,20 @@ export class UpdateAppointmentStatusDto {
 }
 
 export class CreateAppointmentDto {
+  /** Obligatorio en CITA; omitir en BLOQUEO. */
+  @ValidateIf((o: CreateAppointmentDto) => (o.eventType ?? 'CITA') !== 'BLOQUEO')
   @IsUUID()
-  patientId: string;
+  patientId?: string;
+
+  @IsOptional()
+  @IsEnum(AppointmentEventType)
+  eventType?: AppointmentEventType;
+
+  /** Motivo del bloqueo (vacaciones, capacitación, etc.). Obligatorio si eventType=BLOQUEO. */
+  @ValidateIf((o: CreateAppointmentDto) => o.eventType === 'BLOQUEO')
+  @IsString()
+  @MaxLength(255)
+  blockReason?: string;
 
   /** Por defecto, el profesional autenticado */
   @IsOptional()
@@ -140,6 +153,11 @@ export class UpdateAppointmentDto {
   @IsString()
   @MaxLength(1000)
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  blockReason?: string;
 }
 
 export class RegisterAdmissionDto {

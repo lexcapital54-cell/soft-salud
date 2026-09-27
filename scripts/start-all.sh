@@ -91,6 +91,15 @@ else
   done
 fi
 
+# ── 2b. Migraciones Prisma (tablas HCE, consentimientos, agenda…) ───────────
+log "Migraciones PostgreSQL (prisma migrate deploy)"
+if [[ -f "$ROOT/api/.env" ]]; then
+  (cd "$ROOT/api" && npx prisma migrate deploy) && ok "Esquema al día" \
+    || fail "Falló prisma migrate deploy. Revisa Postgres y api/.env"
+else
+  echo "    ⚠ Sin api/.env — omitiendo migrate (el contenedor api lo intentará al arrancar)"
+fi
+
 # ── 3. Contenedores api + web ───────────────────────────────────────────────
 log "Contenedores HABILISALUD (api + web)"
 if [[ "$DO_BUILD" -eq 1 ]]; then

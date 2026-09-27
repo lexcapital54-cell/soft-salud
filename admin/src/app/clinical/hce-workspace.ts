@@ -1,0 +1,119 @@
+import { Component, OnDestroy, OnInit, QueryList, ViewChildren, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { AuthService } from '../auth.service';
+import { WEBSITE_URL } from '../api.config';
+import { ClinicalHistory } from './clinical-history';
+import { ClinicSwitcher } from '../clinic-switcher';
+import { HceWorkspaceService } from './hce-workspace.service';
+import { OpenEncountersAlert } from './open-encounters-alert';
+import { VoiceDictationService } from './voice-dictation.service';
+import { ClinicalTextToSpeechService } from './clinical-text-to-speech.service';
+
+@Component({
+  selector: 'app-hce-workspace',
+  imports: [ClinicalHistory, OpenEncountersAlert, ClinicSwitcher],
+  templateUrl: './hce-workspace.html',
+  styleUrl: './hce-workspace.scss',
+})
+export class HceWorkspace implements OnInit, OnDestroy {
+  private readonly workspace = inject(HceWorkspaceService);
+  private readonly auth = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly voice = inject(VoiceDictationService);
+  private readonly textToSpeech = inject(ClinicalTextToSpeechService);
+  private sub?: Subscription;
+
+  @ViewChildren(ClinicalHistory)
+  private histories!: QueryList<ClinicalHistory>;
+
+  readonly websiteUrl = WEBSITE_URL;
+  readonly user = this.auth.user;
+  readonly canWrite = this.auth.canWriteClinical;
+  readonly tabs = this.workspace.tabs;
+  readonly activeKey = this.workspace.activeKey;
+  bulkSaveMessage = '';
+
+  ngOnInit() {
+    this.sub = this.route.queryParamMap.subscribe((params) => {
+      const encounterId = params.get('encounterId');
+      const patientId = params.get('patientId');
+      if (encounterId) {
+        this.workspace.openEncounter(encounterId, patientId);
+      } else if (patientId) {
+        this.workspace.openPatient(patientId);
+      } else {
+        this.workspace.ensureBlankTab();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
+    this.voice.stop();
+    this.textToSpeech.stop();
+  }
+
+  activate(key: string) {
+    if (key === this.activeKey()) return;
+    this.voice.stop();
+    this.textToSpeech.stop();
+    this.workspace.activate(key);
+  }
+
+  openBlank() {
+    this.voice.stop();
+    this.textToSpeech.stop();
+    this.workspace.openBlank();
+  }
+
+  /** Guarda borrador de todas las pestañas con atención abierta (sin exigir cerrar ninguna). */
+  saveAllOpenDrafts() {
+    this.bulkSaveMessage = '';
+    let started = 0;
+    for (const h of this.histories?.toArray() || []) {
+      if (h.persistOpenDraft()) started += 1;
+    }
+    this.bulkSaveMessage =
+      started > 0
+        ? `Guardando ${started} historia${started === 1 ? '' : 's'} abierta${started === 1 ? '' : 's'} en la base de datos…`
+        : 'No hay historias editables para guardar (abra un paciente o una atención).';
+    window.setTimeout(() => {
+      this.bulkSaveMessage = '';
+    }, 4000);
+  }
+
+  closeTab(key: string, event: Event) {
+    event.stopPropagation();
+    this.voice.stop();
+    this.textToSpeech.stop();
+    this.workspace.close(key);
+  }
+
+  onLabel(key: string, label: string) {
+    this.workspace.setLabel(key, label);
+  }
+
+  onPatientBound(key: string, payload: { patientId: string; label: string }) {
+    this.workspace.bindPatient(key, payload.patientId, payload.label);
+  }
+
+  onOpenPatientTab(payload: { patientId: string; label?: string }) {
+    this.voice.stop();
+    this.textToSpeech.stop();
+    this.workspace.openPatient(payload.patientId, payload.label);
+  }
+
+  goHome() {
+    this.auth.goToWebsite();
+  }
+
+  logout() {
+    this.auth.logoutToClinicLogin();
+  }
+
+  onClinicSwitched() {
+    // Limpia pestañas del workspace anterior y recarga con la nueva sede.
+    window.location.reload();
+  }
+}

@@ -1,0 +1,99 @@
+<section class="hce-export-page">
+  <header class="topbar">
+    <div class="left">
+      <a href="/consultorio.html">← Consultorio</a>
+      <a class="brand" [href]="websiteUrl">HABILISALUD</a>
+      <strong>Descarga de historias clínicas (PDF)</strong>
+    </div>
+    <button type="button" class="ghost" (click)="logout()">Cerrar sesión</button>
+  </header>
+
+  <div class="panel">
+    <h1>Exportar historias clínicas</h1>
+    <p class="muted">
+      Busque por <strong>nombre</strong> o <strong>documento de identidad</strong>, o deje vacío
+      para listar todas las historias del consultorio (sin límite de mes). Los PDF usan el membrete
+      institucional del consultorio.
+    </p>
+
+    <div class="search-row">
+      <label class="grow">
+        Buscar paciente
+        <input
+          [(ngModel)]="query"
+          placeholder="Nombre, apellido o número de documento…"
+          (keydown.enter)="search()"
+        />
+      </label>
+      <button type="button" class="primary" (click)="search()" [disabled]="loading()">
+        {{ loading() ? 'Buscando…' : 'Buscar' }}
+      </button>
+      @if (canDownload()) {
+        <button
+          type="button"
+          class="ghost"
+          (click)="downloadAll()"
+          [disabled]="downloading() || !items().length"
+        >
+          {{ downloading() ? 'Generando…' : 'Descargar todas (ZIP)' }}
+        </button>
+      }
+    </div>
+
+    @if (error()) {
+      <p class="banner error">{{ error() }}</p>
+    }
+    @if (message()) {
+      <p class="banner ok">{{ message() }}</p>
+    }
+
+    @if (loading()) {
+      <p class="muted">Cargando historias…</p>
+    } @else if (!items().length) {
+      <p class="muted">No hay historias clínicas que coincidan.</p>
+    } @else {
+      <p class="muted small">{{ items().length }} historia(s) encontrada(s)</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Paciente</th>
+            <th>Documento</th>
+            <th>Consecutivo</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th>Profesional</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of items(); track row.encounterId) {
+            <tr>
+              <td>{{ row.patientName }}</td>
+              <td>{{ row.documentType }} {{ row.documentNumber }}</td>
+              <td>{{ row.externalCode || '—' }}</td>
+              <td>
+                <span class="pill" [class.signed]="row.status === 'SIGNED'">
+                  {{ row.status === 'SIGNED' ? 'Sellada' : 'Borrador' }}
+                </span>
+              </td>
+              <td>{{ row.signedAt || row.createdAt | date: 'dd/MM/yyyy' }}</td>
+              <td>{{ row.professionalName }}</td>
+              <td>
+                @if (canDownload()) {
+                  <button
+                    type="button"
+                    class="primary small"
+                    (click)="downloadOne(row)"
+                    [disabled]="downloading()"
+                  >
+                    PDF
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</section>

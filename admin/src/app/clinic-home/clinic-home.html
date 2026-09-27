@@ -8,6 +8,7 @@
         <p class="session-name">{{ user()?.fullName }}</p>
         <p class="session-email">{{ user()?.email }}</p>
       </div>
+      <a class="header-link" routerLink="/consultorio/configuracion">Configuración RIPS</a>
       <button type="button" (click)="logout()">Cerrar sesión</button>
     </div>
   </header>
@@ -19,6 +20,17 @@
       Especialidad:
       {{ user()?.specialty ? labels[user()!.specialty!] : 'Sin asignar' }}
     </p>
+
+    <div class="modules modules-rips">
+      <a class="module module-link module-settings" routerLink="/consultorio/configuracion">
+        <h2>Configuración RIPS</h2>
+        <p>
+          Active o desactive el módulo RIPS (facturación EPS). Si la consulta es
+          particular, déjelo apagado. El RDA clínico siempre se genera al firmar.
+        </p>
+        <span class="cta">Abrir configuración →</span>
+      </a>
+    </div>
 
     @if (hasDashboard()) {
       <p class="dashboard-type">
@@ -42,6 +54,14 @@
             <p>Gestione historias clínicas de sus pacientes según la especialidad del consultorio.</p>
             <span class="cta">Abrir HCE →</span>
           </a>
+          <a class="module module-link" routerLink="/consultorio/historias-pdf">
+            <h2>Descargar historias (PDF)</h2>
+            <p>
+              Busque por nombre o documento y descargue historias clínicas en PDF con membrete, sin
+              límite de mes.
+            </p>
+            <span class="cta">Exportar PDF →</span>
+          </a>
         }
         @if (hasClinicalHistory() && !canWriteClinical()) {
           <a class="module module-link" routerLink="/consultorio/historia-clinica">
@@ -52,19 +72,10 @@
         }
         @if (hasDocuments() && canWriteClinical()) {
           <a class="module module-link" routerLink="/consultorio/documentos">
-            <h2>
-              Gestión documental
-              @if (canCountersign() && pendingDocSignatures() > 0) {
-                <span class="badge">{{ pendingDocSignatures() }} por firmar</span>
-              }
-            </h2>
+            <h2>Gestión documental</h2>
             <p>
-              @if (canCountersign() && pendingDocSignatures() > 0) {
-                HABILISALUD ya firmó documentos que esperan su firma de contraparte.
-              } @else {
-                Documentación, evidencias y requisitos de habilitación alineados a la
-                normativa vigente.
-              }
+              Documentación, evidencias y requisitos de habilitación alineados a la
+              normativa vigente.
             </p>
             <span class="cta">Ver módulo →</span>
           </a>

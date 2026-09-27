@@ -686,7 +686,7 @@ export async function importHabilitationPackForClinic(
             requirementId: req.id,
             uploadedById: options.uploadedById,
             version,
-            status: 'PENDING_SIGNATURE',
+            status: 'SIGNED',
             originalName,
             storageKey,
             mimeType,

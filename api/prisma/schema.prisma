@@ -24,6 +24,7 @@ enum ClinicSpecialty {
   DENTISTRY
   MEDICINE
   AESTHETIC
+  PHYSIOTHERAPY
 
   @@map("clinics_specialty_enum")
 }
@@ -55,6 +56,14 @@ enum AppointmentStatus {
 enum CareModality {
   IN_PERSON
   VIRTUAL
+}
+
+/// Cita con paciente vs bloqueo de agenda del profesional.
+enum AppointmentEventType {
+  CITA
+  BLOQUEO
+
+  @@map("appointments_event_type_enum")
 }
 
 /// Tipo de usuario RIPS (Res. 2275 de 2023)
@@ -312,6 +321,11 @@ model Clinic {
   address       String?         @db.VarChar(255)
   phone         String?         @db.VarChar(40)
   isActive      Boolean         @default(true) @map("is_active")
+  /// Periodo de arrendamiento pendiente (YYYY-MM-01). Null si está al día.
+  hostingPeriodDue    DateTime? @map("hosting_period_due") @db.Date
+  /// Si no es null, el consultorio está suspendido por falta de pago de arrendamiento.
+  hostingSuspendedAt  DateTime? @map("hosting_suspended_at") @db.Timestamptz(6)
+  hostingDueNotifiedAt DateTime? @map("hosting_due_notified_at") @db.Timestamptz(6)
   createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -336,6 +350,9 @@ model Clinic {
   patientConsents      PatientConsent[]
   incapacities         Incapacity[]
   notifications        NotificationLog[]
+  userClinicAccess     UserClinicAccess[]
+  remoteConsentInvites RemoteConsentInvite[]
+  platformReceipts     PlatformReceipt[]
 
   @@map("clinics")
 }
@@ -344,10 +361,16 @@ model User {
   id                          String   @id @default(uuid()) @db.Uuid
   email                       String   @unique @db.VarChar(180)
   passwordHash                String   @map("password_hash")
+  /// Última contraseña asignada por SUPER_ADMIN (solo visible en panel admin). Auth sigue con passwordHash.
+  passwordReminder            String?  @map("password_reminder") @db.VarChar(72)
   fullName                    String   @map("full_name") @db.VarChar(160)
   role                        UserRole
   professionalCard            String?  @map("professional_card") @db.VarChar(80)
   professionalSignatureBase64 String?  @map("professional_signature_base64")
+  /// Res. 2275: módulo RIPS de facturación a EPS. false = consulta particular.
+  ripsEnabled                 Boolean  @default(false) @map("rips_enabled")
+  /// Vencimiento del registro REPS del profesional (independiente de la sede).
+  repsExpirationDate          DateTime? @map("reps_expiration_date") @db.Date
   clinicId                    String?  @map("clinic_id") @db.Uuid
   clinic                      Clinic?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
   isActive                    Boolean  @default(true) @map("is_active")
@@ -366,9 +389,30 @@ model User {
   auditLogs                  AuditLog[]
   incapacitiesAuthored       Incapacity[]
   notificationsTriggered     NotificationLog[]
+  clinicAccess               UserClinicAccess[]
+  clinicalRecordDraftLogs    ClinicalRecordDraftLog[]
+  clinicalReportExports      ClinicalReportExport[] @relation("ReportExportedBy")
+  remoteConsentInvitesSent   RemoteConsentInvite[]  @relation("RemoteConsentInvitedBy")
+  platformReceiptsCreated    PlatformReceipt[]      @relation("PlatformReceiptCreatedBy")
 
   @@index([clinicId])
   @@map("users")
+}
+
+/// Sedes físicas a las que un usuario (p. ej. Asistente/RECEPTIONIST) tiene acceso.
+/// Permite gestionar calendarios de 2+ consultorios del mismo tenant.
+model UserClinicAccess {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinicId  String   @map("clinic_id") @db.Uuid
+  clinic    Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([userId, clinicId])
+  @@index([clinicId])
+  @@map("user_clinic_access")
 }
 
 model Patient {
@@ -399,6 +443,9 @@ model Patient {
   residenceZone          ResidenceZone? @map("residence_zone")
   /// Código DIVIPOLA de municipio, 5 dígitos (ej. 17001 = Manizales)
   municipalityCode       String?        @map("municipality_code") @db.VarChar(5)
+  /// Profesión (formación / título).
+  profession             String?        @db.VarChar(120)
+  /// Ocupación actual (actividad laboral).
   occupation             String?        @db.VarChar(120)
   educationLevel         String?        @map("education_level") @db.VarChar(80)
   emergencyContactName   String?        @map("emergency_contact_name") @db.VarChar(160)
@@ -413,6 +460,8 @@ model Patient {
   guardianPhone          String?        @map("guardian_phone") @db.VarChar(40)
   guardianEmail          String?        @map("guardian_email") @db.VarChar(180)
   legalCustodyNotes      String?        @map("legal_custody_notes")
+  /// Avatar del paciente (URL o storage key).
+  photoUrl               String?        @map("photo_url")
   /// Ley 1581: el contacto por cada canal requiere autorización revocable del titular.
   notifyByWhatsapp       Boolean        @default(true) @map("notify_by_whatsapp")
   notifyByEmail          Boolean        @default(true) @map("notify_by_email")
@@ -425,10 +474,12 @@ model Patient {
   clinicalAlerts   ClinicalAlert[]
   clinicalConsents ClinicalConsent[]
   patientConsents  PatientConsent[]
+  remoteConsentInvites RemoteConsentInvite[]
   sessionPackages  SessionPackage[]
   invoices         Invoice[]
   incapacities     Incapacity[]
   notifications    NotificationLog[]
+  reportExports    ClinicalReportExport[]
 
   @@unique([clinicId, documentType, documentNumber])
   @@index([clinicId, lastName])
@@ -438,16 +489,20 @@ model Patient {
 /// Minutos que el hueco de una cita cancelada queda disponible para reagendar.
 /// Pasada la ventana la franja se cierra y deja de ofrecerse.
 model Appointment {
-  id             String            @id @default(uuid()) @db.Uuid
-  clinicId       String            @map("clinic_id") @db.Uuid
-  clinic         Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  patientId      String            @map("patient_id") @db.Uuid
-  patient        Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  professionalId String            @map("professional_id") @db.Uuid
-  professional   User              @relation("AppointmentProfessional", fields: [professionalId], references: [id])
-  startsAt       DateTime          @map("starts_at") @db.Timestamptz(6)
-  endsAt         DateTime          @map("ends_at") @db.Timestamptz(6)
-  status         AppointmentStatus @default(SCHEDULED)
+  id             String                @id @default(uuid()) @db.Uuid
+  clinicId       String                @map("clinic_id") @db.Uuid
+  clinic         Clinic                @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  /// Null cuando eventType = BLOQUEO (bloqueo de agenda sin paciente).
+  patientId      String?               @map("patient_id") @db.Uuid
+  patient        Patient?              @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  professionalId String                @map("professional_id") @db.Uuid
+  professional   User                  @relation("AppointmentProfessional", fields: [professionalId], references: [id])
+  eventType      AppointmentEventType  @default(CITA) @map("event_type")
+  /// Motivo del bloqueo (vacaciones, capacitación, etc.). Solo aplica a BLOQUEO.
+  blockReason    String?               @map("block_reason") @db.VarChar(255)
+  startsAt       DateTime              @map("starts_at") @db.Timestamptz(6)
+  endsAt         DateTime              @map("ends_at") @db.Timestamptz(6)
+  status         AppointmentStatus     @default(SCHEDULED)
   modality       CareModality      @default(IN_PERSON)
   /// Fecha de solicitud de la cita — base del indicador PAMEC de Oportunidad (startsAt - requestDate)
   requestDate    DateTime?         @map("request_date") @db.Timestamptz(6)
@@ -470,6 +525,7 @@ model Appointment {
   @@index([clinicId, startsAt])
   @@index([professionalId, startsAt])
   @@index([clinicId, status, startsAt])
+  @@index([professionalId, eventType, startsAt])
   @@map("appointments")
 }
 
@@ -567,6 +623,8 @@ model Encounter {
   visitType         VisitType?       @map("visit_type")
   visitTypeReason   String?          @map("visit_type_reason") @db.VarChar(120)
   specialtySnapshot ClinicSpecialty? @map("specialty_snapshot")
+  /// Solo aplica si el profesional tiene ripsEnabled; genera JSON financiero Res. 2275.
+  generateRips      Boolean          @default(false) @map("generate_rips")
   createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -581,6 +639,8 @@ model Encounter {
   clinicalAlerts  ClinicalAlert[]
   invoices        Invoice[]
   incapacities    Incapacity[]
+  reportExports   ClinicalReportExport[]
+  remoteConsentInvites RemoteConsentInvite[]
 
   @@index([clinicId, startedAt])
   @@map("encounters")
@@ -611,8 +671,23 @@ model ClinicalRecord {
   evolutions         ClinicalEvolution[]
   clarificationNotes ClarificationNote[]
   attachments        ClinicalAttachment[]
+  draftLogs          ClinicalRecordDraftLog[]
 
   @@map("clinical_records")
+}
+
+/// Auditoría de autoguardados parciales (debounce) sobre borradores HCE.
+model ClinicalRecordDraftLog {
+  id               String         @id @default(uuid()) @db.Uuid
+  clinicalRecordId String         @map("clinical_record_id") @db.Uuid
+  clinicalRecord   ClinicalRecord @relation(fields: [clinicalRecordId], references: [id], onDelete: Cascade)
+  savedById        String?        @map("saved_by_id") @db.Uuid
+  savedBy          User?          @relation(fields: [savedById], references: [id], onDelete: SetNull)
+  contentHash      String?        @map("content_hash") @db.VarChar(128)
+  savedAt          DateTime       @default(now()) @map("saved_at") @db.Timestamptz(6)
+
+  @@index([clinicalRecordId, savedAt])
+  @@map("clinical_record_draft_logs")
 }
 
 model ClinicalEvolution {
@@ -624,10 +699,14 @@ model ClinicalEvolution {
   content          Json
   contentHash      String         @map("content_hash") @db.VarChar(128)
   signedAt         DateTime       @map("signed_at") @db.Timestamptz(6)
+  /// fecha_atencion_clinica: día real de la sesión (puede ser anterior al registro).
+  clinicalAttentionDate DateTime? @map("clinical_attention_date") @db.Timestamptz(6)
   immutable        Boolean        @default(true)
+  /// fecha_sistema: la fija la BD al insertar; ningún endpoint la modifica.
   createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([clinicalRecordId, signedAt])
+  @@index([clinicalRecordId, clinicalAttentionDate])
   @@map("clinical_evolutions")
 }
 
@@ -711,6 +790,7 @@ model ConsentTemplate {
   updatedAt    DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   patientConsents PatientConsent[]
+  remoteConsentInvites RemoteConsentInvite[]
 
   @@unique([specialty, code, version])
   @@map("consent_templates")
@@ -741,7 +821,9 @@ model ClinicalConsent {
   @@map("consents")
 }
 
-/// Consentimiento informado firmado + PDF inalterable (Ley 1581 / Ley 1090)
+/// Consentimiento informado firmado + PDF inalterable (Ley 1581 / Ley 1090).
+/// Para menores de edad la firma principal usa signerRole = LEGAL_GUARDIAN
+/// (acudiente/responsable legal); una sola firma es suficiente.
 model PatientConsent {
   id                 String            @id @default(uuid()) @db.Uuid
   clinicId           String            @map("clinic_id") @db.Uuid
@@ -770,6 +852,54 @@ model PatientConsent {
   @@index([encounterId, templateId, signerRole])
   @@index([clinicId, signedAt])
   @@map("patient_consents")
+}
+
+/// Invitación de firma remota por correo (atención virtual). Caduca en 7 días.
+model RemoteConsentInvite {
+  id              String          @id @default(uuid()) @db.Uuid
+  clinicId        String          @map("clinic_id") @db.Uuid
+  clinic          Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patientId       String          @map("patient_id") @db.Uuid
+  patient         Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  encounterId     String?         @map("encounter_id") @db.Uuid
+  encounter       Encounter?      @relation(fields: [encounterId], references: [id], onDelete: SetNull)
+  templateId      String          @map("template_id") @db.Uuid
+  template        ConsentTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  invitedById     String          @map("invited_by_id") @db.Uuid
+  invitedBy       User            @relation("RemoteConsentInvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+  /// Token opaco en claro solo se entrega por WhatsApp/correo; en BD se guarda el hash SHA-256.
+  tokenHash       String          @unique @map("token_hash") @db.VarChar(64)
+  sentToEmail     String?         @map("sent_to_email") @db.VarChar(180)
+  sentToPhone     String?         @map("sent_to_phone") @db.VarChar(40)
+  status          String          @default("PENDING") @db.VarChar(20)
+  expiresAt       DateTime        @map("expires_at") @db.Timestamptz(6)
+  usedAt          DateTime?       @map("used_at") @db.Timestamptz(6)
+  patientConsentId String?        @map("patient_consent_id") @db.Uuid
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([clinicId, status])
+  @@index([patientId, createdAt])
+  @@index([expiresAt])
+  @@map("remote_consent_invites")
+}
+
+/// Informe clínico exportado (PDF server-side) con trazabilidad.
+model ClinicalReportExport {
+  id           String    @id @default(uuid()) @db.Uuid
+  clinicId     String    @map("clinic_id") @db.Uuid
+  patientId    String    @map("patient_id") @db.Uuid
+  patient      Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  encounterId  String?   @map("encounter_id") @db.Uuid
+  encounter    Encounter? @relation(fields: [encounterId], references: [id], onDelete: SetNull)
+  requestedBy  String    @map("requested_by") @db.VarChar(160)
+  exportedById String    @map("exported_by_id") @db.Uuid
+  exportedBy   User      @relation("ReportExportedBy", fields: [exportedById], references: [id])
+  storageKey   String?   @map("storage_key") @db.VarChar(255)
+  exportedAt   DateTime  @default(now()) @map("exported_at") @db.Timestamptz(6)
+
+  @@index([patientId, exportedAt])
+  @@index([clinicId, exportedAt])
+  @@map("clinical_report_exports")
 }
 
 model ClinicalAttachment {
@@ -984,6 +1114,60 @@ model Transaction {
   @@map("transactions")
 }
 
+// ─── Ingresos de plataforma (SUPER_ADMIN / HabiliSALUD) ─────────────────────
+
+enum PlatformPlanVariant {
+  WITHOUT_DOCS
+  WITH_DOCS
+}
+
+enum PlatformChargeKind {
+  CLINIC_SETUP
+  MONTHLY_HOSTING
+  OTHER
+}
+
+/// Tarifas editables: alta con/sin documentación y arrendamiento mensual del servidor.
+model PlatformFee {
+  id        String              @id @default(uuid()) @db.Uuid
+  code      String              @unique @db.VarChar(60)
+  label     String              @db.VarChar(160)
+  kind      PlatformChargeKind
+  plan      PlatformPlanVariant
+  amount    Decimal             @db.Decimal(12, 2)
+  currency  String              @default("COP") @db.VarChar(3)
+  isActive  Boolean             @default(true) @map("is_active")
+  updatedAt DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("platform_fees")
+}
+
+/// Recibos de cobro HabiliSALUD a consultorios (alta + arrendamiento servidor).
+model PlatformReceipt {
+  id          String              @id @default(uuid()) @db.Uuid
+  number      String              @unique @db.VarChar(40)
+  clinicId    String              @map("clinic_id") @db.Uuid
+  clinic      Clinic              @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  kind        PlatformChargeKind
+  plan        PlatformPlanVariant
+  description String              @db.VarChar(255)
+  amount      Decimal             @db.Decimal(12, 2)
+  currency    String              @default("COP") @db.VarChar(3)
+  method      PaymentMethod       @default(TRANSFER)
+  paidAt      DateTime            @map("paid_at") @db.Timestamptz(6)
+  /// Mes de servicio para arrendamiento (YYYY-MM-01).
+  periodMonth DateTime?           @map("period_month") @db.Date
+  notes       String?
+  createdById String?             @map("created_by_id") @db.Uuid
+  createdBy   User?               @relation("PlatformReceiptCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([paidAt])
+  @@index([clinicId, kind, periodMonth])
+  @@map("platform_receipts")
+}
+
 model QualitySnapshot {
   id               String   @id @default(uuid()) @db.Uuid
   clinicId         String   @map("clinic_id") @db.Uuid
@@ -1025,8 +1209,10 @@ model DocumentRequirement {
   title        String           @db.VarChar(255)
   description  String?
   isMandatory  Boolean          @default(true) @map("is_mandatory")
-  /// Si está deshabilitado, el consultorio solo puede verlo (sin editar/firmar).
+  /// Si está deshabilitado, el consultorio no lo ve ni puede editar/firmar.
   isEnabled    Boolean          @default(true) @map("is_enabled")
+  /// Si es true, tras el sello HABILISALUD el consultorio debe firmar contraparte.
+  requiresClinicSignature Boolean @default(false) @map("requires_clinic_signature")
   validityDays Int?             @map("validity_days")
   createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)

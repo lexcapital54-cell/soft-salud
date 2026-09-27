@@ -225,7 +225,11 @@ export class SgsstFillPdfService {
           stack: this.signatureBlock(
             ROLE_TITLE[sig.role],
             sig.signerName,
-            this.toDataUrl(sig.signatureBase64),
+            (sig.role === DocumentSignerRole.ELABORO ||
+              sig.role === DocumentSignerRole.REVISO) &&
+              /^habilisalud$/i.test(sig.signerName)
+              ? null
+              : this.toDataUrl(sig.signatureBase64),
           ),
         });
       });
@@ -270,22 +274,37 @@ export class SgsstFillPdfService {
   private signatureBlock(
     title: string,
     name: string,
-    signatureDataUrl: string,
+    signatureDataUrl: string | null | undefined,
   ): Content[] {
-    return [
+    const hasImage =
+      !!signatureDataUrl && signatureDataUrl.startsWith('data:image');
+    const stack: Content[] = [
       {
         text: title,
         style: 'label',
         alignment: 'center',
         margin: [0, 0, 0, 8],
       },
-      {
-        image: signatureDataUrl,
+    ];
+    if (hasImage) {
+      stack.push({
+        image: signatureDataUrl!,
         width: 140,
         height: 56,
         alignment: 'center',
         margin: [0, 0, 0, 4],
-      },
+      });
+    } else {
+      stack.push({
+        text: name || 'HABILISALUD',
+        alignment: 'center',
+        bold: true,
+        fontSize: 13,
+        color: '#003d4c',
+        margin: [0, 16, 0, 12],
+      });
+    }
+    stack.push(
       {
         canvas: [
           {
@@ -311,7 +330,8 @@ export class SgsstFillPdfService {
         fontSize: 9,
         color: '#8f8f8f',
       },
-    ];
+    );
+    return stack;
   }
 
   private toDataUrl(raw: string) {

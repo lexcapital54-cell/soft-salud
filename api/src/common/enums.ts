@@ -11,9 +11,16 @@ export enum ClinicSpecialty {
   DENTISTRY = 'DENTISTRY',
   MEDICINE = 'MEDICINE',
   AESTHETIC = 'AESTHETIC',
+  PHYSIOTHERAPY = 'PHYSIOTHERAPY',
 }
 
 export enum DashboardType {
   CLINICAL_HISTORY = 'CLINICAL_HISTORY',
   CLINICAL_HISTORY_WITH_DOCS = 'CLINICAL_HISTORY_WITH_DOCS',
+}
+
+/** Cita con paciente vs bloqueo de agenda del profesional. */
+export enum AppointmentEventType {
+  CITA = 'CITA',
+  BLOQUEO = 'BLOQUEO',
 }

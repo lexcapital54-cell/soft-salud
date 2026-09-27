@@ -20,6 +20,10 @@ export class NewClinicAdminDto {
   @IsString()
   @MinLength(8)
   password: string;
+
+  @IsOptional()
+  @IsString()
+  professionalCard?: string;
 }
 
 export class CreateClinicDto {

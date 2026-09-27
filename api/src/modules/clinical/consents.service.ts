@@ -5,12 +5,14 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { ClinicSpecialty } from '@prisma/client';
+import { ClinicSpecialty, ConsentSignerRole, Prisma } from '@prisma/client';
 import { User } from '../../users/user.entity';
 import { PrismaService } from '../../prisma/prisma.module';
 import { fillConsentPlaceholders } from './consent-placeholders';
 import { ConsentPdfService } from './consent-pdf.service';
 import { CreatePatientConsentDto } from './dto/consent.dto';
+
+const MINOR_DOCUMENT_TYPES = new Set(['TI', 'RC', 'CN', 'MS']);
 
 @Injectable()
 export class ConsentsService {
@@ -127,6 +129,27 @@ export class ConsentsService {
     };
   }
 
+  private patientIsMinor(patient: {
+    birthDate: Date | null;
+    documentType: string | null;
+    isMinorOverride: boolean | null;
+  }) {
+    if (patient.isMinorOverride !== null && patient.isMinorOverride !== undefined) {
+      return patient.isMinorOverride;
+    }
+    if (MINOR_DOCUMENT_TYPES.has((patient.documentType ?? '').toUpperCase())) {
+      return true;
+    }
+    if (!patient.birthDate) return false;
+    const birth = new Date(patient.birthDate);
+    if (Number.isNaN(birth.getTime())) return false;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age -= 1;
+    return age < 18;
+  }
+
   async sign(
     user: User,
     dto: CreatePatientConsentDto,
@@ -163,12 +186,16 @@ export class ConsentsService {
 
     let professionalName = user.fullName?.trim() || '';
     let professionalCard = user.professionalCard?.trim() || '';
+    let encounterVisitDate: Date | null = null;
     if (dto.encounterId) {
       const encounter = await this.prisma.encounter.findFirst({
         where: { id: dto.encounterId, clinicId, patientId: dto.patientId },
         include: {
           professional: {
             select: { fullName: true, professionalCard: true },
+          },
+          clinicalRecord: {
+            select: { content: true, createdAt: true },
           },
         },
       });
@@ -183,17 +210,76 @@ export class ConsentsService {
         professionalCard =
           encounter.professional.professionalCard?.trim() || professionalCard;
       }
+      const recordContent = encounter.clinicalRecord?.content as
+        | Record<string, unknown>
+        | undefined;
+      const documentedAt =
+        recordContent?.documentedAt ??
+        encounter.clinicalRecord?.createdAt ??
+        encounter.createdAt;
+      if (documentedAt) {
+        encounterVisitDate = new Date(documentedAt as string | Date);
+      }
     }
 
     const signedAt = new Date();
+    const displayDate =
+      encounterVisitDate && !Number.isNaN(encounterVisitDate.getTime())
+        ? encounterVisitDate
+        : signedAt;
     const patientName = `${patient.firstName} ${patient.lastName}`.trim();
-    const signerName = dto.signerName?.trim() || patientName;
+
+    const isMinor = this.patientIsMinor(patient);
+    const guardianName = patient.guardianFullName?.trim() || '';
+    const guardianDocType = patient.guardianDocumentType?.trim() || 'CC';
+    const guardianDocNumber = patient.guardianDocumentNumber?.trim() || '';
+
+    if (isMinor) {
+      if (!guardianName) {
+        throw new BadRequestException(
+          'Para menores de edad complete el nombre del acudiente en la ficha del paciente.',
+        );
+      }
+      if (!guardianDocNumber && !dto.signerDocument?.trim()) {
+        throw new BadRequestException(
+          'Para menores de edad complete el documento del acudiente en la ficha del paciente.',
+        );
+      }
+      if (
+        dto.signerRole &&
+        dto.signerRole !== ConsentSignerRole.LEGAL_GUARDIAN
+      ) {
+        throw new BadRequestException(
+          'Para menores la firma debe ser del acudiente o representante legal.',
+        );
+      }
+    }
+
+    const signerRole = isMinor
+      ? ConsentSignerRole.LEGAL_GUARDIAN
+      : (dto.signerRole ?? ConsentSignerRole.PATIENT);
+
+    const signerName =
+      dto.signerName?.trim() ||
+      (isMinor && guardianName
+        ? `${guardianName} (acudiente de ${patientName})`
+        : patientName);
     const docType =
-      dto.signerDocumentType?.trim() || patient.documentType || 'CC';
-    const docNumber = dto.signerDocument?.trim() || patient.documentNumber;
+      dto.signerDocumentType?.trim() ||
+      (isMinor && patient.guardianDocumentType
+        ? patient.guardianDocumentType
+        : patient.documentType) ||
+      'CC';
+    const docNumber =
+      dto.signerDocument?.trim() ||
+      (isMinor && guardianDocNumber
+        ? guardianDocNumber
+        : patient.documentNumber);
     if (!docNumber) {
       throw new BadRequestException(
-        'El consentimiento requiere el documento de quien firma. Complete la ficha del paciente o indique el documento del firmante.',
+        isMinor
+          ? 'Complete el documento del acudiente (menor de edad) o indique el documento del firmante.'
+          : 'El consentimiento requiere el documento de quien firma. Complete la ficha del paciente o indique el documento del firmante.',
       );
     }
     const signerDocument = `${docType} ${docNumber}`.slice(0, 40);
@@ -206,7 +292,7 @@ export class ConsentsService {
       patientName,
       professionalName,
       professionalCard,
-      signedAt,
+      signedAt: displayDate,
     });
 
     const consent = await this.prisma.patientConsent.create({
@@ -215,7 +301,9 @@ export class ConsentsService {
         patientId: dto.patientId,
         encounterId: dto.encounterId ?? null,
         templateId: template.id,
+        signerRole,
         signerName,
+        signerDocumentType: docType,
         signerDocument,
         signatureBase64: dto.signatureBase64,
         signedAt,
@@ -250,13 +338,14 @@ export class ConsentsService {
         signerName,
         signerDocument,
         signatureBase64: dto.signatureBase64,
-        signedAt,
+        signedAt: displayDate,
         ipAddress: meta.ipAddress,
         userAgent: meta.userAgent,
         encounterId: dto.encounterId ?? null,
         professionalName,
         professionalCard,
         professionalSignatureBase64: dto.professionalSignatureBase64,
+        signerRole,
       });
     } catch (error) {
       this.logger.error(
@@ -301,6 +390,28 @@ export class ConsentsService {
       template.code,
       signedAt,
     );
+
+    if (dto.encounterId) {
+      const record = await this.prisma.clinicalRecord.findFirst({
+        where: { encounterId: dto.encounterId },
+        select: { id: true, content: true },
+      });
+      if (record) {
+        const content = {
+          ...((record.content as Record<string, unknown>) ?? {}),
+        };
+        const draft = {
+          ...((content.consentDraft as Record<string, unknown>) ?? {}),
+          patientSignatureBase64: dto.signatureBase64,
+          patientSignaturePending: false,
+        };
+        content.consentDraft = draft;
+        await this.prisma.clinicalRecord.update({
+          where: { id: record.id },
+          data: { content: content as Prisma.InputJsonValue },
+        });
+      }
+    }
 
     return {
       ...updated,

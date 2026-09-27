@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Historia clínica — Psicología</title>
+  <style>
+    :root {
+      --rose: #c48b7e;
+      --rose-soft: #e1b7ad;
+      --title: #2a1f1c;
+      --muted: #7a6a66;
+      --line: #eddcd6;
+      --paper: #faf4f1;
+      --card: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+      color: var(--title);
+      background: linear-gradient(180deg, #faf4f1 0%, #fff 280px);
+      border-left: 6px solid var(--rose-soft);
+      letter-spacing: -0.012em;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 28px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+    .brand { font-weight: 700; color: var(--rose); letter-spacing: 0.04em; text-decoration: none; }
+    .clinic { margin: 0; color: var(--muted); font-size: 13px; }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 24px 20px 60px; }
+    .eyebrow { margin: 0; color: var(--rose); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+    h1 { margin: 8px 0 18px; font-size: 1.65rem; font-weight: 600; }
+    .block {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 22px;
+      margin: 18px 0;
+      box-shadow: 0 8px 30px rgba(196, 139, 126, 0.08);
+    }
+    .block h3 { margin: 0 0 12px; color: var(--rose); font-size: 1.1rem; }
+    .block h4 { margin: 18px 0 10px; color: var(--title); font-size: 0.95rem; }
+    .muted { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+    label { display: grid; gap: 6px; font-size: 13px; margin-bottom: 12px; color: #2e2e2e; }
+    input, textarea, select {
+      border: 1px solid #e3d2cc;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font: inherit;
+      background: #fffdfc;
+      width: 100%;
+    }
+    textarea { resize: vertical; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .ante { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin-bottom: 12px; }
+    .ante label.check { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
+    .ante label.check input { width: auto; }
+    .cie-block { border: 2px solid var(--rose); background: #fdf7f5; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px 6px; text-align: left; }
+    th { color: var(--rose); font-weight: 600; background: var(--paper); }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <a class="brand" href="/">HC PSICOLOGÍA</a>
+      <p class="clinic">Consultorio de psicología · HabiliSALUD</p>
+    </div>
+    <span style="color:#c48b7e;font-size:13px">Vista previa</span>
+  </header>
+
+  <main class="wrap">
+    <p class="eyebrow">Historia clínica</p>
+    <h1>Historia clínica — Psicología</h1>
+
+    <section class="block">
+      <h3>1. Datos de identificación del paciente</h3>
+      <div class="grid-4">
+        <label>Tipo doc.<select><option>CC</option></select></label>
+        <label>Número<input value="1.000.000.000" /></label>
+        <label>Nombres<input value="Paciente" /></label>
+        <label>Apellidos<input value="Ejemplo" /></label>
+        <label>Fecha nacimiento<input type="date" value="1995-04-12" /></label>
+        <label>Sexo<select><option>Femenino</option></select></label>
+        <label>Teléfono<input value="300 000 0000" /></label>
+        <label>Ocupación<input value="Docente" /></label>
+      </div>
+    </section>
+
+    <section class="block">
+      <h3>2. Datos de la atención</h3>
+      <div class="grid-4">
+        <label>ID historia<input value="HC-0001" readonly /></label>
+        <label>Fecha de digitación<input value="27/09/2026 10:00" readonly /></label>
+        <label>Modalidad<select><option>Presencial</option></select></label>
+        <label>Servicio<input value="Consulta externa" readonly /></label>
+      </div>
+    </section>
+
+    <section class="block">
+      <h3>3. Datos mínimos de atención (Res. 866)</h3>
+      <label>Motivo de consulta<textarea rows="2"></textarea></label>
+      <label>Enfermedad actual<textarea rows="3"></textarea></label>
+
+      <h4>Antecedentes</h4>
+      <div class="ante">
+        <div><label class="check"><input type="checkbox" /> Personales (Aplica)</label></div>
+        <div><label class="check"><input type="checkbox" checked /> Psiquiátricos (Aplica)</label><input placeholder="Detalle breve…" /></div>
+        <div><label class="check"><input type="checkbox" /> Familiares (Aplica)</label></div>
+        <div><label class="check"><input type="checkbox" /> Tóxicos (Aplica)</label></div>
+      </div>
+
+      <label>Historia psicosocial<textarea rows="4"></textarea></label>
+
+      <h4>Examen mental</h4>
+      <p class="muted">Incluya aquí, si aplica, valoración de riesgo (ideación suicida, heteroagresividad u otras alertas).</p>
+      <label>Descripción libre<textarea rows="5" placeholder="Apariencia, conducta, lenguaje, ánimo, pensamiento, percepción, juicio, insight y riesgo (si aplica)…"></textarea></label>
+      <label>Impresión diagnóstica (narrativa)<textarea rows="3"></textarea></label>
+    </section>
+
+    <section class="block cie-block">
+      <h3>4. Diagnósticos (CIE-10)</h3>
+      <label>Buscar código<input placeholder="Código CIE-10 o descripción…" /></label>
+      <table>
+        <thead><tr><th>Código</th><th>Descripción</th><th>Tipo</th></tr></thead>
+        <tbody>
+          <tr><td>F41.1</td><td>Trastorno de ansiedad generalizada</td><td>Principal</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="block">
+      <h3>5. Procedimientos (CUPS)</h3>
+      <table>
+        <thead><tr><th>Código</th><th>Descripción</th><th>Cantidad</th></tr></thead>
+        <tbody>
+          <tr><td>890208</td><td>Consulta de primera vez por psicología</td><td>1</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="block">
+      <h3>6. Registro Digital de Atención (RDA) — Res. 1888 de 2025</h3>
+      <p class="muted">Al guardar la historia clínica el sistema arma el RDA con anamnesis, examen mental, diagnósticos y procedimientos.</p>
+    </section>
+
+    <section class="block">
+      <h3>7. Consentimientos (plantilla legal + firma)</h3>
+      <p class="muted">Habeas Data, consentimiento informado adultos / NNA, telepsicología o disentimiento. Firma del paciente y de la profesional.</p>
+    </section>
+  </main>
+</body>
+</html>

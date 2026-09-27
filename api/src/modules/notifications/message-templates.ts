@@ -10,6 +10,9 @@ export interface MessageContext {
   location?: string | null;
 }
 
+/** Variantes de texto sobre la misma plantilla base (sin nuevos enums). */
+export type MessageVariant = 'default' | 'booking' | 'reschedule';
+
 const TIME_ZONE = 'America/Bogota';
 
 function formatWhen(date: Date) {
@@ -43,8 +46,18 @@ const HEADLINES: Record<NotificationKind, string> = {
   MANUAL_RESEND: 'Recordatorio de su cita',
 };
 
-export function buildMessage(kind: NotificationKind, ctx: MessageContext) {
-  const headline = HEADLINES[kind];
+function headlineFor(kind: NotificationKind, variant: MessageVariant) {
+  if (variant === 'booking') return 'Su cita quedó agendada';
+  if (variant === 'reschedule') return 'Su cita fue reprogramada';
+  return HEADLINES[kind];
+}
+
+export function buildMessage(
+  kind: NotificationKind,
+  ctx: MessageContext,
+  variant: MessageVariant = 'default',
+) {
+  const headline = headlineFor(kind, variant);
   const subject = `${headline} — ${ctx.clinicName}`;
 
   if (kind === NotificationKind.CANCELLATION) {
@@ -59,10 +72,15 @@ export function buildMessage(kind: NotificationKind, ctx: MessageContext) {
     return { subject, body };
   }
 
+  const lead =
+    variant === 'reschedule'
+      ? 'Le informamos la nueva fecha y hora de su cita:'
+      : `${headline}:`;
+
   const body = [
     `Hola ${ctx.patientName},`,
     '',
-    `${headline}:`,
+    lead,
     `Fecha y hora: ${formatWhen(ctx.startsAt)}`,
     `Profesional: ${ctx.professionalName}`,
     whereLine(ctx),

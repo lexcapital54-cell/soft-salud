@@ -67,6 +67,7 @@ export interface DocumentFileRow {
   hasClinicAdminSignature?: boolean;
   canClinicSign?: boolean;
   awaitingClinicSignature?: boolean;
+  requiresClinicSignature?: boolean;
   canPreview: boolean;
   signatures: DocumentSignatureRow[];
   missingRoles: DocumentSignerRole[];
@@ -80,6 +81,10 @@ export interface RequirementRow {
   isMandatory: boolean;
   /** Controlado solo por superadmin. */
   isEnabled: boolean;
+  /** Si true, el consultorio debe firmar contraparte tras HabiliSALUD. */
+  requiresClinicSignature?: boolean;
+  /** Pilar del requisito (para permisos CRUD del admin). */
+  pillar?: DocumentPillar;
   validityDays: number | null;
   status: ComplianceStatus;
   expiresAt: string | null;

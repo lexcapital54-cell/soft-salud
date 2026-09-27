@@ -1,6 +1,7 @@
 import {
   IsArray,
   IsBoolean,
+  IsDateString,
   IsEnum,
   IsObject,
   IsOptional,
@@ -8,6 +9,7 @@ import {
   IsUUID,
   MaxLength,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -32,6 +34,17 @@ export class ListEncountersQueryDto {
   @IsOptional()
   @IsUUID()
   patientId?: string;
+}
+
+/** Corrección de fecha de digitación / modalidad (también en HC sellada, auditada). */
+export class UpdateAttendanceMetaDto {
+  @IsOptional()
+  @IsEnum(CareModality)
+  modality?: CareModality;
+
+  @IsOptional()
+  @IsDateString()
+  documentedAt?: string;
 }
 
 export class CreateEncounterDto {
@@ -74,6 +87,22 @@ export class DiagnosisInputDto {
   type?: DiagnosisType;
 }
 
+/** Actualiza solo CIE-10 (permite completar codificación con la HC ya sellada). */
+export class UpdateDiagnosesDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DiagnosisInputDto)
+  diagnoses: DiagnosisInputDto[];
+}
+
+/** Actualiza solo procedimientos CUPS (consultas, psicoterapias, remisiones). */
+export class UpdateProceduresDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProcedureInputDto)
+  procedures: ProcedureInputDto[];
+}
+
 export class ProcedureInputDto {
   @IsString()
   @MaxLength(20)
@@ -113,6 +142,17 @@ export class CreateEvolutionDto {
   @MaxLength(160)
   reason?: string;
 
+  /** Situación actual del paciente (se hereda a la siguiente evolución). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  currentSituation?: string;
+
+  /** fecha_atencion_clinica (ISO). Si falta, se usa la fecha de firma. */
+  @IsOptional()
+  @IsDateString()
+  clinicalAttentionDate?: string;
+
   @IsOptional()
   @IsString()
   signatureBase64?: string;
@@ -121,6 +161,20 @@ export class CreateEvolutionDto {
 export class UpdateProfessionalSignatureDto {
   @IsString()
   signatureBase64: string;
+}
+
+export class UpdateRipsSettingsDto {
+  @IsBoolean()
+  ripsEnabled: boolean;
+}
+
+/** Vencimiento del registro REPS del profesional (User.repsExpirationDate). */
+export class UpdateRepsSettingsDto {
+  /** YYYY-MM-DD, o null/vacío para limpiar. */
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== '')
+  @IsDateString()
+  repsExpirationDate?: string | null;
 }
 
 export class SaveClinicalRecordDto {
@@ -170,4 +224,14 @@ export class SaveClinicalRecordDto {
   @IsOptional()
   @IsString()
   externalCause?: string;
+
+  /** Generar JSON RIPS para esta atención (si el profesional tiene RIPS activo). */
+  @IsOptional()
+  @IsBoolean()
+  generateRips?: boolean;
+
+  /** true cuando el guardado viene del autoguardado (debounce) del frontend. */
+  @IsOptional()
+  @IsBoolean()
+  autosave?: boolean;
 }

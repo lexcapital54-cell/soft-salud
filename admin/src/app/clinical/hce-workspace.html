@@ -1,0 +1,92 @@
+<section class="hce-workspace">
+  <header class="ws-topbar">
+    <div class="ws-left">
+      <a href="/consultorio.html">← Consultorio</a>
+      <a
+        class="brand"
+        [href]="websiteUrl"
+        (click)="goHome(); $event.preventDefault()"
+        >HABILISALUD</a
+      >
+      <strong class="ws-title">Historia clínica</strong>
+    </div>
+    <div class="ws-actions">
+      @if (canWrite()) {
+        <a class="ghost ws-pdf-link" href="/consultorio/historias-pdf">Descargar PDF</a>
+      }
+      <app-clinic-switcher [compact]="true" (switched)="onClinicSwitched()" />
+      @if (!canWrite()) {
+        <span class="muted small">Modo lectura ({{ user()?.role }})</span>
+      }
+      <button type="button" class="ghost logout" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <div class="ws-tabs" role="tablist" aria-label="Historias abiertas">
+    @for (tab of tabs(); track tab.key) {
+      <button
+        type="button"
+        role="tab"
+        class="ws-tab"
+        [class.active]="tab.key === activeKey()"
+        [attr.aria-selected]="tab.key === activeKey()"
+        (click)="activate(tab.key)"
+      >
+        <span class="ws-tab-label">{{ tab.label }}</span>
+        <span
+          class="ws-tab-close"
+          title="Cerrar pestaña"
+          (click)="closeTab(tab.key, $event)"
+          >×</span
+        >
+      </button>
+    }
+    <button
+      type="button"
+      class="ws-tab-add"
+      title="Abrir otra historia"
+      (click)="openBlank()"
+    >
+      +
+    </button>
+  </div>
+
+  @if (canWrite()) {
+    <div class="ws-alerts">
+      <div class="ws-bulk-save">
+        <p class="ws-bulk-hint">
+          Puede tener varias historias abiertas a la vez. No hace falta cerrar una para guardar otra.
+        </p>
+        <button type="button" class="ghost" (click)="saveAllOpenDrafts()">
+          Guardar borradores abiertos
+        </button>
+        @if (bulkSaveMessage) {
+          <span class="ws-bulk-msg">{{ bulkSaveMessage }}</span>
+        }
+      </div>
+      <app-open-encounters-alert />
+    </div>
+  }
+
+  <div class="ws-panes">
+    @for (tab of tabs(); track tab.key) {
+      <div
+        class="ws-pane"
+        [class.active]="tab.key === activeKey()"
+        role="tabpanel"
+        [attr.hidden]="tab.key === activeKey() ? null : true"
+      >
+        <app-clinical-history
+          [embedded]="true"
+          [tabKey]="tab.key"
+          [isActiveTab]="tab.key === activeKey()"
+          [initialPatientId]="tab.patientId"
+          [initialEncounterId]="tab.encounterId"
+          (labelChange)="onLabel(tab.key, $event)"
+          (patientBound)="onPatientBound(tab.key, $event)"
+          (openPatientTab)="onOpenPatientTab($event)"
+        />
+      </div>
+    }
+  </div>
+</section>

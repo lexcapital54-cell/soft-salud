@@ -3,15 +3,18 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  StreamableFile,
 } from '@nestjs/common';
 import { User } from '../../users/user.entity';
 import { PrismaService } from '../../prisma/prisma.module';
+import { EmailSmtpProvider } from '../notifications/notification-providers';
 import {
   CreatePatientDto,
   QuickPatientDto,
   UpdatePatientDto,
 } from './dto/patient.dto';
 import { withProfileStatus } from './patient-profile';
+import { ClinicalStorageService } from './clinical-storage.service';
 
 /** Basta con saber si existe una atención con historia abierta. */
 const historyProbe = {
@@ -33,7 +36,11 @@ function withHistoryFlag<T extends { encounters: { id: string }[] }>(row: T) {
 
 @Injectable()
 export class PatientsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: ClinicalStorageService,
+    private readonly email: EmailSmtpProvider,
+  ) {}
 
   private requireClinicId(user: User) {
     if (!user.clinicId) {
@@ -65,7 +72,7 @@ export class PatientsService {
       orderBy: createdAt
         ? [{ createdAt: 'desc' }]
         : [{ lastName: 'asc' }, { firstName: 'asc' }],
-      take: createdAt ? 500 : 50,
+      take: createdAt ? 500 : 200,
     });
     return rows.map((row) => withHistoryFlag(withProfileStatus(row)));
   }
@@ -198,11 +205,19 @@ export class PatientsService {
           email: dto.email,
           eps: dto.eps,
           regime: dto.regime,
+          profession: dto.profession,
           occupation: dto.occupation,
           educationLevel: dto.educationLevel,
           emergencyContactName: dto.emergencyContactName,
           emergencyContactPhone: dto.emergencyContactPhone,
           emergencyRelationship: dto.emergencyRelationship,
+          guardianFullName: dto.guardianFullName,
+          guardianDocumentType: dto.guardianDocumentType,
+          guardianDocumentNumber: dto.guardianDocumentNumber,
+          guardianRelationship: dto.guardianRelationship,
+          guardianPhone: dto.guardianPhone,
+          guardianEmail: dto.guardianEmail,
+          photoUrl: dto.photoUrl,
         },
       });
       return withProfileStatus(patient);
@@ -252,6 +267,7 @@ export class PatientsService {
         ...(dto.email !== undefined ? { email: dto.email } : {}),
         ...(dto.eps !== undefined ? { eps: dto.eps } : {}),
         ...(dto.regime !== undefined ? { regime: dto.regime } : {}),
+        ...(dto.profession !== undefined ? { profession: dto.profession } : {}),
         ...(dto.occupation !== undefined ? { occupation: dto.occupation } : {}),
         ...(dto.educationLevel !== undefined
           ? { educationLevel: dto.educationLevel }
@@ -265,6 +281,25 @@ export class PatientsService {
         ...(dto.emergencyRelationship !== undefined
           ? { emergencyRelationship: dto.emergencyRelationship }
           : {}),
+        ...(dto.guardianFullName !== undefined
+          ? { guardianFullName: dto.guardianFullName }
+          : {}),
+        ...(dto.guardianDocumentType !== undefined
+          ? { guardianDocumentType: dto.guardianDocumentType }
+          : {}),
+        ...(dto.guardianDocumentNumber !== undefined
+          ? { guardianDocumentNumber: dto.guardianDocumentNumber }
+          : {}),
+        ...(dto.guardianRelationship !== undefined
+          ? { guardianRelationship: dto.guardianRelationship }
+          : {}),
+        ...(dto.guardianPhone !== undefined
+          ? { guardianPhone: dto.guardianPhone }
+          : {}),
+        ...(dto.guardianEmail !== undefined
+          ? { guardianEmail: dto.guardianEmail }
+          : {}),
+        ...(dto.photoUrl !== undefined ? { photoUrl: dto.photoUrl } : {}),
       },
     });
     return withProfileStatus(updated);
@@ -280,5 +315,170 @@ export class PatientsService {
       throw new NotFoundException('Paciente no encontrado');
     }
     return withProfileStatus(withHistoryFlag(patient));
+  }
+
+  /**
+   * Envía el encuadre terapéutico (horarios, cancelaciones, confidencialidad)
+   * al correo del paciente cuando hay SMTP; si no, queda registrado como simulado.
+   */
+  async sendTherapeuticFrame(user: User, patientId: string) {
+    const clinicId = this.requireClinicId(user);
+    const patient = await this.prisma.patient.findFirst({
+      where: { id: patientId, clinicId },
+      include: { clinic: true },
+    });
+    if (!patient) throw new NotFoundException('Paciente no encontrado');
+    const destination = patient.email?.trim() || null;
+    const patientName =
+      `${patient.firstName || ''} ${patient.lastName || ''}`.replace(/\s+/g, ' ').trim() ||
+      'paciente';
+    const clinicName = patient.clinic?.name || 'el consultorio';
+    const body = [
+      `Estimado/a ${patientName},`,
+      '',
+      `Le compartimos las reglas terapéuticas de ${clinicName}:`,
+      '',
+      '1. Horarios: llegue a tiempo; la sesión inicia y termina en la hora agendada.',
+      '2. Cancelaciones: avise con al menos 24 horas de anticipación para reprogramar.',
+      '3. Confidencialidad: lo hablado en sesión es privado, salvo riesgo inminente o deber legal (Ley 1090 de 2006).',
+      '4. Encuadre: el proceso requiere compromiso mutuo; si no puede continuar, comuníquelo a su profesional.',
+      '5. Contacto: use los canales oficiales del consultorio para citas y dudas administrativas.',
+      '',
+      'Este mensaje es informativo y queda registrado en su expediente.',
+      '',
+      'HABILISALUD',
+    ].join('\n');
+
+    let simulated = true;
+    let providerMessageId: string | undefined;
+    if (destination) {
+      const result = await this.email.send({
+        destination,
+        subject: `Reglas terapéuticas · ${clinicName}`,
+        body,
+      });
+      simulated = result.simulated;
+      providerMessageId = result.providerMessageId;
+    }
+
+    await this.prisma.auditLog.create({
+      data: {
+        clinicId,
+        userId: user.id,
+        action: 'CREATE',
+        entityType: 'TherapeuticFrame',
+        entityId: patient.id,
+        metadata: {
+          destination,
+          simulated: !destination || simulated,
+          providerMessageId,
+          topics: [
+            'horarios',
+            'cancelaciones',
+            'confidencialidad',
+            'encuadre terapéutico',
+          ],
+        },
+      },
+    });
+
+    if (!destination) {
+      return {
+        sent: false,
+        destination: null,
+        message:
+          'El paciente no tiene correo. Agregue un email en la ficha para enviar las reglas terapéuticas.',
+      };
+    }
+
+    return {
+      sent: true,
+      destination,
+      simulated,
+      message: simulated
+        ? `Encuadre registrado para ${destination} (SMTP no configurado: modo simulado).`
+        : `Reglas terapéuticas enviadas a ${destination}.`,
+    };
+  }
+
+  /**
+   * Foto de identificación del paciente: archivo en storage + clave en photoUrl.
+   * Acepta cámara o galería (JPEG/PNG/WebP, máx. 8 MB).
+   */
+  async uploadPhoto(user: User, patientId: string, file: Express.Multer.File) {
+    const clinicId = this.requireClinicId(user);
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('Seleccione o capture una foto.');
+    }
+    const mime = (file.mimetype || '').toLowerCase();
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(mime)) {
+      throw new BadRequestException('Solo se permiten imágenes JPG, PNG o WebP.');
+    }
+
+    const patient = await this.prisma.patient.findFirst({
+      where: { id: patientId, clinicId },
+    });
+    if (!patient) throw new NotFoundException('Paciente no encontrado');
+
+    const ext =
+      mime.includes('png') ? '.png' : mime.includes('webp') ? '.webp' : '.jpg';
+    const fileName = `avatar-${Date.now()}${ext}`;
+    const { storageKey } = await this.storage.writeBuffer(
+      `patients/${patient.id}`,
+      fileName,
+      file.buffer,
+      mime,
+    );
+
+    const updated = await this.prisma.patient.update({
+      where: { id: patient.id },
+      data: { photoUrl: storageKey },
+    });
+    return withProfileStatus(updated);
+  }
+
+  async getPhoto(user: User, patientId: string) {
+    const clinicId = this.requireClinicId(user);
+    const patient = await this.prisma.patient.findFirst({
+      where: { id: patientId, clinicId },
+      select: { id: true, photoUrl: true },
+    });
+    if (!patient) throw new NotFoundException('Paciente no encontrado');
+    if (!patient.photoUrl || this.isExternalPhoto(patient.photoUrl)) {
+      throw new NotFoundException('El paciente no tiene foto cargada.');
+    }
+
+    const buffer = await this.storage.readBuffer(patient.photoUrl);
+    const mime = this.guessImageMime(patient.photoUrl);
+    return new StreamableFile(buffer, {
+      type: mime,
+      disposition: 'inline; filename="paciente-foto"',
+    });
+  }
+
+  async removePhoto(user: User, patientId: string) {
+    const clinicId = this.requireClinicId(user);
+    const patient = await this.prisma.patient.findFirst({
+      where: { id: patientId, clinicId },
+    });
+    if (!patient) throw new NotFoundException('Paciente no encontrado');
+
+    const updated = await this.prisma.patient.update({
+      where: { id: patient.id },
+      data: { photoUrl: null },
+    });
+    return withProfileStatus(updated);
+  }
+
+  /** URLs http(s) o data: legacy; lo demás se trata como storageKey. */
+  isExternalPhoto(photoUrl: string) {
+    return /^(https?:|data:)/i.test(photoUrl.trim());
+  }
+
+  private guessImageMime(storageKey: string) {
+    const lower = storageKey.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    return 'image/jpeg';
   }
 }

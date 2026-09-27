@@ -1,10 +1,19 @@
 <section class="agenda-page">
   <header class="topbar">
     <div class="topbar-left">
-      <a routerLink="/consultorio">← Consultorio</a>
-      <strong>Agenda del día</strong>
+      @if (isReceptionist()) {
+        <strong>Agenda · Secretaría</strong>
+      } @else {
+        <a href="/consultorio.html">← Consultorio</a>
+        <strong>Agenda del día</strong>
+      }
     </div>
     <div class="topbar-actions">
+      <app-clinic-switcher
+        [compact]="true"
+        [label]="isReceptionist() ? 'Doctora' : 'Sede'"
+        (switched)="onClinicSwitched()"
+      />
       @if (canManage()) {
         <button type="button" class="primary" (click)="toggleBooking()">
           {{ showBooking() ? 'Cerrar' : 'Nueva cita' }}
@@ -13,8 +22,36 @@
       <button type="button" class="ghost" (click)="refresh()" [disabled]="loading()">
         {{ loading() ? 'Actualizando…' : 'Actualizar' }}
       </button>
+      <button type="button" class="ghost" (click)="logout()">Cerrar sesión</button>
     </div>
   </header>
+
+  @if (isReceptionist()) {
+    <p class="banner tip">
+      Elija la <strong>doctora</strong> en el selector de arriba para ver su agenda y
+      programar citas. Si ella bloquea el día o una franja, verá el aviso aquí.
+    </p>
+  }
+
+  @if (agendaBlocks().length) {
+    <div class="banner warn-blocks" role="alert">
+      <strong>Agenda bloqueada</strong>
+      <ul>
+        @for (b of agendaBlocks(); track b.id) {
+          <li>
+            <span class="wb-pro">{{ b.professional.fullName }}</span>
+            · {{ blockRangeLabel(b) }}
+            @if (b.blockReason) {
+              — {{ b.blockReason }}
+            }
+          </li>
+        }
+      </ul>
+      <p class="muted small">
+        No programe citas en esas franjas: el sistema las rechazará automáticamente.
+      </p>
+    </div>
+  }
 
   @if (showBooking()) {
     <div class="modal-backdrop" (click)="closeBooking()"></div>
@@ -157,7 +194,7 @@
         </section>
 
         <section class="step">
-          <h3><span class="step-num">2</span> Quién atiende</h3>
+          <h3><span class="step-num">2</span> {{ isReceptionist() ? 'Doctora que atiende' : 'Quién atiende' }}</h3>
           <div class="pro-list">
             @for (pro of professionals(); track pro.id; let i = $index) {
               <button
@@ -176,6 +213,12 @@
               <p class="muted small">No hay profesionales habilitados.</p>
             }
           </div>
+          @if (isReceptionist() && agendaBlocks().length) {
+            <p class="banner warn-blocks compact">
+              Hay bloqueos en la agenda de esta doctora. Revise el aviso superior antes de
+              programar.
+            </p>
+          }
         </section>
         </div>
 
@@ -239,7 +282,7 @@
           [disabled]="booking()"
           (click)="createAppointment()"
         >
-          {{ booking() ? 'Programando…' : 'Programar' }}
+          {{ booking() ? 'Guardando…' : 'Programar' }}
         </button>
       </footer>
     </div>
@@ -267,7 +310,95 @@
         Fecha
         <input type="date" [ngModel]="date()" (ngModelChange)="setDate($event)" />
       </label>
+      @if (canBlockAgenda()) {
+        <label class="block-toggle">
+          <input
+            type="checkbox"
+            [ngModel]="showDayBlock()"
+            (ngModelChange)="setShowDayBlock($event)"
+          />
+          <span>Bloquear</span>
+        </label>
+      }
     </div>
+    @if (canBlockAgenda() && showDayBlock()) {
+      <div class="day-block-panel">
+        <p class="muted small day-block-intro">
+          Reserve agenda del
+          <strong>{{ blockDateLabel() }}</strong>
+          sin paciente: franja concreta o toda la jornada ({{ dayStartLabel }}–{{ dayEndLabel }}).
+        </p>
+        <div class="row day-block-row">
+          <label>
+            Profesional
+            <select [(ngModel)]="dayBlockProfessionalId">
+              @for (pro of professionals(); track pro.id) {
+                <option [value]="pro.id">{{ pro.fullName }}</option>
+              }
+            </select>
+          </label>
+          <label class="grow">
+            Motivo
+            <input
+              [(ngModel)]="dayBlockReason"
+              placeholder="Vacaciones, capacitación, reunión…"
+              maxlength="255"
+            />
+          </label>
+        </div>
+        <div class="day-block-scopes">
+          <label class="scope-option">
+            <input
+              type="radio"
+              name="dayBlockScope"
+              value="full"
+              [(ngModel)]="dayBlockScope"
+            />
+            <span>Toda la jornada</span>
+          </label>
+          <label class="scope-option">
+            <input
+              type="radio"
+              name="dayBlockScope"
+              value="range"
+              [(ngModel)]="dayBlockScope"
+            />
+            <span>Franja horaria</span>
+          </label>
+        </div>
+        @if (dayBlockScope === 'range') {
+          <div class="row day-block-row">
+            <label>
+              Desde
+              <select [(ngModel)]="dayBlockFrom">
+                @for (t of blockTimeOptions; track t) {
+                  <option [value]="t">{{ t }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              Hasta
+              <select [(ngModel)]="dayBlockTo">
+                @for (t of blockEndTimeOptions; track t) {
+                  <option [value]="t">{{ t }}</option>
+                }
+              </select>
+            </label>
+          </div>
+        }
+        <div class="day-block-actions">
+          <button type="button" class="ghost" (click)="setShowDayBlock(false)">Cancelar</button>
+          <button
+            type="button"
+            class="primary"
+            [disabled]="dayBlockSaving()"
+            (click)="applyDayBlock()"
+          >
+            {{ dayBlockSaving() ? 'Bloqueando…' : 'Aplicar bloqueo' }}
+          </button>
+        </div>
+      </div>
+    }
     <div class="chips filter-chips">
       @for (f of statusFilters; track f.value) {
         <button
@@ -376,15 +507,28 @@
                         type="button"
                         class="slot-appt"
                         [attr.data-status]="appt.status"
+                        [class.block]="isBlock(appt)"
                         [class.selected]="selected()?.id === appt.id"
                         (click)="selectAppointment(appt)"
                       >
-                        <span class="slot-time">{{ appt.startsAt | date: 'HH:mm' }}</span>
-                        <span class="slot-name">{{ appt.patient.fullName }}</span>
+                        <span class="slot-time">
+                          {{ appt.startsAt | date: 'HH:mm' }}
+                          @if (isBlock(appt) || cell.span > 1) {
+                            –{{ appt.endsAt | date: 'HH:mm' }}
+                          }
+                        </span>
+                        <span class="slot-name">{{ appointmentTitle(appt) }}</span>
                         <span class="slot-meta">
-                          {{ appt.isTelemedicine ? 'Telemedicina' : 'Presencial' }}
-                          @if (rangeMode() === 'week') {
-                            · {{ appt.professional.fullName }}
+                          @if (isBlock(appt)) {
+                            Bloqueo
+                            @if (rangeMode() === 'week') {
+                              · {{ appt.professional.fullName }}
+                            }
+                          } @else {
+                            {{ appt.isTelemedicine ? 'Telemedicina' : 'Presencial' }}
+                            @if (rangeMode() === 'week') {
+                              · {{ appt.professional.fullName }}
+                            }
                           }
                         </span>
                       </button>
@@ -422,40 +566,62 @@
         <h3>{{ rangeMode() === 'week' ? 'Citas de la semana' : 'Citas del día' }}</h3>
 
         @if (selected(); as appt) {
-          <div class="panel-detail">
-            <strong>{{ appt.patient.fullName }}</strong>
+          <div class="panel-detail" [class.block-detail]="isBlock(appt)">
+            <strong>{{ appointmentTitle(appt) }}</strong>
             <p class="muted small">
               {{ appt.startsAt | date: 'EEEE d MMM, HH:mm' }} — {{ appt.endsAt | date: 'HH:mm' }}
             </p>
             <p class="muted small">
-              @if (appt.patient.documentNumber) {
-                {{ appt.patient.documentType }} {{ appt.patient.documentNumber }}
-              } @else {
-                {{ appt.patient.phone || 'Sin documento registrado' }}
+              @if (isBlock(appt)) {
+                Bloqueo de agenda · {{ appt.professional.fullName }}
+              } @else if (appt.patient; as patient) {
+                @if (patient.documentNumber) {
+                  {{ patient.documentType }} {{ patient.documentNumber }}
+                } @else {
+                  {{ patient.phone || 'Sin documento registrado' }}
+                }
+                · {{ appt.professional.fullName }}
               }
-              · {{ appt.professional.fullName }}
             </p>
             <div class="badges">
+              @if (isBlock(appt)) {
+                <span class="status-badge block-badge">Bloqueo</span>
+              }
               <span class="status-badge" [attr.data-status]="appt.status">
                 {{ statusLabels[appt.status] }}
               </span>
-              @if (!appt.habeasDataSigned) {
+              @if (!isBlock(appt) && !appt.habeasDataSigned) {
                 <span class="status-badge habeas-missing">Habeas Data pendiente</span>
               }
-              @if (!appt.patient.profileComplete) {
+              @if (!isBlock(appt) && appt.patient && !appt.patient.profileComplete) {
                 <span class="status-badge profile-missing">Ficha por completar</span>
               }
             </div>
-            @if (appt.reason) {
+            @if (appt.blockReason) {
+              <p class="reason">{{ appt.blockReason }}</p>
+            } @else if (appt.reason) {
               <p class="reason">{{ appt.reason }}</p>
             }
             <div class="panel-actions">
-              @if (appt.isTelemedicine && appt.meetingUrl) {
+              @if (!isBlock(appt) && appt.isTelemedicine && appt.meetingUrl) {
                 <button type="button" class="primary" (click)="joinMeeting(appt)">
                   Unirse a consulta
                 </button>
               }
-              @if (appt.encounterId) {
+              @if (!isBlock(appt) && appt.patient && canManage()) {
+                <a
+                  class="linkish"
+                  routerLink="/consultorio/recibos"
+                  [queryParams]="{
+                    patientId: appt.patient.id,
+                    appointmentId: appt.id,
+                    patientName: appt.patient.firstName + ' ' + appt.patient.lastName
+                  }"
+                >
+                  Cobrar
+                </a>
+              }
+              @if (!isBlock(appt) && appt.encounterId && appt.patient && !isReceptionist()) {
                 <a
                   class="linkish"
                   routerLink="/consultorio/historia-clinica"
@@ -472,10 +638,10 @@
                     [disabled]="busyId() === appt.id"
                     (click)="changeStatus(appt, target)"
                   >
-                    {{ transitionLabels[target] }}
+                    {{ isBlock(appt) && target === 'CANCELLED' ? 'Liberar franja' : transitionLabels[target] }}
                   </button>
                 }
-                @if (appt.status === 'CANCELLED') {
+                @if (!isBlock(appt) && appt.status === 'CANCELLED') {
                   <button type="button" class="ghost" (click)="startReschedule(appt)">
                     Reagendar
                   </button>
@@ -485,7 +651,7 @@
           </div>
         } @else {
           <p class="muted small">
-            Seleccione una cita en la rejilla para ver sus acciones.
+            Seleccione una cita o bloqueo en la rejilla para ver sus acciones.
           </p>
         }
 
@@ -495,16 +661,22 @@
               <button
                 type="button"
                 [class.active]="selected()?.id === appt.id"
+                [class.block-item]="isBlock(appt)"
                 (click)="selectAppointment(appt)"
               >
-                <span class="panel-time">{{ appt.startsAt | date: 'HH:mm' }}</span>
-                <span class="panel-name">{{ appt.patient.fullName }}</span>
+                <span class="panel-time">
+                  {{ appt.startsAt | date: 'HH:mm' }}
+                  @if (isBlock(appt)) {
+                    –{{ appt.endsAt | date: 'HH:mm' }}
+                  }
+                </span>
+                <span class="panel-name">{{ appointmentTitle(appt) }}</span>
                 <span class="panel-status" [attr.data-status]="appt.status"></span>
               </button>
             </li>
           } @empty {
             <li class="muted small">
-              {{ loading() ? 'Cargando agenda…' : 'Sin citas para este periodo.' }}
+              {{ loading() ? 'Cargando agenda…' : 'Sin citas ni bloqueos para este periodo.' }}
             </li>
           }
         </ul>
@@ -515,7 +687,11 @@
   @if (viewMode() === 'list') {
   <div class="agenda-list">
     @for (appt of appointments(); track appt.id) {
-      <article class="appointment" [class.busy]="busyId() === appt.id">
+      <article
+        class="appointment"
+        [class.busy]="busyId() === appt.id"
+        [class.block-card]="isBlock(appt)"
+      >
         <div class="time-col">
           <strong>{{ appt.startsAt | date: 'HH:mm' }}</strong>
           <span class="muted small">{{ appt.endsAt | date: 'HH:mm' }}</span>
@@ -523,32 +699,46 @@
 
         <div class="info-col">
           <div class="name-row">
-            <h3>{{ appt.patient.fullName }}</h3>
-            <span
-              class="tag"
-              [class.tag-adult]="appt.patient.populationGroup === 'ADULT'"
-              [class.tag-minor]="appt.patient.populationGroup === 'MINOR'"
-            >
-              {{ appt.patient.populationGroup === 'MINOR' ? 'Menor de edad' : 'Adulto' }}
-            </span>
-            <span class="tag" [class.tag-virtual]="appt.isTelemedicine" [class.tag-inperson]="!appt.isTelemedicine">
-              {{ appt.isTelemedicine ? 'Telemedicina' : 'Presencial' }}
-            </span>
+            <h3>{{ appointmentTitle(appt) }}</h3>
+            @if (isBlock(appt)) {
+              <span class="tag tag-block">Bloqueo</span>
+            } @else if (appt.patient; as patient) {
+              <span
+                class="tag"
+                [class.tag-adult]="patient.populationGroup === 'ADULT'"
+                [class.tag-minor]="patient.populationGroup === 'MINOR'"
+              >
+                {{ patient.populationGroup === 'MINOR' ? 'Menor de edad' : 'Adulto' }}
+              </span>
+              <span
+                class="tag"
+                [class.tag-virtual]="appt.isTelemedicine"
+                [class.tag-inperson]="!appt.isTelemedicine"
+              >
+                {{ appt.isTelemedicine ? 'Telemedicina' : 'Presencial' }}
+              </span>
+            }
           </div>
 
           <p class="muted small">
-            @if (appt.patient.documentNumber) {
-              {{ appt.patient.documentType }} {{ appt.patient.documentNumber }}
-            } @else {
-              {{ appt.patient.phone || 'Sin documento registrado' }}
-            }
-            · {{ appt.professional.fullName }}
-            @if (appt.opportunityDays !== null) {
-              · Oportunidad: {{ appt.opportunityDays }} día(s)
+            @if (isBlock(appt)) {
+              {{ appt.professional.fullName }}
+            } @else if (appt.patient; as patient) {
+              @if (patient.documentNumber) {
+                {{ patient.documentType }} {{ patient.documentNumber }}
+              } @else {
+                {{ patient.phone || 'Sin documento registrado' }}
+              }
+              · {{ appt.professional.fullName }}
+              @if (appt.opportunityDays !== null) {
+                · Oportunidad: {{ appt.opportunityDays }} día(s)
+              }
             }
           </p>
 
-          @if (appt.reason) {
+          @if (appt.blockReason) {
+            <p class="reason">{{ appt.blockReason }}</p>
+          } @else if (appt.reason) {
             <p class="reason">{{ appt.reason }}</p>
           }
 
@@ -556,23 +746,37 @@
             <span class="status-badge" [attr.data-status]="appt.status">
               {{ statusLabels[appt.status] }}
             </span>
-            @if (!appt.habeasDataSigned) {
+            @if (!isBlock(appt) && !appt.habeasDataSigned) {
               <span class="status-badge habeas-missing">Habeas Data pendiente</span>
             }
-            @if (!appt.patient.profileComplete) {
+            @if (!isBlock(appt) && appt.patient && !appt.patient.profileComplete) {
               <span class="status-badge profile-missing">Ficha por completar</span>
             }
           </div>
         </div>
 
         <div class="actions-col">
-          @if (appt.isTelemedicine && appt.meetingUrl) {
+          @if (!isBlock(appt) && appt.isTelemedicine && appt.meetingUrl) {
             <button type="button" class="primary" (click)="joinMeeting(appt)">
               Unirse a consulta
             </button>
           }
 
-          @if (appt.encounterId) {
+          @if (!isBlock(appt) && appt.patient && canManage()) {
+            <a
+              class="linkish"
+              routerLink="/consultorio/recibos"
+              [queryParams]="{
+                patientId: appt.patient.id,
+                appointmentId: appt.id,
+                patientName: appt.patient.firstName + ' ' + appt.patient.lastName
+              }"
+            >
+              Cobrar
+            </a>
+          }
+
+          @if (!isBlock(appt) && appt.encounterId && appt.patient && !isReceptionist()) {
             <a
               class="linkish"
               routerLink="/consultorio/historia-clinica"
@@ -590,29 +794,47 @@
                 [disabled]="busyId() === appt.id"
                 (click)="changeStatus(appt, target)"
               >
-                {{ transitionLabels[target] }}
+                {{
+                  isBlock(appt) && target === 'CANCELLED'
+                    ? 'Liberar franja'
+                    : transitionLabels[target]
+                }}
               </button>
             }
-            @if (appt.status === 'CANCELLED') {
-              <button type="button" class="ghost" (click)="startReschedule(appt)">
-                Reagendar
-              </button>
-            }
+          }
 
-            <button type="button" class="linkish" (click)="toggleNotices(appt)">
-              {{ noticesFor() === appt.id ? 'Ocultar recordatorios' : 'Recordatorios' }}
+          @if (!isBlock(appt) && canManage()) {
+            <button
+              type="button"
+              class="ghost"
+              [disabled]="!!noticesLoading() && noticesFor() === appt.id"
+              (click)="toggleNotices(appt)"
+            >
+              {{ noticesFor() === appt.id ? 'Ocultar recordatorios' : 'Avisos' }}
+            </button>
+          }
+
+          @if (!isBlock(appt) && canManage() && appt.status === 'CANCELLED') {
+            <button type="button" class="ghost" (click)="startReschedule(appt)">
+              Reagendar
             </button>
           }
         </div>
 
-        @if (noticesFor() === appt.id) {
+        @if (!isBlock(appt) && noticesFor() === appt.id) {
           <div class="notices">
             <div class="notices-head">
-              <strong>Recordatorios enviados</strong>
+              <div>
+                <strong>Avisos al paciente</strong>
+                <p class="muted small notices-hint">
+                  Al agendar se envía correo (si hay email y autorización). También hay
+                  recordatorios automáticos a 24 h y 2 h antes.
+                </p>
+              </div>
               <span class="notice-actions">
                 <button
                   type="button"
-                  class="ghost"
+                  class="notice-btn notice-btn-secondary"
                   [disabled]="!!resending()"
                   (click)="resend(appt, 'WHATSAPP')"
                 >
@@ -620,7 +842,7 @@
                 </button>
                 <button
                   type="button"
-                  class="ghost"
+                  class="notice-btn notice-btn-primary"
                   [disabled]="!!resending()"
                   (click)="resend(appt, 'EMAIL')"
                 >
@@ -635,7 +857,7 @@
               <ul class="notice-list">
                 @for (n of notices(); track n.id) {
                   <li>
-                    <span class="notice-tag" [class.failed]="n.status === 'FAILED'">
+                    <span class="notice-tag" [class.failed]="n.status === 'FAILED'" [class.sent]="n.status === 'SENT'">
                       {{ channelLabels[n.channel] }}
                     </span>
                     {{ notificationKindLabels[n.kind] }}
@@ -644,6 +866,10 @@
                       · {{ (n.sentAt || n.createdAt) | date: 'short' }}
                       @if (n.status === 'FAILED') {
                         · falló
+                      } @else if (n.status === 'SENT') {
+                        · enviado
+                      } @else if (n.status === 'SKIPPED') {
+                        · omitido
                       }
                     </span>
                   </li>
@@ -651,7 +877,9 @@
               </ul>
             } @else {
               <p class="muted small">
-                Aún no se ha enviado ningún recordatorio para esta cita.
+                Aún no hay avisos registrados. Si el paciente tiene correo y
+                <em>autorizó notificaciones</em>, al crear la cita debería aparecer aquí el
+                envío. También puede reenviar manualmente.
               </p>
             }
           </div>
@@ -673,40 +901,61 @@
 @if (cancelFor(); as appt) {
   <div class="modal-backdrop" (click)="closeCancel()">
     <div class="modal" (click)="$event.stopPropagation()">
-      <h2>Cancelar cita</h2>
+      <h2>{{ isBlock(appt) ? 'Liberar franja' : 'Cancelar cita' }}</h2>
       <p class="muted">
-        {{ appt.patient.fullName }} — {{ appt.startsAt | date: 'EEEE d MMM, HH:mm' }}
+        {{ appointmentTitle(appt) }} — {{ appt.startsAt | date: 'EEEE d MMM, HH:mm' }}
       </p>
 
-      <label>
-        Motivo de la cancelación (opcional)
-        <input [(ngModel)]="cancelReason" placeholder="El paciente no puede asistir…" />
-      </label>
+      @if (isBlock(appt)) {
+        <p class="muted small">
+          Se eliminará el bloqueo y la franja quedará disponible para nuevas citas.
+        </p>
+        <label>
+          Motivo (opcional)
+          <input [(ngModel)]="cancelReason" placeholder="Ya no aplica el bloqueo…" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="ghost" (click)="closeCancel()">Volver</button>
+          <button
+            type="button"
+            class="primary"
+            [disabled]="busyId() === appt.id"
+            (click)="confirmCancel(false)"
+          >
+            Liberar franja
+          </button>
+        </div>
+      } @else {
+        <label>
+          Motivo de la cancelación (opcional)
+          <input [(ngModel)]="cancelReason" placeholder="El paciente no puede asistir…" />
+        </label>
 
-      <p class="muted small">
-        Si reagenda, la franja liberada queda disponible unos minutos y el paciente ya viene
-        seleccionado para darle una hora nueva.
-      </p>
+        <p class="muted small">
+          Si reagenda, la franja liberada queda disponible unos minutos y el paciente ya viene
+          seleccionado para darle una hora nueva.
+        </p>
 
-      <div class="modal-actions">
-        <button type="button" class="ghost" (click)="closeCancel()">Volver</button>
-        <button
-          type="button"
-          class="ghost"
-          [disabled]="busyId() === appt.id"
-          (click)="confirmCancel(false)"
-        >
-          Cancelar sin reagendar
-        </button>
-        <button
-          type="button"
-          class="primary"
-          [disabled]="busyId() === appt.id"
-          (click)="confirmCancel(true)"
-        >
-          Cancelar y reagendar
-        </button>
-      </div>
+        <div class="modal-actions">
+          <button type="button" class="ghost" (click)="closeCancel()">Volver</button>
+          <button
+            type="button"
+            class="ghost"
+            [disabled]="busyId() === appt.id"
+            (click)="confirmCancel(false)"
+          >
+            Cancelar sin reagendar
+          </button>
+          <button
+            type="button"
+            class="primary"
+            [disabled]="busyId() === appt.id"
+            (click)="confirmCancel(true)"
+          >
+            Cancelar y reagendar
+          </button>
+        </div>
+      }
     </div>
   </div>
 }
@@ -716,8 +965,9 @@
     <div class="modal" (click)="$event.stopPropagation()">
       <h2>Admisión — Habeas Data</h2>
       <p class="muted">
-        {{ appt.patient.fullName }} no tiene registrada la autorización de tratamiento de datos
-        personales (Ley 1581 de 2012). No se puede admitir en sala de espera sin ella.
+        {{ appt.patient?.fullName || 'El paciente' }} no tiene registrada la autorización de
+        tratamiento de datos personales (Ley 1581 de 2012). No se puede admitir en sala de espera
+        sin ella.
       </p>
 
       <label>

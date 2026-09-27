@@ -2,6 +2,326 @@
   min-height: 100svh;
   padding: 20px 24px 24px;
   background: linear-gradient(180deg, #f7fbfb 0%, #ffffff 220px);
+  --hce-accent: #0d7377;
+  --hce-title: #003d4c;
+  --hce-rose: #0d7377;
+}
+
+.hce-page.specialty-psychology {
+  background:
+    linear-gradient(180deg, #faf4f1 0%, #ffffff 240px);
+  --hce-accent: #c48b7e;
+  --hce-title: #2a1f1c;
+  --hce-rose: #e1b7ad;
+  --hce-gold: #c9a46a;
+  --hce-peach: #f5d1a9;
+  --hce-lavender: #d6bbdd;
+  --hce-sky: #89d1f2;
+  border-left: 6px solid var(--hce-rose);
+}
+
+.hce-page.specialty-physiotherapy {
+  /* Paleta HC-FT-001 (plantilla fisioterapia) */
+  background: linear-gradient(180deg, #e8f3fc 0%, #ffffff 240px);
+  --hce-accent: #0072ce;
+  --hce-title: #004a8c;
+  --hce-rose: #0072ce;
+  --hce-light: #e1f0ff;
+  --hce-mid: #0072ce;
+  border-left: 6px solid var(--hce-title);
+}
+
+.hce-page.specialty-physiotherapy .topbar-left a {
+  color: #004a8c;
+}
+
+.hce-page.specialty-physiotherapy .brand {
+  color: #004a8c !important;
+}
+
+.hce-page.specialty-physiotherapy .block {
+  border: 1px solid #0072ce;
+  background: #fff;
+  border-radius: 10px;
+  overflow: visible;
+}
+
+.hce-page.specialty-physiotherapy .block > h3,
+.hce-page.specialty-physiotherapy .cie-block > h3,
+.hce-page.specialty-physiotherapy .cups-block > h3 {
+  margin: -16px -16px 14px;
+  padding: 10px 16px;
+  background: #004a8c;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-radius: 10px 10px 0 0;
+}
+
+.hce-page.specialty-physiotherapy .block .section3-head {
+  margin: -16px -16px 14px;
+  padding: 10px 16px 12px;
+  background: #004a8c;
+  border-radius: 0;
+}
+
+.hce-page.specialty-physiotherapy .block .section3-head h3 {
+  margin: 0 0 6px;
+  padding: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.hce-page.specialty-physiotherapy .block .section3-head .muted {
+  color: #d6e8fa;
+}
+
+.hce-page.specialty-physiotherapy .block h4 {
+  color: #004a8c;
+  font-weight: 700;
+}
+
+.hce-page.specialty-physiotherapy button.primary,
+.hce-page.specialty-physiotherapy .save-bar button.primary {
+  background: #004a8c;
+  border-color: #004a8c;
+  color: #ffffff;
+}
+
+.hce-page.specialty-physiotherapy button.ghost,
+.hce-page.specialty-physiotherapy .save-bar button.ghost,
+.hce-page.specialty-physiotherapy button.logout {
+  background: #ffffff;
+  border-color: #0072ce;
+  color: #004a8c;
+}
+
+.hce-page.specialty-physiotherapy button.linkish {
+  color: #004a8c;
+  background: transparent;
+}
+
+.hce-page.specialty-physiotherapy .photo-btn-primary,
+.hce-page.specialty-physiotherapy .anexo-btn-pick {
+  background: #004a8c;
+  border-color: #004a8c;
+  color: #ffffff;
+}
+
+.hce-page.specialty-physiotherapy .photo-btn-secondary,
+.hce-page.specialty-physiotherapy .anexo-btn {
+  background: #ffffff;
+  border-color: #0072ce;
+  color: #004a8c;
+}
+
+.hce-page.specialty-physiotherapy .autosave-chip {
+  border-color: #b7d6f5;
+  background: #e1f0ff;
+  color: #004a8c;
+}
+
+.hce-page.specialty-physiotherapy .autosave-chip.pending {
+  color: #004a8c;
+  background: #e8f3fc;
+  border-color: #0072ce;
+}
+
+.hce-page.specialty-physiotherapy .cie-block {
+  border-color: #004a8c;
+  background: #f5f9fd;
+}
+
+.hce-page.specialty-physiotherapy .control-mode {
+  border-color: #004a8c;
+  background: #fff;
+  overflow: visible;
+}
+
+.hce-page.specialty-physiotherapy .control-mode .control-mode-head {
+  margin: -16px -16px 14px;
+  padding: 10px 16px 12px;
+  background: #004a8c;
+  border-radius: 10px 10px 0 0;
+}
+
+.hce-page.specialty-physiotherapy .control-mode .control-mode-head h3 {
+  margin: 0 0 6px;
+  padding: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.hce-page.specialty-physiotherapy .control-mode .control-mode-head .muted {
+  color: #d6e8fa;
+}
+
+.hce-page.specialty-physiotherapy .control-new-title {
+  color: #004a8c;
+}
+
+.hce-page.specialty-physiotherapy .cups-block {
+  border-color: #0072ce;
+  background: #eef6fc;
+}
+
+.hce-page.specialty-physiotherapy .cups-block h3 {
+  color: #ffffff;
+}
+
+.hce-page.specialty-physiotherapy .ft-hce {
+  border-color: #0072ce;
+  background: #fff;
+}
+
+.hce-page.specialty-physiotherapy .ft-check-table th,
+.hce-page.specialty-physiotherapy .ft-check-table td {
+  border-color: #0072ce;
+}
+
+.hce-page.specialty-physiotherapy .ft-check-table th {
+  background: #e1f0ff;
+  color: #004a8c;
+  font-weight: 700;
+}
+
+.hce-page.specialty-physiotherapy .save-bar {
+  border-color: #b7d6f5;
+  background: rgba(225, 240, 255, 0.95);
+}
+
+.hce-page.specialty-physiotherapy .save-bar-info strong {
+  color: #004a8c;
+}
+
+.hce-page.specialty-physiotherapy .side-card {
+  border-color: #b7d6f5;
+}
+
+.hce-page.specialty-physiotherapy .side-card h3 {
+  color: #004a8c;
+}
+
+.hce-page.specialty-physiotherapy.embedded-page {
+  background: transparent;
+  border-left: 4px solid #004a8c;
+}
+
+.brand-logo-brain {
+  display: block;
+  width: 48px;
+  height: auto;
+  object-fit: contain;
+}
+
+.brand-dulcemente {
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.12em;
+  font-size: 15px;
+  color: var(--hce-title);
+  font-weight: 700;
+}
+
+.brand-ft {
+  letter-spacing: 0.04em;
+  font-size: 15px;
+  font-weight: 700;
+  color: #004a8c !important;
+  text-decoration: none;
+}
+
+.hce-page.specialty-psychology .block h3,
+.hce-page.specialty-psychology .topbar .brand-dulcemente {
+  color: var(--hce-title);
+}
+
+.hce-page.specialty-psychology .block {
+  border-color: #edd8d1;
+}
+
+/* Paleta Dulcemente en botones: acento en borde/fondo, texto siempre legible */
+.hce-page.specialty-psychology button.primary,
+.hce-page.specialty-psychology .save-bar button.primary {
+  background: #2a1f1c;
+  border-color: #2a1f1c;
+  color: #ffffff;
+}
+
+.hce-page.specialty-psychology button.ghost,
+.hce-page.specialty-psychology .save-bar button.ghost,
+.hce-page.specialty-psychology button.logout {
+  background: #fffdfc;
+  border-color: #e1b7ad;
+  color: #2a1f1c;
+}
+
+.hce-page.specialty-psychology button.linkish {
+  color: #c48b7e;
+  background: transparent;
+}
+
+.hce-page.specialty-psychology .photo-btn-primary,
+.hce-page.specialty-psychology .anexo-btn-pick {
+  background: #2a1f1c;
+  border-color: #2a1f1c;
+  color: #ffffff;
+}
+
+.hce-page.specialty-psychology .photo-btn-secondary,
+.hce-page.specialty-psychology .anexo-btn {
+  background: #fffdfc;
+  border-color: #e1b7ad;
+  color: #2a1f1c;
+}
+
+.hce-page.specialty-psychology .autosave-chip {
+  border-color: #edd8d1;
+  background: #fbf6f4;
+  color: #2a1f1c;
+}
+
+.hce-page.specialty-psychology .autosave-chip.pending {
+  color: #2a1f1c;
+  background: #faf4f1;
+  border-color: #e1b7ad;
+}
+
+.hce-page.specialty-psychology .cie-block {
+  border-color: var(--hce-accent);
+  background: #fbf6f4;
+}
+
+.hce-page.specialty-psychology .cie-block h3 {
+  color: var(--hce-accent);
+}
+
+.hce-page.embedded-page {
+  min-height: 0;
+  padding-top: 8px;
+  background: transparent;
+}
+
+.hce-page.specialty-psychology.embedded-page {
+  background: transparent;
+  border-left: 4px solid var(--hce-rose);
+}
+
+.pane-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
 }
 
 .topbar {
@@ -80,6 +400,26 @@ button:disabled {
 .banner.err {
   background: #fdeeee;
   color: #8a1f1f;
+}
+
+.banner.tip {
+  background: #eef6f7;
+  color: #003d4c;
+  border: 1px solid #c5dde0;
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+
+.banner.warn {
+  background: #fff8f0;
+  color: #5c3a1e;
+  border: 1px solid #e8c4a8;
+}
+
+.banner a {
+  margin-left: 8px;
+  color: inherit;
+  font-weight: 600;
 }
 
 .card,
@@ -237,8 +577,7 @@ textarea {
   min-width: 0;
 }
 
-/* Fieldset para sellar de una sola vez todo lo clínico; la identificación del
-   paciente vive fuera porque sigue siendo editable con la historia cerrada. */
+/* Bloque clínico en solo lectura al sellar; Escuchar sigue activo fuera de inputs. */
 .clinical-body {
   min-width: 0;
   margin: 0;
@@ -246,8 +585,30 @@ textarea {
   border: 0;
 }
 
-.clinical-body:disabled {
-  opacity: 0.85;
+.clinical-body-locked textarea[readonly],
+.clinical-body-locked input[readonly] {
+  background: #fafafa;
+}
+
+.field-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.field-toolbar.antecedent-toolbar {
+  margin-bottom: 8px;
+}
+
+.field-title {
+  font-weight: 600;
+  color: #333;
+}
+
+.block .field-toolbar {
+  margin-bottom: 0;
 }
 
 .closed-note {
@@ -259,6 +620,190 @@ textarea {
   background: #fdf6ec;
   color: #7a5520;
   font-size: 0.85rem;
+}
+
+.sealed-loaded-tip {
+  margin: 0 0 14px;
+}
+
+.control-mode {
+  border: 2px solid #0d7377;
+  background: linear-gradient(180deg, #f3fbfb 0%, #fff 48%);
+  scroll-margin-top: 72px;
+}
+
+.control-mode-head h3 {
+  margin: 0 0 4px;
+  color: #0d7377;
+}
+
+.sealed-summary {
+  border: 1px solid #c5d9d9;
+  background: #fafcfc;
+  scroll-margin-top: 72px;
+}
+
+.sealed-signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed #d5e2e5;
+}
+
+.sealed-sig {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: 12px;
+  border: 1px solid #d5e2e5;
+  border-radius: 10px;
+  background: #fff;
+
+  img {
+    max-width: 100%;
+    max-height: 110px;
+    object-fit: contain;
+    background: #fff;
+  }
+
+  &.pending {
+    border-color: #e8b4b4;
+    background: #fff8f8;
+  }
+
+  .sig-missing {
+    color: #8a1f1f;
+    font-weight: 600;
+    font-size: 0.88rem;
+  }
+}
+
+.sealed-consents {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid #eef3f4;
+  }
+}
+
+@media (max-width: 720px) {
+  .sealed-signatures {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sealed-field {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #e6eeee;
+}
+
+.sealed-field strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #0d5c5f;
+  font-size: 0.85rem;
+}
+
+.sealed-field p {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.45;
+  color: #2e2e2e;
+}
+
+.control-new-title {
+  margin: 16px 0 10px;
+  color: #0d7377;
+  font-size: 1rem;
+}
+
+.evolution-date input {
+  max-width: 260px;
+}
+
+.empty-evolutions {
+  margin: 0;
+  padding: 10px 0 2px;
+}
+
+.control-mode-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+
+.control-mode-head h3 {
+  margin: 0 0 4px;
+  color: #0d7377;
+}
+
+.control-past {
+  margin: 0 0 16px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f7fafa;
+  border: 1px solid #d7e8e8;
+}
+
+.control-past h4 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: #0d7377;
+}
+
+.control-soap-optional {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px dashed #b7d4d4;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.control-soap-optional summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #3d5c5c;
+  margin-bottom: 8px;
+}
+
+.control-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ghost.full,
+.primary.full {
+  width: 100%;
+}
+
+button.linkish {
+  display: inline;
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #0d7377;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .block {
@@ -279,6 +824,124 @@ textarea {
   margin: 16px 0 8px;
   font-size: 14px;
   font-weight: 500;
+}
+
+.ft-hce {
+  border-color: #0d7377;
+  background: #f7fcfc;
+}
+
+.hce-page.specialty-physiotherapy .ft-hce {
+  border-color: #0072ce;
+  background: #ffffff;
+}
+
+.ft-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+
+.ft-func-open {
+  margin-bottom: 14px;
+}
+
+.ft-func-open select {
+  width: 100%;
+  min-height: 40px;
+  font-size: 15px;
+  background: #fff;
+}
+
+.ft-valoracion-block {
+  margin: 16px 0;
+  padding: 14px;
+  border: 2px solid #004a8c;
+  border-radius: 12px;
+  background: #f5f9fd;
+  scroll-margin-top: 72px;
+}
+
+.ft-valoracion-block > h4 {
+  margin: 0 0 6px;
+  color: #004a8c;
+  font-size: 1.05rem;
+}
+
+.ft-valoracion-hint {
+  margin: 0 0 12px;
+}
+
+.hce-page.specialty-physiotherapy .ft-valoracion-block {
+  border-color: #004a8c;
+  background: #eef6fc;
+}
+
+.sealed-func-list {
+  margin: 6px 0 0;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+
+.sealed-func-list li {
+  margin: 0.25rem 0;
+  line-height: 1.35;
+}
+
+.sealed-func-list span {
+  font-weight: 600;
+}
+
+.ft-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+
+.ft-check-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 12px;
+  font-size: 13px;
+}
+
+.ft-check-table th,
+.ft-check-table td {
+  border: 1px solid #d7e5e6;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.ft-check-table th {
+  background: #e8f4f4;
+  color: #003d4c;
+}
+
+@media (max-width: 800px) {
+  .ft-grid-2,
+  .ft-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cie-block {
+  border: 2px solid #0d7377;
+  background: #f3fbfb;
+  scroll-margin-top: 72px;
+}
+
+.cie-block h3 {
+  color: #0d7377;
+}
+
+.cups-block {
+  border: 2px solid #2563eb;
+  background: #f0f6ff;
+  scroll-margin-top: 72px;
+}
+
+.cups-block h3 {
+  color: #1d4ed8;
 }
 
 .block > label {
@@ -307,6 +970,21 @@ td {
 .search-row {
   position: relative;
   margin-bottom: 8px;
+  z-index: 2;
+  overflow: visible;
+}
+
+.cie-block,
+.cups-block {
+  overflow: visible;
+  position: relative;
+  z-index: 1;
+}
+
+.cie-block:focus-within,
+.cups-block:focus-within,
+.search-row:focus-within {
+  z-index: 30;
 }
 
 .catalog-hint {
@@ -349,7 +1027,7 @@ td {
 
 .suggest {
   position: absolute;
-  z-index: 5;
+  z-index: 40;
   left: 0;
   right: 0;
   margin: 4px 0 0;
@@ -358,14 +1036,16 @@ td {
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 12px;
-  max-height: 220px;
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
 }
 
 .suggest.inline {
-  min-width: 280px;
+  min-width: min(520px, 90vw);
+  max-width: min(720px, 95vw);
   right: auto;
+  white-space: normal;
 }
 
 .suggest button {
@@ -375,6 +1055,8 @@ td {
   border-radius: 0;
   background: transparent;
   padding: 10px 12px;
+  white-space: normal;
+  line-height: 1.35;
 }
 
 .suggest button:hover {
@@ -472,6 +1154,41 @@ td {
   margin: 4px 0 0;
   color: #8f8f8f;
   font-size: 12px;
+}
+
+.consent-block {
+  border: 2px solid #0d7377;
+  background: #f9fcfc;
+}
+
+.consent-block h3 {
+  color: #0d7377;
+}
+
+.full-width {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.ok-hint {
+  color: #0d7377;
+}
+
+.side-card .pill {
+  display: inline-block;
+  margin-top: 4px;
+  border: 1px solid #d9ecec;
+  background: #fff;
+  color: #667;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.side-card .pill.ok {
+  border-color: #0d7377;
+  background: #e8f6f6;
+  color: #003d4c;
 }
 
 .consent-signer-embed {
@@ -699,6 +1416,88 @@ button.full {
   font-size: 0.95rem;
 }
 
+.autosave-chip {
+  font-size: 0.82rem;
+  color: #0d5c3d;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #e8f6f0;
+  border: 1px solid #b8ddd0;
+  white-space: nowrap;
+
+  &.pending {
+    color: #003d4c;
+    background: #eef4f6;
+    border-color: #c5d8de;
+  }
+
+  &.error {
+    color: #8a1f1f;
+    background: #fff1f1;
+    border-color: #e8b4b4;
+  }
+}
+
+.save-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 88px;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 420px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e8b4b4;
+  border-left: 4px solid #c0392b;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  font-size: 0.85rem;
+  color: #4a1f1f;
+  animation: save-toast-in 0.2s ease-out;
+
+  div {
+    display: grid;
+    gap: 2px;
+  }
+
+  strong {
+    color: #8a1f1f;
+  }
+
+  .save-toast-retry {
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #e8b4b4;
+    background: #fff5f5;
+    color: #8a1f1f;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .save-toast-close {
+    border: none;
+    background: transparent;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: #8a6a6a;
+    cursor: pointer;
+  }
+}
+
+@keyframes save-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .save-bar button.primary,
 .save-bar button.ghost {
   padding: 12px 20px;
@@ -758,4 +1557,406 @@ button.full {
   color: #8a1f1f;
   font-size: 0.9rem;
   line-height: 1.6;
+}
+
+.guardian-box {
+  margin: 14px 0 16px;
+  padding: 14px 16px;
+  border: 1px solid #e8c4a8;
+  border-radius: 14px;
+  background: #fff8f0;
+}
+
+.guardian-box h4 {
+  margin: 0 0 6px;
+  color: #8a4a12;
+  font-weight: 600;
+}
+
+.dictation-row,
+.motive-row {
+  display: grid;
+  gap: 8px;
+}
+
+.dictation-row textarea,
+.motive-row textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 0;
+}
+
+.dictation-row input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dictation-row app-voice-dictation-btn,
+.motive-row app-voice-dictation-btn {
+  justify-self: start;
+}
+
+.hce-page.specialty-physiotherapy .ft-hce .dictation-row {
+  margin-top: 4px;
+}
+
+@media (max-width: 720px) {
+  .ft-grid-2,
+  .ft-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.section3-listen-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border: 2px solid #5c4a9e;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f6f3ff 0%, #fff 100%);
+  box-shadow: 0 8px 20px rgba(61, 46, 114, 0.1);
+}
+
+.section3-listen-banner-inline {
+  border-color: #c9bddf;
+  background: #faf8ff;
+}
+
+.section3-listen-banner strong {
+  color: #3d2e72;
+  font-size: 1rem;
+}
+
+.section3-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e8eef0;
+}
+
+.section3-head app-clinical-listen-btn {
+  flex-shrink: 0;
+}
+
+.section3-head h3 {
+  margin: 0 0 4px;
+}
+
+.section3-head .muted {
+  margin: 0;
+}
+
+.antecedent-grid {
+  display: grid;
+  gap: 10px;
+  margin: 8px 0 14px;
+}
+
+.antecedent-item {
+  display: grid;
+  gap: 6px;
+}
+
+.checkbox-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.doc-header-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.patient-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 1px solid #d5e2e5;
+  background: #f2f7f7;
+}
+
+.patient-photo-box {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 16px;
+  align-items: center;
+  margin: 16px 0 8px;
+  padding: 14px;
+  border: 1px solid #d5e2e5;
+  border-radius: 16px;
+  background: #f7fbfb;
+}
+
+.patient-photo-frame {
+  width: 140px;
+  height: 140px;
+  border-radius: 16px;
+  border: 1px dashed #0d7377;
+  background: #fff;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.patient-photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.patient-photo-empty {
+  color: #8f8f8f;
+  font-size: 0.9rem;
+}
+
+.patient-photo-title {
+  margin: 0 0 4px;
+  color: #003d4c;
+  font-weight: 600;
+}
+
+.patient-photo-actions .muted {
+  margin: 0 0 10px;
+}
+
+.patient-photo-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.photo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.12s ease,
+    box-shadow 0.15s ease;
+  user-select: none;
+}
+
+.photo-btn:hover:not(:disabled):not(.disabled) {
+  transform: translateY(-1px);
+}
+
+.photo-btn:active:not(:disabled):not(.disabled) {
+  transform: translateY(0);
+}
+
+.photo-btn:disabled,
+.photo-btn.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.photo-btn-primary {
+  background: #003d4c;
+  border-color: #003d4c;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(0, 61, 76, 0.18);
+}
+
+.photo-btn-primary:hover:not(:disabled):not(.disabled) {
+  background: #0d7377;
+  border-color: #0d7377;
+  box-shadow: 0 10px 22px rgba(13, 115, 119, 0.22);
+}
+
+.photo-btn-secondary {
+  background: #fff;
+  border-color: #0d7377;
+  color: #003d4c;
+  box-shadow: 0 4px 12px rgba(0, 45, 92, 0.06);
+}
+
+.photo-btn-secondary:hover:not(:disabled):not(.disabled) {
+  background: #e8f6f6;
+  border-color: #003d4c;
+}
+
+label.photo-btn {
+  margin: 0;
+}
+
+.photo-btn-danger {
+  background: #fff5f5;
+  border-color: #e8b4b4;
+  color: #8a1f1f;
+}
+
+.photo-btn-danger:hover:not(:disabled):not(.disabled) {
+  background: #fdeeee;
+  border-color: #d47a7a;
+}
+
+@media (max-width: 640px) {
+  .patient-photo-box {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .patient-photo-buttons {
+    width: 100%;
+  }
+
+  .photo-btn {
+    flex: 1 1 auto;
+  }
+}
+
+.camera-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 30, 40, 0.55);
+}
+
+.camera-dialog {
+  width: min(520px, 100%);
+  padding: 18px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid #d5e2e5;
+  box-shadow: 0 18px 48px rgba(0, 45, 92, 0.22);
+}
+
+.camera-dialog h4 {
+  margin: 0 0 6px;
+  color: #003d4c;
+  font-weight: 600;
+}
+
+.camera-video-wrap {
+  position: relative;
+  margin: 12px 0 14px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0a1f24;
+  aspect-ratio: 4 / 3;
+}
+
+.camera-video-wrap video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.camera-wait {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.camera-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.camera-actions .photo-btn-primary {
+  min-width: 132px;
+}
+
+.anexo-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.anexo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.anexo-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.anexo-btn-pick {
+  background: #e8f6f6;
+  border-color: #0d7377;
+  color: #003d4c;
+  min-width: 180px;
+}
+
+.anexos-upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 12px 0 8px;
+}
+
+.anexos-file-btn {
+  cursor: pointer;
+}
+
+.anexos-file-hint {
+  margin: 0 0 12px;
 }

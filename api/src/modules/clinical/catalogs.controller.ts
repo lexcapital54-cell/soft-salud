@@ -1,7 +1,11 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { User } from '../../users/user.entity';
 import { CatalogsService } from './catalogs.service';
 import { DIVIPOLA } from './divipola.catalog';
+
+type AuthedRequest = Request & { user: User };
 
 @Controller('catalogs')
 @UseGuards(JwtAuthGuard)
@@ -15,12 +19,20 @@ export class CatalogsController {
   }
 
   @Get('cie')
-  searchCie(@Query('q') q?: string) {
-    return this.catalogsService.searchCie(q);
+  searchCie(@Req() req: AuthedRequest, @Query('q') q?: string) {
+    const specialty =
+      req.user?.clinic?.specialty ||
+      (req.user as User & { specialty?: string })?.specialty ||
+      null;
+    return this.catalogsService.searchCie(q, 300, specialty);
   }
 
   @Get('cups')
-  searchCups(@Query('q') q?: string) {
-    return this.catalogsService.searchCups(q);
+  searchCups(@Req() req: AuthedRequest, @Query('q') q?: string) {
+    const specialty =
+      req.user?.clinic?.specialty ||
+      (req.user as User & { specialty?: string })?.specialty ||
+      null;
+    return this.catalogsService.searchCups(q, 300, specialty);
   }
 }

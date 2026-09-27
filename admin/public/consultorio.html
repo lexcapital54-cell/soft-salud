@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <title>Consultorio · HABILISALUD</title>
+  <style>
+    :root { --brand:#0d7377; --ink:#003d4c; --muted:#8f8f8f; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100svh; font-family: "DM Sans", system-ui, sans-serif;
+      background: #f3f7f8; color: #000;
+    }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 16px; padding: 28px;
+    }
+    .brand { letter-spacing: -0.02em; color: #000; text-decoration: none; }
+    .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .user-chip { text-align: right; }
+    .session-name { margin: 0; font-size: 14px; color: #2e2e2e; }
+    .session-email { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+    .sede-switch {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; color: #405a5f;
+    }
+    .sede-switch select {
+      font: inherit; padding: 8px 10px; border: 1px solid #d8e2e2;
+      border-radius: 10px; background: #fff; color: var(--ink); max-width: 220px;
+    }
+    .sede-switch .lbl {
+      text-transform: uppercase; letter-spacing: .04em; font-size: 11px; color: var(--muted);
+    }
+    .btn {
+      border: 1px solid #000; background: #fff; border-radius: 30px;
+      padding: 12px 18px; font: inherit; cursor: pointer; text-decoration: none; color: inherit;
+      display: inline-block;
+    }
+    .btn-primary { border-color: var(--ink); background: var(--ink); color: #fff; }
+    .btn:disabled { opacity: .55; cursor: wait; }
+    .card {
+      margin: 0 auto 48px; max-width: 900px; padding: 48px; background: #fff;
+      border: 1px solid #d7e3e6; border-radius: 45px;
+      box-shadow: 0 16px 48px rgba(0, 45, 92, 0.1);
+    }
+    .eyebrow {
+      color: var(--brand); letter-spacing: 0.08em; text-transform: uppercase; font-size: 13px; margin: 0;
+    }
+    h1 {
+      margin: 8px 0 12px; font-size: clamp(28px, 5vw, 48px); font-weight: 400; letter-spacing: -0.03em;
+    }
+    .meta { color: #2e2e2e; margin: 0 0 8px; }
+    .dashboard-type { margin: 8px 0 0; color: var(--ink); font-weight: 500; }
+    .rips-panel {
+      margin-top: 28px; padding: 22px; border-radius: 22px;
+      border: 2px solid var(--brand); background: #e8f6f6;
+    }
+    .rips-panel h2 { margin: 0 0 8px; font-size: 22px; font-weight: 600; color: var(--ink); }
+    .rips-panel p { margin: 0 0 16px; color: #2e2e2e; line-height: 1.45; }
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      flex-wrap: wrap; margin-bottom: 14px;
+    }
+    .switch {
+      position: relative; width: 56px; height: 32px; flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0; cursor: pointer; background: #b7c6c9;
+      border-radius: 999px; transition: .2s;
+    }
+    .slider:before {
+      content: ""; position: absolute; height: 24px; width: 24px; left: 4px; bottom: 4px;
+      background: #fff; border-radius: 50%; transition: .2s;
+    }
+    .switch input:checked + .slider { background: var(--brand); }
+    .switch input:checked + .slider:before { transform: translateX(24px); }
+    .status { font-weight: 600; color: var(--ink); }
+    .msg { margin: 10px 0 0; font-size: 14px; }
+    .msg.ok { color: #0d5c3d; }
+    .msg.err { color: #8a1f1f; }
+    .open-hce-panel {
+      margin-top: 20px; padding: 16px 18px; border-radius: 18px;
+      border: 1px solid #e8c4a8; background: #fff8f0;
+    }
+    .open-hce-panel h2 { margin: 0 0 10px; font-size: 1.05rem; color: #5c3a1e; }
+    .open-hce-panel ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+    .open-hce-panel li {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; background: #fff;
+      border: 1px solid #f0dcc8; font-size: .92rem;
+    }
+    .open-hce-panel li.urgent { border-color: #e08a8a; background: #fff5f5; }
+    .open-hce-panel li.warn { border-color: #e8b86d; }
+    .open-hce-panel a { color: var(--brand); text-decoration: none; font-weight: 500; }
+    .open-hce-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 22px; height: 22px; padding: 0 6px; margin-left: 6px;
+      border-radius: 999px; background: #c45c00; color: #fff; font-size: 12px; font-weight: 600;
+    }
+    .reps-panel {
+      margin-top: 20px; padding: 16px 18px; border-radius: 18px;
+      border: 1px solid #d5e2e5; background: #f7fbfb;
+    }
+    .reps-panel.warn { border-color: #e8c4a8; background: #fff8f0; }
+    .reps-panel.urgent { border-color: #e8b4b4; background: #fdeeee; }
+    .reps-panel h2 { margin: 0 0 8px; font-size: 1.05rem; color: #003d4c; }
+    .reps-panel.warn h2 { color: #5c3a1e; }
+    .reps-panel.urgent h2 { color: #8a1f1f; }
+    .reps-panel p { margin: 0 0 10px; color: #2e2e2e; line-height: 1.45; }
+    .reps-panel a { color: var(--brand); text-decoration: none; font-weight: 500; }
+    .modules {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px; margin-top: 28px;
+    }
+    .module {
+      display: block; background: #fff; border: 1px solid #d5e2e5; border-radius: 22px;
+      padding: 22px 20px 18px; box-shadow: 0 10px 28px rgba(0, 45, 92, 0.1);
+      color: inherit; text-decoration: none;
+    }
+    .module h2 { margin: 0 0 8px; font-size: 22px; font-weight: 400; }
+    .module p { margin: 0; color: var(--muted); line-height: 1.4; }
+    .cta { display: inline-block; margin-top: 14px; color: var(--brand); font-size: 14px; }
+    .err-banner {
+      margin: 0 auto 16px; max-width: 900px; padding: 12px 16px;
+      background: #fff1f1; color: #8a1f1f; border-radius: 12px;
+    }
+    @media (max-width: 720px) {
+      header { flex-direction: column; align-items: flex-start; }
+      .card { margin: 0 16px 40px; padding: 28px; }
+    }
+
+    /* Dulcemente — solo psicología */
+    body.specialty-psychology {
+      --brand: #c48b7e;
+      --ink: #2a1f1c;
+      --muted: #8a7470;
+      --rose: #e1b7ad;
+      --gold: #c9a46a;
+      background: linear-gradient(180deg, #faf4f1 0%, #f7f0ec 40%, #f3f7f8 100%);
+      color: var(--ink);
+    }
+    body.specialty-psychology .brand { color: var(--ink); }
+    body.specialty-psychology .card {
+      border-color: #edd8d1;
+      box-shadow: 0 16px 48px rgba(42, 31, 28, 0.08);
+      border-left: 6px solid var(--rose);
+    }
+    body.specialty-psychology .eyebrow { color: var(--brand); }
+    body.specialty-psychology h1 { color: var(--ink); }
+    body.specialty-psychology .btn {
+      border-color: #e1b7ad;
+      color: #2a1f1c;
+      background: #fff;
+    }
+    body.specialty-psychology .btn-primary {
+      border-color: #2a1f1c;
+      background: #2a1f1c;
+      color: #ffffff;
+    }
+    body.specialty-psychology .btn-primary:hover {
+      background: #3d2f2b;
+      color: #ffffff;
+    }
+    body.specialty-psychology .module {
+      border-color: #edd8d1;
+      background: #fffdfc;
+      box-shadow: 0 10px 28px rgba(42, 31, 28, 0.07);
+      transition: border-color .2s, box-shadow .2s, transform .15s;
+      color: #2a1f1c;
+    }
+    body.specialty-psychology .module:hover {
+      border-color: #c48b7e;
+      box-shadow: 0 14px 32px rgba(196, 139, 126, 0.22);
+      transform: translateY(-2px);
+    }
+    body.specialty-psychology .module h2 {
+      color: #2a1f1c;
+    }
+    body.specialty-psychology .module p {
+      color: #5c4a46;
+    }
+    body.specialty-psychology .cta {
+      color: #c48b7e;
+      font-weight: 600;
+    }
+    body.specialty-psychology .rips-panel {
+      border-color: var(--brand);
+      background: #fbf6f4;
+    }
+    body.specialty-psychology .rips-panel h2 { color: var(--ink); }
+    body.specialty-psychology .switch input:checked + .slider { background: var(--brand); }
+    body.specialty-psychology .status { color: var(--ink); }
+    body.specialty-psychology .reps-panel {
+      border-color: #edd8d1;
+      background: #fbf6f4;
+    }
+    body.specialty-psychology .reps-panel h2 { color: var(--ink); }
+    body.specialty-psychology .reps-panel a,
+    body.specialty-psychology .open-hce-panel a { color: var(--brand); }
+    body.specialty-psychology .open-hce-badge { background: var(--gold); }
+    body.specialty-psychology .sede-switch select {
+      border-color: #edd8d1;
+      color: var(--ink);
+    }
+
+    /* HC-FT — fisioterapia (paleta azul de la plantilla) */
+    body.specialty-physiotherapy {
+      --brand: #0072ce;
+      --ink: #004a8c;
+      --muted: #5a6f85;
+      background: linear-gradient(180deg, #e8f3fc 0%, #f3f7f8 100%);
+      color: #1a1a1a;
+    }
+    body.specialty-physiotherapy .brand { color: #004a8c; }
+    body.specialty-physiotherapy .card {
+      border-color: #0072ce;
+      box-shadow: 0 16px 48px rgba(0, 74, 140, 0.1);
+      border-left: 6px solid #004a8c;
+    }
+    body.specialty-physiotherapy .eyebrow { color: #0072ce; }
+    body.specialty-physiotherapy h1 { color: #004a8c; }
+    body.specialty-physiotherapy .btn {
+      border-color: #0072ce;
+      color: #004a8c;
+      background: #fff;
+    }
+    body.specialty-physiotherapy .btn-primary {
+      border-color: #004a8c;
+      background: #004a8c;
+      color: #ffffff;
+    }
+    body.specialty-physiotherapy .btn-primary:hover {
+      background: #003a70;
+      color: #ffffff;
+    }
+    body.specialty-physiotherapy .module {
+      border-color: #b7d6f5;
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(0, 74, 140, 0.08);
+      color: #1a1a1a;
+      transition: border-color .2s, box-shadow .2s, transform .15s;
+    }
+    body.specialty-physiotherapy .module:hover {
+      border-color: #0072ce;
+      box-shadow: 0 14px 32px rgba(0, 114, 206, 0.2);
+      transform: translateY(-2px);
+    }
+    body.specialty-physiotherapy .module h2 { color: #004a8c; }
+    body.specialty-physiotherapy .module p { color: #5a6f85; }
+    body.specialty-physiotherapy .cta { color: #0072ce; font-weight: 600; }
+    body.specialty-physiotherapy .rips-panel {
+      border-color: #0072ce;
+      background: #e1f0ff;
+    }
+    body.specialty-physiotherapy .rips-panel h2 { color: #004a8c; }
+    body.specialty-physiotherapy .switch input:checked + .slider { background: #0072ce; }
+    body.specialty-physiotherapy .status { color: #004a8c; }
+    body.specialty-physiotherapy .reps-panel {
+      border-color: #b7d6f5;
+      background: #eef6fc;
+    }
+    body.specialty-physiotherapy .reps-panel h2 { color: #004a8c; }
+    body.specialty-physiotherapy .reps-panel a,
+    body.specialty-physiotherapy .open-hce-panel a { color: #0072ce; }
+    body.specialty-physiotherapy .open-hce-badge { background: #004a8c; }
+    body.specialty-physiotherapy .sede-switch select {
+      border-color: #b7d6f5;
+      color: #004a8c;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="https://www.habilisalud.com">HABILISALUD</a>
+    <div class="header-actions">
+      <label class="sede-switch" id="sedeSwitch" hidden>
+        <span class="lbl" id="sedeLbl">Sede</span>
+        <select id="sedeSelect"></select>
+      </label>
+      <div class="user-chip">
+        <p class="session-name" id="fullName">—</p>
+        <p class="session-email" id="email">—</p>
+      </div>
+      <button type="button" class="btn" id="logout">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <p class="err-banner" id="authErr" hidden>
+    Sesión no válida. <a href="/login-profesional.html">Inicie sesión de nuevo</a>.
+  </p>
+
+  <div class="card" id="main" hidden>
+    <p class="eyebrow" id="dashEyebrow">Dashboard del consultorio</p>
+    <h1 id="clinicName">Consultorio</h1>
+    <p class="meta" id="specialty">Especialidad: —</p>
+    <p class="dashboard-type" id="plan">Plan activo: —</p>
+    <p class="meta" id="secretariaHint" hidden>
+      Perfil Secretaría: use el selector <strong>Doctora</strong> para cambiar entre agendas
+      y programar citas. Si una doctora bloquea el día o una franja, verá el aviso en Agenda.
+    </p>
+
+    <section class="rips-panel" id="ripsPanel">
+      <h2>Configuración RIPS</h2>
+      <p>
+        Active el módulo solo si factura a EPS (Res. 2275). Si la consulta es
+        particular, déjelo apagado. El RDA clínico se genera siempre al firmar la HCE.
+      </p>
+      <div class="toggle-row">
+        <span class="status" id="ripsStatus">Cargando…</span>
+        <label class="switch" title="Activar o desactivar RIPS">
+          <input type="checkbox" id="ripsToggle" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <button type="button" class="btn btn-primary" id="ripsSave">Guardar configuración</button>
+      <p class="msg" id="ripsMsg" hidden></p>
+    </section>
+
+    <section class="reps-panel" id="repsPanel" hidden>
+      <h2 id="repsTitle">Registro REPS</h2>
+      <p id="repsMsg">—</p>
+      <a href="/consultorio/configuracion">Actualizar fecha REPS →</a>
+    </section>
+
+    <section class="open-hce-panel" id="openHcePanel" hidden>
+      <h2>
+        <span id="openHceTitle">Historias clínicas sin cerrar</span>
+        <span class="open-hce-badge" id="openHceBadge">0</span>
+      </h2>
+      <ul id="openHceList"></ul>
+    </section>
+
+    <div class="modules">
+      <a class="module" id="modAgenda" href="/consultorio/agenda">
+        <h2>Agenda del día</h2>
+        <p>Citas de hoy, admisión con Habeas Data, sala de espera y consultas de telemedicina.</p>
+        <span class="cta">Abrir agenda →</span>
+      </a>
+      <a class="module" id="modPacientes" href="/consultorio/pacientes">
+        <h2>Pacientes</h2>
+        <p>Busque pacientes y consulte por calendario las historias clínicas creadas cada día.</p>
+        <span class="cta">Ver pacientes →</span>
+      </a>
+      <a class="module" id="hce" href="/consultorio/historia-clinica">
+        <h2>Historia clínica</h2>
+        <p>Gestione historias clínicas de sus pacientes según la especialidad del consultorio.</p>
+        <span class="cta">Abrir HCE →</span>
+      </a>
+      <a class="module" id="hcePdf" href="/consultorio/historias-pdf">
+        <h2>Descargar historias (PDF)</h2>
+        <p>
+          Busque por nombre o documento y descargue historias clínicas en PDF con membrete, sin
+          límite de mes.
+        </p>
+        <span class="cta">Exportar PDF →</span>
+      </a>
+      <a class="module" id="docs" href="/consultorio/documentos" hidden>
+        <h2>Gestión documental</h2>
+        <p>Documentación, evidencias y requisitos de habilitación alineados a la normativa vigente.</p>
+        <span class="cta">Ver módulo →</span>
+      </a>
+      <a class="module" id="billing" href="/consultorio/recibos" hidden>
+        <h2>Recibos de caja</h2>
+        <p>Cobros, gastos, paquetes de sesiones y cierre diario de caja del consultorio.</p>
+        <span class="cta">Abrir caja →</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var labels = {
+        PSYCHOLOGY: 'Psicología',
+        PHYSIOTHERAPY: 'Fisioterapia',
+        DENTISTRY: 'Odontología',
+        MEDICINE: 'Medicina',
+        AESTHETIC: 'Medicina estética',
+      };
+      var plans = {
+        CLINICAL_HISTORY: 'Historia clínica',
+        CLINICAL_HISTORY_WITH_DOCS: 'Historia clínica con gestión documental',
+      };
+
+      var token = localStorage.getItem('habilisalud_token');
+      var raw = localStorage.getItem('habilisalud_user');
+      var user = null;
+      try { user = raw ? JSON.parse(raw) : null; } catch (e) { user = null; }
+
+      if (!token || !user) {
+        document.getElementById('authErr').hidden = false;
+        return;
+      }
+
+      document.getElementById('main').hidden = false;
+      document.getElementById('fullName').textContent = user.fullName || '—';
+      document.getElementById('email').textContent = user.email || '—';
+      document.getElementById('clinicName').textContent = user.clinicName || 'Consultorio';
+      document.getElementById('specialty').textContent =
+        'Especialidad: ' + (labels[user.specialty] || 'Sin asignar');
+      document.getElementById('plan').textContent =
+        'Plan activo: ' + (plans[user.dashboardType] || 'Sin asignar');
+
+      if (user.specialty === 'PSYCHOLOGY') {
+        document.body.classList.add('specialty-psychology');
+      } else if (user.specialty === 'PHYSIOTHERAPY') {
+        document.body.classList.add('specialty-physiotherapy');
+      }
+
+      var isSecretaria = user.role === 'RECEPTIONIST';
+      if (isSecretaria) {
+        // Secretaría: solo agenda (también por URL directa a otros módulos).
+        location.replace('/consultorio/agenda?_=' + Date.now());
+        return;
+      }
+
+      if (user.dashboardType === 'CLINICAL_HISTORY_WITH_DOCS') {
+        document.getElementById('docs').hidden = false;
+      }
+
+      var billingOk = ['PSYCHOLOGY', 'PHYSIOTHERAPY', 'DENTISTRY'].indexOf(user.specialty) !== -1;
+      if (billingOk) {
+        document.getElementById('billing').hidden = false;
+      }
+
+      var canWriteClinical = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
+      if (!canWriteClinical) {
+        var pdfMod = document.getElementById('hcePdf');
+        if (pdfMod) pdfMod.hidden = true;
+      }
+
+      var toggle = document.getElementById('ripsToggle');
+      var statusEl = document.getElementById('ripsStatus');
+      var msg = document.getElementById('ripsMsg');
+      var saveBtn = document.getElementById('ripsSave');
+
+      function setStatus(on) {
+        statusEl.textContent = on
+          ? 'RIPS activado (facturación EPS)'
+          : 'RIPS desactivado (consulta particular)';
+      }
+
+      // Mostrar de inmediato el valor de sesión (no esperar red).
+      toggle.checked = !!user.ripsEnabled;
+      setStatus(!!user.ripsEnabled);
+
+      function showMsg(text, ok) {
+        msg.hidden = false;
+        msg.className = 'msg ' + (ok ? 'ok' : 'err');
+        msg.textContent = text;
+      }
+
+      function authHeaders() {
+        return {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token,
+        };
+      }
+
+      function loadOpenHce() {
+        var canWrite = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
+        if (!canWrite) return;
+        fetch('/api/encounters/open', { headers: authHeaders(), cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : []; })
+          .then(function (rows) {
+            if (!rows || !rows.length) return;
+            var panel = document.getElementById('openHcePanel');
+            var list = document.getElementById('openHceList');
+            var badge = document.getElementById('openHceBadge');
+            panel.hidden = false;
+            badge.textContent = String(rows.length);
+            list.innerHTML = rows.map(function (item) {
+              var cls = item.daysOpen >= 7 ? 'urgent' : item.daysOpen >= 3 ? 'warn' : '';
+              var when = item.daysOpen > 0
+                ? ' · hace ' + item.daysOpen + ' día' + (item.daysOpen === 1 ? '' : 's')
+                : ' · hoy';
+              var doc = item.documentNumber
+                ? ' <span style="color:#6a8085">' + (item.documentType || '') + ' ' + item.documentNumber + '</span>'
+                : '';
+              var href = '/consultorio/historia-clinica?patientId=' + encodeURIComponent(item.patientId);
+              return '<li class="' + cls + '"><div><strong>' + item.patientName + '</strong>' + doc +
+                '<br><span style="color:#6a8085;font-size:.85rem">Abierta ' +
+                new Date(item.createdAt).toLocaleDateString('es-CO') + when + '</span></div>' +
+                '<a href="' + href + '">Abrir HCE →</a></li>';
+            }).join('');
+          })
+          .catch(function () {});
+      }
+
+      function showRepsAlert(data) {
+        var canWrite = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
+        if (!canWrite) return;
+        var level = data.alertLevel || 'info';
+        // Solo aviso si falta, está por vencer (≤60) o venció.
+        if (level === 'ok') return;
+        var panel = document.getElementById('repsPanel');
+        var title = document.getElementById('repsTitle');
+        var msg = document.getElementById('repsMsg');
+        panel.hidden = false;
+        panel.className = 'reps-panel' + (level === 'urgent' || level === 'warn' ? ' ' + level : '');
+        title.textContent =
+          data.status === 'EXPIRED'
+            ? 'REPS vencido'
+            : data.status === 'MISSING'
+              ? 'REPS sin fecha registrada'
+              : 'REPS por vencer';
+        msg.textContent = data.message || 'Revise su registro REPS.';
+        if (data.repsExpirationDate) {
+          user.repsExpirationDate = data.repsExpirationDate;
+          localStorage.setItem('habilisalud_user', JSON.stringify(user));
+        }
+      }
+
+      function loadReps() {
+        var canWrite = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
+        if (!canWrite) return;
+        fetch('/api/me/reps-settings', { headers: authHeaders(), cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (data) {
+            if (data) showRepsAlert(data);
+          })
+          .catch(function () {});
+      }
+
+      function loadSedes() {
+        fetch('/api/auth/clinics', { headers: authHeaders(), cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : []; })
+          .then(function (rows) {
+            if (!rows || rows.length < 2) return;
+            var wrap = document.getElementById('sedeSwitch');
+            var sel = document.getElementById('sedeSelect');
+            wrap.hidden = false;
+            sel.innerHTML = rows.map(function (c) {
+              var selected = c.isCurrent || c.id === user.clinicId ? ' selected' : '';
+              return '<option value="' + c.id + '"' + selected + '>' + c.name + '</option>';
+            }).join('');
+            sel.addEventListener('change', function () {
+              var clinicId = sel.value;
+              if (!clinicId || clinicId === user.clinicId) return;
+              sel.disabled = true;
+              fetch('/api/auth/switch-clinic', {
+                method: 'POST',
+                headers: authHeaders(),
+                cache: 'no-store',
+                body: JSON.stringify({ clinicId: clinicId }),
+              })
+                .then(function (r) {
+                  if (!r.ok) throw new Error('switch');
+                  return r.json();
+                })
+                .then(function (data) {
+                  localStorage.setItem('habilisalud_token', data.accessToken);
+                  localStorage.setItem('habilisalud_user', JSON.stringify(data.user));
+                  location.reload();
+                })
+                .catch(function () {
+                  sel.disabled = false;
+                  alert('No se pudo cambiar de sede.');
+                });
+            });
+          })
+          .catch(function () {});
+      }
+
+      loadOpenHce();
+      loadReps();
+      loadSedes();
+
+      if (!isSecretaria) {
+        fetch('/api/me/rips-settings', { headers: authHeaders(), cache: 'no-store' })
+          .then(function (r) {
+            if (!r.ok) throw new Error('No se pudo cargar RIPS');
+            return r.json();
+          })
+          .then(function (data) {
+            toggle.checked = !!data.ripsEnabled;
+            setStatus(!!data.ripsEnabled);
+            user.ripsEnabled = !!data.ripsEnabled;
+            localStorage.setItem('habilisalud_user', JSON.stringify(user));
+          })
+          .catch(function () { /* ya mostramos valor de sesión */ });
+
+        saveBtn.addEventListener('click', function () {
+          saveBtn.disabled = true;
+          msg.hidden = true;
+          var enabled = !!toggle.checked;
+          fetch('/api/me/rips-settings', {
+            method: 'POST',
+            headers: authHeaders(),
+            cache: 'no-store',
+            body: JSON.stringify({ ripsEnabled: enabled }),
+          })
+            .then(function (r) {
+              if (!r.ok) throw new Error('No se pudo guardar');
+              return r.json();
+            })
+            .then(function (data) {
+              toggle.checked = !!data.ripsEnabled;
+              setStatus(!!data.ripsEnabled);
+              user.ripsEnabled = !!data.ripsEnabled;
+              localStorage.setItem('habilisalud_user', JSON.stringify(user));
+              showMsg(
+                data.ripsEnabled
+                  ? 'Guardado: RIPS activado. La HCE pedirá Finalidad, Causa externa, CIE-10 y CUPS.'
+                  : 'Guardado: RIPS desactivado. El RDA se sigue generando al firmar.',
+                true,
+              );
+            })
+            .catch(function () {
+              showMsg('No se pudo guardar la configuración RIPS.', false);
+            })
+            .finally(function () {
+              saveBtn.disabled = false;
+            });
+        });
+      }
+
+      document.getElementById('logout').addEventListener('click', function () {
+        localStorage.removeItem('habilisalud_token');
+        localStorage.removeItem('habilisalud_user');
+        location.replace('/login-profesional.html?_=' + Date.now());
+      });
+    })();
+  </script>
+</body>
+</html>

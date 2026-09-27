@@ -18,12 +18,25 @@ import { UserRole } from '../../common/enums';
 import { PrismaService } from '../../prisma/prisma.module';
 import { User } from '../../users/user.entity';
 import { ClinicalStorageService } from '../clinical/clinical-storage.service';
+import { DocumentProvisionService } from './document-provision.service';
 import { SignDocumentDto, UpdateDocumentMetaDto } from './dto/document.dto';
 import { FillSgsstDto } from './dto/fill-sgsst.dto';
 import { FillTrainingActaDto } from './dto/fill-training-acta.dto';
 import { HabilitationPackImportService } from './habilitation-pack-import.service';
+import { FT_DOC_CATEGORY_HINTS } from './ft-doc-categories';
 import { PdfBrandService } from './pdf-brand.service';
 import { SgsstFillPdfService } from './sgsst-fill-pdf.service';
+import AdmZip from 'adm-zip';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'fs';
+import { dirname, join, normalize as pathNormalize, sep } from 'path';
+import { tmpdir } from 'os';
 
 export type ComplianceStatus = 'GREEN' | 'YELLOW' | 'RED' | 'OPTIONAL';
 
@@ -41,9 +54,14 @@ const TRAINING_SIGNER_ROLES: DocumentSignerRole[] = [
   DocumentSignerRole.ASISTENTE,
 ];
 
-/** Doble sello obligatorio: primero HABILISALUD, luego admin del consultorio. */
-const APPROVAL_ROLES: DocumentSignerRole[] = [
+/** Doble sello solo en SG-SST: primero HABILISALUD, luego admin del consultorio. */
+const SST_DUAL_ROLES: DocumentSignerRole[] = [
   DocumentSignerRole.HABILISALUD,
+  DocumentSignerRole.CLINIC_ADMIN,
+];
+
+/** Fuera de SG-SST: solo firma del profesional del consultorio. */
+const PROFESSIONAL_ONLY_ROLES: DocumentSignerRole[] = [
   DocumentSignerRole.CLINIC_ADMIN,
 ];
 
@@ -58,9 +76,27 @@ function contentRoles(requirementCode: string): DocumentSignerRole[] {
   return GENERAL_SIGNER_ROLES;
 }
 
-/** @deprecated alias — prefer contentRoles / APPROVAL_ROLES */
+/** @deprecated alias — prefer contentRoles */
 function requiredRoles(requirementCode: string): DocumentSignerRole[] {
   return contentRoles(requirementCode);
+}
+
+/** Todo el pilar SG-SST se puede diligenciar y firmar con imagen. */
+function isSgsstFillable(requirementCode: string, pillar: DocumentPillar) {
+  return pillar === DocumentPillar.SG_SST || requirementCode.startsWith('SST_');
+}
+
+/**
+ * Ya no se exige sello pendiente de HABILISALUD ni del profesional.
+ * Los nombres (Elaboró/Revisó/Aprobó) se rellenan en el PDF; el expediente
+ * no queda en “por firmar”.
+ */
+function approvalRolesFor(
+  _requirementCode: string,
+  _pillar: DocumentPillar,
+  _requiresClinicSignature: boolean,
+): DocumentSignerRole[] {
+  return [];
 }
 
 function hasRole(
@@ -71,20 +107,21 @@ function hasRole(
 }
 
 function approvalStatus(
-  signatures: { role: DocumentSignerRole }[],
+  _signatures: { role: DocumentSignerRole }[],
+  _needed: DocumentSignerRole[],
 ): DocumentFileStatus {
-  const hasH = hasRole(signatures, DocumentSignerRole.HABILISALUD);
-  const hasC = hasRole(signatures, DocumentSignerRole.CLINIC_ADMIN);
-  if (hasH && hasC) return DocumentFileStatus.SIGNED;
-  if (hasH || hasC || signatures.length > 0) {
-    return DocumentFileStatus.PARTIALLY_SIGNED;
-  }
-  return DocumentFileStatus.PENDING_SIGNATURE;
+  return DocumentFileStatus.SIGNED;
 }
 
-/** Todo el pilar SG-SST se puede diligenciar y firmar con imagen. */
-function isSgsstFillable(requirementCode: string, pillar: DocumentPillar) {
-  return pillar === DocumentPillar.SG_SST || requirementCode.startsWith('SST_');
+/** Estado efectivo para semáforo: sin pendientes de firma. */
+function effectiveFileStatus(status: DocumentFileStatus): DocumentFileStatus {
+  if (
+    status === DocumentFileStatus.PENDING_SIGNATURE ||
+    status === DocumentFileStatus.PARTIALLY_SIGNED
+  ) {
+    return DocumentFileStatus.SIGNED;
+  }
+  return status;
 }
 
 function isTrainingDoc(requirementCode: string) {
@@ -110,6 +147,31 @@ const PILLAR_LABELS: Record<DocumentPillar, string> = {
   INTERDEPENDENCIA: 'Interdependencia',
   SG_SST: 'Seguridad y salud en el trabajo',
 };
+
+/** Pilares donde admin/profesional del consultorio puede cargar y reemplazar archivos. */
+const CLINIC_ADMIN_CRUD_PILLARS = new Set<DocumentPillar>([
+  DocumentPillar.DOCUMENTACION_LEGAL,
+  DocumentPillar.TALENTO_HUMANO,
+]);
+
+function isClinicAdminCrudPillar(pillar: DocumentPillar | string | null | undefined) {
+  return !!pillar && CLINIC_ADMIN_CRUD_PILLARS.has(pillar as DocumentPillar);
+}
+
+/**
+ * Uso de suelo y concepto sanitario: cualquier profesional del consultorio
+ * (ADMIN / HEALTH_PROFESSIONAL) puede cargar y reemplazar, aunque vivan en
+ * Infraestructura u otros pilares.
+ */
+function isClinicLandUseOrSanitaryCode(code: string | null | undefined): boolean {
+  const c = (code || '').toUpperCase();
+  if (!c) return false;
+  return (
+    c.includes('USO_DEL_SUELO') ||
+    c.includes('USO_DE_SUELO') ||
+    c.includes('CONCEPTO_SANITARIO')
+  );
+}
 
 const PILLAR_ORDER: DocumentPillar[] = [
   DocumentPillar.DOCUMENTACION_LEGAL,
@@ -150,6 +212,7 @@ export class DocumentsService {
     private readonly sgsstFillPdf: SgsstFillPdfService,
     private readonly packImport: HabilitationPackImportService,
     private readonly pdfBrand: PdfBrandService,
+    private readonly documentProvision: DocumentProvisionService,
   ) {}
 
   private requireClinicId(user: User) {
@@ -176,31 +239,155 @@ export class DocumentsService {
     return this.requireClinicId(user);
   }
 
-  /** Solo HABILISALUD (superadmin) habilita, retira o descarga. */
+  /** Solo SUPER_ADMIN: habilitar requisitos, asignar catálogo, replicar, descargar. */
   private assertDocumentWriter(user: User) {
     if (user.role !== UserRole.SUPER_ADMIN) {
       throw new ForbiddenException(
-        'Solo el superadministrador puede habilitar, retirar o descargar estos documentos.',
+        'Solo el superadministrador puede administrar la estructura del expediente (habilitar, asignar o descargar).',
       );
     }
   }
 
-  /** Cargar archivos: superadmin o admin del consultorio (sin descarga). */
-  private assertDocumentUploader(user: User) {
-    if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.ADMIN) {
+  /**
+   * SUPER_ADMIN: todo.
+   * ADMIN y HEALTH_PROFESSIONAL: Legal + Talento + uso de suelo / concepto sanitario.
+   */
+  private assertClinicDocFileCrud(
+    user: User,
+    pillar: DocumentPillar | string | null | undefined,
+    requirementCode?: string | null,
+  ) {
+    if (user.role === UserRole.SUPER_ADMIN) return;
+    const isClinicProfessional =
+      user.role === UserRole.ADMIN ||
+      user.role === UserRole.HEALTH_PROFESSIONAL;
+    if (!isClinicProfessional) {
       throw new ForbiddenException(
-        'Solo el superadministrador o el administrador del consultorio pueden cargar documentos.',
+        'Solo puede cargar o modificar Documentación legal, Talento humano, uso de suelo y concepto sanitario.',
       );
     }
+    if (isClinicLandUseOrSanitaryCode(requirementCode)) return;
+    if (isClinicAdminCrudPillar(pillar)) return;
+    throw new ForbiddenException(
+      'Solo puede cargar o modificar Documentación legal, Talento humano, uso de suelo y concepto sanitario.',
+    );
   }
 
-  /** Diligenciar SG-SST: superadmin o admin del consultorio. */
-  private assertDocumentFiller(user: User) {
-    if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException(
-        'Solo el superadministrador o el administrador del consultorio pueden diligenciar.',
-      );
+  /** Activa uso de suelo / concepto sanitario para que el profesional los vea y pueda cargar. */
+  private async ensureLandUseSanitaryEnabled(clinicId: string) {
+    const rows = await this.prisma.documentRequirement.findMany({
+      where: { clinicId, isEnabled: false },
+      select: { id: true, code: true },
+    });
+    const ids = rows
+      .filter((r) => isClinicLandUseOrSanitaryCode(r.code))
+      .map((r) => r.id);
+    if (!ids.length) return;
+    await this.prisma.documentRequirement.updateMany({
+      where: { id: { in: ids } },
+      data: { isEnabled: true },
+    });
+  }
+
+  /** Brand del consultorio: Aprobó = profesional de ESE consultorio. */
+  async getClinicBrand(user: User, clinicIdParam?: string) {
+    const clinicId = this.clinicScope(user, clinicIdParam);
+    const brand = await this.pdfBrand.resolveBrand(user, clinicId);
+    return {
+      clinicId,
+      clinicName: brand.clinicName,
+      professionalName: brand.professionalName,
+      professionalCard: brand.professionalCard,
+      professionalUserId: brand.professionalUserId,
+      elaboratedBy: brand.elaboratedBy,
+      hasSignature: !!brand.signatureBase64,
+      signatureBase64: brand.signatureBase64 ?? null,
+      city: brand.city,
+    };
+  }
+
+  /**
+   * Re-sella todos los PDF activos del consultorio con el profesional correcto,
+   * limpiando sellos previos para no mezclar nombres entre consultorios.
+   */
+  async rebrandClinicPdfs(user: User, clinicIdParam?: string) {
+    this.assertDocumentWriter(user);
+    const clinicId = this.clinicScope(user, clinicIdParam);
+    const brand = await this.pdfBrand.resolveBrand(user, clinicId);
+    const files = await this.prisma.documentFile.findMany({
+      where: {
+        requirement: { clinicId },
+        status: { not: DocumentFileStatus.RETIRED },
+        OR: [
+          { mimeType: { contains: 'pdf' } },
+          { originalName: { endsWith: '.pdf', mode: 'insensitive' } },
+        ],
+      },
+      include: {
+        requirement: {
+          select: {
+            id: true,
+            code: true,
+            category: { select: { pillar: true } },
+          },
+        },
+      },
+    });
+
+    let updated = 0;
+    let skipped = 0;
+    for (const file of files) {
+      try {
+        const buffer = await this.storage.readBuffer(file.storageKey);
+        const branded = await this.pdfBrand.brandPdf(buffer, brand, {
+          force: true,
+        });
+        const { contentHash } = await this.storage.putBuffer(
+          file.storageKey,
+          branded,
+          'application/pdf',
+        );
+        await this.prisma.documentFile.update({
+          where: { id: file.id },
+          data: {
+            sizeBytes: branded.length,
+            checksum: contentHash,
+            mimeType: 'application/pdf',
+            notes: `Aprobó: ${brand.professionalName} · Elaboró/Revisó: HABILISALUD (re-sellado por consultorio).`,
+          },
+        });
+        await this.prisma.documentSignature.deleteMany({
+          where: {
+            documentFileId: file.id,
+            role: DocumentSignerRole.CLINIC_ADMIN,
+          },
+        });
+        await this.prisma.documentSignature.create({
+          data: {
+            documentFileId: file.id,
+            role: DocumentSignerRole.CLINIC_ADMIN,
+            signerUserId: brand.professionalUserId,
+            signerName: brand.professionalName,
+            signatureBase64:
+              brand.signatureBase64 ||
+              'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5W2XQAAAAASUVORK5CYII=',
+            contentHash,
+          },
+        });
+        updated += 1;
+      } catch {
+        skipped += 1;
+      }
     }
+
+    return {
+      clinicId,
+      clinicName: brand.clinicName,
+      professionalName: brand.professionalName,
+      updated,
+      skipped,
+      total: files.length,
+    };
   }
 
   private assertClinicCountersigner(user: User) {
@@ -210,6 +397,15 @@ export class DocumentsService {
     ) {
       throw new ForbiddenException(
         'Solo el administrador o profesional del consultorio puede firmar la contraparte.',
+      );
+    }
+  }
+
+  /** Diligenciar SG-SST: solo SUPER_ADMIN. */
+  private assertDocumentFiller(user: User) {
+    if (user.role !== UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException(
+        'Solo el superadministrador puede diligenciar documentos SG-SST.',
       );
     }
   }
@@ -232,21 +428,45 @@ export class DocumentsService {
       .sort((a, b) => b.version - a.version);
   }
 
+  /**
+   * Borra por completo todas las versiones de un requisito (DB + disco).
+   * Así al retirar/reemplazar no queda rastro de lo anterior.
+   */
+  private async purgeRequirementFiles(requirementId: string) {
+    const previous = await this.prisma.documentFile.findMany({
+      where: { requirementId },
+      select: { id: true, storageKey: true },
+    });
+    if (!previous.length) return;
+    await this.prisma.documentFile.deleteMany({ where: { requirementId } });
+    for (const row of previous) {
+      await this.storage.deleteStored(row.storageKey).catch(() => undefined);
+    }
+  }
+
   private serializeFile(
     file: FileRow,
     validityDays: number | null,
     requirementCode: string,
     pillar: DocumentPillar,
+    requiresClinicSignature = false,
   ) {
     const signedRoles = new Set(file.signatures.map((s) => s.role));
     const content = contentRoles(requirementCode);
+    const sgsst = isSgsstFillable(requirementCode, pillar);
+    const needed = approvalRolesFor(
+      requirementCode,
+      pillar,
+      requiresClinicSignature,
+    );
     const hasHabilisalud = signedRoles.has(DocumentSignerRole.HABILISALUD);
     const hasClinicAdmin = signedRoles.has(DocumentSignerRole.CLINIC_ADMIN);
+    const status = effectiveFileStatus(file.status);
     return {
       id: file.id,
       version: file.version,
       periodLabel: file.periodLabel,
-      status: file.status,
+      status,
       originalName: file.originalName,
       mimeType: file.mimeType,
       sizeBytes: file.sizeBytes,
@@ -257,22 +477,15 @@ export class DocumentsService {
       retiredAt: file.retiredAt,
       createdAt: file.createdAt,
       uploadedBy: file.uploadedBy?.fullName ?? null,
-      /** Roles del sello dual (UI de firma). */
-      requiredRoles: APPROVAL_ROLES,
+      requiredRoles: needed,
       contentRoles: content,
-      fillable: isSgsstFillable(requirementCode, pillar),
+      requiresClinicSignature: false,
+      fillable: sgsst,
       fillableTraining: isTrainingDoc(requirementCode),
       hasHabilisaludSignature: hasHabilisalud,
       hasClinicAdminSignature: hasClinicAdmin,
-      /** El consultorio solo puede firmar tras el sello de HABILISALUD. */
-      canClinicSign:
-        hasHabilisalud &&
-        !hasClinicAdmin &&
-        file.status !== DocumentFileStatus.RETIRED,
-      awaitingClinicSignature:
-        hasHabilisalud &&
-        !hasClinicAdmin &&
-        file.status !== DocumentFileStatus.RETIRED,
+      canClinicSign: false,
+      awaitingClinicSignature: false,
       canPreview:
         file.mimeType.startsWith('image/') ||
         file.mimeType === 'application/pdf' ||
@@ -286,18 +499,25 @@ export class DocumentsService {
         signedAt: s.signedAt,
         signatureBase64: s.signatureBase64,
       })),
-      missingRoles: APPROVAL_ROLES.filter((role) => !signedRoles.has(role)),
+      missingRoles: [] as DocumentSignerRole[],
     };
   }
 
   /**
    * Semáforo:
    * - Sin evidencia → RED / OPTIONAL
-   * - Con evidencia sin firmar o parcialmente firmada → YELLOW
-   * - Firmada y vigente → GREEN
-   * - Firmada y vencida → RED
+   * - Con evidencia vigente → GREEN
+   * - Con evidencia por vencer → YELLOW
+   * - Con evidencia vencida → RED
    */
   private statusOf(requirement: RequirementWithFiles, now: Date) {
+    if (!requirement.isEnabled) {
+      return {
+        status: 'OPTIONAL' as ComplianceStatus,
+        expiresAt: null,
+        daysToExpiry: null,
+      };
+    }
     const latest = this.activeFiles(requirement.files)[0] ?? null;
 
     if (!latest) {
@@ -313,7 +533,7 @@ export class DocumentsService {
       ? Math.ceil((expiresAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
       : null;
 
-    if (latest.status !== DocumentFileStatus.SIGNED) {
+    if (effectiveFileStatus(latest.status) !== DocumentFileStatus.SIGNED) {
       return {
         status: 'YELLOW' as ComplianceStatus,
         expiresAt,
@@ -377,8 +597,8 @@ export class DocumentsService {
   }
 
   /**
-   * Histórico mensual de documentos firmados (auditoría).
-   * Incluye SIGNED y RETIRED con firmas (el retiro no borra evidencia).
+   * Histórico mensual de documentos vigentes (auditoría).
+   * Solo archivos activos; lo retirado se elimina sin dejar rastro.
    */
   async signedArchive(user: User, period?: string, clinicIdParam?: string) {
     const clinicId = this.clinicScope(user, clinicIdParam);
@@ -387,14 +607,11 @@ export class DocumentsService {
 
     const files = await this.prisma.documentFile.findMany({
       where: {
-        requirement: { clinicId },
-        OR: [
-          { status: DocumentFileStatus.SIGNED },
-          {
-            status: DocumentFileStatus.RETIRED,
-            signatures: { some: {} },
-          },
-        ],
+        requirement: {
+          clinicId,
+          ...(user.role === UserRole.SUPER_ADMIN ? {} : { isEnabled: true }),
+        },
+        status: DocumentFileStatus.SIGNED,
       },
       include: {
         ...fileInclude,
@@ -445,6 +662,7 @@ export class DocumentsService {
           file.requirement.validityDays,
           file.requirement.code,
           pillar,
+          file.requirement.requiresClinicSignature === true,
         );
         return {
           ...serialized,
@@ -462,6 +680,20 @@ export class DocumentsService {
   async overview(user: User, pillar?: DocumentPillar, clinicIdParam?: string) {
     const clinicId = this.clinicScope(user, clinicIdParam);
     await this.packImport.importForClinic(clinicId).catch(() => undefined);
+    await this.ensureLandUseSanitaryEnabled(clinicId).catch(() => undefined);
+    // Normaliza historial: ya no hay pendientes de firma HabiliSalud / profesional.
+    await this.prisma.documentFile.updateMany({
+      where: {
+        requirement: { clinicId },
+        status: {
+          in: [
+            DocumentFileStatus.PENDING_SIGNATURE,
+            DocumentFileStatus.PARTIALLY_SIGNED,
+          ],
+        },
+      },
+      data: { status: DocumentFileStatus.SIGNED },
+    });
     const now = new Date();
 
     const requirements = await this.prisma.documentRequirement.findMany({
@@ -476,6 +708,12 @@ export class DocumentsService {
       orderBy: [{ category: { sortOrder: 'asc' } }, { code: 'asc' }],
     });
 
+    // Profesional/admin del consultorio: no ven documentos deshabilitados.
+    const visibleRequirements =
+      user.role === UserRole.SUPER_ADMIN
+        ? requirements
+        : requirements.filter((r) => r.isEnabled);
+
     const byPillar = new Map<
       DocumentPillar,
       {
@@ -485,7 +723,7 @@ export class DocumentsService {
       }
     >();
 
-    for (const requirement of requirements) {
+    for (const requirement of visibleRequirements) {
       const { status, expiresAt, daysToExpiry } = this.statusOf(requirement, now);
       const key = requirement.category.pillar;
       if (!byPillar.has(key)) {
@@ -505,6 +743,21 @@ export class DocumentsService {
       const categoryNode = pillarNode.categories.get(requirement.categoryId)!;
       const active = this.activeFiles(requirement.files);
       const latest = active[0] ?? null;
+      const pillar = requirement.category.pillar;
+      const sgsst = isSgsstFillable(requirement.code, pillar);
+      const needsClinicFlag = requirement.requiresClinicSignature === true;
+      const needed = approvalRolesFor(
+        requirement.code,
+        pillar,
+        needsClinicFlag,
+      );
+      const hasHabili =
+        !!latest &&
+        latest.signatures.some((s) => s.role === DocumentSignerRole.HABILISALUD);
+      const hasClinic =
+        !!latest &&
+        latest.signatures.some((s) => s.role === DocumentSignerRole.CLINIC_ADMIN);
+      const canClinicSign = false;
 
       categoryNode.requirements.push({
         id: requirement.id,
@@ -513,6 +766,8 @@ export class DocumentsService {
         description: requirement.description,
         isMandatory: requirement.isMandatory,
         isEnabled: requirement.isEnabled,
+        requiresClinicSignature: false,
+        pillar,
         validityDays: requirement.validityDays,
         status,
         expiresAt,
@@ -523,23 +778,17 @@ export class DocumentsService {
               latest,
               requirement.validityDays,
               requirement.code,
-              requirement.category.pillar,
+              pillar,
+              needsClinicFlag,
             )
           : null,
-        fillable: isSgsstFillable(requirement.code, requirement.category.pillar),
+        fillable: sgsst,
         fillableTraining: isTrainingDoc(requirement.code),
-        requiredRoles: APPROVAL_ROLES,
+        requiredRoles: needed,
         contentRoles: contentRoles(requirement.code),
-        hasHabilisaludSignature: !!latest &&
-          latest.signatures.some((s) => s.role === DocumentSignerRole.HABILISALUD),
-        awaitingClinicSignature: !!latest &&
-          latest.signatures.some((s) => s.role === DocumentSignerRole.HABILISALUD) &&
-          !latest.signatures.some((s) => s.role === DocumentSignerRole.CLINIC_ADMIN) &&
-          latest.status !== DocumentFileStatus.RETIRED,
-        canClinicSign: !!latest &&
-          latest.signatures.some((s) => s.role === DocumentSignerRole.HABILISALUD) &&
-          !latest.signatures.some((s) => s.role === DocumentSignerRole.CLINIC_ADMIN) &&
-          latest.status !== DocumentFileStatus.RETIRED,
+        hasHabilisaludSignature: hasHabili,
+        awaitingClinicSignature: false,
+        canClinicSign,
       });
     }
 
@@ -558,7 +807,9 @@ export class DocumentsService {
       };
     });
 
-    const pendingCountersignatures = this.collectPendingCountersign(requirements);
+    const pendingCountersignatures = this.collectPendingCountersign(
+      visibleRequirements,
+    );
 
     return {
       generatedAt: now,
@@ -571,15 +822,18 @@ export class DocumentsService {
   }
 
   private collectPendingCountersign(
-    requirements: Array<{
+    _requirements: Array<{
       id: string;
       code: string;
       title: string;
       isEnabled: boolean;
+      requiresClinicSignature?: boolean;
+      category: { pillar: DocumentPillar };
       files: FileRow[];
     }>,
   ) {
-    const pending: Array<{
+    // Sin pendientes de firma HabiliSalud / profesional.
+    return [] as Array<{
       fileId: string;
       requirementId: string;
       requirementCode: string;
@@ -589,36 +843,7 @@ export class DocumentsService {
       habilisaludSignerName: string;
       habilisaludSignedAt: Date;
       message: string;
-    }> = [];
-
-    for (const requirement of requirements) {
-      if (!requirement.isEnabled) continue;
-      for (const file of this.activeFiles(requirement.files)) {
-        const h = file.signatures.find(
-          (s) => s.role === DocumentSignerRole.HABILISALUD,
-        );
-        const c = file.signatures.find(
-          (s) => s.role === DocumentSignerRole.CLINIC_ADMIN,
-        );
-        if (!h || c) continue;
-        pending.push({
-          fileId: file.id,
-          requirementId: requirement.id,
-          requirementCode: requirement.code,
-          requirementTitle: requirement.title,
-          version: file.version,
-          originalName: file.originalName,
-          habilisaludSignerName: h.signerName,
-          habilisaludSignedAt: h.signedAt,
-          message: `HABILISALUD ya firmó «${requirement.title}» (v${file.version}). Debe firmar la contraparte desde gestión documental.`,
-        });
-      }
-    }
-
-    return pending.sort(
-      (a, b) =>
-        b.habilisaludSignedAt.getTime() - a.habilisaludSignedAt.getTime(),
-    );
+    }>;
   }
 
   private emptyCategory(category: { id: string; code: string; name: string }) {
@@ -633,6 +858,8 @@ export class DocumentsService {
         description: string | null;
         isMandatory: boolean;
         isEnabled: boolean;
+        requiresClinicSignature: boolean;
+        pillar: DocumentPillar;
         validityDays: number | null;
         status: ComplianceStatus;
         expiresAt: Date | null;
@@ -693,11 +920,17 @@ export class DocumentsService {
         validityDays: requirement.validityDays,
         category: requirement.category.name,
         pillar: requirement.category.pillar,
+        isEnabled: requirement.isEnabled,
+        requiresClinicSignature: requirement.requiresClinicSignature,
       },
       ...this.statusOf(requirement, now),
       fillable: isSgsstFillable(requirement.code, requirement.category.pillar),
       fillableTraining: isTrainingDoc(requirement.code),
-      requiredRoles: APPROVAL_ROLES,
+      requiredRoles: approvalRolesFor(
+        requirement.code,
+        requirement.category.pillar,
+        requirement.requiresClinicSignature === true,
+      ),
       contentRoles: contentRoles(requirement.code),
       files: requirement.files.map((file) =>
         this.serializeFile(
@@ -705,6 +938,7 @@ export class DocumentsService {
           requirement.validityDays,
           requirement.code,
           requirement.category.pillar,
+          requirement.requiresClinicSignature === true,
         ),
       ),
     };
@@ -727,12 +961,14 @@ export class DocumentsService {
         title: file.requirement.title,
         pillar: file.requirement.category.pillar,
         category: file.requirement.category.name,
+        requiresClinicSignature: file.requirement.requiresClinicSignature,
       },
       file: this.serializeFile(
         file,
         file.requirement.validityDays,
         file.requirement.code,
         file.requirement.category.pillar,
+        file.requirement.requiresClinicSignature,
       ),
     };
   }
@@ -745,9 +981,13 @@ export class DocumentsService {
     context: AuditContext,
     clinicIdParam?: string,
   ) {
-    this.assertDocumentUploader(user);
     const clinicId = this.clinicScope(user, clinicIdParam);
-    if (!file?.buffer?.length) throw new BadRequestException('Archivo requerido');
+    let buffer = file?.buffer;
+    if (!file || !buffer?.length) {
+      throw new BadRequestException(
+        'No se recibió el archivo. Elija de nuevo el PDF/documento e intente cargar otra vez.',
+      );
+    }
     if (file.size > MAX_UPLOAD_BYTES) {
       throw new BadRequestException('El archivo supera los 25 MB permitidos');
     }
@@ -757,10 +997,22 @@ export class DocumentsService {
       include: { category: true },
     });
     if (!requirement) throw new NotFoundException('Requisito no encontrado');
+    this.assertClinicDocFileCrud(
+      user,
+      requirement.category.pillar,
+      requirement.code,
+    );
     if (requirement.isEnabled === false && user.role !== UserRole.SUPER_ADMIN) {
-      throw new ForbiddenException(
-        'Este documento está deshabilitado. Solo el superadministrador puede cargarlo.',
-      );
+      if (isClinicLandUseOrSanitaryCode(requirement.code)) {
+        await this.prisma.documentRequirement.update({
+          where: { id: requirement.id },
+          data: { isEnabled: true },
+        });
+      } else {
+        throw new ForbiddenException(
+          'Este documento está deshabilitado. Solo el superadministrador puede cargarlo.',
+        );
+      }
     }
 
     let expiry: Date | null = null;
@@ -772,6 +1024,24 @@ export class DocumentsService {
       expiry = parsed;
     }
 
+    const sgsst = isSgsstFillable(
+      requirement.code,
+      requirement.category.pillar,
+    );
+    const isPdf =
+      (file.mimetype || '').includes('pdf') ||
+      file.originalname.toLowerCase().endsWith('.pdf');
+    const brand = await this.pdfBrand.resolveBrand(user, clinicId);
+    let autoSigned = true;
+    let mimeType = file.mimetype || 'application/octet-stream';
+    let originalName = file.originalname;
+
+    // Fuera de SG-SST: rellenar perfil; sin pendientes de firma.
+    if (!sgsst && isPdf) {
+      buffer = await this.pdfBrand.brandPdf(buffer, brand);
+      mimeType = 'application/pdf';
+    }
+
     const last = await this.prisma.documentFile.findFirst({
       where: { requirementId: requirement.id },
       orderBy: { version: 'desc' },
@@ -779,14 +1049,21 @@ export class DocumentsService {
     });
     const version = (last?.version ?? 0) + 1;
 
-    const safeExt = (extname(file.originalname) || '').slice(0, 12);
+    const safeExt = (extname(originalName) || '').slice(0, 12);
     const fileName = `v${version}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${safeExt}`;
     const { storageKey, contentHash } = await this.storage.writeBuffer(
       `habilitation-docs/${clinicId}/${requirement.category.pillar.toLowerCase()}/${requirement.code}`,
       fileName,
-      file.buffer,
-      file.mimetype || 'application/octet-stream',
+      buffer,
+      mimeType,
     );
+
+    const needed = approvalRolesFor(
+      requirement.code,
+      requirement.category.pillar,
+      requirement.requiresClinicSignature === true,
+    );
+    const initialStatus = DocumentFileStatus.SIGNED;
 
     const created = await this.prisma.documentFile.create({
       data: {
@@ -794,26 +1071,54 @@ export class DocumentsService {
         uploadedById: user.id,
         version,
         periodLabel: meta.periodLabel?.trim() || null,
-        status: DocumentFileStatus.PENDING_SIGNATURE,
-        originalName: file.originalname,
+        status: initialStatus,
+        originalName,
         storageKey,
-        mimeType: file.mimetype || 'application/octet-stream',
-        sizeBytes: file.size,
+        mimeType,
+        sizeBytes: buffer.length,
         checksum: contentHash,
         expiresAt: expiry,
-        notes: meta.notes?.trim() || null,
+        notes:
+          meta.notes?.trim() ||
+          (autoSigned
+            ? `Rellenado con perfil y firma de ${brand.professionalName} (historia clínica).`
+            : null),
       },
     });
 
+    if (autoSigned) {
+      const stamp =
+        brand.signatureBase64 ||
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5W2XQAAAAASUVORK5CYII=';
+      // Firmante = profesional del consultorio (nunca cruzar con otro consultorio).
+      const signerUserId =
+        brand.professionalUserId ||
+        (user.clinicId === clinicId ? user.id : null);
+      await this.prisma.documentSignature.create({
+        data: {
+          documentFileId: created.id,
+          role: DocumentSignerRole.CLINIC_ADMIN,
+          signerUserId,
+          signerName: brand.professionalName,
+          signatureBase64: stamp,
+          contentHash,
+          ipAddress: context.ipAddress,
+          userAgent: context.userAgent,
+        },
+      });
+    }
+
     await this.recordAudit(clinicId, user, AuditAction.UPLOAD, created.id, context, {
       requirementCode: requirement.code,
-      originalName: file.originalname,
+      originalName,
       checksum: contentHash,
       version,
       periodLabel: meta.periodLabel ?? null,
+      brandedProfessional: !sgsst && isPdf,
+      autoSignedWithProfile: autoSigned,
     });
 
-    return this.listFiles(user, requirement.id);
+    return this.listFiles(user, requirement.id, clinicIdParam);
   }
 
   /**
@@ -892,26 +1197,58 @@ export class DocumentsService {
       }
     }
 
+    const clinicRow = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+      select: { createdAt: true },
+    });
+    const clinicCreatedIso = clinicRow?.createdAt
+      ? clinicRow.createdAt.toISOString().slice(0, 10)
+      : null;
+    const brand = await this.pdfBrand.resolveBrand(user, clinicId);
+
     const normalized = roles.map((role) => {
       const sig = provided.get(role)!;
-      return {
-        role,
-        signerName: sig.signerName.trim(),
-        signatureBase64: this.normalizeSignature(sig.signatureBase64),
-      };
+      let signerName = (sig.signerName || '').trim();
+      if (
+        !signerName &&
+        (role === DocumentSignerRole.ELABORO ||
+          role === DocumentSignerRole.REVISO)
+      ) {
+        signerName = 'HABILISALUD';
+      }
+      if (!signerName && role === DocumentSignerRole.APROBO) {
+        signerName = brand.professionalName;
+      }
+      const isHabiliRole =
+        (role === DocumentSignerRole.ELABORO ||
+          role === DocumentSignerRole.REVISO) &&
+        /^habilisalud$/i.test(signerName);
+      let signatureBase64 = (sig.signatureBase64 || '').trim();
+      if (isHabiliRole && !signatureBase64.startsWith('data:image')) {
+        signatureBase64 =
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5W2XQAAAAASUVORK5CYII=';
+      } else {
+        signatureBase64 = this.normalizeSignature(signatureBase64);
+      }
+      return { role, signerName, signatureBase64 };
     });
+
+    const fechaDoc = (dto.fecha || clinicCreatedIso || '').trim();
+    if (!fechaDoc) {
+      throw new BadRequestException('Indique la fecha del documento.');
+    }
 
     const periodLabel =
       dto.periodLabel?.trim() ||
       (() => {
-        const d = new Date(dto.fecha);
+        const d = new Date(fechaDoc);
         if (Number.isNaN(d.getTime())) return null;
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       })();
 
     const formData = {
       kind: isTrainingDoc(requirement.code) ? 'TRAINING_ACTA' : 'SGSST_FILL',
-      fecha: dto.fecha.trim(),
+      fecha: fechaDoc,
       periodLabel,
       tema: dto.tema?.trim() || null,
       objetivo: dto.objetivo?.trim() || null,
@@ -923,8 +1260,8 @@ export class DocumentsService {
     try {
       pdfBuffer = await this.sgsstFillPdf.build({
         clinicName: requirement.clinic.name,
-        professionalName: user.fullName,
-        professionalCard: user.professionalCard,
+        professionalName: brand.professionalName,
+        professionalCard: brand.professionalCard,
         documentTitle: requirement.title,
         documentCode: requirement.code,
         fecha: formData.fecha,
@@ -944,12 +1281,10 @@ export class DocumentsService {
       );
     }
 
-    const last = await this.prisma.documentFile.findFirst({
-      where: { requirementId: requirement.id },
-      orderBy: { version: 'desc' },
-      select: { version: true },
-    });
-    const version = (last?.version ?? 0) + 1;
+    // Al diligenciar se limpia lo anterior: solo queda el PDF nuevo.
+    await this.purgeRequirementFiles(requirement.id);
+
+    const version = 1;
     const slug = requirement.code.toLowerCase().replace(/[^a-z0-9]+/g, '_');
     const safeName = `${slug}_${periodLabel || 'sin-periodo'}_v${version}.pdf`;
     const { storageKey, contentHash } = await this.storage.writeBuffer(
@@ -963,15 +1298,48 @@ export class DocumentsService {
     const validity = requirement.validityDays ?? 365;
     expiresAt.setDate(expiresAt.getDate() + validity);
 
+    const needsClinic = requirement.requiresClinicSignature === true;
+    const neededRoles = approvalRolesFor(
+      requirement.code,
+      requirement.category.pillar,
+      needsClinic,
+    );
     const created = await this.prisma.$transaction(async (tx) => {
+      const approvalRole =
+        user.role === UserRole.SUPER_ADMIN
+          ? DocumentSignerRole.HABILISALUD
+          : DocumentSignerRole.CLINIC_ADMIN;
+      // Fuera de SG-SST el sello es solo del profesional; en SG-SST el rol
+      // depende de quién diligencia.
+      const sealRole = isSgsstFillable(
+        requirement.code,
+        requirement.category.pillar,
+      )
+        ? approvalRole
+        : DocumentSignerRole.CLINIC_ADMIN;
+      if (!neededRoles.includes(sealRole) && neededRoles.length) {
+        // Si el profesional diligencia SG-SST sin Habili, igual deja CLINIC_ADMIN.
+      }
+      const approvalSig = {
+        role: neededRoles.includes(sealRole)
+          ? sealRole
+          : neededRoles[0] ?? DocumentSignerRole.CLINIC_ADMIN,
+        signerName: (user.fullName || user.email).trim(),
+        signatureBase64: normalized[0].signatureBase64,
+      };
+      const initialRoles = [
+        ...normalized.map((sig) => ({ role: sig.role })),
+        { role: approvalSig.role },
+      ];
+      const initialStatus = approvalStatus(initialRoles, neededRoles);
+
       const file = await tx.documentFile.create({
         data: {
           requirementId: requirement.id,
           uploadedById: user.id,
           version,
           periodLabel,
-          // Contenido diligenciado + sello HABILISALUD; falta contraparte del consultorio.
-          status: DocumentFileStatus.PARTIALLY_SIGNED,
+          status: initialStatus,
           originalName: safeName,
           storageKey,
           mimeType: 'application/pdf',
@@ -980,21 +1348,15 @@ export class DocumentsService {
           expiresAt,
           formData,
           notes:
-            user.role === UserRole.SUPER_ADMIN
-              ? 'Documento SG-SST diligenciado por HABILISALUD. Pendiente firma del consultorio.'
-              : 'Documento SG-SST diligenciado por el consultorio. Pendiente sello HABILISALUD.',
+            isSgsstFillable(requirement.code, requirement.category.pillar)
+              ? user.role === UserRole.SUPER_ADMIN
+                ? needsClinic
+                  ? 'Documento SG-SST diligenciado por HABILISALUD. Pendiente firma del consultorio.'
+                  : 'Documento SG-SST diligenciado y sellado por HABILISALUD.'
+                : 'Documento SG-SST diligenciado por el consultorio. Pendiente sello HABILISALUD.'
+              : 'Documento diligenciado con datos y firma del profesional del consultorio.',
         },
       });
-
-      const approvalRole =
-        user.role === UserRole.SUPER_ADMIN
-          ? DocumentSignerRole.HABILISALUD
-          : DocumentSignerRole.CLINIC_ADMIN;
-      const approvalSig = {
-        role: approvalRole,
-        signerName: (user.fullName || user.email).trim(),
-        signatureBase64: normalized[0].signatureBase64,
-      };
 
       await tx.documentSignature.createMany({
         data: [
@@ -1030,8 +1392,13 @@ export class DocumentsService {
       version,
       periodLabel,
       formData,
-      awaitingClinicCountersign: user.role === UserRole.SUPER_ADMIN,
-      awaitingHabilisaludSeal: user.role === UserRole.ADMIN,
+      awaitingClinicCountersign:
+        user.role === UserRole.SUPER_ADMIN &&
+        needsClinic &&
+        isSgsstFillable(requirement.code, requirement.category.pillar),
+      awaitingHabilisaludSeal:
+        user.role === UserRole.ADMIN &&
+        isSgsstFillable(requirement.code, requirement.category.pillar),
     });
 
     return this.getFile(user, created.id, clinicId);
@@ -1044,20 +1411,27 @@ export class DocumentsService {
     context: AuditContext,
     clinicIdParam?: string,
   ) {
-    this.assertDocumentWriter(user);
     const clinicId = this.clinicScope(user, clinicIdParam);
     const file = await this.prisma.documentFile.findFirst({
       where: { id: fileId, requirement: { clinicId } },
-      include: { requirement: { select: { id: true, code: true } } },
+      include: {
+        requirement: {
+          select: {
+            id: true,
+            code: true,
+            category: { select: { pillar: true } },
+          },
+        },
+      },
     });
     if (!file) throw new NotFoundException('Documento no encontrado');
+    this.assertClinicDocFileCrud(
+      user,
+      file.requirement.category.pillar,
+      file.requirement.code,
+    );
     if (file.status === DocumentFileStatus.RETIRED) {
       throw new ConflictException('No se puede editar una versión retirada');
-    }
-    if (file.status === DocumentFileStatus.SIGNED) {
-      throw new ConflictException(
-        'La versión ya está firmada. Cargue una nueva versión para corregir metadatos.',
-      );
     }
 
     let expiresAt: Date | null | undefined = undefined;
@@ -1103,7 +1477,16 @@ export class DocumentsService {
       where: { id: fileId, requirement: { clinicId } },
       include: {
         signatures: true,
-        requirement: { select: { id: true, code: true, title: true, isEnabled: true } },
+        requirement: {
+          select: {
+            id: true,
+            code: true,
+            title: true,
+            isEnabled: true,
+            requiresClinicSignature: true,
+            category: { select: { pillar: true } },
+          },
+        },
       },
     });
     if (!file) throw new NotFoundException('Documento no encontrado');
@@ -1121,11 +1504,26 @@ export class DocumentsService {
       );
     }
 
+    const pillar = file.requirement.category.pillar;
+    const sgsst = isSgsstFillable(file.requirement.code, pillar);
+    const needed = approvalRolesFor(
+      file.requirement.code,
+      pillar,
+      file.requirement.requiresClinicSignature === true,
+    );
     const role = dto.role;
+
     if (user.role === UserRole.SUPER_ADMIN) {
-      if (role !== DocumentSignerRole.HABILISALUD) {
+      if (!sgsst || role !== DocumentSignerRole.HABILISALUD) {
         throw new BadRequestException(
-          'El superadministrador sella con el rol HABILISALUD. Las firmas de contenido se cargan con «Llenar y firmar».',
+          sgsst
+            ? 'El superadministrador sella con el rol HABILISALUD. Las firmas de contenido se cargan con «Llenar y firmar».'
+            : 'Fuera de SG-SST no aplica el sello HABILISALUD. Solo firma el profesional del consultorio.',
+        );
+      }
+      if (!needed.includes(DocumentSignerRole.HABILISALUD)) {
+        throw new BadRequestException(
+          'Este documento SG-SST no requiere sello HABILISALUD.',
         );
       }
     } else if (
@@ -1135,12 +1533,21 @@ export class DocumentsService {
       this.assertClinicCountersigner(user);
       if (role !== DocumentSignerRole.CLINIC_ADMIN) {
         throw new BadRequestException(
-          'El consultorio solo puede firmar como CLINIC_ADMIN (contraparte).',
+          'El consultorio firma como profesional (CLINIC_ADMIN).',
         );
       }
-      if (!hasRole(file.signatures, DocumentSignerRole.HABILISALUD)) {
+      if (!needed.includes(DocumentSignerRole.CLINIC_ADMIN)) {
         throw new ForbiddenException(
-          'Aún no puede firmar: el superadministrador de HABILISALUD debe firmar primero.',
+          'Este documento no exige firma del profesional del consultorio.',
+        );
+      }
+      if (
+        sgsst &&
+        needed.includes(DocumentSignerRole.HABILISALUD) &&
+        !hasRole(file.signatures, DocumentSignerRole.HABILISALUD)
+      ) {
+        throw new ForbiddenException(
+          'Aún no puede firmar: el superadministrador de HABILISALUD debe firmar primero (solo SG-SST).',
         );
       }
     } else {
@@ -1174,7 +1581,7 @@ export class DocumentsService {
     });
 
     const rolesAfter = [...file.signatures, { role }];
-    const nextStatus = approvalStatus(rolesAfter);
+    const nextStatus = approvalStatus(rolesAfter, needed);
 
     await this.prisma.documentFile.update({
       where: { id: file.id },
@@ -1188,7 +1595,9 @@ export class DocumentsService {
       status: nextStatus,
       version: file.version,
       awaitingClinicCountersign:
+        sgsst &&
         role === DocumentSignerRole.HABILISALUD &&
+        file.requirement.requiresClinicSignature &&
         nextStatus === DocumentFileStatus.PARTIALLY_SIGNED,
     });
 
@@ -1309,38 +1718,61 @@ export class DocumentsService {
     });
   }
 
-  /** Retiro lógico: la versión queda en el histórico, nunca se borra del disco. */
+  /**
+   * Retiro: elimina ese archivo sin dejar rastro (DB + disco).
+   * Si hay otros documentos en la misma carpeta/requisito, se conservan.
+   */
   async retire(user: User, fileId: string, context: AuditContext, clinicIdParam?: string) {
-    this.assertDocumentWriter(user);
+    return this.deleteFilePermanent(user, fileId, context, clinicIdParam);
+  }
+
+  /**
+   * Eliminación definitiva de un archivo (firmas + disco).
+   * No borra los demás documentos del mismo requisito.
+   */
+  async deleteFilePermanent(
+    user: User,
+    fileId: string,
+    context: AuditContext,
+    clinicIdParam?: string,
+  ) {
     const clinicId = this.clinicScope(user, clinicIdParam);
     const file = await this.prisma.documentFile.findFirst({
       where: { id: fileId, requirement: { clinicId } },
-      include: { requirement: { select: { id: true, code: true } } },
-    });
-    if (!file) throw new NotFoundException('Documento no encontrado');
-    if (file.status === DocumentFileStatus.RETIRED) {
-      return this.listFiles(user, file.requirement.id, clinicIdParam);
-    }
-
-    await this.prisma.documentFile.update({
-      where: { id: file.id },
-      data: {
-        status: DocumentFileStatus.RETIRED,
-        retiredAt: new Date(),
+      include: {
+        requirement: {
+          select: {
+            id: true,
+            code: true,
+            category: { select: { pillar: true } },
+          },
+        },
       },
     });
+    if (!file) throw new NotFoundException('Documento no encontrado');
+    this.assertClinicDocFileCrud(
+      user,
+      file.requirement.category.pillar,
+      file.requirement.code,
+    );
 
-    await this.recordAudit(clinicId, user, AuditAction.UPDATE, file.id, context, {
-      retired: true,
+    const requirementId = file.requirement.id;
+    const storageKey = file.storageKey;
+
+    await this.prisma.documentFile.delete({ where: { id: file.id } });
+    await this.storage.deleteStored(storageKey).catch(() => undefined);
+
+    await this.recordAudit(clinicId, user, AuditAction.UPDATE, fileId, context, {
+      permanent: true,
+      deleted: true,
       requirementCode: file.requirement.code,
       originalName: file.originalName,
-      storageKey: file.storageKey,
+      storageKey,
       version: file.version,
     });
 
-    return this.listFiles(user, file.requirement.id, clinicIdParam);
+    return this.listFiles(user, requirementId, clinicIdParam);
   }
-
 
   async setRequirementEnabled(
     user: User,
@@ -1361,6 +1793,25 @@ export class DocumentsService {
     return this.overview(user, undefined, clinicId);
   }
 
+  async setRequirementClinicSignature(
+    user: User,
+    requirementId: string,
+    requiresClinicSignature: boolean,
+    clinicIdParam?: string,
+  ) {
+    this.assertDocumentWriter(user);
+    const clinicId = this.clinicScope(user, clinicIdParam);
+    const requirement = await this.prisma.documentRequirement.findFirst({
+      where: { id: requirementId, clinicId },
+    });
+    if (!requirement) throw new NotFoundException('Requisito no encontrado');
+    await this.prisma.documentRequirement.update({
+      where: { id: requirement.id },
+      data: { requiresClinicSignature },
+    });
+    return this.overview(user, undefined, clinicId);
+  }
+
   async setAllRequirementsEnabled(
     user: User,
     enabled: boolean,
@@ -1373,6 +1824,712 @@ export class DocumentsService {
       data: { isEnabled: enabled },
     });
     return this.overview(user, undefined, clinicId);
+  }
+
+  async listCategories(user: User) {
+    this.assertDocumentWriter(user);
+    for (const folder of FT_DOC_CATEGORY_HINTS) {
+      await this.prisma.documentCategory.upsert({
+        where: { code: folder.code },
+        create: {
+          code: folder.code,
+          name: folder.name,
+          sortOrder: folder.sortOrder,
+          pillar: folder.pillar,
+        },
+        update: {
+          name: folder.name,
+          sortOrder: folder.sortOrder,
+          pillar: folder.pillar,
+        },
+      });
+    }
+    return this.prisma.documentCategory.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      select: { id: true, code: true, name: true, pillar: true, sortOrder: true },
+    });
+  }
+
+  async createRequirement(
+    user: User,
+    dto: {
+      categoryId: string;
+      code: string;
+      title: string;
+      description?: string;
+      isMandatory?: boolean;
+      requiresClinicSignature?: boolean;
+    },
+    clinicIdParam?: string,
+  ) {
+    this.assertDocumentWriter(user);
+    const clinicId = this.clinicScope(user, clinicIdParam);
+    const category = await this.prisma.documentCategory.findUnique({
+      where: { id: dto.categoryId },
+    });
+    if (!category) throw new NotFoundException('Categoría no encontrada');
+
+    const code = dto.code.trim().toUpperCase().replace(/\s+/g, '_');
+    const existing = await this.prisma.documentRequirement.findFirst({
+      where: { clinicId, code },
+    });
+    if (existing) {
+      throw new BadRequestException(`Ya existe el requisito ${code} en este consultorio`);
+    }
+
+    await this.prisma.documentRequirement.create({
+      data: {
+        clinicId,
+        categoryId: category.id,
+        code,
+        title: dto.title.trim(),
+        description: dto.description?.trim() || null,
+        isMandatory: dto.isMandatory !== false,
+        isEnabled: true,
+        requiresClinicSignature: dto.requiresClinicSignature === true,
+      },
+    });
+    return this.overview(user, undefined, clinicId);
+  }
+
+  async clearClinicDocuments(user: User, clinicIdParam?: string) {
+    this.assertDocumentWriter(user);
+    const clinicId = this.clinicScope(user, clinicIdParam);
+    const deleted = await this.prisma.documentRequirement.deleteMany({
+      where: { clinicId },
+    });
+    return {
+      clinicId,
+      deletedRequirements: deleted.count,
+      overview: await this.overview(user, undefined, clinicId),
+    };
+  }
+
+  /**
+   * Copia requisitos (+ último archivo activo) del consultorio origen a otros
+   * de la misma especialidad (o a targets explícitos).
+   */
+  async replicateDocuments(
+    user: User,
+    opts: {
+      sourceClinicId: string;
+      targetClinicIds?: string[];
+      includeFiles?: boolean;
+    },
+  ) {
+    this.assertDocumentWriter(user);
+    const source = await this.prisma.clinic.findUnique({
+      where: { id: opts.sourceClinicId },
+      select: { id: true, name: true, specialty: true },
+    });
+    if (!source) throw new NotFoundException('Consultorio origen no encontrado');
+
+    const sourceReqs = await this.prisma.documentRequirement.findMany({
+      where: { clinicId: source.id },
+      include: {
+        category: true,
+        files: {
+          where: { status: { not: DocumentFileStatus.RETIRED } },
+          orderBy: { version: 'asc' },
+        },
+      },
+      orderBy: [{ category: { sortOrder: 'asc' } }, { code: 'asc' }],
+    });
+
+    if (!sourceReqs.length) {
+      throw new BadRequestException(
+        'El consultorio origen no tiene requisitos para replicar. Cargue primero la documentación.',
+      );
+    }
+
+    let targets = opts.targetClinicIds?.length
+      ? await this.prisma.clinic.findMany({
+          where: {
+            id: { in: opts.targetClinicIds },
+            isActive: true,
+          },
+          select: { id: true, name: true, specialty: true },
+        })
+      : await this.prisma.clinic.findMany({
+          where: {
+            isActive: true,
+            specialty: source.specialty,
+            id: { not: source.id },
+            dashboardType: 'CLINICAL_HISTORY_WITH_DOCS',
+          },
+          select: { id: true, name: true, specialty: true },
+        });
+
+    targets = targets.filter((t) => t.id !== source.id);
+    if (!targets.length) {
+      throw new BadRequestException('No hay consultorios destino para replicar.');
+    }
+
+    const includeFiles = opts.includeFiles !== false;
+    const results: Array<{
+      clinicId: string;
+      clinicName: string;
+      created: number;
+      updated: number;
+      filesCopied: number;
+    }> = [];
+
+    for (const target of targets) {
+      let created = 0;
+      let updated = 0;
+      let filesCopied = 0;
+
+      for (const req of sourceReqs) {
+        const existing = await this.prisma.documentRequirement.findFirst({
+          where: { clinicId: target.id, code: req.code },
+        });
+
+        let targetReqId: string;
+        if (existing) {
+          await this.prisma.documentRequirement.update({
+            where: { id: existing.id },
+            data: {
+              categoryId: req.categoryId,
+              title: req.title,
+              description: req.description,
+              isMandatory: req.isMandatory,
+              isEnabled: req.isEnabled,
+              validityDays: req.validityDays,
+              requiresClinicSignature: req.requiresClinicSignature,
+            },
+          });
+          targetReqId = existing.id;
+          updated += 1;
+        } else {
+          const createdReq = await this.prisma.documentRequirement.create({
+            data: {
+              clinicId: target.id,
+              categoryId: req.categoryId,
+              code: req.code,
+              title: req.title,
+              description: req.description,
+              isMandatory: req.isMandatory,
+              isEnabled: req.isEnabled,
+              validityDays: req.validityDays,
+              requiresClinicSignature: req.requiresClinicSignature,
+            },
+          });
+          targetReqId = createdReq.id;
+          created += 1;
+        }
+
+        const sourceFiles = req.files;
+        if (includeFiles && sourceFiles.length) {
+          // Evita acumular réplicas viejas: deja solo los archivos autodiligenciados.
+          await this.purgeRequirementFiles(targetReqId);
+          const brand = await this.pdfBrand.resolveBrand(user, target.id);
+
+          for (const sourceFile of sourceFiles) {
+            try {
+              let buffer = await this.storage.readBuffer(sourceFile.storageKey);
+              const mime =
+                sourceFile.mimeType || 'application/octet-stream';
+              const isPdf =
+                mime.includes('pdf') ||
+                sourceFile.originalName.toLowerCase().endsWith('.pdf');
+              if (isPdf) {
+                // Autodiligencia con nombre / REPS / datos del profesional destino.
+                buffer = await this.pdfBrand.brandPdf(buffer, brand, {
+                  force: true,
+                });
+              }
+              const last = await this.prisma.documentFile.findFirst({
+                where: { requirementId: targetReqId },
+                orderBy: { version: 'desc' },
+                select: { version: true },
+              });
+              const version = (last?.version ?? 0) + 1;
+              const safeExt = (extname(sourceFile.originalName) || '').slice(
+                0,
+                12,
+              );
+              const fileName = `v${version}-replica-${Date.now()}${safeExt}`;
+              const { storageKey, contentHash } = await this.storage.writeBuffer(
+                `habilitation-docs/${target.id}/${req.category.pillar.toLowerCase()}/${req.code}`,
+                fileName,
+                buffer,
+                mime,
+              );
+              await this.prisma.documentFile.create({
+                data: {
+                  requirementId: targetReqId,
+                  uploadedById: user.id,
+                  version,
+                  periodLabel: sourceFile.periodLabel,
+                  status: DocumentFileStatus.SIGNED,
+                  originalName: sourceFile.originalName,
+                  storageKey,
+                  mimeType: mime,
+                  sizeBytes: buffer.length,
+                  checksum: contentHash,
+                  expiresAt: sourceFile.expiresAt,
+                  notes: `Réplica autodiligenciada desde ${source.name} → ${target.name} (${brand.professionalName}${brand.professionalCard ? ` · REPS/TP ${brand.professionalCard}` : ''}).`,
+                },
+              });
+              filesCopied += 1;
+            } catch {
+              // Continuar con el resto si un archivo no se puede leer/sellar.
+            }
+          }
+        }
+      }
+
+      results.push({
+        clinicId: target.id,
+        clinicName: target.name,
+        created,
+        updated,
+        filesCopied,
+      });
+    }
+
+    return {
+      sourceClinicId: source.id,
+      sourceClinicName: source.name,
+      specialty: source.specialty,
+      requirementCount: sourceReqs.length,
+      targets: results,
+    };
+  }
+
+  /**
+   * Importa una carpeta maestra (subcarpetas + archivos) o un ZIP equivalente
+   * al expediente del consultorio. Idempotente por checksum.
+   */
+  async importMasterPack(
+    user: User,
+    clinicIdParam: string | undefined,
+    opts: {
+      files?: Express.Multer.File[];
+      relativePaths?: string[];
+      zip?: Express.Multer.File | null;
+      ensureStructure?: boolean;
+    },
+  ) {
+    this.assertDocumentWriter(user);
+    const clinicId = this.clinicScope(user, clinicIdParam);
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+      select: {
+        id: true,
+        name: true,
+        specialty: true,
+        dashboardType: true,
+      },
+    });
+    if (!clinic) throw new NotFoundException('Consultorio no encontrado');
+
+    const zip = opts.zip;
+    const files = (opts.files ?? []).filter((f) => f?.buffer?.length);
+    if (!zip && !files.length) {
+      throw new BadRequestException(
+        'Seleccione una carpeta con documentos o un archivo ZIP.',
+      );
+    }
+
+    if (opts.ensureStructure !== false) {
+      const dashboard =
+        clinic.dashboardType || 'CLINICAL_HISTORY_WITH_DOCS';
+      if (!clinic.dashboardType) {
+        await this.prisma.clinic.update({
+          where: { id: clinicId },
+          data: { dashboardType: 'CLINICAL_HISTORY_WITH_DOCS' },
+        });
+      }
+      await this.documentProvision.ensureForClinic(clinicId, dashboard);
+    }
+
+    const reqCount = await this.prisma.documentRequirement.count({
+      where: { clinicId },
+    });
+    if (!reqCount) {
+      throw new BadRequestException(
+        'El consultorio no tiene estructura documental. Asigne el dashboard «Historia clínica + docs» o cree requisitos antes de importar.',
+      );
+    }
+
+    const tempRoot = mkdtempSync(join(tmpdir(), 'hs-master-pack-'));
+    try {
+      let packRoot = tempRoot;
+      if (zip) {
+        if (!/\.zip$/i.test(zip.originalname || '')) {
+          throw new BadRequestException('El archivo comprimido debe ser .zip');
+        }
+        if (zip.size > 200 * 1024 * 1024) {
+          throw new BadRequestException('El ZIP supera los 200 MB permitidos');
+        }
+        const zipPath = join(tempRoot, 'pack.zip');
+        writeFileSync(zipPath, zip.buffer);
+        const archive = new AdmZip(zipPath);
+        archive.extractAllTo(join(tempRoot, 'extracted'), true);
+        packRoot = this.resolvePackRoot(join(tempRoot, 'extracted'));
+      } else {
+        const paths = opts.relativePaths ?? [];
+        if (paths.length && paths.length !== files.length) {
+          throw new BadRequestException(
+            'La lista de rutas relativas no coincide con los archivos enviados.',
+          );
+        }
+        const staging = join(tempRoot, 'folder');
+        mkdirSync(staging, { recursive: true });
+        for (let i = 0; i < files.length; i += 1) {
+          const file = files[i];
+          const relRaw =
+            (paths[i] || file.originalname || `file-${i}`).replace(/\\/g, '/');
+          const rel = relRaw.replace(/^\/+/, '');
+          if (!rel || rel.includes('..')) {
+            throw new BadRequestException(`Ruta inválida: ${relRaw}`);
+          }
+          const abs = join(staging, ...rel.split('/').filter(Boolean));
+          const normalized = pathNormalize(abs);
+          if (!normalized.startsWith(pathNormalize(staging) + sep) && normalized !== pathNormalize(staging)) {
+            throw new BadRequestException(`Ruta fuera de la carpeta: ${relRaw}`);
+          }
+          mkdirSync(dirname(normalized), { recursive: true });
+          writeFileSync(normalized, file.buffer);
+        }
+        packRoot = this.resolvePackRoot(staging);
+      }
+
+      const stats = await this.packImport.importFromDirectory(
+        clinicId,
+        packRoot,
+        user.id,
+      );
+
+      return {
+        clinicId,
+        clinicName: clinic.name,
+        packRootHint: packRoot.split(sep).slice(-2).join('/'),
+        stats,
+        overview: await this.overview(user, undefined, clinicId),
+      };
+    } finally {
+      try {
+        rmSync(tempRoot, { recursive: true, force: true });
+      } catch {
+        /* ignore cleanup errors */
+      }
+    }
+  }
+
+  /** Si hay una sola carpeta raíz con el contenido, úsala como packRoot. */
+  private resolvePackRoot(extractedDir: string) {
+    if (!existsSync(extractedDir)) return extractedDir;
+    const entries = readdirSync(extractedDir, { withFileTypes: true }).filter(
+      (e) => e.name !== '__MACOSX' && e.name !== '.DS_Store',
+    );
+    const dirs = entries.filter((e) => e.isDirectory());
+    const files = entries.filter((e) => e.isFile());
+    if (dirs.length === 1 && files.length === 0) {
+      return join(extractedDir, dirs[0].name);
+    }
+    return extractedDir;
+  }
+
+  /**
+   * Catálogo de documentos para que SUPER_ADMIN asigne al consultorio.
+   * Fuente: requisitos de un consultorio origen (o el más completo de la misma especialidad).
+   */
+  async getAssignmentCatalog(
+    user: User,
+    clinicIdParam?: string,
+    sourceClinicIdParam?: string,
+  ) {
+    this.assertDocumentWriter(user);
+    const clinicId = this.clinicScope(user, clinicIdParam);
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+      select: { id: true, name: true, specialty: true },
+    });
+    if (!clinic) throw new NotFoundException('Consultorio no encontrado');
+
+    const peers = await this.prisma.clinic.findMany({
+      where: {
+        isActive: true,
+        specialty: clinic.specialty,
+        dashboardType: 'CLINICAL_HISTORY_WITH_DOCS',
+      },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+
+    let sourceClinicId = sourceClinicIdParam?.trim() || '';
+    if (sourceClinicId && !peers.some((p) => p.id === sourceClinicId)) {
+      // Permitir también cualquier consultorio activo como plantilla.
+      const any = await this.prisma.clinic.findFirst({
+        where: { id: sourceClinicId, isActive: true },
+        select: { id: true },
+      });
+      if (!any) sourceClinicId = '';
+    }
+
+    if (!sourceClinicId) {
+      // El peer con más requisitos (excluyendo el propio si está vacío).
+      const counts = await this.prisma.documentRequirement.groupBy({
+        by: ['clinicId'],
+        where: { clinicId: { in: peers.map((p) => p.id) } },
+        _count: { _all: true },
+      });
+      counts.sort((a, b) => b._count._all - a._count._all);
+      sourceClinicId =
+        counts.find((c) => c.clinicId !== clinicId)?.clinicId ||
+        counts[0]?.clinicId ||
+        '';
+    }
+
+    // Si no hay plantilla en la especialidad, usa cualquier consultorio con docs.
+    if (!sourceClinicId) {
+      const anyRich = await this.prisma.documentRequirement.groupBy({
+        by: ['clinicId'],
+        _count: { _all: true },
+      });
+      anyRich.sort((a, b) => b._count._all - a._count._all);
+      sourceClinicId = anyRich[0]?.clinicId || '';
+    }
+
+    const sourceClinic = sourceClinicId
+      ? await this.prisma.clinic.findUnique({
+          where: { id: sourceClinicId },
+          select: { id: true, name: true, specialty: true },
+        })
+      : null;
+
+    const templateReqs = sourceClinicId
+      ? await this.prisma.documentRequirement.findMany({
+          where: { clinicId: sourceClinicId },
+          include: {
+            category: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                pillar: true,
+                sortOrder: true,
+              },
+            },
+          },
+          orderBy: [
+            { category: { sortOrder: 'asc' } },
+            { code: 'asc' },
+          ],
+        })
+      : [];
+
+    const assigned = await this.prisma.documentRequirement.findMany({
+      where: { clinicId },
+      select: {
+        id: true,
+        code: true,
+        isEnabled: true,
+        title: true,
+      },
+    });
+    const assignedByCode = new Map(assigned.map((r) => [r.code, r]));
+
+    const items = templateReqs.map((req) => {
+      const current = assignedByCode.get(req.code);
+      return {
+        code: req.code,
+        title: req.title,
+        description: req.description,
+        isMandatory: req.isMandatory,
+        requiresClinicSignature: req.requiresClinicSignature,
+        category: req.category,
+        alreadyAssigned: !!current,
+        assignedEnabled: current?.isEnabled ?? false,
+        assignedRequirementId: current?.id ?? null,
+      };
+    });
+
+    // Incluye requisitos propios que no están en la plantilla (docs a medida).
+    for (const row of assigned) {
+      if (items.some((i) => i.code === row.code)) continue;
+      const full = await this.prisma.documentRequirement.findUnique({
+        where: { id: row.id },
+        include: {
+          category: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              pillar: true,
+              sortOrder: true,
+            },
+          },
+        },
+      });
+      if (!full) continue;
+      items.push({
+        code: full.code,
+        title: full.title,
+        description: full.description,
+        isMandatory: full.isMandatory,
+        requiresClinicSignature: full.requiresClinicSignature,
+        category: full.category,
+        alreadyAssigned: true,
+        assignedEnabled: full.isEnabled,
+        assignedRequirementId: full.id,
+      });
+    }
+
+    items.sort((a, b) => {
+      const sa = a.category.sortOrder - b.category.sortOrder;
+      if (sa !== 0) return sa;
+      return a.code.localeCompare(b.code);
+    });
+
+    return {
+      clinic: {
+        id: clinic.id,
+        name: clinic.name,
+        specialty: clinic.specialty,
+      },
+      sourceClinic: sourceClinic
+        ? {
+            id: sourceClinic.id,
+            name: sourceClinic.name,
+            specialty: sourceClinic.specialty,
+          }
+        : null,
+      peerClinics: peers,
+      items,
+      selectedCodes: items
+        .filter((i) => i.alreadyAssigned && i.assignedEnabled)
+        .map((i) => i.code),
+    };
+  }
+
+  /**
+   * Crea/habilita los códigos seleccionados en el consultorio.
+   * Por defecto deshabilita los no seleccionados (sin borrar archivos).
+   */
+  async assignRequirements(
+    user: User,
+    dto: {
+      codes: string[];
+      syncDisabled?: boolean;
+      sourceClinicId?: string;
+    },
+    clinicIdParam?: string,
+  ) {
+    this.assertDocumentWriter(user);
+    const clinicId = this.clinicScope(user, clinicIdParam);
+    const wanted = [
+      ...new Set(
+        (dto.codes || [])
+          .map((c) => String(c || '').trim().toUpperCase().replace(/\s+/g, '_'))
+          .filter(Boolean),
+      ),
+    ];
+
+    const catalog = await this.getAssignmentCatalog(
+      user,
+      clinicId,
+      dto.sourceClinicId,
+    );
+    const byCode = new Map(catalog.items.map((i) => [i.code, i]));
+
+    let created = 0;
+    let enabled = 0;
+    let disabled = 0;
+    let skippedUnknown = 0;
+
+    for (const code of wanted) {
+      const template = byCode.get(code);
+      if (!template) {
+        skippedUnknown += 1;
+        continue;
+      }
+
+      const existing = await this.prisma.documentRequirement.findFirst({
+        where: { clinicId, code },
+      });
+      if (existing) {
+        if (!existing.isEnabled) {
+          await this.prisma.documentRequirement.update({
+            where: { id: existing.id },
+            data: { isEnabled: true },
+          });
+          enabled += 1;
+        }
+        continue;
+      }
+
+      // Asegura categoría (puede no existir aún en BD global).
+      let categoryId = template.category.id;
+      const cat = await this.prisma.documentCategory.findUnique({
+        where: { id: categoryId },
+      });
+      if (!cat) {
+        const upserted = await this.prisma.documentCategory.upsert({
+          where: { code: template.category.code },
+          create: {
+            code: template.category.code,
+            name: template.category.name,
+            sortOrder: template.category.sortOrder,
+            pillar: template.category.pillar,
+          },
+          update: {
+            name: template.category.name,
+            sortOrder: template.category.sortOrder,
+            pillar: template.category.pillar,
+          },
+        });
+        categoryId = upserted.id;
+      }
+
+      await this.prisma.documentRequirement.create({
+        data: {
+          clinicId,
+          categoryId,
+          code,
+          title: template.title,
+          description: template.description,
+          isMandatory: template.isMandatory,
+          isEnabled: true,
+          requiresClinicSignature: template.requiresClinicSignature,
+        },
+      });
+      created += 1;
+    }
+
+    const syncDisabled = dto.syncDisabled !== false;
+    if (syncDisabled) {
+      const wantedSet = new Set(wanted);
+      const current = await this.prisma.documentRequirement.findMany({
+        where: { clinicId, isEnabled: true },
+        select: { id: true, code: true },
+      });
+      const toDisable = current.filter((r) => !wantedSet.has(r.code));
+      if (toDisable.length) {
+        await this.prisma.documentRequirement.updateMany({
+          where: { id: { in: toDisable.map((r) => r.id) } },
+          data: { isEnabled: false },
+        });
+        disabled = toDisable.length;
+      }
+    }
+
+    return {
+      clinicId,
+      created,
+      enabled,
+      disabled,
+      skippedUnknown,
+      selectedCount: wanted.length,
+      overview: await this.overview(user, undefined, clinicId),
+      catalog: await this.getAssignmentCatalog(
+        user,
+        clinicId,
+        dto.sourceClinicId || catalog.sourceClinic?.id,
+      ),
+    };
   }
 
   private recordAudit(

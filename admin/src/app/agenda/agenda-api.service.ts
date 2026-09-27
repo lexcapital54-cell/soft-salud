@@ -4,6 +4,7 @@ import { retry, throwError, timer } from 'rxjs';
 import {
   AgendaProfessional,
   AppointmentAdmission,
+  AppointmentEventType,
   AppointmentStatus,
   CareModality,
   NotificationChannel,
@@ -70,9 +71,12 @@ export class AgendaApiService {
   }
 
   create(body: {
-    patientId: string;
+    patientId?: string;
+    eventType?: AppointmentEventType;
+    blockReason?: string;
     professionalId?: string;
     startsAt: string;
+    endsAt?: string;
     durationMinutes?: number;
     requestDate?: string;
     modality?: CareModality;

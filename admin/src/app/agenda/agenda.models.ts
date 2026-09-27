@@ -1,3 +1,5 @@
+export type AppointmentEventType = 'CITA' | 'BLOQUEO';
+
 export type AppointmentStatus =
   | 'SCHEDULED'
   | 'CONFIRMED'
@@ -53,6 +55,8 @@ export interface TodayAppointment {
   startsAt: string;
   endsAt: string;
   status: AppointmentStatus;
+  eventType: AppointmentEventType;
+  blockReason: string | null;
   modality: CareModality;
   isTelemedicine: boolean;
   meetingUrl: string | null;
@@ -69,7 +73,7 @@ export interface TodayAppointment {
     fullName: string;
     professionalCard: string | null;
   };
-  patient: AppointmentPatient;
+  patient: AppointmentPatient | null;
   habeasDataSigned: boolean;
   admission: AppointmentAdmission | null;
   allowedTransitions: AppointmentStatus[];
@@ -143,9 +147,9 @@ export interface NotificationLogRow {
 export const NOTIFICATION_KIND_LABELS: Record<NotificationKind, string> = {
   REMINDER_24H: 'Recordatorio 24 h',
   REMINDER_2H: 'Recordatorio 2 h',
-  CONFIRMATION: 'Confirmación',
+  CONFIRMATION: 'Agendada / confirmada',
   CANCELLATION: 'Cancelación',
-  MANUAL_RESEND: 'Reenvío manual',
+  MANUAL_RESEND: 'Reenvío / reprogramación',
 };
 
 export const NOTIFICATION_CHANNEL_LABELS: Record<NotificationChannel, string> = {

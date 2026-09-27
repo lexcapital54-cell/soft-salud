@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <title>Ingreso del profesional · HABILISALUD</title>
+  <style>
+    :root { --brand:#0d7377; --ink:#003d4c; --paper:#f3f7f8; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100svh; font-family: "DM Sans", system-ui, sans-serif;
+      background: linear-gradient(180deg, #e8f4f4 0%, var(--paper) 40%, #fff 100%);
+      color: var(--ink); display: grid; place-items: center; padding: 24px;
+    }
+    .wrap { width: min(420px, 100%); }
+    .brand {
+      display: inline-block; margin-bottom: 18px; letter-spacing: -0.02em;
+      color: #000; text-decoration: none; font-size: 1.1rem;
+    }
+    .card {
+      background: #fff; border: 1px solid #d7e3e6; border-radius: 28px;
+      padding: 28px; box-shadow: 0 16px 40px rgba(0,45,92,.1);
+    }
+    .eyebrow {
+      margin: 0; color: var(--brand); text-transform: uppercase;
+      letter-spacing: .08em; font-size: 12px;
+    }
+    h1 { margin: 8px 0 10px; font-weight: 500; font-size: 1.6rem; }
+    .hint { margin: 0 0 18px; color: #6a8085; line-height: 1.4; font-size: .95rem; }
+    label { display: grid; gap: 6px; margin-bottom: 14px; font-size: .92rem; }
+    input {
+      width: 100%; border: 1px solid #c9d8db; border-radius: 12px;
+      padding: 12px 14px; font: inherit;
+    }
+    button[type=submit] {
+      width: 100%; border: 0; border-radius: 999px; padding: 14px 18px;
+      background: var(--ink); color: #fff; font: inherit; cursor: pointer;
+    }
+    button[type=submit]:disabled { opacity: .6; cursor: wait; }
+    .error { color: #8a1f1f; margin: 0 0 12px; }
+    .rips-note {
+      margin-top: 16px; padding: 12px 14px; border-radius: 14px;
+      background: #e8f6f6; border: 1px solid #0d7377; font-size: .88rem; line-height: 1.35;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="brand" href="https://www.habilisalud.com">HABILISALUD</a>
+    <div class="card">
+      <p class="eyebrow">Acceso al consultorio</p>
+      <h1>Ingreso del consultorio</h1>
+      <p class="hint">Use el usuario de la doctora, profesional o secretaría creado por HABILISALUD.</p>
+      <form id="form">
+        <label>Correo <input id="email" type="email" autocomplete="username" required /></label>
+        <label>Contraseña <input id="password" type="password" autocomplete="current-password" required minlength="6" /></label>
+        <p class="error" id="error" hidden></p>
+        <button type="submit" id="btn">Entrar</button>
+      </form>
+      <div class="rips-note">
+        Al entrar verá <strong>Configuración RIPS</strong> en el dashboard del consultorio
+        (facturación EPS opcional; el RDA clínico siempre se genera al firmar).
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var form = document.getElementById('form');
+      var err = document.getElementById('error');
+      var btn = document.getElementById('btn');
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        err.hidden = true;
+        btn.disabled = true;
+        btn.textContent = 'Ingresando…';
+        try {
+          var res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store',
+            body: JSON.stringify({
+              email: document.getElementById('email').value.trim(),
+              password: document.getElementById('password').value,
+            }),
+          });
+          var data = await res.json().catch(function () { return {}; });
+          if (!res.ok) {
+            throw new Error((data && data.message) || 'Credenciales inválidas o usuario inactivo.');
+          }
+          var role = data.user && data.user.role;
+          var allowed = ['ADMIN', 'HEALTH_PROFESSIONAL', 'RECEPTIONIST', 'AUDITOR'];
+          if (allowed.indexOf(role) === -1) {
+            throw new Error('Este acceso es solo para personal del consultorio.');
+          }
+          localStorage.setItem('habilisalud_token', data.accessToken);
+          localStorage.setItem('habilisalud_user', JSON.stringify(data.user));
+          if (role === 'RECEPTIONIST') {
+            location.replace('/consultorio/agenda?_=' + Date.now());
+          } else {
+            location.replace('/consultorio.html?_=' + Date.now());
+          }
+        } catch (ex) {
+          err.textContent = (ex && ex.message) || 'No se pudo iniciar sesión.';
+          err.hidden = false;
+          btn.disabled = false;
+          btn.textContent = 'Entrar';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

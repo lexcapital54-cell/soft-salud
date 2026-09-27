@@ -1,0 +1,204 @@
+<section class="settings">
+  <header>
+    <div class="crumbs">
+      <a [href]="websiteUrl">HABILISALUD</a>
+      <span>/</span>
+      <a href="/consultorio.html">Consultorio</a>
+      <h1>Configuración</h1>
+    </div>
+    <app-clinic-switcher (switched)="onClinicSwitched()" />
+  </header>
+
+  @if (canManageAccess()) {
+  <div class="card">
+    <p class="eyebrow">Operación multi-sede</p>
+    <h2>Acceso a sedes</h2>
+    <p class="lead">
+      Asigne a su <strong>Secretaría</strong> (y al personal) las sedes físicas que pueden
+      gestionar. Al cambiar de sede en el selector, ven agenda y pacientes de esa ubicación.
+    </p>
+
+    <h3 class="subhead">Vincular otra sede a su cuenta</h3>
+    <p class="muted small">
+      Primero vincule la segunda ubicación a usted como administrador; luego podrá
+      asignársela a la secretaría.
+    </p>
+    <div class="row-inline">
+      <select [(ngModel)]="linkClinicId" name="linkClinicId">
+        <option value="">— Elegir sede —</option>
+        @for (c of directory(); track c.id) {
+          <option [value]="c.id">
+            {{ c.name }}@if (c.address) { · {{ c.address }} }
+          </option>
+        }
+      </select>
+      <button
+        type="button"
+        class="ghost"
+        [disabled]="!linkClinicId"
+        (click)="linkSelfClinic()"
+      >
+        Vincular sede
+      </button>
+    </div>
+
+    <h3 class="subhead">Personal</h3>
+    <ul class="staff-list">
+      @for (row of staff(); track row.id) {
+        <li>
+          <div>
+            <strong>{{ row.fullName }}</strong>
+            <span class="muted small">
+              {{ row.roleLabel }} · {{ row.email }} ·
+              {{ row.accessClinicIds.length }} sede(s)
+            </span>
+          </div>
+          <button type="button" class="ghost" (click)="openAccess(row)">
+            Sedes…
+          </button>
+        </li>
+      } @empty {
+        <li class="muted small">No hay personal activo en esta sede.</li>
+      }
+    </ul>
+
+    @if (accessMessage()) {
+      <p class="ok">{{ accessMessage() }}</p>
+    }
+    @if (accessError()) {
+      <p class="err">{{ accessError() }}</p>
+    }
+  </div>
+  }
+
+  @if (accessUser(); as target) {
+    <div class="modal-backdrop" (click)="closeAccess()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h2>Sedes de {{ target.fullName }}</h2>
+        <p class="muted small">{{ target.roleLabel }} · {{ target.email }}</p>
+        <ul class="access-checks">
+          @for (c of accessClinics(); track c.id) {
+            <li>
+              <label>
+                <input
+                  type="checkbox"
+                  [checked]="c.granted || c.isHome"
+                  [disabled]="c.isHome"
+                  (change)="toggleClinic(c)"
+                />
+                <span>
+                  <strong>{{ c.name }}</strong>
+                  @if (c.isHome) {
+                    <em> (sede principal)</em>
+                  }
+                  @if (c.address) {
+                    <span class="muted small"> · {{ c.address }}</span>
+                  }
+                </span>
+              </label>
+            </li>
+          }
+        </ul>
+        <div class="modal-actions">
+          <button type="button" class="ghost" (click)="closeAccess()">Cerrar</button>
+          <button
+            type="button"
+            class="primary"
+            [disabled]="accessSaving()"
+            (click)="saveAccess()"
+          >
+            {{ accessSaving() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="card">
+    <p class="eyebrow">Habilitación profesional</p>
+    <h2>Registro REPS</h2>
+    <p class="lead">
+      Indique la fecha de vencimiento de su inscripción en el
+      <strong>Registro Especial de Prestadores de Servicios de Salud (REPS)</strong>.
+      El sistema avisará a 60 y 30 días, y si ya está vencido.
+    </p>
+
+    <label class="field">
+      Fecha de vencimiento REPS
+      <input type="date" [(ngModel)]="repsExpirationDate" name="repsExpirationDate" />
+    </label>
+
+    @if (repsStatus()) {
+      <p class="reps-status" [class]="repsAlertLevel()">{{ repsStatus() }}</p>
+    }
+
+    @if (repsMessage()) {
+      <p class="ok">{{ repsMessage() }}</p>
+    }
+    @if (repsError()) {
+      <p class="err">{{ repsError() }}</p>
+    }
+
+    <button
+      type="button"
+      class="primary"
+      (click)="saveReps()"
+      [disabled]="savingReps()"
+    >
+      {{ savingReps() ? 'Guardando…' : 'Guardar fecha REPS' }}
+    </button>
+  </div>
+
+  <div class="card">
+    <p class="eyebrow">Facturación y interoperabilidad</p>
+    <h2>Módulo RIPS (Res. 2275 de 2023)</h2>
+    <p class="lead">
+      Active este módulo solo si factura a EPS o necesita reportar RIPS. Si su
+      consulta es <strong>100% particular</strong>, déjelo desactivado para
+      mantener la historia clínica limpia.
+    </p>
+
+    <label class="toggle-row">
+      <input type="checkbox" [(ngModel)]="ripsEnabled" name="ripsEnabled" />
+      <span>
+        <strong>Habilitar Módulo RIPS (Res. 2275)</strong>
+        <small>
+          Desactívelo si la consulta es particular. El RDA (Resumen Digital de
+          Atención, Res. 866 / Ley 2015) <em>siempre</em> se genera en segundo
+          plano al firmar la HCE, aunque RIPS esté apagado.
+        </small>
+      </span>
+    </label>
+
+    <div class="info">
+      <p><strong>Con RIPS OFF</strong></p>
+      <ul>
+        <li>Se ocultan Finalidad, Causa externa y Tipo de visita obligatorio.</li>
+        <li>Plan de intervención en texto libre (sin CUPS obligatorio).</li>
+        <li>RDA FHIR R4 se genera al firmar (cumplimiento clínico).</li>
+      </ul>
+      <p><strong>Con RIPS ON</strong></p>
+      <ul>
+        <li>Finalidad por defecto: 02 — Terapéutico.</li>
+        <li>Causa externa por defecto: 15 — Enfermedad general.</li>
+        <li>Validación CIE-10 / CUPS y JSON financiero al firmar.</li>
+      </ul>
+    </div>
+
+    @if (message()) {
+      <p class="ok">{{ message() }}</p>
+    }
+    @if (error()) {
+      <p class="err">{{ error() }}</p>
+    }
+
+    <button
+      type="button"
+      class="primary"
+      (click)="saveRips()"
+      [disabled]="savingRips()"
+    >
+      {{ savingRips() ? 'Guardando…' : 'Guardar configuración RIPS' }}
+    </button>
+  </div>
+</section>

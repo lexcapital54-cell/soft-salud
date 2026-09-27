@@ -8,4 +8,6 @@ export const environment = {
   apiBase: '/api',
   /** Landing pública en Latinoamérica Hosting. */
   websiteUrl: 'https://www.habilisalud.com',
+  /** Subir este valor en cada deploy visible (RIPS, UI, etc.). */
+  buildId: '20260821-rips-v3',
 };

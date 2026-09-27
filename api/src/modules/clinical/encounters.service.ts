@@ -17,18 +17,23 @@ import { UserRole } from '../../common/enums';
 import { User } from '../../users/user.entity';
 import { PrismaService } from '../../prisma/prisma.module';
 import {
-  HCE_PSI_SCHEMA,
   SOAP_CONTENT_DEFAULTS,
+  contentDefaultsForSpecialty,
+  externalCodePrefixForSpecialty,
 } from './form-template.definitions';
 import { FormTemplatesService } from './form-templates.service';
 import { ListEncountersQueryDto } from './dto/clinical.dto';
 import { missingProfileFields } from './patient-profile';
 import { ProfessionalSignatureService } from './professional-signature.service';
+import { RdaExportService } from './rda-export.service';
 import {
   CreateEncounterDto,
   CreateEvolutionDto,
   SaveClinicalRecordDto,
   SignClinicalRecordDto,
+  UpdateAttendanceMetaDto,
+  UpdateDiagnosesDto,
+  UpdateProceduresDto,
 } from './dto/clinical.dto';
 
 const encounterInclude = {
@@ -37,7 +42,10 @@ const encounterInclude = {
   clinicalRecord: {
     include: {
       evolutions: {
-        orderBy: { signedAt: 'asc' as const },
+        orderBy: [
+          { clinicalAttentionDate: 'asc' as const },
+          { signedAt: 'asc' as const },
+        ],
         include: {
           author: {
             select: { id: true, fullName: true, professionalCard: true },
@@ -51,6 +59,11 @@ const encounterInclude = {
   consents: true,
   attachments: { orderBy: { createdAt: 'desc' as const } },
   incapacities: { orderBy: { createdAt: 'desc' as const } },
+  patientConsents: {
+    orderBy: { signedAt: 'desc' as const },
+    take: 1,
+    select: { signatureBase64: true, signedAt: true },
+  },
 } satisfies Prisma.EncounterInclude;
 
 type EncounterWithRelations = Prisma.EncounterGetPayload<{
@@ -63,6 +76,7 @@ export class EncountersService {
     private readonly prisma: PrismaService,
     private readonly formTemplates: FormTemplatesService,
     private readonly signatures: ProfessionalSignatureService,
+    private readonly rdaExport: RdaExportService,
   ) {}
 
   private requireClinicId(user: User) {
@@ -106,7 +120,80 @@ export class EncountersService {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: query.from || query.to ? 500 : 30,
+      take: query.from || query.to ? 500 : 200,
+    });
+  }
+
+  /**
+   * HCE en borrador sin cerrar (alertas al profesional).
+   * `Encounter.createdAt` es la fecha de apertura inmutable.
+   */
+  async listOpen(user: User) {
+    const clinicId = this.requireClinicId(user);
+    const onlyMine = user.role === UserRole.HEALTH_PROFESSIONAL;
+
+    const rows = await this.prisma.encounter.findMany({
+      where: {
+        clinicId,
+        status: { in: ['PLANNED', 'IN_PROGRESS'] },
+        ...(onlyMine ? { professionalId: user.id } : {}),
+        clinicalRecord: { status: 'DRAFT' },
+      },
+      include: {
+        patient: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            secondLastName: true,
+            documentType: true,
+            documentNumber: true,
+          },
+        },
+        professional: { select: { id: true, fullName: true } },
+        clinicalRecord: {
+          select: {
+            id: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 100,
+    });
+
+    const now = Date.now();
+    return rows.map((row) => {
+      const createdAt = row.createdAt;
+      const daysOpen = Math.max(
+        0,
+        Math.floor((now - createdAt.getTime()) / (24 * 60 * 60 * 1000)),
+      );
+      const patientName = [
+        row.patient.firstName,
+        row.patient.lastName,
+        row.patient.secondLastName,
+      ]
+        .filter(Boolean)
+        .join(' ');
+      return {
+        encounterId: row.id,
+        patientId: row.patient.id,
+        patientName,
+        documentType: row.patient.documentType,
+        documentNumber: row.patient.documentNumber,
+        professionalName: row.professional.fullName,
+        encounterStatus: row.status,
+        clinicalRecordStatus: row.clinicalRecord?.status ?? 'DRAFT',
+        /** Fecha de apertura inmutable (no cambia al firmar días después). */
+        createdAt: createdAt.toISOString(),
+        clinicalRecordCreatedAt:
+          row.clinicalRecord?.createdAt.toISOString() ?? createdAt.toISOString(),
+        updatedAt: row.clinicalRecord?.updatedAt.toISOString() ?? null,
+        daysOpen,
+      };
     });
   }
 
@@ -124,6 +211,23 @@ export class EncountersService {
     });
     if (!encounter) {
       throw new NotFoundException('Encuentro no encontrado');
+    }
+    // Controles de agenda pueden crear un encuentro sin HCE (historia única).
+    // Al abrirlo devolvemos la historia clínica real del paciente con todo el
+    // contenido ya guardado / sellado, para que no se vea un SOAP vacío.
+    if (!encounter.clinicalRecord) {
+      const withRecord = await this.prisma.encounter.findFirst({
+        where: {
+          patientId: encounter.patientId,
+          clinicId,
+          clinicalRecord: { isNot: null },
+        },
+        include: encounterInclude,
+        orderBy: { createdAt: 'asc' },
+      });
+      if (withRecord) {
+        return this.serializeEncounter(withRecord, user);
+      }
     }
     return this.serializeEncounter(encounter, user);
   }
@@ -183,6 +287,33 @@ export class EncountersService {
     return encounter ? this.serializeEncounter(encounter, user) : null;
   }
 
+  /** «Situación actual» de la última evolución del paciente, para pre-llenar la siguiente. */
+  async lastCurrentSituation(user: User, patientId: string) {
+    const clinicId = this.requireClinicId(user);
+    const last = await this.prisma.clinicalEvolution.findFirst({
+      where: { clinicalRecord: { encounter: { patientId, clinicId } } },
+      orderBy: [{ clinicalAttentionDate: 'desc' }, { signedAt: 'desc' }],
+      select: { id: true, content: true, clinicalAttentionDate: true, signedAt: true },
+    });
+    if (!last) return { currentSituation: '', evolutionId: null, clinicalAttentionDate: null };
+    const content = (last.content ?? {}) as Record<string, unknown>;
+    const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+    // Evoluciones anteriores guardaban la situación en «Motivo del control» (reason).
+    const legacyReason = text(content.reason);
+    const genericReasons = new Set([
+      'Control / nota de evolución',
+      'Adenda / nota aclaratoria',
+      'Nota de evolución',
+    ]);
+    return {
+      currentSituation:
+        text(content.currentSituation) ||
+        (genericReasons.has(legacyReason) ? '' : legacyReason),
+      evolutionId: last.id,
+      clinicalAttentionDate: (last.clinicalAttentionDate ?? last.signedAt).toISOString(),
+    };
+  }
+
   /**
    * Arma el borrador de HCE (visitType/SOAP, plantilla, código externo) sin persistirlo.
    * Lo comparten la apertura manual de atención y el trigger desde la agenda del día.
@@ -228,17 +359,11 @@ export class EncountersService {
         ? 'PRIOR_FINISHED_SAME_SPECIALTY'
         : 'FIRST_FOR_SPECIALTY';
 
-    const year = new Date().getFullYear();
-    const count = await this.prisma.encounter.count({ where: { clinicId } });
-    const prefix =
-      specialty === 'PSYCHOLOGY'
-        ? 'HC-PSI'
-        : specialty === 'DENTISTRY'
-          ? 'HC-ODO'
-          : specialty === 'MEDICINE'
-            ? 'HC-MED'
-            : 'HC-AES';
-    const externalCode = `${prefix}-${year}-${String(count + 1).padStart(6, '0')}`;
+    // Consecutivo propio de cada profesional (no se mezcla entre Dras/sedes).
+    const externalCode = await this.nextExternalCode({
+      specialty,
+      professionalId: params.professionalId,
+    });
 
     // La historia es única por paciente: la atención de control se registra
     // como encuentro (queda su trazabilidad) pero no abre un segundo documento.
@@ -246,11 +371,16 @@ export class EncountersService {
       where: { encounter: { patientId, clinicId } },
     });
 
-    const defaultContent = structuredClone(
-      noteFormat === ClinicalNoteFormat.SOAP
-        ? SOAP_CONTENT_DEFAULTS
-        : HCE_PSI_SCHEMA.contentDefaults,
-    ) as Prisma.InputJsonValue;
+    const documentedAt = new Date().toISOString();
+    const defaultContent = {
+      ...(structuredClone(
+        noteFormat === ClinicalNoteFormat.SOAP
+          ? SOAP_CONTENT_DEFAULTS
+          : contentDefaultsForSpecialty(specialty),
+      ) as Record<string, unknown>),
+      // Fecha de digitación: se fija al abrir el borrador y no cambia al sellar.
+      documentedAt,
+    } as Prisma.InputJsonValue;
 
     return {
       clinicId,
@@ -289,6 +419,194 @@ export class EncountersService {
     };
   }
 
+  /**
+   * Consecutivo HCE por profesional + año.
+   * Formato: HC-PSI-NAU-2026-000001 (cada Dra tiene su propia serie).
+   */
+  private async nextExternalCode(params: {
+    specialty: ClinicSpecialty;
+    professionalId: string;
+  }) {
+    const year = new Date().getFullYear();
+    const prefix = externalCodePrefixForSpecialty(params.specialty);
+
+    const professional = await this.prisma.user.findUnique({
+      where: { id: params.professionalId },
+      select: { fullName: true },
+    });
+    const initials = this.professionalInitials(professional?.fullName || 'PROF');
+    const seriesPrefix = `${prefix}-${initials}-${year}-`;
+
+    const latest = await this.prisma.encounter.findFirst({
+      where: {
+        professionalId: params.professionalId,
+        externalCode: { startsWith: seriesPrefix },
+      },
+      orderBy: { externalCode: 'desc' },
+      select: { externalCode: true },
+    });
+
+    let next = 1;
+    if (latest?.externalCode) {
+      const tail = latest.externalCode.slice(seriesPrefix.length);
+      const parsed = Number.parseInt(tail, 10);
+      if (Number.isFinite(parsed) && parsed >= 0) next = parsed + 1;
+    }
+
+    return `${seriesPrefix}${String(next).padStart(6, '0')}`;
+  }
+
+  /** Iniciales estables para el consecutivo (p. ej. "Natalia Angel Usuga" → NAU). */
+  private professionalInitials(fullName: string) {
+    const parts = fullName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z\s]/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!parts.length) return 'PROF';
+    if (parts.length === 1) return parts[0].slice(0, 3).toUpperCase().padEnd(3, 'X');
+    return parts
+      .slice(0, 3)
+      .map((p) => p[0]!.toUpperCase())
+      .join('');
+  }
+
+  /**
+   * Congela la fecha de digitación: si el cliente envía una fecha anterior
+   * (p. ej. borrador recuperado), se respeta; si no hay ninguna, se usa la de apertura.
+   * Nunca se actualiza al firmar/guardar de nuevo.
+   */
+  private preserveDocumentedAt(
+    existingContent: Record<string, unknown> | null | undefined,
+    incomingContent: Record<string, unknown>,
+    fallbackIso: string,
+  ) {
+    const existing = this.parseIsoDate(existingContent?.documentedAt);
+    const incoming = this.parseIsoDate(incomingContent.documentedAt);
+    const candidates = [existing, incoming].filter((d): d is Date => !!d);
+    const chosen =
+      candidates.length > 0
+        ? new Date(Math.min(...candidates.map((d) => d.getTime())))
+        : new Date(fallbackIso);
+    return {
+      ...incomingContent,
+      documentedAt: chosen.toISOString(),
+    };
+  }
+
+  /**
+   * El sellado de un consentimiento escribe la firma del paciente directo en BD;
+   * un autoguardado con contenido del navegador sin esa imagen no debe borrarla.
+   */
+  private preserveSignatures(
+    existingContent: Record<string, unknown>,
+    incoming: Record<string, unknown>,
+  ) {
+    const result = { ...incoming };
+    const oldDraft = (existingContent.consentDraft ?? {}) as Record<string, unknown>;
+    const newDraft = (incoming.consentDraft ?? {}) as Record<string, unknown>;
+    if (oldDraft.patientSignatureBase64 && !newDraft.patientSignatureBase64) {
+      result.consentDraft = {
+        ...newDraft,
+        patientSignatureBase64: oldDraft.patientSignatureBase64,
+        patientSignaturePending: false,
+      };
+    }
+    const oldSig = (existingContent.signature ?? {}) as Record<string, unknown>;
+    const newSig = (incoming.signature ?? {}) as Record<string, unknown>;
+    if (oldSig.signatureBase64 && !newSig.signatureBase64) {
+      result.signature = { ...newSig, signatureBase64: oldSig.signatureBase64 };
+    }
+    return result;
+  }
+
+  private parseIsoDate(value: unknown): Date | null {
+    if (typeof value !== 'string' || !value.trim()) return null;
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  /**
+   * Fecha de digitación y modalidad se pueden corregir aun con la HC sellada:
+   * no alteran el texto clínico y cada cambio queda en auditoría.
+   */
+  async updateAttendanceMeta(
+    user: User,
+    encounterId: string,
+    dto: UpdateAttendanceMetaDto,
+  ) {
+    const clinicId = this.requireClinicId(user);
+    const encounter = await this.prisma.encounter.findFirst({
+      where: { id: encounterId, clinicId },
+      include: { clinicalRecord: true },
+    });
+    if (!encounter || !encounter.clinicalRecord) {
+      throw new NotFoundException('Encuentro o HCE no encontrada');
+    }
+    if (user.role !== UserRole.ADMIN && encounter.professionalId !== user.id) {
+      throw new ForbiddenException(
+        'Solo el profesional tratante puede corregir los datos de la atención.',
+      );
+    }
+
+    const content = {
+      ...((encounter.clinicalRecord.content as Record<string, unknown> | null) ?? {}),
+    };
+    const previous = {
+      modality: encounter.modality,
+      documentedAt: (content.documentedAt as string | undefined) ?? null,
+    };
+
+    let documentedAt: string | undefined;
+    if (dto.documentedAt) {
+      const parsed = new Date(dto.documentedAt);
+      if (Number.isNaN(parsed.getTime())) {
+        throw new BadRequestException('Fecha de digitación inválida.');
+      }
+      if (parsed.getTime() > Date.now() + 5 * 60 * 1000) {
+        throw new BadRequestException('La fecha de digitación no puede ser futura.');
+      }
+      documentedAt = parsed.toISOString();
+      content.documentedAt = documentedAt;
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      if (dto.modality && dto.modality !== encounter.modality) {
+        await tx.encounter.update({
+          where: { id: encounterId },
+          data: { modality: dto.modality },
+        });
+      }
+      if (documentedAt) {
+        await tx.clinicalRecord.update({
+          where: { id: encounter.clinicalRecord!.id },
+          data: { content: content as Prisma.InputJsonValue },
+        });
+      }
+      await tx.auditLog.create({
+        data: {
+          clinicId,
+          userId: user.id,
+          action: 'UPDATE',
+          entityType: 'EncounterAttendanceMeta',
+          entityId: encounterId,
+          metadata: {
+            recordStatus: encounter.clinicalRecord!.status,
+            previous,
+            next: {
+              modality: dto.modality ?? encounter.modality,
+              documentedAt: documentedAt ?? previous.documentedAt,
+            },
+          },
+        },
+      });
+    });
+
+    return this.getOne(user, encounterId);
+  }
+
   async saveDraft(user: User, encounterId: string, dto: SaveClinicalRecordDto) {
     const clinicId = this.requireClinicId(user);
     const encounter = await this.prisma.encounter.findFirst({
@@ -306,10 +624,23 @@ export class EncountersService {
       });
     }
 
+    const existingContent =
+      (encounter.clinicalRecord.content as Record<string, unknown> | null) ?? {};
+    const incomingContent = (dto.content ?? {}) as Record<string, unknown>;
+    const contentToSave = this.preserveSignatures(
+      existingContent,
+      this.preserveDocumentedAt(
+        existingContent,
+        incomingContent,
+        encounter.createdAt.toISOString(),
+      ),
+    );
+
     await this.prisma.$transaction(async (tx) => {
       await tx.encounter.update({
         where: { id: encounterId },
         data: {
+          // No tocar createdAt / startedAt: la fecha de digitación queda fija.
           modality: dto.modality ?? encounter.modality,
           serviceType: dto.serviceType ?? encounter.serviceType,
           location: dto.location ?? encounter.location,
@@ -318,13 +649,16 @@ export class EncountersService {
             dto.externalCause !== undefined
               ? dto.externalCause
               : encounter.externalCause,
+          ...(dto.generateRips !== undefined
+            ? { generateRips: dto.generateRips }
+            : {}),
         },
       });
 
       await tx.clinicalRecord.update({
         where: { id: encounter.clinicalRecord!.id },
         data: {
-          content: dto.content as Prisma.InputJsonValue,
+          content: contentToSave as Prisma.InputJsonValue,
           status: 'DRAFT',
           ...(dto.noteFormat ? { noteFormat: dto.noteFormat } : {}),
         },
@@ -398,7 +732,127 @@ export class EncountersService {
           action: 'UPDATE',
           entityType: 'ClinicalRecord',
           entityId: encounter.clinicalRecord!.id,
-          metadata: { encounterId },
+          metadata: { encounterId, autosave: dto.autosave === true },
+        },
+      });
+    });
+
+    // Bitácora de autoguardado fuera de la TX principal: si falla el log,
+    // el borrador clínico ya quedó persistido.
+    if (dto.autosave) {
+      try {
+        const contentHash = this.signatures.hash([JSON.stringify(contentToSave)]);
+        await this.prisma.clinicalRecordDraftLog.create({
+          data: {
+            clinicalRecordId: encounter.clinicalRecord.id,
+            savedById: user.id,
+            contentHash,
+          },
+        });
+      } catch {
+        // No bloquear el guardado clínico por fallos de auditoría.
+      }
+    }
+
+    return this.getOne(user, encounterId);
+  }
+
+  /** CIE-10 editable aunque la HC ya esté sellada (no altera fecha de digitación ni huella). */
+  async updateDiagnoses(
+    user: User,
+    encounterId: string,
+    dto: UpdateDiagnosesDto,
+  ) {
+    const clinicId = this.requireClinicId(user);
+    const encounter = await this.prisma.encounter.findFirst({
+      where: { id: encounterId, clinicId },
+      include: { clinicalRecord: true },
+    });
+    if (!encounter || !encounter.clinicalRecord) {
+      throw new NotFoundException('Encuentro o HCE no encontrada');
+    }
+    if (user.role !== UserRole.ADMIN && encounter.professionalId !== user.id) {
+      throw new ForbiddenException(
+        'Solo el profesional tratante puede actualizar los diagnósticos CIE-10.',
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.diagnosis.deleteMany({ where: { encounterId } });
+      if (dto.diagnoses.length) {
+        await tx.diagnosis.createMany({
+          data: dto.diagnoses.map((d) => ({
+            encounterId,
+            cieCode: d.cieCode.trim(),
+            description: d.description.trim(),
+            type: d.type ?? 'IMPRESSION',
+          })),
+        });
+      }
+      await tx.auditLog.create({
+        data: {
+          clinicId,
+          userId: user.id,
+          action: 'UPDATE',
+          entityType: 'ClinicalRecord',
+          entityId: encounter.clinicalRecord!.id,
+          metadata: {
+            kind: 'UPDATE_DIAGNOSES',
+            encounterId,
+            recordStatus: encounter.clinicalRecord!.status,
+            count: dto.diagnoses.length,
+          },
+        },
+      });
+    });
+
+    return this.getOne(user, encounterId);
+  }
+
+  /** CUPS editable aunque la HC ya esté sellada. */
+  async updateProcedures(
+    user: User,
+    encounterId: string,
+    dto: UpdateProceduresDto,
+  ) {
+    const clinicId = this.requireClinicId(user);
+    const encounter = await this.prisma.encounter.findFirst({
+      where: { id: encounterId, clinicId },
+      include: { clinicalRecord: true },
+    });
+    if (!encounter || !encounter.clinicalRecord) {
+      throw new NotFoundException('Encuentro o HCE no encontrada');
+    }
+    if (user.role !== UserRole.ADMIN && encounter.professionalId !== user.id) {
+      throw new ForbiddenException(
+        'Solo el profesional tratante puede actualizar los procedimientos CUPS.',
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.clinicalProcedure.deleteMany({ where: { encounterId } });
+      if (dto.procedures.length) {
+        await tx.clinicalProcedure.createMany({
+          data: dto.procedures.map((p) => ({
+            encounterId,
+            cupsCode: p.cupsCode.trim(),
+            description: p.description.trim(),
+          })),
+        });
+      }
+      await tx.auditLog.create({
+        data: {
+          clinicId,
+          userId: user.id,
+          action: 'UPDATE',
+          entityType: 'ClinicalRecord',
+          entityId: encounter.clinicalRecord!.id,
+          metadata: {
+            kind: 'UPDATE_PROCEDURES',
+            encounterId,
+            recordStatus: encounter.clinicalRecord!.status,
+            count: dto.procedures.length,
+          },
         },
       });
     });
@@ -445,6 +899,11 @@ export class EncountersService {
 
     const content = { ...((record.content as Record<string, unknown>) ?? {}) };
     this.assertSignable(content, record.noteFormat);
+
+    // Conserva la fecha de digitación aunque se selle hoy.
+    if (!content.documentedAt) {
+      content.documentedAt = encounter.createdAt.toISOString();
+    }
 
     const signatureBase64 = await this.signatures.resolve(
       user,
@@ -507,13 +966,14 @@ export class EncountersService {
       });
     });
 
+    // RDA siempre (Ley 2015 / Res. 866). RIPS solo si el profesional lo habilitó.
+    this.rdaExport.enqueueAfterSign(encounterId);
+    void this.rdaExport
+      .generateRipsIfEnabled(encounterId, user.ripsEnabled === true)
+      .catch(() => undefined);
+
     return this.getOne(user, encounterId);
   }
-
-  /**
-   * Adenda sobre una HCE ya sellada: la nota original nunca se altera,
-   * las correcciones se apilan como registros inmutables.
-   */
   async addEvolution(
     user: User,
     encounterId: string,
@@ -541,13 +1001,28 @@ export class EncountersService {
     );
     const signedAt = new Date();
     const note = dto.note.trim();
-    const reason = dto.reason?.trim() || 'Adenda / nota aclaratoria';
+    const reason = dto.reason?.trim() || 'Nota de evolución';
+    const currentSituation = dto.currentSituation?.trim() || '';
+
+    let clinicalAttentionDate = signedAt;
+    if (dto.clinicalAttentionDate) {
+      const parsed = new Date(dto.clinicalAttentionDate);
+      if (Number.isNaN(parsed.getTime())) {
+        throw new BadRequestException('Fecha de atención clínica inválida.');
+      }
+      if (parsed.getTime() > signedAt.getTime() + 5 * 60 * 1000) {
+        throw new BadRequestException('La fecha de atención clínica no puede ser futura.');
+      }
+      clinicalAttentionDate = parsed;
+    }
 
     const contentHash = this.signatures.hash([
       record.id,
       record.contentHash,
       reason,
+      currentSituation,
       note,
+      clinicalAttentionDate.toISOString(),
       user.id,
       signedAt.toISOString(),
     ]);
@@ -557,9 +1032,11 @@ export class EncountersService {
         data: {
           clinicalRecordId: record.id,
           authorId: user.id,
+          clinicalAttentionDate,
           content: {
             note,
             reason,
+            currentSituation,
             professionalName: user.fullName,
             professionalCard: user.professionalCard || '',
             signatureBase64,
@@ -580,7 +1057,13 @@ export class EncountersService {
           action: 'SIGN',
           entityType: 'ClinicalEvolution',
           entityId: record.id,
-          metadata: { encounterId, contentHash, reason },
+          metadata: {
+            encounterId,
+            contentHash,
+            reason,
+            clinicalAttentionDate: clinicalAttentionDate.toISOString(),
+            systemDate: signedAt.toISOString(),
+          },
         },
       });
     });
@@ -611,9 +1094,22 @@ export class EncountersService {
 
     const care = (content.careMinimum ?? {}) as Record<string, unknown>;
     const assessment = (content.assessment ?? {}) as Record<string, unknown>;
-    if (!text(care.motive) && !text(assessment.impressionNarrative)) {
+    const physio = (content.physiotherapy ?? {}) as Record<string, unknown>;
+    const hasPhysioCore = [
+      'physioDiagnosis',
+      'physioDxDescription',
+      'findings',
+      'treatmentObjectives',
+      'interventionPlan',
+    ].some((key) => text(physio[key]));
+
+    if (
+      !text(care.motive) &&
+      !text(assessment.impressionNarrative) &&
+      !hasPhysioCore
+    ) {
       throw new BadRequestException(
-        'Registre al menos el motivo de consulta o la impresión diagnóstica antes de firmar.',
+        'Registre al menos el motivo de consulta, la impresión diagnóstica o el contenido clínico de la atención antes de firmar.',
       );
     }
   }
@@ -622,8 +1118,13 @@ export class EncountersService {
     encounter: EncounterWithRelations,
     user?: User,
   ) {
+    const { patientConsents, ...rest } = encounter;
     const base = {
-      ...encounter,
+      ...rest,
+      clinicalRecord: this.withPatientSignatureFallback(
+        rest.clinicalRecord,
+        patientConsents[0]?.signatureBase64,
+      ),
       professional: {
         id: encounter.professional.id,
         fullName: encounter.professional.fullName,
@@ -654,5 +1155,27 @@ export class EncountersService {
     }
 
     return base;
+  }
+
+  /** Si la firma no quedó en el contenido, se muestra la del consentimiento sellado. */
+  private withPatientSignatureFallback<T extends { content: Prisma.JsonValue } | null>(
+    record: T,
+    consentSignature: string | null | undefined,
+  ): T {
+    if (!record || !consentSignature) return record;
+    const content = (record.content ?? {}) as Record<string, unknown>;
+    const draft = (content.consentDraft ?? {}) as Record<string, unknown>;
+    if (draft.patientSignatureBase64) return record;
+    return {
+      ...record,
+      content: {
+        ...content,
+        consentDraft: {
+          ...draft,
+          patientSignatureBase64: consentSignature,
+          patientSignaturePending: false,
+        },
+      },
+    };
   }
 }

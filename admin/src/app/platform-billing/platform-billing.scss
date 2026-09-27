@@ -1,0 +1,322 @@
+.shell {
+  display: grid;
+  min-height: 100svh;
+  grid-template-columns: 260px 1fr;
+}
+
+aside {
+  padding: 32px 24px;
+  border-right: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.brand {
+  margin: 0;
+  letter-spacing: -0.02em;
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.role {
+  margin: 4px 0 0;
+  color: #0d7377;
+  font-size: 14px;
+}
+
+nav a {
+  display: block;
+  color: #2e2e2e;
+  text-decoration: none;
+  padding: 6px 0;
+}
+
+nav a.active {
+  font-weight: 600;
+  color: #0d7377;
+}
+
+.session {
+  margin-top: auto;
+}
+
+.session-name {
+  margin: 0;
+  font-weight: 500;
+}
+
+.session-email {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+main {
+  padding: 28px 32px 48px;
+  background: linear-gradient(180deg, #f7fbfb 0%, #fff 40%);
+}
+
+.topbar h1 {
+  margin: 4px 0 8px;
+  font-size: 1.75rem;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #0d7377;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.welcome {
+  margin: 0;
+  color: #475569;
+  max-width: 52rem;
+}
+
+.ok {
+  background: #ecfdf5;
+  color: #065f46;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.error {
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0 16px;
+}
+
+.tabs button {
+  border: 1px solid #dbe4e8;
+  background: #fff;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.tabs button.active {
+  background: #0d7377;
+  color: #fff;
+  border-color: #0d7377;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stat {
+  background: #fff;
+  border: 1px solid #e8eef0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.stat .lbl {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.stat .val {
+  margin: 6px 0 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #003d4c;
+}
+
+.stat .sub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e8eef0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.card h2 {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+}
+
+.row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.muted {
+  color: #64748b;
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 8px 6px;
+  border-bottom: 1px solid #eef2f4;
+}
+
+tr.hl {
+  background: #f0fafa;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #334155;
+}
+
+label.full {
+  grid-column: 1 / -1;
+}
+
+label.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid #d0dbe0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.fee-input {
+  width: 140px;
+}
+
+.primary {
+  background: #0d7377;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.danger {
+  background: #fff;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: #f1f5f9;
+}
+
+.pill[data-status='PAID'] {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.pill[data-status='UNPAID'] {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.pill[data-status='SUSPENDED'] {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+tr.warn {
+  background: #fffaf5;
+}
+
+tr.bad {
+  background: #fff5f5;
+}
+
+.row-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.ghost {
+  background: transparent;
+  border: 1px solid #d0dbe0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.linkish {
+  background: none;
+  border: none;
+  color: #0d7377;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+@media (max-width: 800px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  aside {
+    border-right: none;
+    border-bottom: 1px solid #f0f0f0;
+  }
+}

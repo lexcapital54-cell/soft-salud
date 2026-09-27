@@ -7,10 +7,13 @@ import { Clinic } from './clinics/clinic.entity';
 import { ClinicsModule } from './clinics/clinics.module';
 import { SeedService } from './database/seed.service';
 import { AgendaModule } from './modules/agenda/agenda.module';
+import { BillingModule } from './modules/billing/billing.module';
+import { PlatformBillingModule } from './modules/platform-billing/platform-billing.module';
 import { ClinicalModule } from './modules/clinical/clinical.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { UserClinicAccess } from './users/user-clinic-access.entity';
 import { User } from './users/user.entity';
 import { UsersModule } from './users/users.module';
 
@@ -31,7 +34,7 @@ import { UsersModule } from './users/users.module';
         username: config.get('DB_USERNAME', 'postgres'),
         password: config.get('DB_PASSWORD', 'postgres'),
         database: config.get('DB_NAME', 'habilisalud'),
-        entities: [User, Clinic],
+        entities: [User, Clinic, UserClinicAccess],
         // Schema clínico/ERP lo gestiona Prisma; TypeORM solo auth/clinics.
         synchronize: false,
       }),
@@ -43,6 +46,8 @@ import { UsersModule } from './users/users.module';
     NotificationsModule,
     AgendaModule,
     DocumentsModule,
+    BillingModule,
+    PlatformBillingModule,
   ],
   providers: [SeedService],
 })

@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  AppointmentEventType,
   AppointmentStatus,
   AuditAction,
   CareModality,
@@ -130,14 +131,23 @@ export class AppointmentsService {
         ...(query.status ? { status: query.status } : {}),
         ...(q
           ? {
-              patient: {
-                OR: [
-                  { firstName: { contains: q, mode: 'insensitive' } },
-                  { lastName: { contains: q, mode: 'insensitive' } },
-                  { secondLastName: { contains: q, mode: 'insensitive' } },
-                  { documentNumber: { contains: q, mode: 'insensitive' } },
-                ],
-              },
+              OR: [
+                {
+                  eventType: AppointmentEventType.BLOQUEO,
+                  blockReason: { contains: q, mode: 'insensitive' },
+                },
+                {
+                  eventType: AppointmentEventType.CITA,
+                  patient: {
+                    OR: [
+                      { firstName: { contains: q, mode: 'insensitive' } },
+                      { lastName: { contains: q, mode: 'insensitive' } },
+                      { secondLastName: { contains: q, mode: 'insensitive' } },
+                      { documentNumber: { contains: q, mode: 'insensitive' } },
+                    ],
+                  },
+                },
+              ],
             }
           : {}),
       },
@@ -147,7 +157,7 @@ export class AppointmentsService {
 
     const habeasByPatient = await this.habeasDataByPatient(
       clinicId,
-      rows.map((r) => r.patientId),
+      rows.map((r) => r.patientId).filter((id): id is string => id != null),
     );
 
     return rows.map((row) => this.serialize(row, habeasByPatient));
@@ -160,7 +170,13 @@ export class AppointmentsService {
       include: appointmentInclude,
     });
     if (!row) throw new NotFoundException('Cita no encontrada');
-    const habeas = await this.habeasDataByPatient(clinicId, [row.patientId]);
+    if (row.eventType === AppointmentEventType.CITA && (!row.patientId || !row.patient)) {
+      throw new NotFoundException('Cita sin paciente');
+    }
+    const habeas = await this.habeasDataByPatient(
+      clinicId,
+      row.patientId ? [row.patientId] : [],
+    );
     return this.serialize(row, habeas);
   }
 
@@ -184,12 +200,27 @@ export class AppointmentsService {
     context: { ipAddress?: string; userAgent?: string } = {},
   ) {
     const clinicId = this.requireClinicId(user);
+    const eventType = dto.eventType ?? AppointmentEventType.CITA;
+    const isBlock = eventType === AppointmentEventType.BLOQUEO;
 
-    const patient = await this.prisma.patient.findFirst({
-      where: { id: dto.patientId, clinicId },
-      select: { id: true },
-    });
-    if (!patient) throw new NotFoundException('Paciente no encontrado');
+    let patientId: string | null = null;
+    if (isBlock) {
+      if (!dto.blockReason?.trim()) {
+        throw new BadRequestException(
+          'Indique el motivo del bloqueo (vacaciones, capacitación, etc.).',
+        );
+      }
+    } else {
+      if (!dto.patientId) {
+        throw new BadRequestException('Seleccione un paciente para la cita.');
+      }
+      const patient = await this.prisma.patient.findFirst({
+        where: { id: dto.patientId, clinicId },
+        select: { id: true },
+      });
+      if (!patient) throw new NotFoundException('Paciente no encontrado');
+      patientId = patient.id;
+    }
 
     const professionalId = await this.resolveProfessionalId(
       clinicId,
@@ -203,7 +234,7 @@ export class AppointmentsService {
     });
 
     const requestDate = dto.requestDate ? new Date(dto.requestDate) : new Date();
-    if (requestDate > startsAt) {
+    if (!isBlock && requestDate > startsAt) {
       throw new BadRequestException(
         'La fecha de solicitud no puede ser posterior a la fecha de la cita',
       );
@@ -211,19 +242,24 @@ export class AppointmentsService {
 
     await this.assertNoOverlap({ professionalId, startsAt, endsAt });
 
-    const modality = dto.modality ?? CareModality.IN_PERSON;
+    const modality = isBlock
+      ? CareModality.IN_PERSON
+      : (dto.modality ?? CareModality.IN_PERSON);
     const created = await this.prisma.appointment.create({
       data: {
         clinicId,
-        patientId: patient.id,
+        patientId,
         professionalId,
         startsAt,
         endsAt,
-        requestDate,
+        requestDate: isBlock ? startsAt : requestDate,
         status: AppointmentStatus.SCHEDULED,
+        eventType,
+        blockReason: isBlock ? dto.blockReason!.trim() : null,
         modality,
-        meetingUrl: modality === CareModality.VIRTUAL ? dto.meetingUrl : null,
-        reason: dto.reason,
+        meetingUrl:
+          !isBlock && modality === CareModality.VIRTUAL ? dto.meetingUrl : null,
+        reason: isBlock ? null : dto.reason,
         notes: dto.notes,
       },
       include: appointmentInclude,
@@ -238,12 +274,29 @@ export class AppointmentsService {
         entityId: created.id,
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
-        metadata: { patientId: patient.id, professionalId, modality },
+        metadata: {
+          patientId,
+          professionalId,
+          modality,
+          eventType,
+          blockReason: created.blockReason,
+        },
       },
     });
 
-    const habeas = await this.habeasDataByPatient(clinicId, [patient.id]);
-    return this.serialize(created, habeas);
+    const habeas = await this.habeasDataByPatient(
+      clinicId,
+      patientId ? [patientId] : [],
+    );
+    const serialized = this.serialize(created, habeas);
+
+    if (!isBlock && patientId) {
+      void this.notifications
+        .notifyBooking(created.id)
+        .catch(() => undefined);
+    }
+
+    return serialized;
   }
 
   async update(
@@ -320,10 +373,22 @@ export class AppointmentsService {
       },
     });
 
-    const habeas = await this.habeasDataByPatient(clinicId, [
-      updated.patientId,
-    ]);
-    return this.serialize(updated, habeas);
+    const habeas = await this.habeasDataByPatient(
+      clinicId,
+      updated.patientId ? [updated.patientId] : [],
+    );
+    const serialized = this.serialize(updated, habeas);
+
+    const timeChanged =
+      existing.startsAt.getTime() !== updated.startsAt.getTime() ||
+      existing.endsAt.getTime() !== updated.endsAt.getTime();
+    if (timeChanged && existing.eventType === AppointmentEventType.CITA) {
+      void this.notifications
+        .notifyReschedule(updated.id)
+        .catch(() => undefined);
+    }
+
+    return serialized;
   }
 
   private async resolveProfessionalId(clinicId: string, professionalId: string) {
@@ -392,14 +457,18 @@ export class AppointmentsService {
 
     const clash = await this.prisma.appointment.findFirst({
       where: { ...overlaps, status: { notIn: ['CANCELLED', 'NO_SHOW'] } },
-      select: { id: true },
+      select: { id: true, eventType: true, blockReason: true },
     });
 
     if (clash) {
+      const isBlock = clash.eventType === AppointmentEventType.BLOQUEO;
       throw new ConflictException({
         code: 'SLOT_TAKEN',
-        message:
-          'El profesional ya tiene una cita que se cruza con ese horario.',
+        message: isBlock
+          ? `El profesional tiene un bloqueo en ese horario${
+              clash.blockReason ? ` (${clash.blockReason})` : ''
+            }.`
+          : 'El profesional ya tiene una cita que se cruza con ese horario.',
         conflictingAppointmentId: clash.id,
       });
     }
@@ -437,11 +506,19 @@ export class AppointmentsService {
     });
     if (!appointment) throw new NotFoundException('Cita no encontrada');
 
+    // Bloqueo de agenda: solo se puede cancelar (liberar la franja).
+    if (appointment.eventType === AppointmentEventType.BLOQUEO) {
+      return this.cancelBlock(user, appointment, dto, context);
+    }
+
+    if (!appointment.patientId || !appointment.patient) {
+      throw new BadRequestException('La franja no tiene paciente asociado.');
+    }
+    const patientId = appointment.patientId;
+
     const target = dto.status;
     if (appointment.status === target) {
-      const habeas = await this.habeasDataByPatient(clinicId, [
-        appointment.patientId,
-      ]);
+      const habeas = await this.habeasDataByPatient(clinicId, [patientId]);
       return this.serialize(appointment, habeas);
     }
 
@@ -454,14 +531,14 @@ export class AppointmentsService {
 
     // Ley 1581: sin Habeas Data firmado no se admite al paciente en sala de espera
     if (target === AppointmentStatus.IN_WAITING) {
-      const signed = await this.hasHabeasData(clinicId, appointment.patientId);
+      const signed = await this.hasHabeasData(clinicId, patientId);
       if (!signed) {
         throw new ConflictException({
           code: 'HABEAS_DATA_REQUIRED',
           message:
             'El paciente no tiene la autorización de tratamiento de datos (Ley 1581) firmada. Complete la admisión antes de pasarlo a sala de espera.',
           appointmentId: appointment.id,
-          patientId: appointment.patientId,
+          patientId,
         });
       }
     }
@@ -470,28 +547,42 @@ export class AppointmentsService {
       target === AppointmentStatus.IN_WAITING && !appointment.encounterId;
 
     let draftData: Prisma.EncounterUncheckedCreateInput | null = null;
+    let existingHcEncounterId: string | null = null;
     if (shouldCreateEncounter) {
-      const clinic = await this.prisma.clinic.findUnique({
-        where: { id: clinicId },
-        select: { specialty: true },
+      // Historia única: si el paciente ya tiene HCE, vincular la cita a esa
+      // atención (no crear un encuentro huérfano sin clinical_record).
+      const existingHc = await this.prisma.encounter.findFirst({
+        where: { patientId, clinicId, clinicalRecord: { isNot: null } },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true },
       });
-      if (!clinic) throw new NotFoundException('Consultorio no encontrado');
+      if (existingHc) {
+        existingHcEncounterId = existingHc.id;
+      } else {
+        const clinic = await this.prisma.clinic.findUnique({
+          where: { id: clinicId },
+          select: { specialty: true },
+        });
+        if (!clinic) throw new NotFoundException('Consultorio no encontrado');
 
-      draftData = await this.encounters.buildDraftData({
-        clinicId,
-        clinicSpecialty: clinic.specialty as ClinicSpecialty,
-        patientId: appointment.patientId,
-        professionalId: appointment.professionalId,
-        authorId: appointment.professionalId,
-        modality: appointment.modality,
-        purpose: appointment.reason,
-      });
+        draftData = await this.encounters.buildDraftData({
+          clinicId,
+          clinicSpecialty: clinic.specialty as ClinicSpecialty,
+          patientId,
+          professionalId: appointment.professionalId,
+          authorId: appointment.professionalId,
+          modality: appointment.modality,
+          purpose: appointment.reason,
+        });
+      }
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
       let encounterId = appointment.encounterId;
 
-      if (draftData) {
+      if (existingHcEncounterId) {
+        encounterId = existingHcEncounterId;
+      } else if (draftData) {
         const encounter = await tx.encounter.create({
           data: draftData,
           select: { id: true },
@@ -544,9 +635,7 @@ export class AppointmentsService {
         .catch(() => undefined);
     }
 
-    const habeas = await this.habeasDataByPatient(clinicId, [
-      updated.patientId,
-    ]);
+    const habeas = await this.habeasDataByPatient(clinicId, [patientId]);
     return this.serialize(updated, habeas);
   }
 
@@ -563,6 +652,9 @@ export class AppointmentsService {
       include: { patient: true },
     });
     if (!appointment) throw new NotFoundException('Cita no encontrada');
+    if (!appointment.patient) {
+      throw new BadRequestException('La franja no tiene paciente asociado.');
+    }
 
     const signedAt = dto.habeasDataSigned ? new Date() : null;
     const data = {
@@ -631,20 +723,116 @@ export class AppointmentsService {
         },
         select: { appointment: { select: { patientId: true } } },
       });
-      for (const a of admissions) result.set(a.appointment.patientId, true);
+      for (const a of admissions) {
+        const pid = a.appointment.patientId;
+        if (pid) result.set(pid, true);
+      }
     }
 
     for (const id of ids) if (!result.has(id)) result.set(id, false);
     return result;
   }
 
+  /** Libera un bloqueo de agenda (vacaciones, etc.) sin notificar paciente. */
+  private async cancelBlock(
+    user: User,
+    appointment: AppointmentWithRelations,
+    dto: UpdateAppointmentStatusDto,
+    context: { ipAddress?: string; userAgent?: string },
+  ) {
+    const clinicId = this.requireClinicId(user);
+    if (dto.status !== AppointmentStatus.CANCELLED) {
+      throw new BadRequestException(
+        'Un bloqueo de agenda solo se puede cancelar (liberar la franja).',
+      );
+    }
+    if (appointment.status === AppointmentStatus.CANCELLED) {
+      return this.serialize(appointment, new Map());
+    }
+    if (appointment.status !== AppointmentStatus.SCHEDULED) {
+      throw new BadRequestException(
+        `No se puede liberar un bloqueo en estado ${appointment.status}`,
+      );
+    }
+
+    const updated = await this.prisma.appointment.update({
+      where: { id: appointment.id },
+      data: {
+        status: AppointmentStatus.CANCELLED,
+        cancelledAt: new Date(),
+        notes: dto.reason
+          ? [appointment.notes, dto.reason].filter(Boolean).join(' · ')
+          : appointment.notes,
+      },
+      include: appointmentInclude,
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        clinicId,
+        userId: user.id,
+        action: AuditAction.UPDATE,
+        entityType: 'Appointment',
+        entityId: appointment.id,
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+        metadata: {
+          eventType: 'BLOQUEO',
+          from: appointment.status,
+          to: AppointmentStatus.CANCELLED,
+          reason: dto.reason ?? null,
+        },
+      },
+    });
+
+    return this.serialize(updated, new Map());
+  }
+
   private serialize(
     row: AppointmentWithRelations,
     habeasByPatient: Map<string, boolean>,
   ) {
+    if (row.eventType === AppointmentEventType.BLOQUEO) {
+      return {
+        id: row.id,
+        startsAt: row.startsAt,
+        endsAt: row.endsAt,
+        status: row.status,
+        eventType: row.eventType,
+        blockReason: row.blockReason,
+        modality: row.modality,
+        isTelemedicine: false,
+        meetingUrl: null,
+        requestDate: row.requestDate,
+        opportunityDays: null,
+        reason: row.reason,
+        notes: row.notes,
+        cancelledAt: row.cancelledAt,
+        slotReopenUntil:
+          row.status === AppointmentStatus.CANCELLED && row.cancelledAt
+            ? new Date(
+                row.cancelledAt.getTime() + CANCELLATION_REOPEN_MINUTES * 60_000,
+              )
+            : null,
+        encounterId: null,
+        professional: row.professional,
+        patient: null,
+        habeasDataSigned: false,
+        admission: null,
+        allowedTransitions:
+          row.status === AppointmentStatus.SCHEDULED
+            ? [AppointmentStatus.CANCELLED]
+            : [],
+      };
+    }
+
+    if (!row.patient || !row.patientId) {
+      throw new BadRequestException('Cita sin datos de paciente');
+    }
+    const patient = row.patient;
     const isMinor =
-      row.patient.isMinorOverride ??
-      MINOR_DOCUMENT_TYPES.has((row.patient.documentType ?? '').toUpperCase());
+      patient.isMinorOverride ??
+      MINOR_DOCUMENT_TYPES.has((patient.documentType ?? '').toUpperCase());
 
     // Indicador PAMEC de oportunidad: días entre solicitud y cita
     const opportunityDays = row.requestDate
@@ -661,6 +849,8 @@ export class AppointmentsService {
       startsAt: row.startsAt,
       endsAt: row.endsAt,
       status: row.status,
+      eventType: row.eventType ?? AppointmentEventType.CITA,
+      blockReason: row.blockReason,
       modality: row.modality,
       isTelemedicine: row.modality === CareModality.VIRTUAL,
       meetingUrl: row.modality === CareModality.VIRTUAL ? row.meetingUrl : null,
@@ -679,17 +869,17 @@ export class AppointmentsService {
       encounterId: row.encounterId,
       professional: row.professional,
       patient: {
-        id: row.patient.id,
-        firstName: row.patient.firstName,
-        lastName: row.patient.lastName,
-        fullName: `${row.patient.firstName} ${row.patient.lastName}`.trim(),
-        documentType: row.patient.documentType,
-        documentNumber: row.patient.documentNumber,
-        birthDate: row.patient.birthDate,
-        phone: row.patient.phone,
+        id: patient.id,
+        firstName: patient.firstName,
+        lastName: patient.lastName,
+        fullName: `${patient.firstName} ${patient.lastName}`.trim(),
+        documentType: patient.documentType,
+        documentNumber: patient.documentNumber,
+        birthDate: patient.birthDate,
+        phone: patient.phone,
         isMinor,
         populationGroup: isMinor ? 'MINOR' : 'ADULT',
-        profileComplete: missingProfileFields(row.patient).length === 0,
+        profileComplete: missingProfileFields(patient).length === 0,
       },
       habeasDataSigned: habeasByPatient.get(row.patientId) ?? false,
       admission: row.admission,

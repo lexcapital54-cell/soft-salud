@@ -37,11 +37,22 @@ export interface Patient {
   email?: string | null;
   eps?: string | null;
   regime?: string | null;
+  /** Profesión (formación / título). */
+  profession?: string | null;
+  /** Ocupación actual. */
   occupation?: string | null;
   educationLevel?: string | null;
   emergencyContactName?: string | null;
   emergencyContactPhone?: string | null;
   emergencyRelationship?: string | null;
+  /** Acudiente / representante legal (menores). */
+  guardianFullName?: string | null;
+  guardianDocumentType?: string | null;
+  guardianDocumentNumber?: string | null;
+  guardianRelationship?: string | null;
+  guardianPhone?: string | null;
+  guardianEmail?: string | null;
+  photoUrl?: string | null;
   createdAt?: string;
   /** Ya tiene historia clínica abierta: la atención se anota como evolución. */
   hasClinicalHistory?: boolean;
@@ -94,14 +105,53 @@ export interface SoapContent {
   plan: string;
 }
 
+export interface PhysiotherapyContent {
+  antecedentsDetail: {
+    personal: string;
+    pathological: string;
+    surgical: string;
+    allergic: string;
+    pharmacological: string;
+    family: string;
+    obgyn: string;
+    traumatic: string;
+    occupational: string;
+    others: string;
+  };
+  systemsReviewGrid: Record<string, '' | 'NORMAL' | 'ANORMAL'>;
+  physioDiagnosis: string;
+  findings: string;
+  functionalAssessment: Record<string, string>;
+  physioDxCode: string;
+  physioDxDescription: string;
+  treatmentObjectives: string;
+  interventionPlan: string;
+  frequency: string;
+  estimatedDuration: string;
+  sessionCount: string;
+  closure: {
+    closedAt: string;
+    caseStatus: string;
+    treatmentResult: string;
+  };
+}
+
 export interface ClinicalContent {
-  profile?: 'FULL' | 'SOAP' | string;
+  profile?: 'FULL' | 'SOAP' | 'PHYSIOTHERAPY' | string;
   soap?: SoapContent;
   careMinimum: {
     motive: string;
     presentIllness: string;
     antecedents: string;
+    /** Historia psicosocial (antes revisión por sistemas). */
     systemsReview: string;
+    /** Antecedentes estructurados Aplica/No aplica. */
+    antecedentFlags?: {
+      personales: { applies: boolean; detail: string };
+      psiquiatricos: { applies: boolean; detail: string };
+      familiares: { applies: boolean; detail: string };
+      toxicos: { applies: boolean; detail: string };
+    };
   };
   mentalExam: {
     appearance: string;
@@ -113,6 +163,8 @@ export interface ClinicalContent {
     perception: string;
     judgment: string;
     insight: string;
+    /** Texto libre unificado del examen mental. */
+    narrative?: string;
   };
   assessment: {
     impressionNarrative: string;
@@ -123,6 +175,8 @@ export interface ClinicalContent {
   allergies: string[];
   medications: string[];
   risks: { suicideRisk: string; notes: string };
+  /** Bloques específicos de HC-FT-001 (fisioterapia). */
+  physiotherapy?: PhysiotherapyContent;
   rdaMeta: {
     includedEvents: string[];
     deviceId: string;
@@ -135,6 +189,17 @@ export interface ClinicalContent {
     verificationCode: string;
     signatureBase64?: string | null;
   };
+  /** Borrador de firma del paciente en consentimientos (antes del sellado legal). */
+  consentDraft?: {
+    patientSignatureBase64?: string | null;
+    /** true si la HC se selló sin firma del paciente (completar después). */
+    patientSignaturePending?: boolean;
+  };
+  /**
+   * Fecha/hora en que se digitó el contenido clínico (inmutable).
+   * No es la fecha de “Guardar historia clínica” / sellado.
+   */
+  documentedAt?: string | null;
   _redacted?: boolean;
 }
 
@@ -143,6 +208,7 @@ export interface ClinicalEvolution {
   content: {
     note: string;
     reason?: string;
+    currentSituation?: string;
     professionalName?: string;
     professionalCard?: string;
     signatureBase64?: string | null;
@@ -151,6 +217,10 @@ export interface ClinicalEvolution {
   };
   contentHash: string;
   signedAt: string;
+  /** fecha_atencion_clinica: día real de la sesión. */
+  clinicalAttentionDate?: string | null;
+  /** fecha_sistema: timestamp de inserción (auditoría). */
+  createdAt?: string;
   author?: { id: string; fullName: string; professionalCard?: string | null };
 }
 
@@ -159,6 +229,7 @@ export interface ClinicalRecord {
   status: ClinicalRecordStatus;
   noteFormat?: ClinicalNoteFormat;
   content: ClinicalContent;
+  createdAt?: string;
   updatedAt: string;
   contentHash?: string | null;
   verificationCode?: string | null;
@@ -210,6 +281,7 @@ export interface Encounter {
   purpose: string | null;
   externalCause: string | null;
   startedAt: string | null;
+  createdAt?: string;
   visitType?: VisitType | null;
   visitTypeReason?: string | null;
   specialtySnapshot?: string | null;
@@ -239,9 +311,26 @@ export interface EncounterListItem {
   clinicalRecord: {
     id: string;
     status: ClinicalRecordStatus;
+    createdAt?: string;
     updatedAt: string;
     noteFormat?: ClinicalNoteFormat;
   } | null;
+}
+
+/** HCE abierta (borrador) para alertas del profesional. */
+export interface OpenEncounterItem {
+  encounterId: string;
+  patientId: string;
+  patientName: string;
+  documentType: string | null;
+  documentNumber: string | null;
+  professionalName: string;
+  encounterStatus: string;
+  clinicalRecordStatus: ClinicalRecordStatus;
+  createdAt: string;
+  clinicalRecordCreatedAt: string;
+  updatedAt: string | null;
+  daysOpen: number;
 }
 
 export interface SivigilaCaseRow {
@@ -263,4 +352,20 @@ export interface SivigilaCaseRow {
 export interface SivigilaSummary {
   totalCases: number;
   byCieCode: { cieCode: string; count: number }[];
+}
+
+/** Fila del módulo de descarga masiva de HCE en PDF. */
+export interface HceExportItem {
+  encounterId: string;
+  patientId: string;
+  patientName: string;
+  documentType: string | null;
+  documentNumber: string | null;
+  externalCode: string | null;
+  status: ClinicalRecordStatus;
+  signedAt: string | null;
+  createdAt: string;
+  noteFormat: ClinicalNoteFormat;
+  professionalName: string;
+  fileName: string;
 }

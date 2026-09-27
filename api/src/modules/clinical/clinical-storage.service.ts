@@ -47,6 +47,43 @@ export class ClinicalStorageService {
     return { storageKey, absolutePath, contentHash };
   }
 
+  /** Sobrescribe un storageKey existente (disco + BD). */
+  async putBuffer(
+    storageKey: string,
+    buffer: Buffer,
+    mimeType = 'application/octet-stream',
+  ): Promise<{ contentHash: string }> {
+    const absolutePath = this.resolveAbsolutePath(storageKey);
+    mkdirSync(path.dirname(absolutePath), { recursive: true });
+    await fs.writeFile(absolutePath, buffer);
+    const contentHash = createHash('sha256').update(buffer).digest('hex');
+    await this.upsertBlob(storageKey, buffer, mimeType, contentHash);
+    return { contentHash };
+  }
+
+  /** Borra espejo en disco + blob en BD (best-effort). */
+  async deleteStored(storageKey: string) {
+    try {
+      await this.prisma.storedFile.deleteMany({ where: { storageKey } });
+    } catch (err) {
+      this.logger.warn(
+        `No se pudo borrar blob BD ${storageKey}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+    const absolutePath = this.resolveAbsolutePath(storageKey);
+    try {
+      if (existsSync(absolutePath)) await fs.unlink(absolutePath);
+    } catch (err) {
+      this.logger.warn(
+        `No se pudo borrar disco ${storageKey}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+  }
+
   /** Persiste en BD un archivo que ya existe en disco (p. ej. PDFs de consentimientos). */
   async persistExisting(
     storageKey: string,

@@ -19,6 +19,12 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
+    if (user.clinic?.hostingSuspendedAt) {
+      throw new UnauthorizedException(
+        'Consultorio suspendido por falta de pago del arrendamiento mensual. Póngase al día con HabiliSALUD para reactivar el acceso.',
+      );
+    }
+
     const matches = await bcrypt.compare(dto.password, user.passwordHash);
     if (!matches) {
       throw new UnauthorizedException('Credenciales inválidas');

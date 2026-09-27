@@ -1,16 +1,40 @@
-<section class="hce-page">
+<section
+  class="hce-page"
+  [class.embedded-page]="embedded()"
+  [class.specialty-psychology]="isPsychologyClinic()"
+  [class.specialty-physiotherapy]="isPhysiotherapyClinic()"
+>
+  @if (!embedded()) {
   <header class="topbar">
     <div class="topbar-left">
-      <a routerLink="/consultorio">← Consultorio</a>
-      <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()"
-        >HABILISALUD</a
-      >
+      <a href="/consultorio.html">← Consultorio</a>
+      @if (isPsychologyClinic()) {
+        <img
+          class="brand-logo-brain"
+          src="/logo-dulcemente-brain.png"
+          alt="Dulcemente"
+          width="48"
+          height="34"
+        />
+        <span class="brand brand-dulcemente">DULCEMENTE</span>
+      } @else if (isPhysiotherapyClinic()) {
+        <a class="brand brand-ft" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()"
+          >HC FISIOTERAPIA</a
+        >
+      } @else {
+        <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()"
+          >HABILISALUD</a
+        >
+      }
     </div>
     <div class="topbar-actions">
       @if (canWrite()) {
         <button type="button" class="ghost" (click)="newAttention()">Nueva atención</button>
         @if (isLocked()) {
-          <span class="locked-tag">Historia sellada · solo lectura</span>
+          <span class="locked-tag">Historia sellada</span>
+          <button type="button" class="primary" (click)="scrollToEvolutions()">
+            Ir a notas de evolución
+          </button>
         }
       } @else {
         <span class="muted small">Modo lectura ({{ user()?.role }})</span>
@@ -18,12 +42,36 @@
       <button type="button" class="ghost logout" (click)="logout()">Cerrar sesión</button>
     </div>
   </header>
+  } @else {
+  <div class="pane-toolbar">
+    @if (canWrite()) {
+      <button type="button" class="ghost" (click)="newAttention()">Nueva atención</button>
+      @if (isLocked()) {
+        <span class="locked-tag">Historia sellada</span>
+        <button type="button" class="primary" (click)="scrollToEvolutions()">
+          Ir a notas de evolución
+        </button>
+      }
+    }
+  </div>
+  }
 
   @if (message()) {
     <p class="banner ok">{{ message() }}</p>
   }
   @if (error()) {
     <p class="banner err">{{ error() }}</p>
+  }
+
+  @if (canWrite() && !embedded()) {
+    <app-open-encounters-alert />
+  }
+
+  @if (repsAlert(); as reps) {
+    <p class="banner" [class.err]="reps.level === 'urgent'" [class.warn]="reps.level === 'warn'">
+      {{ reps.message }}
+      <a routerLink="/consultorio/configuracion">Actualizar REPS →</a>
+    </p>
   }
 
   <div class="setup card">
@@ -39,7 +87,10 @@
       @if (patientMode === 'select') {
         <label class="grow">
           Paciente
-          <select [(ngModel)]="selectedPatientId">
+          <select
+            [(ngModel)]="selectedPatientId"
+            (ngModelChange)="onSelectedPatientChange($event)"
+          >
             <option value="">— Seleccione —</option>
             @for (p of patients(); track p.id) {
               <option [value]="p.id">
@@ -50,14 +101,42 @@
         </label>
         <button
           type="button"
-          class="primary"
-          (click)="startEncounter()"
-          [disabled]="loading() || !canWrite()"
+          class="ghost"
+          (click)="scrollToCieSection()"
+          [disabled]="!encounter() && !selectedPatientId"
         >
-          Abrir atención
+          CIE-10 ↓
+        </button>
+        <button
+          type="button"
+          class="primary"
+          (click)="reloadSelectedPatient()"
+          [disabled]="loading() || !canWrite() || (!encounter() && !selectedPatientId)"
+        >
+          {{ loading() ? 'Cargando…' : encounter() ? 'Recargar atención' : 'Abrir atención' }}
         </button>
       }
     </div>
+
+    @if (canWrite() && !encounter() && selectedPatientId) {
+      <p class="banner tip" style="margin-top: 12px">
+        @if (loading()) {
+          Abriendo la atención en el servidor… Mientras tanto puede seguir escribiendo: todo queda
+          guardado en este navegador.
+        } @else if (autosaveStatus() === 'error') {
+          Servidor no disponible. Lo escrito queda en este navegador y se subirá al reconectar.
+        } @else {
+          Puede escribir ya: se guarda en este navegador y se sincroniza con la base de datos al
+          abrir la atención.
+        }
+      </p>
+    }
+    @if (canWrite() && !encounter() && !selectedPatientId && patientMode === 'select') {
+      <p class="banner tip" style="margin-top: 12px">
+        Seleccione un paciente (o créelo). Puede abrir otra pestaña con <strong>+</strong> sin
+        guardar la historia actual: cada pestaña conserva su propio borrador en este navegador.
+      </p>
+    }
 
     @if (patientMode === 'create') {
       <div class="grid-4">
@@ -72,6 +151,51 @@
         <label>Número <input [(ngModel)]="patientForm.documentNumber" /></label>
         <label>Nombres <input [(ngModel)]="patientForm.firstName" /></label>
         <label>Apellidos <input [(ngModel)]="patientForm.lastName" /></label>
+      </div>
+
+      @if (isMinor()) {
+        <div class="guardian-box">
+          <h4>Datos del representante legal / acudiente (menor de edad)</h4>
+          <p class="muted small">
+            Obligatorio para menores (TI, RC o edad &lt; 18). Complete antes de crear el paciente.
+          </p>
+          <div class="grid-3">
+            <label
+              >Nombre acudiente
+              <input [(ngModel)]="patientForm.guardianFullName" required />
+            </label>
+            <label
+              >Tipo documento
+              <select [(ngModel)]="patientForm.guardianDocumentType">
+                @for (t of documentTypes; track t.value) {
+                  <option [value]="t.value">{{ t.label }}</option>
+                }
+              </select>
+            </label>
+            <label
+              >Número documento
+              <input [(ngModel)]="patientForm.guardianDocumentNumber" />
+            </label>
+            <label
+              >Parentesco
+              <input
+                [(ngModel)]="patientForm.guardianRelationship"
+                placeholder="Madre, padre, tutor…"
+              />
+            </label>
+            <label
+              >Teléfono
+              <input [(ngModel)]="patientForm.guardianPhone" />
+            </label>
+            <label
+              >Correo
+              <input [(ngModel)]="patientForm.guardianEmail" />
+            </label>
+          </div>
+        </div>
+      }
+
+      <div class="grid-4">
         <label>Fecha nac. <input type="date" [(ngModel)]="patientForm.birthDate" /></label>
         <label
           >Departamento
@@ -111,12 +235,17 @@
 
   <article class="doc">
     <div class="doc-header">
-      <div>
-        <h1>HISTORIA CLÍNICA ELECTRÓNICA – PSICOLOGÍA</h1>
-        <p class="regs">
-          Cumple Ley 2015 de 2020, Resolución 866 de 2021, Resolución 1888 de 2025 y marco de
-          protección de datos personales.
-        </p>
+      <div class="doc-header-main">
+        @if (patientPhotoSrc()) {
+          <img class="patient-avatar" [src]="patientPhotoSrc()" alt="Foto del paciente" />
+        }
+        <div>
+          <h1>{{ hceTitle() }}</h1>
+          <p class="regs">
+            Cumple Ley 2015 de 2020, Resolución 866 de 2021, Resolución 1888 de 2025 y marco de
+            protección de datos personales.
+          </p>
+        </div>
       </div>
       <div class="gen-box">
         <span>Fecha y hora de generación</span>
@@ -128,12 +257,409 @@
       <div class="main">
         @if (isLocked()) {
           <p class="closed-note">
-            Historia clínica cerrada el {{ record()?.signedAt | date: 'short' }}. Solo puede
-            corregir los datos de identificación del paciente; cualquier información nueva va en una
-            nota de evolución firmada.
+            Historia clínica <strong>cerrada</strong> el
+            {{ record()?.signedAt | date: 'short' }}.
+            Use el bloque verde
+            <strong>«Notas de evolución / control»</strong> para esta sesión.
           </p>
         }
-        <section class="block">
+
+        @if (isLocked() && (!isAuditor() || !content._redacted)) {
+          <section class="block control-mode" id="evoluciones-section">
+            <div class="control-mode-head">
+              <div>
+                <h3>4. Notas de evolución / control</h3>
+                <p class="muted small">
+                  @if (isPhysiotherapyClinic()) {
+                    Registre aquí la evolución de <strong>esta sesión</strong> del paciente. La
+                    historia inicial queda sellada; no es necesario volver a llenarla.
+                  } @else {
+                    Aquí registra el control de <strong>esta sesión</strong> (no vuelva a llenar la
+                    historia inicial). Identificación del paciente más abajo.
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div class="control-past">
+              <h4>
+                Controles firmados
+                @if (evolutions().length) {
+                  <span class="muted">({{ evolutions().length }})</span>
+                }
+              </h4>
+              @if (evolutions().length) {
+                <ul class="evolutions">
+                  @for (ev of evolutions(); track ev.id) {
+                    <li>
+                      <p class="ev-head">
+                        Atención: {{ evolutionAttentionDateOf(ev) | date: 'dd/MM/yyyy HH:mm' }}
+                        <span class="muted"
+                          >· Registrado: {{ ev.signedAt | date: 'dd/MM/yyyy HH:mm' }}</span
+                        >
+                        @if (evolutionIsBackdated(ev)) {
+                          <span class="pill">Registro posterior</span>
+                        }
+                      </p>
+                      @if (evolutionSituationOf(ev); as situation) {
+                        <p class="ev-note"><strong>Situación actual:</strong> {{ situation }}</p>
+                      }
+                      <p class="ev-note">{{ ev.content.note }}</p>
+                      <p class="muted small">
+                        {{ ev.content.professionalName || ev.author?.fullName }}
+                        @if (ev.content.verificationCode) {
+                          · {{ ev.content.verificationCode }}
+                        }
+                      </p>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="muted small empty-evolutions">
+                  Todavía no hay notas de evolución. Complete el formulario de abajo y pulse
+                  <strong>Firmar nota de control</strong>.
+                </p>
+              }
+            </div>
+
+            @if (canWrite()) {
+              <h4 class="control-new-title">Registrar control de esta sesión</h4>
+              <label class="evolution-date"
+                >Fecha de atención clínica
+                <input
+                  type="datetime-local"
+                  [(ngModel)]="evolutionAttentionDate"
+                  [max]="nowLocal()"
+                  title="Día real de la sesión. Puede ser un día anterior; la fecha de registro la fija el sistema."
+                />
+                <span class="muted small">
+                  La fecha y hora de registro en el sistema se guardan automáticamente y no se pueden
+                  modificar.
+                </span>
+              </label>
+              <label
+                >Situación actual
+                <textarea
+                  rows="3"
+                  [(ngModel)]="evolutionCurrentSituation"
+                  placeholder="Situación actual del paciente (se conserva para la próxima evolución)…"
+                  (focusout)="onClinicalTextBlur($event)"
+                ></textarea>
+                @if (evolutionSituationInherited(); as origin) {
+                  <span class="muted small">Pre-llenado desde {{ origin }}. Actualícelo si cambió.</span>
+                }
+              </label>
+              <label
+                >Evolución terapéutica
+                <textarea
+                    rows="6"
+                    [(ngModel)]="evolutionNote"
+                    [placeholder]="
+                      isPhysiotherapyClinic()
+                        ? 'Qué se trabajó, respuesta al tratamiento, avances funcionales, acuerdos…'
+                        : 'Qué se trabajó, evidenció, acuerdos, tareas…'
+                    "
+                    (focusout)="onClinicalTextBlur($event)"
+                  ></textarea>
+              </label>
+              @if (isPhysiotherapyClinic()) {
+                <label
+                  >Evaluación / hallazgos de la sesión (opcional)
+                  <textarea
+                      rows="5"
+                      [(ngModel)]="evolutionMentalExam"
+                      placeholder="Dolor, movilidad, fuerza, funcionalidad, tolerancia al ejercicio…"
+                      (focusout)="onClinicalTextBlur($event)"
+                    ></textarea>
+                </label>
+              } @else {
+                <label
+                  >Examen mental (obligatorio)
+                  <textarea
+                      rows="5"
+                      [(ngModel)]="evolutionMentalExam"
+                      placeholder="Apariencia, conducta, lenguaje, ánimo, pensamiento, percepción, juicio, insight y riesgo (si aplica)…"
+                      (focusout)="onClinicalTextBlur($event)"
+                    ></textarea>
+                </label>
+              }
+
+              <details class="control-soap-optional">
+                <summary>SOAP opcional (S/O/A/P)</summary>
+                <label
+                  >S — Subjetivo
+                  <textarea rows="2" [(ngModel)]="evolutionSoap.subjective"></textarea>
+                </label>
+                <label
+                  >O — Objetivo
+                  <textarea rows="2" [(ngModel)]="evolutionSoap.objective"></textarea>
+                </label>
+                <label
+                  >A — Análisis
+                  <textarea rows="2" [(ngModel)]="evolutionSoap.assessment"></textarea>
+                </label>
+                <label
+                  >P — Plan
+                  <textarea rows="2" [(ngModel)]="evolutionSoap.plan"></textarea>
+                </label>
+              </details>
+
+              @if (
+                !storedSignature() &&
+                !professionalSignature() &&
+                !content.signature.signatureBase64
+              ) {
+                <p class="muted small">
+                  Dibuje su firma para poder firmar el control (o guárdela en el perfil).
+                </p>
+                <div class="pad-wrap">
+                  <canvas
+                    #signaturePadCanvas
+                    class="sign-pad"
+                    aria-label="Firma del profesional para control"
+                    (pointerenter)="ensureSignaturePad()"
+                    (pointerdown)="ensureSignaturePad()"
+                  ></canvas>
+                </div>
+                <div class="sign-actions">
+                  <button type="button" class="ghost" (click)="clearSignature()">Limpiar</button>
+                  <button
+                    type="button"
+                    class="ghost"
+                    (click)="saveSignatureToProfile()"
+                    [disabled]="!hasStroke()"
+                  >
+                    Guardar en mi perfil
+                  </button>
+                </div>
+              } @else {
+                <p class="muted small">
+                  Se usará la firma de su perfil o la de la historia sellada al firmar el control.
+                </p>
+              }
+
+              <div class="control-actions">
+                <button
+                  type="button"
+                  class="primary"
+                  (click)="addEvolution()"
+                  [disabled]="signing()"
+                >
+                  {{ signing() ? 'Firmando…' : 'Firmar nota de control' }}
+                </button>
+                <a
+                  href="#historia-guardada"
+                  class="ghost"
+                  (click)="scrollToSealedOrEvolutions(); $event.preventDefault()"
+                  >Ver historia inicial guardada ↓</a
+                >
+              </div>
+            }
+          </section>
+
+          <section class="block sealed-summary" id="historia-guardada">
+            <div class="control-mode-head">
+              <div>
+                <h3>Historia clínica inicial (guardada)</h3>
+                <p class="muted small">
+                  Contenido sellado de la primera atención (solo lectura).
+                </p>
+              </div>
+              <button type="button" class="ghost" (click)="toggleInitialHistory()">
+                {{
+                  showInitialHistory()
+                    ? 'Ocultar formulario completo'
+                    : 'Ver formulario completo'
+                }}
+              </button>
+            </div>
+
+            @if (isSoap()) {
+              @if (content.soap?.subjective) {
+                <div class="sealed-field">
+                  <strong>S — Subjetivo</strong>
+                  <p>{{ content.soap!.subjective }}</p>
+                </div>
+              }
+              @if (content.soap?.objective) {
+                <div class="sealed-field">
+                  <strong>O — Objetivo</strong>
+                  <p>{{ content.soap!.objective }}</p>
+                </div>
+              }
+              @if (content.soap?.assessment) {
+                <div class="sealed-field">
+                  <strong>A — Análisis</strong>
+                  <p>{{ content.soap!.assessment }}</p>
+                </div>
+              }
+              @if (content.soap?.plan) {
+                <div class="sealed-field">
+                  <strong>P — Plan</strong>
+                  <p>{{ content.soap!.plan }}</p>
+                </div>
+              }
+            } @else if (isPhysiotherapyClinic()) {
+              @if (content.careMinimum?.motive) {
+                <div class="sealed-field">
+                  <strong>Motivo de consulta</strong>
+                  <p>{{ content.careMinimum.motive }}</p>
+                </div>
+              }
+              @if (content.careMinimum?.presentIllness) {
+                <div class="sealed-field">
+                  <strong>Enfermedad actual</strong>
+                  <p>{{ content.careMinimum.presentIllness }}</p>
+                </div>
+              }
+              @if (physio().physioDiagnosis) {
+                <div class="sealed-field">
+                  <strong>Diagnóstico fisioterapéutico</strong>
+                  <p>{{ physio().physioDiagnosis }}</p>
+                </div>
+              }
+              @if (physio().findings) {
+                <div class="sealed-field">
+                  <strong>Hallazgos / observaciones</strong>
+                  <p>{{ physio().findings }}</p>
+                </div>
+              }
+              @if (physio().treatmentObjectives) {
+                <div class="sealed-field">
+                  <strong>Objetivos del tratamiento</strong>
+                  <p>{{ physio().treatmentObjectives }}</p>
+                </div>
+              }
+              @if (physio().interventionPlan) {
+                <div class="sealed-field">
+                  <strong>Plan de intervención</strong>
+                  <p>{{ physio().interventionPlan }}</p>
+                </div>
+              }
+              @if (content.assessment?.impressionNarrative) {
+                <div class="sealed-field">
+                  <strong>Impresión diagnóstica</strong>
+                  <p>{{ content.assessment.impressionNarrative }}</p>
+                </div>
+              }
+              @if (hasFtFunctionalAssessment()) {
+                <div class="sealed-field">
+                  <strong>Valoración por sistemas y funciones</strong>
+                  <ul class="sealed-func-list">
+                    @for (row of ftFunctionalSummaryRows(); track row.label) {
+                      <li>
+                        <span>{{ row.label }}:</span>
+                        {{ row.value }}
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            } @else {
+              @if (content.careMinimum?.motive) {
+                <div class="sealed-field">
+                  <strong>Motivo de consulta</strong>
+                  <p>{{ content.careMinimum.motive }}</p>
+                </div>
+              }
+              @if (content.careMinimum?.presentIllness) {
+                <div class="sealed-field">
+                  <strong>Enfermedad actual</strong>
+                  <p>{{ content.careMinimum.presentIllness }}</p>
+                </div>
+              }
+              @if (content.careMinimum?.systemsReview) {
+                <div class="sealed-field">
+                  <strong>Historia psicosocial</strong>
+                  <p>{{ content.careMinimum.systemsReview }}</p>
+                </div>
+              }
+              @if (content.mentalExam?.narrative) {
+                <div class="sealed-field">
+                  <strong>Examen mental</strong>
+                  <p>{{ content.mentalExam.narrative }}</p>
+                </div>
+              }
+              @if (content.assessment?.impressionNarrative) {
+                <div class="sealed-field">
+                  <strong>Impresión diagnóstica</strong>
+                  <p>{{ content.assessment.impressionNarrative }}</p>
+                </div>
+              }
+            }
+
+            @if (!hasLoadedClinicalSummary()) {
+              <p class="muted small">
+                No se encontró texto clínico en el servidor para esta historia.
+              </p>
+            }
+
+            <div class="sealed-signatures">
+              <div class="sealed-sig">
+                <strong>Firma del profesional</strong>
+                @if (content.signature.signatureBase64) {
+                  <img [src]="content.signature.signatureBase64" alt="Firma del profesional" />
+                } @else {
+                  <span class="muted small">Sin imagen de firma.</span>
+                }
+                <span class="muted small">
+                  {{ content.signature.professionalName }}
+                  @if (content.signature.professionalCard) {
+                    · TP {{ content.signature.professionalCard }}
+                  }
+                </span>
+              </div>
+              <div class="sealed-sig" [class.pending]="!consentDraftPatientSignature()">
+                <strong>Firma del paciente / acudiente</strong>
+                @if (consentDraftPatientSignature(); as patientSig) {
+                  <img [src]="patientSig" alt="Firma del paciente" />
+                  <span class="muted small">Registrada en la base de datos.</span>
+                } @else {
+                  <span class="sig-missing">No hay firma del paciente registrada.</span>
+                  @if (canWrite()) {
+                    <button type="button" class="primary" (click)="scrollToPatientSignature()">
+                      Registrar firma del paciente
+                    </button>
+                    <button
+                      type="button"
+                      class="ghost"
+                      [disabled]="saving()"
+                      (click)="openRemotePatientSignature()"
+                    >
+                      Enviar enlace por WhatsApp (consulta virtual)
+                    </button>
+                  }
+                }
+              </div>
+            </div>
+            @if (sealedConsents().length) {
+              <ul class="sealed-consents">
+                @for (c of sealedConsents(); track c.id) {
+                  <li>
+                    <span>
+                      {{ c.template?.title || 'Consentimiento' }} ·
+                      {{ c.signedAt | date: 'dd/MM/yyyy HH:mm' }}
+                      @if (c.signerName) {
+                        · {{ c.signerName }}
+                      }
+                    </span>
+                    @if (c.pdfStorageKey) {
+                      <button type="button" class="linkish" (click)="openSealedConsentPdf(c.id)">
+                        Ver PDF firmado
+                      </button>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        }
+
+        <section
+          class="block"
+          (input)="onPatientFormInput($event)"
+          (change)="onPatientFormInput($event)"
+        >
           <h3>1. Datos de identificación del paciente</h3>
           <p class="muted small">
             Estos campos actualizan la ficha del paciente y siguen editables aunque la historia esté
@@ -151,6 +677,52 @@
             <label>Número <input [(ngModel)]="patientForm.documentNumber" /></label>
             <label>Nombres <input [(ngModel)]="patientForm.firstName" /></label>
             <label>Apellidos <input [(ngModel)]="patientForm.lastName" /></label>
+          </div>
+
+          @if (isMinor() && patientMode !== 'create') {
+            <div class="guardian-box">
+              <h4>Datos del representante legal / acudiente (menor de edad)</h4>
+              <p class="muted small">
+                Obligatorio para menores (TI, RC o edad &lt; 18). Independiente del contacto de
+                emergencia.
+              </p>
+              <div class="grid-3">
+                <label
+                  >Nombre acudiente
+                  <input [(ngModel)]="patientForm.guardianFullName" required />
+                </label>
+                <label
+                  >Tipo documento
+                  <select [(ngModel)]="patientForm.guardianDocumentType">
+                    @for (t of documentTypes; track t.value) {
+                      <option [value]="t.value">{{ t.label }}</option>
+                    }
+                  </select>
+                </label>
+                <label
+                  >Número documento
+                  <input [(ngModel)]="patientForm.guardianDocumentNumber" />
+                </label>
+                <label
+                  >Parentesco
+                  <input
+                    [(ngModel)]="patientForm.guardianRelationship"
+                    placeholder="Madre, padre, tutor…"
+                  />
+                </label>
+                <label
+                  >Teléfono
+                  <input [(ngModel)]="patientForm.guardianPhone" />
+                </label>
+                <label
+                  >Correo
+                  <input [(ngModel)]="patientForm.guardianEmail" />
+                </label>
+              </div>
+            </div>
+          }
+
+          <div class="grid-4">
             <label
               >Fecha nacimiento <input type="date" [(ngModel)]="patientForm.birthDate"
             /></label>
@@ -225,7 +797,8 @@
                 <option>Particular</option>
               </select>
             </label>
-            <label>Ocupación <input [(ngModel)]="patientForm.occupation" /></label>
+            <label>Profesión <input [(ngModel)]="patientForm.profession" placeholder="Ej. Psicología" /></label>
+            <label>Ocupación <input [(ngModel)]="patientForm.occupation" placeholder="Ej. Docente" /></label>
             <label>Escolaridad <input [(ngModel)]="patientForm.educationLevel" /></label>
             <label
               >Contacto emergencia <input [(ngModel)]="patientForm.emergencyContactName"
@@ -233,62 +806,242 @@
             <label>Tel. emergencia <input [(ngModel)]="patientForm.emergencyContactPhone" /></label>
             <label>Parentesco <input [(ngModel)]="patientForm.emergencyRelationship" /></label>
           </div>
+
+          <div class="patient-photo-box">
+            <div class="patient-photo-frame">
+              @if (patientPhotoSrc()) {
+                <img [src]="patientPhotoSrc()" alt="Foto del paciente" />
+              } @else {
+                <span class="patient-photo-empty">Sin foto</span>
+              }
+            </div>
+            <div class="patient-photo-actions">
+              <p class="patient-photo-title">Foto del paciente</p>
+              <p class="muted small">
+                Use la cámara del computador o del celular, o elija una imagen de la galería.
+              </p>
+              <div class="patient-photo-buttons">
+                <button
+                  type="button"
+                  class="photo-btn photo-btn-primary"
+                  [disabled]="photoUploading() || cameraBusy()"
+                  (click)="openPatientCamera()"
+                >
+                  Tomar foto
+                </button>
+                <label
+                  class="photo-btn photo-btn-secondary"
+                  [class.disabled]="photoUploading()"
+                >
+                  Galería
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    hidden
+                    [disabled]="photoUploading()"
+                    (change)="onPatientPhotoSelected($event)"
+                  />
+                </label>
+                @if (patientPhotoSrc()) {
+                  <button
+                    type="button"
+                    class="photo-btn photo-btn-danger"
+                    [disabled]="photoUploading()"
+                    (click)="clearPatientPhoto()"
+                  >
+                    Quitar
+                  </button>
+                }
+              </div>
+              @if (photoUploading()) {
+                <p class="muted small">Guardando foto…</p>
+              }
+            </div>
+          </div>
+
+          @if (cameraOpen()) {
+            <div class="camera-modal" role="dialog" aria-modal="true" aria-label="Cámara">
+              <div class="camera-dialog">
+                <h4>Cámara</h4>
+                <p class="muted small">Centre el rostro y pulse Capturar.</p>
+                <div class="camera-video-wrap">
+                  <video #patientCameraVideo autoplay playsinline muted></video>
+                  @if (cameraBusy()) {
+                    <p class="camera-wait">Abriendo cámara…</p>
+                  }
+                </div>
+                <div class="camera-actions">
+                  <button
+                    type="button"
+                    class="photo-btn photo-btn-secondary"
+                    (click)="cancelPatientCamera()"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    class="photo-btn photo-btn-primary"
+                    [disabled]="cameraBusy()"
+                    (click)="capturePatientCamera()"
+                  >
+                    Capturar
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+
+          <div class="row-actions">
+            <button type="button" class="ghost" (click)="sendTherapeuticFrame()">
+              Enviar reglas terapéuticas
+            </button>
+            <button type="button" class="ghost" (click)="openDissent()">
+              Disentimiento de hospitalización
+            </button>
+          </div>
         </section>
 
-        <!-- Todo lo clínico queda en solo lectura al sellar; la identificación
-             del paciente se queda fuera del fieldset a propósito. -->
-        <fieldset class="clinical-body" [disabled]="isLocked()">
-          <section class="block">
-            <h3>2. Datos de la atención</h3>
-            <div class="grid-4">
+        @if (!isLocked() || showInitialHistory()) {
+        <section
+          class="block attendance-meta"
+          (input)="onClinicalFormInput($event)"
+          (change)="onClinicalFormInput($event)"
+        >
+          <h3>2. Datos de la atención</h3>
+          <div class="grid-4">
+            <label
+              >ID historia <input [ngModel]="encounter()?.externalCode || '—'" readonly
+              title="Consecutivo propio de la profesional tratante"
+            /></label>
+            <label
+              >Fecha de digitación
+              @if (canEditAttendanceMeta()) {
+                <input
+                  type="datetime-local"
+                  [value]="documentedAtLocal()"
+                  [max]="nowLocal()"
+                  [disabled]="attendanceMetaSaving()"
+                  (change)="onDocumentedAtChange($event)"
+                  title="Fecha en que se digitó la historia (no cambia al guardar o sellar)"
+                />
+              } @else {
+                <input
+                  [ngModel]="
+                    (content.documentedAt || encounter()?.createdAt || encounter()?.startedAt)
+                      | date: 'dd/MM/yyyy HH:mm'
+                  "
+                  readonly
+                  title="Fecha en que se digitó la historia (no cambia al guardar o sellar)"
+                />
+              }
+            </label>
+            <label
+              >Inicio atención
+              <input [ngModel]="encounter()?.startedAt | date: 'dd/MM/yyyy HH:mm'" readonly />
+            </label>
+            <label
+              >Servicio
+              <input [ngModel]="defaultServiceType()" readonly title="Consulta externa (fijo)"
+            /></label>
+            <label
+              >Modalidad
+              <select
+                [ngModel]="modality"
+                (ngModelChange)="onModalityChange($event)"
+                [disabled]="!canEditAttendanceMeta() || attendanceMetaSaving()"
+              >
+                <option value="IN_PERSON">Presencial</option>
+                <option value="VIRTUAL">Virtual</option>
+              </select>
+            </label>
+            <label>IPS / entidad <input [ngModel]="user()?.clinicName" readonly /></label>
+            <label
+              >Profesional
+              <input [ngModel]="encounter()?.professional?.fullName || user()?.fullName" readonly
+            /></label>
+            <label
+              >Ubicación / sede
+              <input
+                [(ngModel)]="location"
+                [readonly]="!canWrite() || isLocked()"
+                title="Dirección del consultorio o sede de atención"
+              />
+            </label>
+            @if (ripsEnabled()) {
               <label
-                >ID historia <input [ngModel]="encounter()?.externalCode || '—'" readonly
-              /></label>
-              <label
-                >Apertura
-                <input [ngModel]="encounter()?.startedAt | date: 'dd/MM/yyyy HH:mm'" readonly
-              /></label>
-              <label
-                >Servicio
-                <input [(ngModel)]="serviceType" placeholder="Consulta externa, urgencias…"
-              /></label>
-              <label
-                >Modalidad
-                <select [(ngModel)]="modality">
-                  <option value="IN_PERSON">Presencial</option>
-                  <option value="VIRTUAL">Virtual</option>
-                </select>
+                >Finalidad
+                <input
+                  [(ngModel)]="purpose"
+                  placeholder="02 - Terapéutico"
+                  [readonly]="attendanceMetaDisabled()"
+                />
               </label>
-              <label>IPS / entidad <input [ngModel]="user()?.clinicName" readonly /></label>
-              <label
-                >Profesional
-                <input [ngModel]="encounter()?.professional?.fullName || user()?.fullName" readonly
-              /></label>
-              <label
-                >Ubicación <input [(ngModel)]="location" placeholder="Consultorio donde se atiende"
-              /></label>
-              <label
-                >Finalidad <input [(ngModel)]="purpose" placeholder="Motivo de la atención"
-              /></label>
-              <label class="span-2">Causa externa <input [(ngModel)]="externalCause" /></label>
+              <label class="span-2"
+                >Causa externa
+                <input
+                  [(ngModel)]="externalCause"
+                  placeholder="15 - Enfermedad General"
+                  [readonly]="attendanceMetaDisabled()"
+                />
+              </label>
               <label
                 >Tipo de visita
                 <input
                   [ngModel]="
                     encounter()?.visitType === 'FOLLOW_UP'
-                      ? 'Subsecuente (SOAP)'
+                      ? 'Control'
                       : encounter()?.visitType === 'INITIAL'
-                        ? 'Primera vez (completa)'
+                        ? 'Primera vez'
                         : '—'
                   "
                   readonly
               /></label>
               <label
-                >Formato nota <input [ngModel]="noteFormat() === 'SOAP' ? 'SOAP' : 'FULL'" readonly
+                >Formato nota
+                <input
+                  [ngModel]="noteFormatLabel()"
+                  readonly
               /></label>
-            </div>
-          </section>
+              <label class="span-2 checkbox-inline">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="generateRipsForThisEncounter"
+                  [disabled]="attendanceMetaDisabled()"
+                />
+                Generar JSON RIPS para esta atención
+              </label>
+            } @else {
+              <label
+                >Tipo de visita
+                <input
+                  [ngModel]="
+                    encounter()?.visitType === 'FOLLOW_UP'
+                      ? 'Control'
+                      : 'Primera vez / particular'
+                  "
+                  readonly
+              /></label>
+              <p class="muted small span-2">
+                RIPS desactivado: Finalidad y Causa externa no se exigen. El RDA se genera al firmar.
+              </p>
+            }
+          </div>
+          @if (attendanceMetaDisabled() && !isLocked()) {
+            <p class="muted small">Seleccione un paciente para editar modalidad y datos RIPS.</p>
+          } @else if (isLocked()) {
+            <p class="muted small">
+              Historia sellada: estos datos quedan de referencia. La modalidad ya no se modifica.
+            </p>
+          }
+        </section>
 
+        <div
+          class="clinical-body"
+          [class.clinical-body-locked]="clinicalFormDisabled()"
+          (input)="onClinicalFormInput($event)"
+          (change)="onClinicalFormInput($event)"
+          (focusout)="onClinicalTextBlur($event)"
+        >
           @if (isAuditor() && content._redacted) {
             <section class="block">
               <h3>Contenido clínico</h3>
@@ -300,435 +1053,1006 @@
           }
 
           @if (!isAuditor() || !content._redacted) {
-            @if (isSoap()) {
-              <section class="block">
-                <h3>3. Nota de evolución (SOAP)</h3>
-                <p class="muted small">
-                  Atención de seguimiento · Subjetivo, Objetivo, Análisis y Plan.
+            @if (isPhysiotherapyClinic()) {
+              <section
+                class="block ft-hce"
+                id="hce-section-3"
+                (input)="onClinicalFormInput($event)"
+                (change)="onClinicalFormInput($event)"
+              >
+                <div class="section3-head">
+                  <div>
+                    <h3>3. Historia clínica de fisioterapia (HC-FT-001)</h3>
+                    <p class="muted small">
+                      Evaluación y plan terapéutico. En valoración: dolor EVA 1–10, fuerza Daniels
+                      (o texto libre), tono y movilidad (goniometría) abiertos.
+                    </p>
+                  </div>
+                </div>
+
+                <label>
+                  Motivo de consulta
+                  <textarea
+                      rows="2"
+                      [(ngModel)]="content.careMinimum.motive"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    ></textarea>
+                </label>
+                <label>
+                  Enfermedad actual
+                  <textarea
+                      rows="4"
+                      [(ngModel)]="content.careMinimum.presentIllness"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    ></textarea>
+                </label>
+
+                <h4>Antecedentes</h4>
+                <div class="ft-grid-2">
+                  @for (item of ftAntecedentKeys; track item.key) {
+                    <label>
+                      {{ item.label }}
+                      <textarea
+                          rows="2"
+                          [(ngModel)]="physio().antecedentsDetail[item.key]"
+                          [readonly]="clinicalFormDisabled()"
+                          (ngModelChange)="onClinicalFieldChange()"
+                        ></textarea>
+                    </label>
+                  }
+                </div>
+
+                <h4>Revisión por sistemas</h4>
+                <table class="ft-check-table">
+                  <thead>
+                    <tr>
+                      <th>Sistema</th>
+                      <th>Normal</th>
+                      <th>Anormal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (sys of ftSystemKeys; track sys.key) {
+                      <tr>
+                        <td>{{ sys.label }}</td>
+                        <td>
+                          <input
+                            type="radio"
+                            [name]="'ft-sys-' + sys.key"
+                            [disabled]="clinicalFormDisabled()"
+                            [checked]="physio().systemsReviewGrid[sys.key] === 'NORMAL'"
+                            (change)="
+                              physio().systemsReviewGrid[sys.key] = 'NORMAL'; onClinicalFieldChange()
+                            "
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="radio"
+                            [name]="'ft-sys-' + sys.key"
+                            [disabled]="clinicalFormDisabled()"
+                            [checked]="physio().systemsReviewGrid[sys.key] === 'ANORMAL'"
+                            (change)="
+                              physio().systemsReviewGrid[sys.key] = 'ANORMAL'; onClinicalFieldChange()
+                            "
+                          />
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                <label>
+                  Detalle revisión por sistemas / otros
+                  <textarea
+                      rows="2"
+                      [(ngModel)]="content.careMinimum.systemsReview"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    ></textarea>
+                </label>
+
+                <h4>Evaluación fisioterapéutica</h4>
+                <label>
+                  Diagnóstico fisioterapéutico
+                  <textarea
+                      rows="2"
+                      [(ngModel)]="physio().physioDiagnosis"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    ></textarea>
+                </label>
+                <label>
+                  Hallazgos / observaciones
+                  <textarea
+                      rows="3"
+                      [(ngModel)]="physio().findings"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    ></textarea>
+                </label>
+
+                <div class="ft-valoracion-block" id="ft-valoracion-funcional">
+                <h4>Valoración por sistemas y funciones</h4>
+                <p class="muted small ft-valoracion-hint">
+                  Dolor = EVA 1–10 · Fuerza = Daniels (o texto libre) · Tono y movilidad = texto libre
+                  (goniometría).
                 </p>
-                <label
-                  >S — Subjetivo
+                <div class="ft-grid-2 ft-func-open">
+                  <label>
+                    Dolor — escala verbal numérica (EVA 1–10)
+                    <select
+                      [(ngModel)]="physio().functionalAssessment['pain']"
+                      [disabled]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    >
+                      <option value="">Sin registrar</option>
+                      @for (n of ftPainScale; track n) {
+                        <option [value]="'' + n">{{ n }} / 10</option>
+                      }
+                    </select>
+                  </label>
+                  <label>
+                    Fuerza muscular — escala Daniels
+                    <select
+                      [(ngModel)]="physio().functionalAssessment['muscleStrength']"
+                      [disabled]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    >
+                      <option value="">Sin registrar / digite abajo</option>
+                      @for (d of ftDanielsScale; track d.value) {
+                        <option [value]="d.value">{{ d.label }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label>
+                    Fuerza muscular — detalle o texto libre
+                    <textarea
+                      rows="2"
+                      [(ngModel)]="physio().functionalAssessment['muscleStrengthDetail']"
+                      placeholder="Segmento, lateralidad o digite libre (si no usa Daniels)…"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    ></textarea>
+                  </label>
+                  <label>
+                    Tono muscular
+                    <textarea
+                      rows="2"
+                      [(ngModel)]="physio().functionalAssessment['muscleTone']"
+                      placeholder="Describa el tono (hipotonía, normal, espasticidad, etc.)…"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    ></textarea>
+                  </label>
+                </div>
+                <label>
+                  Movilidad articular (goniometría)
+                  <textarea
+                    rows="3"
+                    [(ngModel)]="physio().functionalAssessment['jointMobility']"
+                    placeholder="Registre mediciones goniométricas (ART, grados, lado, comparación)…"
+                    [readonly]="clinicalFormDisabled()"
+                    (ngModelChange)="onClinicalFieldChange()"
+                  ></textarea>
+                </label>
+                <table class="ft-check-table">
+                  <thead>
+                    <tr>
+                      <th>Función</th>
+                      <th>Normal</th>
+                      <th>Alterado</th>
+                      <th>N/A</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (fn of ftFunctionalKeys; track fn.key) {
+                      <tr>
+                        <td>{{ fn.label }}</td>
+                        <td>
+                          <input
+                            type="radio"
+                            [name]="'ft-fn-' + fn.key"
+                            [disabled]="clinicalFormDisabled()"
+                            [checked]="physio().functionalAssessment[fn.key] === 'NORMAL'"
+                            (change)="
+                              physio().functionalAssessment[fn.key] = 'NORMAL'; onClinicalFieldChange()
+                            "
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="radio"
+                            [name]="'ft-fn-' + fn.key"
+                            [disabled]="clinicalFormDisabled()"
+                            [checked]="physio().functionalAssessment[fn.key] === 'ALTERADO'"
+                            (change)="
+                              physio().functionalAssessment[fn.key] = 'ALTERADO';
+                              onClinicalFieldChange()
+                            "
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="radio"
+                            [name]="'ft-fn-' + fn.key"
+                            [disabled]="clinicalFormDisabled()"
+                            [checked]="physio().functionalAssessment[fn.key] === 'NA'"
+                            (change)="
+                              physio().functionalAssessment[fn.key] = 'NA'; onClinicalFieldChange()
+                            "
+                          />
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                </div>
+
+                <h4>Diagnóstico fisioterapéutico (codificación)</h4>
+                <div class="ft-grid-2">
+                  <label>
+                    Código
+                    <input
+                      [(ngModel)]="physio().physioDxCode"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    />
+                  </label>
+                  <label>
+                    Descripción
+                    <input
+                        [(ngModel)]="physio().physioDxDescription"
+                        [readonly]="clinicalFormDisabled()"
+                        (ngModelChange)="onClinicalFieldChange()"
+                      />
+                  </label>
+                </div>
+                <label>
+                  Impresión / narrativa diagnóstica
+                  <textarea
+                      rows="2"
+                      [(ngModel)]="content.assessment.impressionNarrative"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    ></textarea>
+                </label>
+
+                <h4>Plan terapéutico</h4>
+                <label>
+                  Objetivos del tratamiento
+                  <textarea
+                      rows="3"
+                      [(ngModel)]="physio().treatmentObjectives"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    ></textarea>
+                </label>
+                <label>
+                  Plan de intervención
+                  <textarea
+                      rows="3"
+                      [(ngModel)]="physio().interventionPlan"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    ></textarea>
+                </label>
+                <div class="ft-grid-3">
+                  <label>
+                    Frecuencia
+                    <input
+                        [(ngModel)]="physio().frequency"
+                        [readonly]="clinicalFormDisabled()"
+                        (ngModelChange)="onClinicalFieldChange()"
+                      />
+                  </label>
+                  <label>
+                    Duración estimada
+                    <input
+                        [(ngModel)]="physio().estimatedDuration"
+                        [readonly]="clinicalFormDisabled()"
+                        (ngModelChange)="onClinicalFieldChange()"
+                      />
+                  </label>
+                  <label>
+                    N.º de sesiones
+                    <input
+                      [(ngModel)]="physio().sessionCount"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    />
+                  </label>
+                </div>
+
+                <h4>Cierre de historia (opcional)</h4>
+                <div class="ft-grid-3">
+                  <label>
+                    Fecha de cierre
+                    <input
+                      type="date"
+                      [(ngModel)]="physio().closure.closedAt"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    />
+                  </label>
+                  <label>
+                    Estado del caso
+                    <input
+                        [(ngModel)]="physio().closure.caseStatus"
+                        placeholder="Activo / Cerrado / Remitido…"
+                        [readonly]="clinicalFormDisabled()"
+                        (ngModelChange)="onClinicalFieldChange()"
+                      />
+                  </label>
+                  <label>
+                    Resultado del tratamiento
+                    <input
+                        [(ngModel)]="physio().closure.treatmentResult"
+                        [readonly]="clinicalFormDisabled()"
+                        (ngModelChange)="onClinicalFieldChange()"
+                      />
+                  </label>
+                </div>
+              </section>
+
+              <section class="block control-mode" id="ft-evoluciones-en-formulario">
+                <div class="control-mode-head">
+                  <div>
+                    <h3>4. Notas de evolución / control</h3>
+                    <p class="muted small">
+                      Tras sellar la historia inicial, registre aquí cada sesión de seguimiento.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="control-past">
+                  <h4>
+                    Controles firmados
+                    @if (evolutions().length) {
+                      <span class="muted">({{ evolutions().length }})</span>
+                    }
+                  </h4>
+                  @if (evolutions().length) {
+                    <ul class="evolutions">
+                      @for (ev of evolutions(); track ev.id) {
+                        <li>
+                          <p class="ev-head">
+                            Atención: {{ evolutionAttentionDateOf(ev) | date: 'dd/MM/yyyy HH:mm' }}
+                            <span class="muted"
+                              >· Registrado: {{ ev.signedAt | date: 'dd/MM/yyyy HH:mm' }}</span
+                            >
+                            @if (evolutionIsBackdated(ev)) {
+                              <span class="pill">Registro posterior</span>
+                            }
+                          </p>
+                          @if (evolutionSituationOf(ev); as situation) {
+                            <p class="ev-note"><strong>Situación actual:</strong> {{ situation }}</p>
+                          }
+                          <p class="ev-note">{{ ev.content.note }}</p>
+                        </li>
+                      }
+                    </ul>
+                  } @else {
+                    <p class="muted small empty-evolutions">
+                      Aún no hay notas de evolución firmadas.
+                    </p>
+                  }
+                </div>
+
+                @if (!isLocked()) {
+                  <p class="banner tip">
+                    Primero complete y pulse <strong>Guardar historia clínica</strong> (sellado).
+                    Después podrá escribir y firmar las notas de evolución de cada sesión.
+                  </p>
+                }
+
+                @if (canWrite() && isLocked()) {
+                  <h4 class="control-new-title">Registrar control de esta sesión</h4>
+                  <label class="evolution-date"
+                    >Fecha de atención clínica
+                    <input
+                      type="datetime-local"
+                      [(ngModel)]="evolutionAttentionDate"
+                      [max]="nowLocal()"
+                      title="Día real de la sesión. Puede ser un día anterior; la fecha de registro la fija el sistema."
+                    />
+                    <span class="muted small">
+                      La fecha y hora de registro en el sistema se guardan automáticamente y no se
+                      pueden modificar.
+                    </span>
+                  </label>
+                  <label
+                    >Situación actual
+                    <textarea
+                      rows="3"
+                      [(ngModel)]="evolutionCurrentSituation"
+                      placeholder="Situación actual del paciente (se conserva para la próxima evolución)…"
+                      (focusout)="onClinicalTextBlur($event)"
+                    ></textarea>
+                    @if (evolutionSituationInherited(); as origin) {
+                      <span class="muted small"
+                        >Pre-llenado desde {{ origin }}. Actualícelo si cambió.</span
+                      >
+                    }
+                  </label>
+                  <label
+                    >Evolución terapéutica
+                    <textarea
+                        rows="6"
+                        [(ngModel)]="evolutionNote"
+                        placeholder="Qué se trabajó, respuesta al tratamiento, avances funcionales, acuerdos…"
+                        (focusout)="onClinicalTextBlur($event)"
+                      ></textarea>
+                  </label>
+                  <label
+                    >Evaluación / hallazgos de la sesión (opcional)
+                    <textarea
+                        rows="5"
+                        [(ngModel)]="evolutionMentalExam"
+                        placeholder="Dolor, movilidad, fuerza, funcionalidad, tolerancia al ejercicio…"
+                        (focusout)="onClinicalTextBlur($event)"
+                      ></textarea>
+                  </label>
+                  <details class="control-soap-optional">
+                    <summary>SOAP opcional (S/O/A/P)</summary>
+                    <label
+                      >S — Subjetivo
+                      <textarea rows="2" [(ngModel)]="evolutionSoap.subjective"></textarea>
+                    </label>
+                    <label
+                      >O — Objetivo
+                      <textarea rows="2" [(ngModel)]="evolutionSoap.objective"></textarea>
+                    </label>
+                    <label
+                      >A — Análisis
+                      <textarea rows="2" [(ngModel)]="evolutionSoap.assessment"></textarea>
+                    </label>
+                    <label
+                      >P — Plan
+                      <textarea rows="2" [(ngModel)]="evolutionSoap.plan"></textarea>
+                    </label>
+                  </details>
+                  <div class="control-actions">
+                    <button
+                      type="button"
+                      class="primary"
+                      (click)="addEvolution()"
+                      [disabled]="signing()"
+                    >
+                      {{ signing() ? 'Firmando…' : 'Firmar nota de control' }}
+                    </button>
+                  </div>
+                }
+              </section>
+            } @else if (isSoap()) {
+              <section class="block" id="hce-section-3">
+                <div class="section3-head">
+                  <div>
+                    <h3>3. Nota de evolución (SOAP)</h3>
+                    <p class="muted small">
+                      Atención de seguimiento · Subjetivo, Objetivo, Análisis y Plan.
+                    </p>
+                  </div>
+                </div>
+                <label>
+                  S — Subjetivo
                   <textarea
                     rows="3"
                     [(ngModel)]="content.soap!.subjective"
-                    [readonly]="!canWrite()"
+                    [readonly]="clinicalFormDisabled()"
                   ></textarea>
                 </label>
-                <label
-                  >O — Objetivo
+                <label>
+                  O — Objetivo
                   <textarea
                     rows="3"
                     [(ngModel)]="content.soap!.objective"
-                    [readonly]="!canWrite()"
+                    [readonly]="clinicalFormDisabled()"
                   ></textarea>
                 </label>
-                <label
-                  >A — Análisis / evaluación
+                <label>
+                  A — Análisis / evaluación
                   <textarea
                     rows="3"
                     [(ngModel)]="content.soap!.assessment"
-                    [readonly]="!canWrite()"
+                    [readonly]="clinicalFormDisabled()"
                   ></textarea>
                 </label>
-                <label
-                  >P — Plan
+                <label>
+                  P — Plan
                   <textarea
                     rows="3"
                     [(ngModel)]="content.soap!.plan"
-                    [readonly]="!canWrite()"
+                    [readonly]="clinicalFormDisabled()"
                   ></textarea>
                 </label>
-
-                <h4>Diagnósticos (CIE-10)</h4>
-                <p class="muted small catalog-hint">
-                  Escriba el código o descripción para agregar diagnósticos a la evolución.
-                </p>
-                <div
-                  class="search-row"
-                  (mouseenter)="openCieCatalog()"
-                  (mouseleave)="onCieMouseLeave($event)"
-                  (focusin)="openCieCatalog()"
-                  (focusout)="scheduleCloseCie()"
-                >
-                  <div class="catalog-input-row">
-                    <input
-                      placeholder="Código CIE-10 o descripción…"
-                      [(ngModel)]="cieQuery"
-                      (ngModelChange)="onCieQueryChange()"
-                      (keydown.enter)="commitCieFromInput($event)"
-                      autocomplete="off"
-                      [disabled]="!canWrite()"
-                    />
-                    <button
-                      type="button"
-                      class="ghost"
-                      (mousedown)="$event.preventDefault()"
-                      (click)="commitCieFromInput()"
-                      [disabled]="!canWrite()"
-                    >
-                      Agregar código
-                    </button>
-                  </div>
-                  @if (cieOpen() && cieResults().length) {
-                    <ul class="suggest" (mousedown)="$event.preventDefault()">
-                      @for (item of cieResults(); track item.id) {
-                        <li>
-                          <button type="button" (click)="addDiagnosis(item)">
-                            <strong>{{ item.code }}</strong> — {{ item.description }}
-                          </button>
-                        </li>
-                      }
-                    </ul>
-                  }
-                </div>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Código</th>
-                      <th>Descripción</th>
-                      <th>Tipo</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (d of diagnoses; track $index) {
-                      <tr>
-                        <td>
-                          <input
-                            class="code-cell"
-                            [(ngModel)]="d.cieCode"
-                            [readonly]="!canWrite()"
-                          />
-                        </td>
-                        <td>
-                          <input [(ngModel)]="d.description" [readonly]="!canWrite()" />
-                        </td>
-                        <td>
-                          <select [(ngModel)]="d.type" [disabled]="!canWrite()">
-                            <option value="IMPRESSION">Impresión</option>
-                            <option value="PRINCIPAL">Principal</option>
-                            <option value="RELATED">Relacionado</option>
-                          </select>
-                        </td>
-                        <td>
-                          @if (canWrite()) {
-                            <button type="button" class="ghost" (click)="removeDiagnosis($index)">
-                              Quitar
-                            </button>
-                          }
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
               </section>
             } @else {
-              <section class="block">
-                <h3>3. Datos mínimos de atención (Res. 866)</h3>
-                <label
-                  >Motivo de consulta
-                  <textarea rows="2" [(ngModel)]="content.careMinimum.motive"></textarea>
+              <section class="block" id="hce-section-3">
+                <div class="section3-head">
+                  <div>
+                    <h3>3. Datos mínimos de atención (Res. 866)</h3>
+                    @if (isLocked()) {
+                      <p class="muted small">Historia guardada (solo lectura).</p>
+                    }
+                  </div>
+                </div>
+                <label>
+                  Motivo de consulta
+                  <textarea
+                      rows="2"
+                      [(ngModel)]="content.careMinimum.motive"
+                      [readonly]="clinicalFormDisabled()"
+                    ></textarea>
                 </label>
-                <label
-                  >Enfermedad actual
-                  <textarea rows="3" [(ngModel)]="content.careMinimum.presentIllness"></textarea>
+                <label>
+                  Enfermedad actual
+                  <textarea
+                      rows="3"
+                      [(ngModel)]="content.careMinimum.presentIllness"
+                      [readonly]="clinicalFormDisabled()"
+                    ></textarea>
                 </label>
-                <label
-                  >Antecedentes
-                  <textarea rows="3" [(ngModel)]="content.careMinimum.antecedents"></textarea>
-                </label>
-                <label
-                  >Revisión por sistemas
-                  <textarea rows="2" [(ngModel)]="content.careMinimum.systemsReview"></textarea>
+
+                <h4>Antecedentes</h4>
+                @if (content.careMinimum.antecedentFlags; as flags) {
+                  <div class="antecedent-grid">
+                    @for (
+                      key of ['personales', 'psiquiatricos', 'familiares', 'toxicos'];
+                      track key
+                    ) {
+                      <div class="antecedent-item">
+                        <label class="checkbox-inline">
+                            <input
+                              type="checkbox"
+                              [(ngModel)]="$any(flags)[key].applies"
+                              [disabled]="clinicalFormDisabled()"
+                            />
+                            {{
+                              key === 'personales'
+                                ? 'Personales'
+                                : key === 'psiquiatricos'
+                                  ? 'Psiquiátricos'
+                                  : key === 'familiares'
+                                    ? 'Familiares'
+                                    : 'Tóxicos'
+                            }}
+                            (Aplica)
+                          </label>
+                        @if ($any(flags)[key].applies) {
+                          <input
+                              [(ngModel)]="$any(flags)[key].detail"
+                              placeholder="Detalle breve…"
+                              [readonly]="clinicalFormDisabled()"
+                            />
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                <label>
+                  Historia psicosocial
+                  <textarea
+                      rows="4"
+                      [(ngModel)]="content.careMinimum.systemsReview"
+                      [readonly]="clinicalFormDisabled()"
+                    ></textarea>
                 </label>
 
                 <h4>Examen mental</h4>
-                <div class="grid-3">
-                  <label
-                    >Apariencia
-                    <textarea rows="2" [(ngModel)]="content.mentalExam.appearance"></textarea>
-                  </label>
-                  <label
-                    >Conducta
-                    <textarea rows="2" [(ngModel)]="content.mentalExam.behavior"></textarea>
-                  </label>
-                  <label
-                    >Lenguaje <textarea rows="2" [(ngModel)]="content.mentalExam.speech"></textarea>
-                  </label>
-                  <label
-                    >Ánimo <textarea rows="2" [(ngModel)]="content.mentalExam.mood"></textarea>
-                  </label>
-                  <label
-                    >Afecto <textarea rows="2" [(ngModel)]="content.mentalExam.affect"></textarea>
-                  </label>
-                  <label
-                    >Pensamiento
-                    <textarea rows="2" [(ngModel)]="content.mentalExam.thought"></textarea>
-                  </label>
-                  <label
-                    >Percepción
-                    <textarea rows="2" [(ngModel)]="content.mentalExam.perception"></textarea>
-                  </label>
-                  <label
-                    >Juicio <textarea rows="2" [(ngModel)]="content.mentalExam.judgment"></textarea>
-                  </label>
-                  <label
-                    >Insight <textarea rows="2" [(ngModel)]="content.mentalExam.insight"></textarea>
-                  </label>
-                </div>
-
-                <label
-                  >Impresión diagnóstica (narrativa)
+                <p class="muted small">
+                  Incluya aquí, si aplica, valoración de riesgo (ideación suicida, heteroagresividad
+                  u otras alertas). Ya no hay un bloque separado de «riesgo suicida».
+                </p>
+                <label>
+                  Descripción libre
                   <textarea
-                    rows="3"
-                    [(ngModel)]="content.assessment.impressionNarrative"
-                  ></textarea>
-                </label>
-                <label
-                  >Observaciones
-                  <textarea rows="2" [(ngModel)]="content.assessment.observations"></textarea>
-                </label>
-                <label
-                  >Plan de manejo (una línea por ítem)
-                  <textarea rows="3" [(ngModel)]="managementPlanText"></textarea>
+                      rows="6"
+                      [(ngModel)]="content.mentalExam.narrative"
+                      placeholder="Apariencia, conducta, lenguaje, ánimo, pensamiento, percepción, juicio, insight y riesgo (si aplica)…"
+                      [readonly]="clinicalFormDisabled()"
+                    ></textarea>
                 </label>
 
-                <h4>Diagnósticos (CIE-10)</h4>
-                <p class="muted small catalog-hint">
-                  Escriba el código o descripción, o ponga el cursor / pase el mouse sobre el campo
-                  para ver la lista.
-                </p>
-                <div
-                  class="search-row"
-                  (mouseenter)="openCieCatalog()"
-                  (mouseleave)="onCieMouseLeave($event)"
-                  (focusin)="openCieCatalog()"
-                  (focusout)="scheduleCloseCie()"
-                >
-                  <div class="catalog-input-row">
-                    <input
-                      placeholder="Código CIE-10 o descripción…"
-                      [(ngModel)]="cieQuery"
-                      (ngModelChange)="onCieQueryChange()"
-                      (keydown.enter)="commitCieFromInput($event)"
-                      autocomplete="off"
-                    />
-                    <button
-                      type="button"
-                      class="ghost"
-                      (mousedown)="$event.preventDefault()"
-                      (click)="commitCieFromInput()"
-                    >
-                      Agregar código
-                    </button>
-                  </div>
-                  @if (cieOpen() && cieResults().length) {
-                    <ul class="suggest" (mousedown)="$event.preventDefault()">
-                      @for (item of cieResults(); track item.id) {
-                        <li>
-                          <button type="button" (click)="addDiagnosis(item)">
-                            <strong>{{ item.code }}</strong>
-                            @if (item.cie11Code) {
-                              <span class="muted"> / {{ item.cie11Code }}</span>
-                            }
-                            — {{ item.description }}
-                            @if (item.category) {
-                              <span class="pill">{{ item.category }}</span>
-                            }
-                          </button>
-                        </li>
-                      }
-                    </ul>
-                  }
-                </div>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Código</th>
-                      <th>Descripción</th>
-                      <th>Tipo</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (d of diagnoses; track $index) {
-                      <tr>
-                        <td>
-                          <input
-                            class="code-cell"
-                            [(ngModel)]="d.cieCode"
-                            placeholder="Ej. F41.1"
-                            (focus)="openCieForRow($index)"
-                            (ngModelChange)="onDiagnosisCodeChange($index)"
-                          />
-                          @if (cieRowOpen() === $index && cieRowResults().length) {
-                            <ul class="suggest inline" (mousedown)="$event.preventDefault()">
-                              @for (item of cieRowResults(); track item.id) {
-                                <li>
-                                  <button
-                                    type="button"
-                                    (click)="applyDiagnosisFromCatalog($index, item)"
-                                  >
-                                    <strong>{{ item.code }}</strong>
-                                    @if (item.cie11Code) {
-                                      <span class="muted"> / {{ item.cie11Code }}</span>
-                                    }
-                                    — {{ item.description }}
-                                  </button>
-                                </li>
-                              }
-                            </ul>
-                          }
-                        </td>
-                        <td>
-                          <input
-                            class="desc-cell"
-                            [(ngModel)]="d.description"
-                            placeholder="Descripción"
-                          />
-                        </td>
-                        <td>
-                          <select [(ngModel)]="d.type">
-                            <option value="PRINCIPAL">Principal</option>
-                            <option value="RELATED">Relacionado</option>
-                            <option value="IMPRESSION">Impresión</option>
-                          </select>
-                        </td>
-                        <td>
-                          <button type="button" class="linkish" (click)="removeDiagnosis($index)">
-                            Quitar
-                          </button>
-                        </td>
-                      </tr>
-                    } @empty {
-                      <tr>
-                        <td colspan="4" class="empty">Sin diagnósticos</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+                <label>
+                  Impresión diagnóstica (narrativa)
+                  <textarea
+                      rows="3"
+                      [(ngModel)]="content.assessment.impressionNarrative"
+                      [readonly]="clinicalFormDisabled()"
+                    ></textarea>
+                </label>
 
-                <h4>Procedimientos / intervenciones (CUPS)</h4>
-                <p class="muted small catalog-hint">
-                  Escriba el código o descripción, o ponga el cursor / pase el mouse sobre el campo
-                  para ver la lista.
-                </p>
-                <div
-                  class="search-row"
-                  (mouseenter)="openCupsCatalog()"
-                  (mouseleave)="onCupsMouseLeave($event)"
-                  (focusin)="openCupsCatalog()"
-                  (focusout)="scheduleCloseCups()"
-                >
-                  <div class="catalog-input-row">
-                    <input
-                      placeholder="Código CUPS o descripción…"
-                      [(ngModel)]="cupsQuery"
-                      (ngModelChange)="onCupsQueryChange()"
-                      (keydown.enter)="commitCupsFromInput($event)"
-                      autocomplete="off"
-                    />
-                    <button
-                      type="button"
-                      class="ghost"
-                      (mousedown)="$event.preventDefault()"
-                      (click)="commitCupsFromInput()"
-                    >
-                      Agregar código
-                    </button>
-                  </div>
-                  @if (cupsOpen() && cupsResults().length) {
-                    <ul class="suggest" (mousedown)="$event.preventDefault()">
-                      @for (item of cupsResults(); track item.id) {
-                        <li>
-                          <button type="button" (click)="addProcedure(item)">
-                            <strong>{{ item.code }}</strong> — {{ item.description }}
-                          </button>
-                        </li>
-                      }
-                    </ul>
-                  }
-                </div>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Código</th>
-                      <th>Descripción</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (p of procedures; track $index) {
-                      <tr>
-                        <td>
-                          <input
-                            class="code-cell"
-                            [(ngModel)]="p.cupsCode"
-                            placeholder="Ej. 890201"
-                            (focus)="openCupsForRow($index)"
-                            (ngModelChange)="onProcedureCodeChange($index)"
-                          />
-                          @if (cupsRowOpen() === $index && cupsRowResults().length) {
-                            <ul class="suggest inline" (mousedown)="$event.preventDefault()">
-                              @for (item of cupsRowResults(); track item.id) {
-                                <li>
-                                  <button
-                                    type="button"
-                                    (click)="applyProcedureFromCatalog($index, item)"
-                                  >
-                                    <strong>{{ item.code }}</strong> — {{ item.description }}
-                                  </button>
-                                </li>
-                              }
-                            </ul>
-                          }
-                        </td>
-                        <td>
-                          <input
-                            class="desc-cell"
-                            [(ngModel)]="p.description"
-                            placeholder="Descripción"
-                          />
-                        </td>
-                        <td>
-                          <button type="button" class="linkish" (click)="removeProcedure($index)">
-                            Quitar
-                          </button>
-                        </td>
-                      </tr>
-                    } @empty {
-                      <tr>
-                        <td colspan="3" class="empty">Sin procedimientos</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-
-                <div class="grid-3">
-                  <label
-                    >Medicamentos (separar por coma)
-                    <textarea rows="2" [(ngModel)]="medicationsText"></textarea>
-                  </label>
-                  <label
-                    >Alergias (separar por coma)
-                    <textarea rows="2" [(ngModel)]="allergiesText"></textarea>
-                  </label>
-                  <label
-                    >Signos vitales
-                    <textarea rows="2" [(ngModel)]="content.vitals.notes"></textarea>
-                  </label>
-                </div>
-                <div class="grid-2">
-                  <label
-                    >Riesgo suicida / alertas
-                    <input [(ngModel)]="content.risks.suicideRisk" />
-                  </label>
-                  <label>Notas de riesgo <input [(ngModel)]="content.risks.notes" /></label>
-                </div>
+                <!-- Riesgo suicida integrado en examen mental (ya no bloque aparte). -->
               </section>
             }
+          }
 
-            @if (encounter() && canWrite()) {
+        </div>
+        } @else if (isLocked()) {
+          <p class="banner tip">
+            Historia inicial oculta.
+            <button type="button" class="linkish" (click)="toggleInitialHistory()">
+              Consultar historia clínica inicial
+            </button>
+          </p>
+        }
+
+        @if (!isAuditor() || !content._redacted) {
+          <section
+            class="block cie-block"
+            id="cie-section"
+            (input)="onDiagnosisFormInput($event)"
+            (change)="onDiagnosisFormInput($event)"
+          >
+            <h3>
+              @if (isPhysiotherapyClinic()) {
+                5. Diagnósticos (CIE-10)
+              } @else {
+                4. Diagnósticos (CIE-10)
+              }
+            </h3>
+            @if (!encounter() && !selectedPatientId) {
+              <p class="banner tip">Seleccione un paciente arriba para ver y editar los CIE-10.</p>
+            } @else if (isLocked()) {
+              <p class="muted small">
+                La historia ya está sellada; aquí puede completar los códigos CIE-10. La fecha de
+                digitación no cambia.
+              </p>
+            } @else {
+              <p class="muted small catalog-hint">
+                Escriba el código o descripción, o pase el mouse sobre el campo para ver el catálogo
+                configurado.
+              </p>
+            }
+            <div
+              class="search-row"
+              (mouseenter)="openCieCatalog()"
+              (mouseleave)="onCieMouseLeave($event)"
+              (focusin)="openCieCatalog()"
+              (focusout)="scheduleCloseCie()"
+            >
+              <div class="catalog-input-row">
+                <input
+                  placeholder="Código CIE-10 o descripción…"
+                  [(ngModel)]="cieQuery"
+                  (ngModelChange)="onCieQueryChange()"
+                  (keydown.enter)="commitCieFromInput($event)"
+                  autocomplete="off"
+                  [disabled]="cieFieldsDisabled()"
+                />
+                <button
+                  type="button"
+                  class="ghost"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="commitCieFromInput()"
+                  [disabled]="cieFieldsDisabled()"
+                >
+                  Agregar código
+                </button>
+              </div>
+              @if (cieOpen() && cieResults().length) {
+                <ul class="suggest" (mousedown)="$event.preventDefault()">
+                  @for (item of cieResults(); track item.id) {
+                    <li>
+                      <button type="button" (click)="addDiagnosis(item)">
+                        <strong>{{ item.code }}</strong>
+                        @if (item.cie11Code) {
+                          <span class="muted"> / {{ item.cie11Code }}</span>
+                        }
+                        — {{ item.description }}
+                        @if (item.category) {
+                          <span class="pill">{{ item.category }}</span>
+                        }
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Descripción</th>
+                  <th>Tipo</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (d of diagnoses; track $index) {
+                  <tr>
+                    <td>
+                      <input
+                        class="code-cell"
+                        [(ngModel)]="d.cieCode"
+                        placeholder="Ej. F41.1"
+                        [disabled]="cieFieldsDisabled()"
+                        (focus)="openCieForRow($index)"
+                        (ngModelChange)="onDiagnosisCodeChange($index)"
+                      />
+                      @if (cieRowOpen() === $index && cieRowResults().length) {
+                        <ul class="suggest inline" (mousedown)="$event.preventDefault()">
+                          @for (item of cieRowResults(); track item.id) {
+                            <li>
+                              <button
+                                type="button"
+                                (click)="applyDiagnosisFromCatalog($index, item)"
+                              >
+                                <strong>{{ item.code }}</strong>
+                                @if (item.cie11Code) {
+                                  <span class="muted"> / {{ item.cie11Code }}</span>
+                                }
+                                — {{ item.description }}
+                              </button>
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </td>
+                    <td>
+                      <input
+                        class="desc-cell"
+                        [(ngModel)]="d.description"
+                        placeholder="Descripción"
+                        [disabled]="cieFieldsDisabled()"
+                      />
+                    </td>
+                    <td>
+                      <select [(ngModel)]="d.type" [disabled]="cieFieldsDisabled()">
+                        <option value="PRINCIPAL">Principal</option>
+                        <option value="RELATED">Relacionado</option>
+                        <option value="IMPRESSION">Impresión</option>
+                      </select>
+                    </td>
+                    <td>
+                      @if (!cieFieldsDisabled()) {
+                        <button type="button" class="linkish" (click)="removeDiagnosis($index)">
+                          Quitar
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="empty">Sin diagnósticos — agregue un código arriba</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            @if (isLocked() && canWrite() && encounter()) {
+              <div class="row-actions">
+                <button
+                  type="button"
+                  class="primary"
+                  [disabled]="saving() || cieFieldsDisabled()"
+                  (click)="saveDiagnosesOnly()"
+                >
+                  {{ saving() ? 'Guardando…' : 'Guardar diagnósticos CIE-10' }}
+                </button>
+              </div>
+            }
+          </section>
+
+          <section
+            class="block cups-block"
+            id="cups-section"
+            (input)="onProcedureFormInput($event)"
+            (change)="onProcedureFormInput($event)"
+          >
+            <h3>
+              @if (isPhysiotherapyClinic()) {
+                6. Procedimientos (CUPS)
+              } @else {
+                5. Procedimientos (CUPS)
+              }
+            </h3>
+            @if (!encounter() && !selectedPatientId) {
+              <p class="banner tip">Seleccione un paciente arriba para ver y editar los CUPS.</p>
+            } @else if (isLocked()) {
+              <p class="muted small">
+                Consultas, evaluaciones, psicoterapias e intervenciones. Puede completarlos aunque la
+                HC esté sellada.
+              </p>
+            } @else {
+              <p class="muted small catalog-hint">
+                Catálogo psicología/psiquiatría: consultas, pruebas, psicoterapias, interconsultas y
+                remisiones. Escriba el código o pase el mouse sobre el campo.
+              </p>
+            }
+            <div
+              class="search-row"
+              (mouseenter)="openCupsCatalog()"
+              (mouseleave)="onCupsMouseLeave($event)"
+              (focusin)="openCupsCatalog()"
+              (focusout)="scheduleCloseCups()"
+            >
+              <div class="catalog-input-row">
+                <input
+                  placeholder="Código CUPS o descripción…"
+                  [(ngModel)]="cupsQuery"
+                  (ngModelChange)="onCupsQueryChange()"
+                  (keydown.enter)="commitCupsFromInput($event)"
+                  autocomplete="off"
+                  [disabled]="cupsFieldsDisabled()"
+                />
+                <button
+                  type="button"
+                  class="ghost"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="commitCupsFromInput()"
+                  [disabled]="cupsFieldsDisabled()"
+                >
+                  Agregar código
+                </button>
+              </div>
+              @if (cupsOpen() && cupsResults().length) {
+                <ul class="suggest" (mousedown)="$event.preventDefault()">
+                  @for (item of cupsResults(); track item.id) {
+                    <li>
+                      <button type="button" (click)="addProcedure(item)">
+                        <strong>{{ item.code }}</strong> — {{ item.description }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>CUPS</th>
+                  <th>Procedimiento</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of procedures; track $index) {
+                  <tr>
+                    <td>
+                      <input
+                        class="code-cell"
+                        [(ngModel)]="p.cupsCode"
+                        placeholder="Ej. 890208"
+                        [disabled]="cupsFieldsDisabled()"
+                        (focus)="openCupsForRow($index)"
+                        (ngModelChange)="onProcedureCodeChange($index)"
+                      />
+                      @if (cupsRowOpen() === $index && cupsRowResults().length) {
+                        <ul class="suggest inline" (mousedown)="$event.preventDefault()">
+                          @for (item of cupsRowResults(); track item.id) {
+                            <li>
+                              <button
+                                type="button"
+                                (click)="applyProcedureFromCatalog($index, item)"
+                              >
+                                <strong>{{ item.code }}</strong> — {{ item.description }}
+                              </button>
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </td>
+                    <td>
+                      <input
+                        class="desc-cell"
+                        [(ngModel)]="p.description"
+                        placeholder="Descripción"
+                        [disabled]="cupsFieldsDisabled()"
+                      />
+                    </td>
+                    <td>
+                      @if (!cupsFieldsDisabled()) {
+                        <button type="button" class="linkish" (click)="removeProcedure($index)">
+                          Quitar
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3" class="empty">
+                      Sin procedimientos — agregue un CUPS arriba (ej. 890208 consulta psicología)
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            @if (isLocked() && canWrite() && encounter()) {
+              <div class="row-actions">
+                <button
+                  type="button"
+                  class="primary"
+                  [disabled]="saving() || cupsFieldsDisabled()"
+                  (click)="saveProceduresOnly()"
+                >
+                  {{ saving() ? 'Guardando…' : 'Guardar procedimientos CUPS' }}
+                </button>
+              </div>
+            }
+          </section>
+        }
+
+        @if (!isSoap() && (!isAuditor() || !content._redacted)) {
+          <section
+            class="block rda-info"
+            (input)="onClinicalFormInput($event)"
+            (change)="onClinicalFormInput($event)"
+          >
+            <h3>
+              @if (isPhysiotherapyClinic()) {
+                7. Registro Digital de Atención (RDA) — Res. 1888 de 2025
+              } @else {
+                6. Registro Digital de Atención (RDA) — Res. 1888 de 2025
+              }
+            </h3>
+            <p class="muted small">
+              <strong>¿Para qué es?</strong> Es el paquete digital (formato FHIR) que HabiliSALUD
+              genera y conserva para interoperabilidad con el Ministerio de Salud (Res. 866 / Ley
+              2015). <strong>No es un formulario que deba llenar a mano</strong>: al pulsar
+              <em>Guardar historia clínica</em> el sistema arma el RDA con anamnesis, examen mental,
+              evaluación, plan y consentimientos.
+            </p>
+            <div class="grid-3">
+              <label
+                >ID RDA (referencia)
+                <input
+                  [ngModel]="encounter()?.externalCode ? encounter()!.externalCode + '-01' : '—'"
+                  readonly
+                /></label>
+              <label
+                >Device ID
+                <input
+                  [(ngModel)]="content.rdaMeta.deviceId"
+                  readonly
+                  placeholder="Opcional — lo asigna el sistema"
+                /></label>
+              <label
+                >Ubicación física
+                <input
+                  [(ngModel)]="content.rdaMeta.physicalLocation"
+                  [readonly]="isLocked() || attendanceMetaDisabled()"
+                  placeholder="Opcional"
+                /></label>
+            </div>
+            @if (!isLocked() && canWrite() && encounter()) {
+              <p class="muted small">Opcional: marque qué bloques incluir en el RDA al firmar.</p>
+              <div class="checks">
+                <label><input type="checkbox" [(ngModel)]="rdaEvents.anamnesis" /> Anamnesis</label>
+                <label
+                  ><input type="checkbox" [(ngModel)]="rdaEvents.mentalExam" /> Examen mental</label
+                >
+                <label
+                  ><input type="checkbox" [(ngModel)]="rdaEvents.evaluation" /> Evaluación</label
+                >
+                <label
+                  ><input type="checkbox" [(ngModel)]="rdaEvents.managementPlan" /> Plan de
+                  manejo</label
+                >
+                <label><input type="checkbox" [(ngModel)]="rdaEvents.education" /> Educación</label>
+                <label
+                  ><input type="checkbox" [(ngModel)]="rdaEvents.consents" /> Consentimientos</label
+                >
+              </div>
+            } @else {
+              <p class="muted small">
+                Con la historia sellada el RDA ya quedó generado; esta sección es solo informativa.
+              </p>
+            }
+          </section>
+        }
+
+        <fieldset
+          class="clinical-body clinical-body-continued"
+          [disabled]="clinicalFormDisabled()"
+          (input)="onClinicalFormInput($event)"
+          (change)="onClinicalFormInput($event)"
+          (focusout)="onClinicalTextBlur($event)"
+        >
+
+            @if (encounter() && canWrite() && supportsIncapacity()) {
               <section class="block">
                 <h3>Incapacidad</h3>
                 <div class="grid-4">
@@ -767,124 +2091,51 @@
                   </ul>
                 }
               </section>
-
-              <section class="block">
-                <h3>Multimedia clínica</h3>
-                <p class="muted small">
-                  Fotos, dibujos / pruebas proyectivas, imágenes (PHOTO / DRAWING).
-                </p>
-                <div class="grid-4">
-                  <label
-                    >Archivo
-                    <input type="file" (change)="onAttachmentFile($event)" accept="image/*,.pdf"
-                  /></label>
-                  <label>Etiqueta <input [(ngModel)]="attachmentLabel" /></label>
-                  <label
-                    >Categoría
-                    <select [(ngModel)]="attachmentCategory">
-                      <option value="PHOTO">Foto</option>
-                      <option value="DRAWING">Dibujo</option>
-                      <option value="IMAGE">Imagen</option>
-                      <option value="LAB">Lab</option>
-                      <option value="EXTERNAL_HCE">HCE externa</option>
-                      <option value="EVOLUTION_MEDIA">Evolución</option>
-                      <option value="OTHER">Otro</option>
-                    </select>
-                  </label>
-                  <label>Leyenda <input [(ngModel)]="attachmentCaption" /></label>
-                </div>
-                <button type="button" class="primary" (click)="uploadAttachment()">
-                  Subir adjunto
-                </button>
-              </section>
             }
 
-            @if (encounter() && attachments().length) {
-              <section class="block">
-                <h3>Adjuntos de la atención</h3>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Etiqueta</th>
-                      <th>Categoría</th>
-                      <th>Tamaño</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (a of attachments(); track a.id) {
-                      <tr>
-                        <td>{{ a.label }}</td>
-                        <td>{{ a.category }}</td>
-                        <td>{{ a.sizeBytes / 1024 | number: '1.0-0' }} KB</td>
-                        <td>
-                          <button type="button" class="ghost" (click)="openAttachment(a.id)">
-                            Ver
-                          </button>
-                          @if (canWrite()) {
-                            <button type="button" class="ghost" (click)="removeAttachment(a.id)">
-                              Eliminar
-                            </button>
-                          }
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </section>
+        </fieldset>
+
+          @if (canWrite() && (!isLocked() || patientConsentPending())) {
+          <section class="block consent-block" id="consent-section">
+            <h3>
+              @if (isPhysiotherapyClinic()) {
+                8. Consentimientos y firmas (paciente + profesional)
+              } @else {
+                7. Consentimientos (plantilla legal + firma)
+              }
+            </h3>
+            @if (patientConsentPending()) {
+              <p class="banner tip">
+                <strong>Firma del paciente pendiente.</strong> La historia ya está sellada con fecha de
+                digitación
+                {{ clinicalDocumentDate() | date: 'dd/MM/yyyy HH:mm' }}.
+                Cuando la paciente regrese, dibuje su firma abajo y pulse
+                <strong>Registrar firma del paciente</strong>. Si la consulta es virtual, pulse
+                <strong>Firma paciente virtual</strong> para enviarle el enlace por WhatsApp: al firmar
+                queda guardada sola en la historia.
+              </p>
             }
-          }
-
-          @if (!isSoap() && (!isAuditor() || !content._redacted)) {
-            <section class="block">
-              <h3>4. Registro Digital de Atención (RDA) — Res. 1888 de 2025</h3>
-              <div class="grid-3">
-                <label
-                  >ID RDA
-                  <input
-                    [ngModel]="encounter()?.externalCode ? encounter()!.externalCode + '-01' : '—'"
-                    readonly
-                /></label>
-                <label>Device ID <input [(ngModel)]="content.rdaMeta.deviceId" /></label>
-                <label
-                  >Ubicación física <input [(ngModel)]="content.rdaMeta.physicalLocation"
-                /></label>
-              </div>
-              <div class="checks">
-                <label><input type="checkbox" [(ngModel)]="rdaEvents.anamnesis" /> Anamnesis</label>
-                <label
-                  ><input type="checkbox" [(ngModel)]="rdaEvents.mentalExam" /> Examen mental</label
-                >
-                <label
-                  ><input type="checkbox" [(ngModel)]="rdaEvents.evaluation" /> Evaluación</label
-                >
-                <label
-                  ><input type="checkbox" [(ngModel)]="rdaEvents.managementPlan" /> Plan de
-                  manejo</label
-                >
-                <label><input type="checkbox" [(ngModel)]="rdaEvents.education" /> Educación</label>
-                <label
-                  ><input type="checkbox" [(ngModel)]="rdaEvents.consents" /> Consentimientos</label
-                >
-              </div>
-            </section>
-          }
-
-          <section class="block">
-            <h3>5. Consentimientos (plantilla legal + firma)</h3>
             <div class="consent-help">
-              <p><strong>No marque checks a mano.</strong> Solo haga esto:</p>
+              <p><strong>No marque checks a mano.</strong> Pasos:</p>
               <ol>
                 <li>Abra una atención con el paciente (arriba).</li>
-                <li>Elija la plantilla legal (Habeas Data, Adultos, NNA o Telepsicología).</li>
+                <li>
+                  Elija la plantilla (Habeas Data, Adultos, NNA, Telepsicología o
+                  <strong>Disentimiento de hospitalización</strong>).
+                </li>
                 <li>
                   Verifique que el texto muestre el nombre y documento del paciente en negrita.
                 </li>
-                <li>Si firma un acudiente, cambie nombre/documento abajo.</li>
-                <li>
-                  Firme en <strong>Firma paciente</strong> y <strong>Firma Dra</strong>; el PDF se
-                  crea al pulsar <strong>Guardar historia clínica</strong> en la barra inferior.
-                </li>
+                @if (!isLocked()) {
+                  <li>
+                    La <strong>firma del paciente</strong> puede quedar pendiente: puede cerrar la HC
+                    solo con la firma de la profesional y completar la del paciente después.
+                  </li>
+                  <li>
+                    Pulse <strong>Guardar historia clínica</strong> para sellar (la fecha de digitación
+                    no cambia).
+                  </li>
+                }
               </ol>
               <p class="muted small" style="margin: 8px 0 0">
                 Estado automático:
@@ -908,6 +2159,11 @@
                 [patientDocument]="consentPatientDocument()"
                 [patientDocumentType]="consentPatientDocType()"
                 [patientCity]="consentPatientCity()"
+                [isMinor]="isMinor()"
+                [guardianFullName]="consentGuardianName()"
+                [guardianDocumentType]="consentGuardianDocType()"
+                [guardianDocumentNumber]="consentGuardianDocument()"
+                [guardianRelationship]="consentGuardianRelationship()"
                 [professionalName]="
                   encounter()?.professional?.fullName ||
                   content.signature.professionalName ||
@@ -920,28 +2176,119 @@
                   ''
                 "
                 [userFullName]="user()?.fullName || ''"
+                [professionalSignature]="consentProfessionalSignature()"
+                [initialPatientSignature]="consentDraftPatientSignature()"
+                [careModality]="modality"
+                (professionalSigned)="onProfessionalSigned($event)"
+                (patientSignatureChanged)="onPatientSignatureChanged($event)"
                 (sealed)="onConsentSealed()"
                 (flagsChanged)="onConsentFlagsChanged()"
               />
             </div>
+            @if (patientConsentPending()) {
+              <div class="row-actions" style="margin-top: 12px">
+                <button
+                  type="button"
+                  class="primary"
+                  [disabled]="saving()"
+                  (click)="registerPatientSignature()"
+                >
+                  {{ saving() ? 'Registrando…' : 'Registrar firma del paciente' }}
+                </button>
+              </div>
+            }
           </section>
+          }
 
           <section class="block">
-            <h3>6. Control de acceso y auditoría</h3>
+            <h3>
+              @if (isPhysiotherapyClinic()) {
+                9. Control de acceso y auditoría
+              } @else {
+                8. Control de acceso y auditoría
+              }
+            </h3>
             <p class="muted">
               El guardado, el sellado y cada nota de evolución quedan registrados en auditoría del
               sistema (usuario, acción, fecha).
             </p>
           </section>
 
-          <section class="block">
-            <h3>7. Anexos</h3>
-            <p class="muted">
-              Carga de anexos (consentimientos PDF, escalas GAD-7, evoluciones) se habilitará en el
-              siguiente paso.
+          <section class="block" id="anexos-section">
+            <h3>
+              @if (isPhysiotherapyClinic()) {
+                10. Anexos
+              } @else {
+                9. Anexos
+              }
+            </h3>
+            <p class="muted small">
+              <strong>Opcional.</strong> Adjunte informes u otros documentos del paciente. Al pulsar
+              <strong>Guardar historia clínica</strong> quedan guardados en la base de datos de esta
+              atención.
             </p>
+            @if (canWrite()) {
+              @if (attachmentsHint(); as hint) {
+                <p class="banner tip">{{ hint }}</p>
+              }
+              <input
+                #attachmentFileInput
+                type="file"
+                class="anexo-file-input"
+                multiple
+                (change)="onAttachmentFile($event)"
+              />
+              <div class="anexos-upload-row">
+                <button
+                  type="button"
+                  class="anexo-btn anexo-btn-pick"
+                  (click)="openAttachmentFilePicker()"
+                >
+                  Elegir archivo
+                </button>
+              </div>
+              @if (selectedAttachmentNames()) {
+                <p class="muted small anexos-file-hint">
+                  Listo: <strong>{{ selectedAttachmentNames() }}</strong>
+                  — se guardará al pulsar <strong>Guardar historia clínica</strong>.
+                </p>
+              }
+              @if (attachmentUploading()) {
+                <p class="muted small">Guardando anexo(s)…</p>
+              }
+            }
+            @if (attachments().length) {
+              <table style="margin-top: 16px">
+                <thead>
+                  <tr>
+                    <th>Archivo</th>
+                    <th>Tamaño</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (a of attachments(); track a.id) {
+                    <tr>
+                      <td>{{ a.label }}</td>
+                      <td>{{ a.sizeBytes / 1024 | number: '1.0-0' }} KB</td>
+                      <td>
+                        <button type="button" class="ghost" (click)="openAttachment(a.id)">
+                          Ver
+                        </button>
+                        @if (canWrite()) {
+                          <button type="button" class="ghost" (click)="removeAttachment(a.id)">
+                            Eliminar
+                          </button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else if (!selectedAttachmentNames()) {
+              <p class="muted small">Aún no hay archivos adjuntos en esta historia.</p>
+            }
           </section>
-        </fieldset>
       </div>
 
       <aside class="side">
@@ -956,15 +2303,80 @@
           </ul>
         </section>
         <section class="side-card">
-          <h3>Protección de datos</h3>
-          <label class="check-line">
-            <input
-              type="checkbox"
-              [ngModel]="consentGranted('DATA_PROCESSING')"
-              (ngModelChange)="setConsent('DATA_PROCESSING', $event)"
+          <h3>Firma del paciente</h3>
+          @if (canWrite() && (!isLocked() || patientConsentPending())) {
+            <button
+              type="button"
+              class="primary full-width"
+              [disabled]="saving() || !consentPatientId()"
+              (click)="openRemotePatientSignature()"
+            >
+              Firma paciente virtual
+            </button>
+            <p class="muted small" style="margin-top: 8px">
+              Envía el enlace por WhatsApp. El paciente firma en el celular y la firma aparece aquí.
+              @if (!encounter()?.id) {
+                <br /><strong>Primero abra o cree la atención</strong> del paciente.
+              }
+              @if (!consentPatientId()) {
+                <br /><strong>Seleccione un paciente</strong> arriba.
+              }
+            </p>
+          }
+          @if (patientConsentPending()) {
+            <p class="muted small ok-hint">
+              <strong>Pendiente.</strong> La HC ya está sellada. Cuando la paciente regrese, use la
+              sección de Consentimientos o el botón abajo.
+            </p>
+            <button
+              type="button"
+              class="primary full-width"
+              [disabled]="saving()"
+              (click)="registerPatientSignature()"
+            >
+              {{ saving() ? 'Registrando…' : 'Registrar firma del paciente' }}
+            </button>
+          } @else if (consentSignerSignedCount() > 0) {
+            <p class="muted small">
+              Consentimiento firmado y sellado. Abra el PDF en Consentimientos o pulse abajo.
+            </p>
+            <button type="button" class="ghost full-width" (click)="scrollToPatientSignature()">
+              Ver consentimientos ↓
+            </button>
+          } @else if (hasPatientSignatureDrawn()) {
+            <img
+              class="sign-preview"
+              [src]="patientSignaturePreview()"
+              alt="Firma del paciente capturada"
             />
-            Autorización de tratamiento registrada
-          </label>
+            <p class="muted small ok-hint">
+              @if (isLocked()) {
+                Firma del paciente registrada en la historia clínica.
+              } @else {
+                Firma capturada. Se sellará al pulsar <strong>Guardar historia clínica</strong>.
+              }
+            </p>
+          } @else {
+            <p class="muted small">
+              Aún no hay firma del paciente en esta atención.
+            </p>
+          }
+          <button type="button" class="ghost full-width" (click)="scrollToPatientSignature()">
+            Ir a firma del paciente ↓
+          </button>
+        </section>
+        <section class="side-card">
+          <h3>Protección de datos</h3>
+          <p class="muted small">
+            @if (consentGranted('DATA_PROCESSING')) {
+              <span class="pill ok">Habeas Data registrado</span>
+            } @else {
+              <span class="pill">Habeas Data pendiente — firme en Consentimientos</span>
+            }
+          </p>
+          <p class="muted small">
+            No marque casillas a mano: la autorización se registra al firmar el consentimiento.
+          </p>
         </section>
         <section class="side-card sign-card">
           <h3>Firma digital (Ley 527)</h3>
@@ -985,8 +2397,21 @@
                   alt="Firma del profesional"
                 />
               }
+              <p class="sealed-tag">Firma del paciente / acudiente</p>
+              @if (consentDraftPatientSignature(); as patientSig) {
+                <img class="sign-preview" [src]="patientSig" alt="Firma del paciente" />
+              } @else {
+                <p class="muted small">Pendiente de registro.</p>
+              }
               <dl class="seal-data">
-                <dt>Firmada</dt>
+                <dt>Fecha de digitación (HC)</dt>
+                <dd>
+                  {{
+                    (content.documentedAt || encounter()?.createdAt || record()?.signedAt)
+                      | date: 'short'
+                  }}
+                </dd>
+                <dt>Sellada por profesional</dt>
                 <dd>{{ record()?.signedAt | date: 'short' }}</dd>
                 <dt>Código de verificación</dt>
                 <dd class="code">{{ record()?.verificationCode }}</dd>
@@ -1006,6 +2431,15 @@
                 <button type="button" class="linkish" (click)="deleteStoredSignature()">
                   Eliminar firma guardada
                 </button>
+              </div>
+            } @else if (content.signature.signatureBase64) {
+              <div class="stored">
+                <p class="muted small">Firma guardada en este borrador:</p>
+                <img
+                  class="sign-preview"
+                  [src]="content.signature.signatureBase64"
+                  alt="Firma del borrador"
+                />
               </div>
             }
             <p class="muted small">
@@ -1046,49 +2480,29 @@
 
         @if (isLocked()) {
           <section class="side-card">
-            <h3>Notas de evolución (Res. 1995)</h3>
+            <h3>Controles firmados</h3>
             <p class="muted small">
-              Cada atención posterior al cierre se registra aquí, firmada e inalterable, dentro de
-              la historia única del paciente.
+              Las notas nuevas se escriben en el bloque principal
+              <strong>«Nota de control — esta sesión»</strong>.
             </p>
             @if (evolutions().length) {
               <ul class="evolutions">
                 @for (ev of evolutions(); track ev.id) {
                   <li>
                     <p class="ev-head">
-                      {{ ev.content.reason || 'Nota de evolución' }}
+                      {{ ev.content.reason || 'Nota de control' }}
                       <span class="muted">· {{ ev.signedAt | date: 'short' }}</span>
                     </p>
                     <p class="ev-note">{{ ev.content.note }}</p>
-                    <p class="muted small">
-                      {{ ev.content.professionalName || ev.author?.fullName }}
-                      @if (ev.content.verificationCode) {
-                        · {{ ev.content.verificationCode }}
-                      }
-                    </p>
                   </li>
                 }
               </ul>
             } @else {
-              <p class="muted small">Todavía no hay notas de evolución.</p>
+              <p class="muted small">Todavía no hay controles firmados.</p>
             }
-
             @if (canWrite()) {
-              <label
-                >Motivo
-                <input [(ngModel)]="evolutionReason" placeholder="Control, corrección, ampliación…"
-              /></label>
-              <label
-                >Contenido
-                <textarea rows="4" [(ngModel)]="evolutionNote"></textarea>
-              </label>
-              <button
-                type="button"
-                class="primary full"
-                (click)="addEvolution()"
-                [disabled]="signing()"
-              >
-                Firmar nota de evolución
+              <button type="button" class="ghost full" (click)="scrollToEvolutions()">
+                Ir a nota de control
               </button>
             }
           </section>
@@ -1099,8 +2513,15 @@
         </section>
         <section class="side-card">
           <h3>Interoperabilidad</h3>
-          <p>HL7 FHIR R4 · RIPS · CIE-10 · CUPS</p>
-          <p class="status">Listo para interoperar (borrador)</p>
+          <p>RDA (FHIR R4) siempre al firmar · CIE-10 y CUPS en toda HC</p>
+          <p class="status">
+            {{
+              ripsEnabled()
+                ? 'RIPS ON — facturación EPS habilitada'
+                : 'RIPS OFF — consulta particular (RDA activo)'
+            }}
+          </p>
+          <a routerLink="/consultorio/configuracion">Configurar RIPS →</a>
         </section>
       </aside>
     </div>
@@ -1121,10 +2542,13 @@
     <div class="save-bar">
       <div class="save-bar-info">
         @if (isLocked()) {
-          <strong>Historia cerrada</strong>
+          <strong>Modo control</strong>
           <span class="muted small">
-            Sellada el {{ record()?.signedAt | date: 'short' }} · solo identificación y notas de
-            evolución.
+            @if (isPhysiotherapyClinic()) {
+              Identificación + nota de evolución de esta sesión. Historia inicial en «Consultar».
+            } @else {
+              Identificación + nota de esta sesión + examen mental. Historia inicial en «Consultar».
+            }
           </span>
         } @else {
           <strong>Guardado en base de datos</strong>
@@ -1138,17 +2562,37 @@
       @if (isLocked()) {
         <button
           type="button"
-          class="primary"
+          class="ghost"
           [disabled]="saving()"
           (click)="savePatientIdentification()"
         >
           {{ saving() ? 'Guardando…' : 'Guardar datos del paciente' }}
         </button>
+        <button
+          type="button"
+          class="primary"
+          [disabled]="signing()"
+          (click)="addEvolution()"
+        >
+          {{ signing() ? 'Firmando…' : 'Firmar nota de control' }}
+        </button>
       } @else {
+        @if (autosaveLabel()) {
+          <span
+            class="autosave-chip"
+            [class.pending]="autosaveStatus() === 'pending' || autosaveStatus() === 'saving'"
+            [class.error]="autosaveStatus() === 'error'"
+            [title]="
+              'Copia local en este navegador. Si el servidor cae, al volver pulse la pestaña o recargue: se sincroniza solo.'
+            "
+          >
+            {{ autosaveLabel() }}
+          </span>
+        }
         <button
           type="button"
           class="ghost"
-          [disabled]="saving() || !encounter()"
+          [disabled]="saving() || (!encounter() && !selectedPatientId)"
           (click)="saveDraftOnly()"
         >
           {{ saving() ? 'Guardando…' : 'Guardar borrador' }}
@@ -1156,12 +2600,27 @@
         <button
           type="button"
           class="primary"
-          [disabled]="saving() || !encounter()"
+          [disabled]="saving() || (!encounter() && !selectedPatientId)"
           (click)="askSaveConfirm()"
         >
           {{ saving() ? 'Guardando y sellando…' : 'Guardar historia clínica' }}
         </button>
       }
+    </div>
+  }
+
+  @if (saveToast(); as toast) {
+    <div class="save-toast" role="status" aria-live="polite">
+      <div>
+        <strong>{{ toast.title }}</strong>
+        <span>{{ toast.detail }} Su texto sigue guardado en este navegador.</span>
+      </div>
+      <button type="button" class="save-toast-retry" (click)="retryPendingSync(); dismissSaveToast()">
+        Reintentar
+      </button>
+      <button type="button" class="save-toast-close" aria-label="Cerrar aviso" (click)="dismissSaveToast()">
+        ×
+      </button>
     </div>
   }
 
@@ -1175,7 +2634,10 @@
             <li>Falta la <strong>firma de la Dra</strong>.</li>
           }
           @if (missing.patient) {
-            <li>Falta la <strong>firma del paciente</strong>.</li>
+            <li>
+              Falta la
+              <strong>{{ isMinor() ? 'firma del acudiente' : 'firma del paciente' }}</strong>.
+            </li>
           }
           @for (field of missing.identification; track field) {
             <li>
@@ -1201,13 +2663,82 @@
       <div class="modal">
         <h3>Guardar y cerrar la historia clínica</h3>
         <p>
-          El documento se firmará con la huella SHA-256 del contenido y quedará inmutable. Después
-          solo podrá corregir los datos de identificación del paciente; toda información nueva se
-          registra como nota de evolución.
+          Se sellará con la huella SHA-256 y la <strong>fecha de digitación</strong> que ya tiene la
+          historia (no cambia al guardar hoy ni cuando el paciente firme después).
         </p>
+        @if (hasPatientSignatureForSeal()) {
+          <p class="muted small">La firma del paciente está capturada y quedará guardada con la historia.</p>
+        } @else {
+          <p class="banner warn">
+            <strong>Atención: el paciente no ha firmado.</strong> La historia quedará sellada sin
+            firma del paciente y tendrá que registrarla en otra visita. Si el paciente está presente,
+            pulse <strong>Volver</strong> y pídale que firme en Consentimientos.
+          </p>
+        }
         <div class="modal-actions">
           <button type="button" class="ghost" (click)="cancelSaveConfirm()">Volver</button>
           <button type="button" class="primary" (click)="saveRecord()">Guardar y cerrar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (dissentOpen()) {
+    <div class="modal-backdrop">
+      <div class="modal">
+        <h3>Disentimiento (anotación rápida)</h3>
+        <p class="muted small">
+          Preferible: use la plantilla firmada en Consentimientos. Esta anotación solo deja
+          constancia en la impresión diagnóstica.
+        </p>
+        <label
+          >Motivo del disentimiento
+          <textarea rows="4" [(ngModel)]="dissentReason"></textarea>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="ghost" (click)="closeDissent()">Cancelar</button>
+          <button type="button" class="primary" (click)="confirmDissent()">Registrar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (referralOpen()) {
+    <div class="modal-backdrop">
+      <div class="modal" style="width: min(560px, 100%)">
+        <h3>Remisión de paciente</h3>
+        <p class="muted small">
+          Genere el formato imprimible firmado por la profesional. Quedará anotado en la
+          impresión diagnóstica; puede anexar el PDF escaneado en Multimedia si lo requiere.
+        </p>
+        <div class="grid-2" style="display: grid; gap: 10px">
+          <label
+            >Institución / profesional destino
+            <input [(ngModel)]="referralForm.toEntity" placeholder="Ej. Urgencias Hospital…" />
+          </label>
+          <label
+            >Especialidad / servicio
+            <input [(ngModel)]="referralForm.specialty" placeholder="Ej. Psiquiatría" />
+          </label>
+          <label
+            >Urgencia
+            <select [(ngModel)]="referralForm.urgency">
+              <option>Ordinaria</option>
+              <option>Prioritaria</option>
+              <option>Urgente</option>
+            </select>
+          </label>
+          <label>CIE-10 <input [(ngModel)]="referralForm.cie" placeholder="Opcional" /></label>
+          <label class="span-2" style="grid-column: 1 / -1"
+            >Motivo clínico
+            <textarea rows="4" [(ngModel)]="referralForm.reason"></textarea>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="ghost" (click)="closeReferral()">Cancelar</button>
+          <button type="button" class="primary" (click)="confirmReferral()">
+            Generar remisión
+          </button>
         </div>
       </div>
     </div>

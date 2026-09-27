@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Historia clínica — Fisioterapia (HC-FT-001)</title>
+  <style>
+    :root {
+      --ft: #0f766e;
+      --ft-dark: #115e59;
+      --ink: #134e4a;
+      --muted: #64748b;
+      --line: #ccfbf1;
+      --paper: #f0fdfa;
+      --card: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #ecfeff 0%, #fff 35%);
+      letter-spacing: -0.012em;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 28px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .brand {
+      font-weight: 700;
+      color: var(--ft);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+    }
+    .clinic {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 24px 20px 80px;
+    }
+    h1 {
+      margin: 8px 0 4px;
+      font-size: 1.65rem;
+      font-weight: 600;
+      color: var(--ft-dark);
+    }
+    .eyebrow {
+      margin: 0;
+      color: var(--ft);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .block {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 22px;
+      margin: 18px 0;
+      box-shadow: 0 8px 30px rgba(15, 118, 110, 0.06);
+    }
+    .block h3 {
+      margin: 0 0 6px;
+      color: var(--ft-dark);
+      font-size: 1.15rem;
+    }
+    .block h4 {
+      margin: 20px 0 10px;
+      color: var(--ft);
+      font-size: 0.95rem;
+    }
+    .muted { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    input, textarea, select {
+      border: 1px solid #99f6e4;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+      background: #f8fffe;
+    }
+    textarea { resize: vertical; width: 100%; }
+    .ft-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .ft-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    table.ft-check-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .ft-check-table th,
+    .ft-check-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 6px;
+      text-align: left;
+    }
+    .ft-check-table th {
+      color: var(--ft);
+      font-weight: 600;
+      background: var(--paper);
+    }
+    .note {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 720px) {
+      .ft-grid-2, .ft-grid-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <a class="brand" href="/">HC FISIOTERAPIA</a>
+      <p class="clinic">Consultorio: Eliana Milena Pardo Ríos</p>
+    </div>
+    <span style="color:#0f766e;font-size:13px">Vista previa · HC-FT-001</span>
+  </header>
+
+  <main class="wrap">
+    <p class="eyebrow">Historia clínica</p>
+    <h1>Historia clínica — Fisioterapia</h1>
+    <p class="note">
+      Esta es la vista del formulario HC-FT-001 que ve el consultorio de fisioterapia
+      (Eliana Milena Pardo Ríos) al abrir una atención. Para editar historias reales entra
+      como profesional a <code>/consultorio/historia-clinica</code>.
+    </p>
+
+    <section class="block">
+      <h3>3. Historia clínica de fisioterapia (HC-FT-001)</h3>
+      <p class="muted">Evaluación y plan terapéutico. Al final firme consentimiento (paciente) y firma profesional.</p>
+
+      <label>Motivo de consulta<textarea rows="2" placeholder="Motivo de la consulta…"></textarea></label>
+      <label>Enfermedad actual<textarea rows="4" placeholder="Curso de la enfermedad actual…"></textarea></label>
+
+      <h4>Antecedentes</h4>
+      <div class="ft-grid-2">
+        <label>Personales<textarea rows="2"></textarea></label>
+        <label>Patológicos<textarea rows="2"></textarea></label>
+        <label>Quirúrgicos<textarea rows="2"></textarea></label>
+        <label>Alérgicos<textarea rows="2"></textarea></label>
+        <label>Farmacológicos<textarea rows="2"></textarea></label>
+        <label>Familiares<textarea rows="2"></textarea></label>
+        <label>Gineco-obstétricos<textarea rows="2"></textarea></label>
+        <label>Traumáticos<textarea rows="2"></textarea></label>
+        <label>Ocupacionales<textarea rows="2"></textarea></label>
+        <label>Otros<textarea rows="2"></textarea></label>
+      </div>
+
+      <h4>Revisión por sistemas</h4>
+      <table class="ft-check-table">
+        <thead><tr><th>Sistema</th><th>Normal</th><th>Anormal</th></tr></thead>
+        <tbody>
+          <tr><td>Cardiovascular</td><td><input type="radio" name="s1" checked></td><td><input type="radio" name="s1"></td></tr>
+          <tr><td>Respiratorio</td><td><input type="radio" name="s2" checked></td><td><input type="radio" name="s2"></td></tr>
+          <tr><td>Neurológico</td><td><input type="radio" name="s5" checked></td><td><input type="radio" name="s5"></td></tr>
+          <tr><td>Músculo-esquelético</td><td><input type="radio" name="s6"></td><td><input type="radio" name="s6" checked></td></tr>
+          <tr><td>Piel y anexos</td><td><input type="radio" name="s7" checked></td><td><input type="radio" name="s7"></td></tr>
+          <tr><td>Otros</td><td><input type="radio" name="s8" checked></td><td><input type="radio" name="s8"></td></tr>
+        </tbody>
+      </table>
+      <label>Detalle revisión por sistemas / otros<textarea rows="2"></textarea></label>
+
+      <h4>Evaluación fisioterapéutica</h4>
+      <label>Diagnóstico fisioterapéutico<textarea rows="2"></textarea></label>
+      <label>Hallazgos / observaciones<textarea rows="3"></textarea></label>
+
+      <h4>Valoración por sistemas y funciones</h4>
+      <div class="ft-grid-2">
+        <label>Dolor — escala verbal numérica (EVA 1–10)
+          <select>
+            <option>Sin registrar</option>
+            <option>1 / 10</option>
+            <option selected>6 / 10</option>
+            <option>10 / 10</option>
+          </select>
+        </label>
+        <label>Fuerza muscular — escala Daniels
+          <select>
+            <option>Sin registrar / digite abajo</option>
+            <option>0/5 — Sin contracción</option>
+            <option selected>3/5 — Movimiento completo contra gravedad</option>
+            <option>5/5 — Fuerza normal</option>
+          </select>
+        </label>
+        <label>Fuerza muscular — detalle o texto libre<textarea rows="2" placeholder="Segmento, lateralidad o digite libre…">Cuádriceps izq. 3/5; derecho 5/5</textarea></label>
+        <label>Tono muscular<textarea rows="2" placeholder="Describa el tono…">Normotónico</textarea></label>
+      </div>
+      <label>Movilidad articular (goniometría)<textarea rows="3" placeholder="Mediciones goniométricas…">Rodilla izq. flexión 95° / extensión −5° (goniometría)</textarea></label>
+      <table class="ft-check-table">
+        <thead><tr><th>Función</th><th>Normal</th><th>Alterado</th><th>N/A</th></tr></thead>
+        <tbody>
+          <tr><td>Sensibilidad</td><td><input type="radio" name="f5" checked></td><td><input type="radio" name="f5"></td><td><input type="radio" name="f5"></td></tr>
+          <tr><td>Coordinación</td><td><input type="radio" name="f6" checked></td><td><input type="radio" name="f6"></td><td><input type="radio" name="f6"></td></tr>
+          <tr><td>Equilibrio</td><td><input type="radio" name="f7"></td><td><input type="radio" name="f7" checked></td><td><input type="radio" name="f7"></td></tr>
+          <tr><td>Marcha</td><td><input type="radio" name="f8"></td><td><input type="radio" name="f8" checked></td><td><input type="radio" name="f8"></td></tr>
+          <tr><td>Funciones cardiorrespiratorias</td><td><input type="radio" name="f9" checked></td><td><input type="radio" name="f9"></td><td><input type="radio" name="f9"></td></tr>
+          <tr><td>Otras funciones</td><td><input type="radio" name="f10"></td><td><input type="radio" name="f10"></td><td><input type="radio" name="f10" checked></td></tr>
+        </tbody>
+      </table>
+
+      <h4>Diagnóstico fisioterapéutico (codificación)</h4>
+      <div class="ft-grid-2">
+        <label>Código<input placeholder="Ej. código CIE / FT" /></label>
+        <label>Descripción<input placeholder="Descripción del diagnóstico" /></label>
+      </div>
+      <label>Impresión / narrativa diagnóstica<textarea rows="2"></textarea></label>
+
+      <h4>Plan terapéutico</h4>
+      <label>Objetivos del tratamiento<textarea rows="3"></textarea></label>
+      <label>Plan de intervención<textarea rows="3"></textarea></label>
+      <div class="ft-grid-3">
+        <label>Frecuencia<input placeholder="Ej. 3× semana" /></label>
+        <label>Duración estimada<input placeholder="Ej. 6 semanas" /></label>
+        <label>N.º de sesiones<input placeholder="Ej. 12" /></label>
+      </div>
+
+      <h4>Cierre de historia (opcional)</h4>
+      <div class="ft-grid-3">
+        <label>Fecha de cierre<input type="date" /></label>
+        <label>Estado del caso<input placeholder="Activo / Cerrado / Remitido…" /></label>
+        <label>Resultado del tratamiento<input /></label>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
+import { ClinicSpecialty } from '@prisma/client';
 import { seedDocumentRequirementsForClinic } from '../../../prisma/seed/document-requirements.seed';
+import { seedPhysiotherapyDocsForClinic } from '../../../prisma/seed/physiotherapy-docs.seed';
 import { seedSgsstRequirementsForClinic } from '../../../prisma/seed/sgsst-requirements.seed';
 import { DashboardType } from '../../common/enums';
 import { PrismaService } from '../../prisma/prisma.module';
@@ -18,6 +20,20 @@ export class DocumentProvisionService {
   async ensureForClinic(clinicId: string, dashboardType: string | null) {
     if (dashboardType !== DashboardType.CLINICAL_HISTORY_WITH_DOCS) {
       return { skipped: true as const };
+    }
+
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+      select: { specialty: true, name: true },
+    });
+
+    if (clinic?.specialty === ClinicSpecialty.PHYSIOTHERAPY) {
+      // Sin checklist ni pack de psicología: el SUPER_ADMIN carga y replica.
+      await seedPhysiotherapyDocsForClinic(this.prisma, clinicId);
+      this.logger.log(
+        `Gestión documental fisioterapia: sin auto-carga de psicología para ${clinic.name}.`,
+      );
+      return { skipped: false as const, physiotherapy: { empty: true } };
     }
 
     const excelPath =

@@ -4,7 +4,15 @@ WORKDIR /app
 COPY admin/package.json admin/package-lock.json ./
 RUN npm ci
 COPY admin/ ./
-RUN npm run build -- --configuration production
+COPY docker/inject-spa-bridge.js /tmp/inject-spa-bridge.js
+RUN npm run build -- --configuration production \
+  && BUILD_ID="rips-$(date -u +%Y%m%d%H%M%S)" \
+  && printf '%s\n' "$BUILD_ID" > /app/dist/admin/browser/build-id.txt \
+  && sed -i "s|src=\"main.js\"|src=\"main.js?v=${BUILD_ID}\"|g" /app/dist/admin/browser/index.html \
+  && sed -i "s|href=\"styles.css\"|href=\"styles.css?v=${BUILD_ID}\"|g" /app/dist/admin/browser/index.html \
+  && node /tmp/inject-spa-bridge.js \
+  && printf '%s\n' "<!DOCTYPE html><html lang=\"es\"><head><meta charset=\"utf-8\"/><meta http-equiv=\"Cache-Control\" content=\"no-store, no-cache, must-revalidate\"/><title>HABILISALUD</title></head><body style=\"font-family:system-ui;padding:48px;color:#003d4c\"><p>Entrando al consultorio…</p><script>(function(){var B=\"${BUILD_ID}\";try{sessionStorage.clear();}catch(e){}location.replace(\"/consultorio.html?_hs=\"+encodeURIComponent(B));})();</script></body></html>" \
+    > /app/dist/admin/browser/entrar.html
 
 FROM caddy:2.10-alpine
 COPY docker/Caddyfile /etc/caddy/Caddyfile

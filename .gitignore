@@ -22,3 +22,9 @@ habilisalud-web.zip
 scripts/.public-admin-url
 
 dist-landing.zip
+
+# Respaldos de BD (datos de pacientes) y artefactos locales
+backups/*.dump
+backups/*.sql
+/*.zip
+/preview-*.png

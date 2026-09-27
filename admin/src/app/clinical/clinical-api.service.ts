@@ -9,6 +9,8 @@ import {
   DivipolaDepartment,
   Encounter,
   EncounterListItem,
+  HceExportItem,
+  OpenEncounterItem,
   Incapacity,
   Patient,
   ProcedureRow,
@@ -24,12 +26,12 @@ export class ClinicalApiService {
   constructor(private readonly http: HttpClient) {}
 
   searchCie(q: string) {
-    const params = new HttpParams().set('q', q);
+    let params = new HttpParams().set('q', q);
     return this.http.get<CatalogCode[]>(`${API}/catalogs/cie`, { params });
   }
 
   searchCups(q: string) {
-    const params = new HttpParams().set('q', q);
+    let params = new HttpParams().set('q', q);
     return this.http.get<CatalogCode[]>(`${API}/catalogs/cups`, { params });
   }
 
@@ -54,12 +56,33 @@ export class ClinicalApiService {
     return this.http.post<Patient>(`${API}/patients/${id}/update`, body);
   }
 
+  uploadPatientPhoto(patientId: string, file: File) {
+    const form = new FormData();
+    form.append('file', file, file.name || 'paciente.jpg');
+    return this.http.post<Patient>(`${API}/patients/${patientId}/photo`, form);
+  }
+
+  downloadPatientPhoto(patientId: string) {
+    return this.http.get(`${API}/patients/${patientId}/photo`, {
+      responseType: 'blob',
+    });
+  }
+
+  deletePatientPhoto(patientId: string) {
+    return this.http.delete<Patient>(`${API}/patients/${patientId}/photo`);
+  }
+
   listEncounters(opts: { from?: string; to?: string; patientId?: string } = {}) {
     let params = new HttpParams();
     if (opts.from) params = params.set('from', opts.from);
     if (opts.to) params = params.set('to', opts.to);
     if (opts.patientId) params = params.set('patientId', opts.patientId);
     return this.http.get<EncounterListItem[]>(`${API}/encounters`, { params });
+  }
+
+  /** Historias clínicas en borrador sin cerrar (alertas). */
+  listOpenEncounters() {
+    return this.http.get<OpenEncounterItem[]>(`${API}/encounters/open`);
   }
 
   quickCreatePatient(body: {
@@ -104,9 +127,33 @@ export class ClinicalApiService {
       location?: string | null;
       purpose?: string | null;
       externalCause?: string | null;
+      generateRips?: boolean;
+      autosave?: boolean;
     },
   ) {
     return this.http.post<Encounter>(`${API}/clinical-records/${encounterId}/save`, payload);
+  }
+
+  updateAttendanceMeta(
+    encounterId: string,
+    body: { modality?: string; documentedAt?: string },
+  ) {
+    return this.http.post<Encounter>(
+      `${API}/clinical-records/${encounterId}/attendance-meta`,
+      body,
+    );
+  }
+
+  updateDiagnoses(encounterId: string, diagnoses: DiagnosisRow[]) {
+    return this.http.post<Encounter>(`${API}/clinical-records/${encounterId}/diagnoses`, {
+      diagnoses,
+    });
+  }
+
+  updateProcedures(encounterId: string, procedures: ProcedureRow[]) {
+    return this.http.post<Encounter>(`${API}/clinical-records/${encounterId}/procedures`, {
+      procedures,
+    });
   }
 
   signClinicalRecord(encounterId: string, signatureBase64?: string) {
@@ -118,9 +165,23 @@ export class ClinicalApiService {
 
   addEvolution(
     encounterId: string,
-    body: { note: string; reason?: string; signatureBase64?: string },
+    body: {
+      note: string;
+      reason?: string;
+      currentSituation?: string;
+      clinicalAttentionDate?: string;
+      signatureBase64?: string;
+    },
   ) {
     return this.http.post<Encounter>(`${API}/clinical-records/${encounterId}/evolutions`, body);
+  }
+
+  lastCurrentSituation(patientId: string) {
+    return this.http.get<{
+      currentSituation: string;
+      evolutionId: string | null;
+      clinicalAttentionDate: string | null;
+    }>(`${API}/encounters/for-patient/${patientId}/last-situation`);
   }
 
   getMySignature() {
@@ -135,6 +196,47 @@ export class ClinicalApiService {
 
   deleteMySignature() {
     return this.http.delete<ProfessionalSignature>(`${API}/me/professional-signature`);
+  }
+
+  getRipsSettings() {
+    return this.http.get<{ ripsEnabled: boolean; note?: string }>(
+      `${API}/me/rips-settings`,
+    );
+  }
+
+  saveRipsSettings(ripsEnabled: boolean) {
+    return this.http.post<{ ripsEnabled: boolean }>(`${API}/me/rips-settings`, {
+      ripsEnabled,
+    });
+  }
+
+  getRepsSettings() {
+    return this.http.get<{
+      repsExpirationDate: string | null;
+      status: 'MISSING' | 'EXPIRED' | 'CRITICAL' | 'WARNING' | 'OK';
+      daysRemaining: number | null;
+      alertLevel: 'info' | 'urgent' | 'warn' | 'ok';
+      message: string;
+      note?: string;
+    }>(`${API}/me/reps-settings`);
+  }
+
+  saveRepsSettings(repsExpirationDate: string | null) {
+    return this.http.post<{
+      repsExpirationDate: string | null;
+      status: string;
+      daysRemaining: number | null;
+      alertLevel: string;
+      message: string;
+    }>(`${API}/me/reps-settings`, { repsExpirationDate });
+  }
+
+  /** Simula envío de encuadre terapéutico (políticas) al correo del paciente. */
+  sendTherapeuticFrame(patientId: string) {
+    return this.http.post<{ sent: boolean; destination?: string }>(
+      `${API}/patients/${patientId}/therapeutic-frame`,
+      {},
+    );
   }
 
   listIncapacities(encounterId: string) {
@@ -239,6 +341,7 @@ export class ClinicalApiService {
     patientId: string;
     templateId: string;
     encounterId?: string;
+    signerRole?: 'PATIENT' | 'LEGAL_GUARDIAN' | 'ASSENT';
     signerName?: string;
     signerDocumentType?: string;
     signerDocument?: string;
@@ -250,6 +353,60 @@ export class ClinicalApiService {
 
   downloadPatientConsentPdf(id: string) {
     return this.http.get(`${API}/patient-consents/${id}/pdf`, {
+      responseType: 'blob',
+    });
+  }
+
+  /** Atención virtual: genera enlace de firma remota (WhatsApp / copia). */
+  sendRemoteConsentInvite(body: {
+    patientId: string;
+    templateId: string;
+    encounterId: string;
+    emailOverride?: string;
+    phoneOverride?: string;
+  }) {
+    return this.http.post<{
+      id: string;
+      link: string;
+      whatsappUrl: string;
+      sentToPhone: string;
+      sentToEmail: string | null;
+      expiresAt: string;
+      emailSimulated: boolean | null;
+      message: string;
+    }>(`${API}/patient-consents/remote-invite`, body);
+  }
+
+  getRemoteConsentInviteStatus(inviteId: string) {
+    return this.http.get<{
+      id: string;
+      status: string;
+      expiresAt: string;
+      usedAt: string | null;
+      sentToPhone: string | null;
+      patientConsentId: string | null;
+      signatureBase64: string | null;
+      signedAt: string | null;
+    }>(`${API}/patient-consents/remote-invite/${inviteId}`);
+  }
+
+  searchHceExports(q?: string) {
+    let params = new HttpParams();
+    if (q) params = params.set('q', q);
+    return this.http.get<HceExportItem[]>(`${API}/clinical-exports`, { params });
+  }
+
+  downloadHcePdf(encounterId: string) {
+    return this.http.get(`${API}/clinical-exports/${encounterId}/pdf`, {
+      responseType: 'blob',
+    });
+  }
+
+  downloadHceBulkZip(q?: string) {
+    let params = new HttpParams();
+    if (q) params = params.set('q', q);
+    return this.http.get(`${API}/clinical-exports/bulk/zip`, {
+      params,
       responseType: 'blob',
     });
   }

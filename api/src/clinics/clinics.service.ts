@@ -3,9 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ClinicSpecialty as PrismaClinicSpecialty } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
+import { seedConsents } from '../../prisma/seed/seedConsents';
 import { UserRole } from '../common/enums';
 import { FormTemplatesService } from '../modules/clinical/form-templates.service';
 import { DocumentProvisionService } from '../modules/documents/document-provision.service';
+import { PrismaService } from '../prisma/prisma.module';
 import { toPublicUser, User } from '../users/user.entity';
 import { Clinic } from './clinic.entity';
 import { CreateClinicDto } from './dto/create-clinic.dto';
@@ -21,6 +23,7 @@ export class ClinicsService {
     private readonly usersRepository: Repository<User>,
     private readonly formTemplates: FormTemplatesService,
     private readonly documentProvision: DocumentProvisionService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async findAll() {
@@ -66,8 +69,10 @@ export class ClinicsService {
         email: dto.admin.email.toLowerCase(),
         fullName: dto.admin.fullName,
         passwordHash: await bcrypt.hash(dto.admin.password, 10),
+        passwordReminder: dto.admin.password,
         role: UserRole.ADMIN,
         clinicId: saved.id,
+        professionalCard: dto.admin.professionalCard?.trim() || null,
         isActive: true,
       });
       await this.usersRepository.save(admin);
@@ -101,6 +106,12 @@ export class ClinicsService {
     } catch (error) {
       // El dashboard ya quedó asignado; la plantilla se puede reintentar al abrir HCE.
       console.error('No se pudo aprovisionar FormTemplate', error);
+    }
+
+    try {
+      await seedConsents(this.prisma);
+    } catch (error) {
+      console.error('No se pudo aprovisionar plantillas de consentimiento', error);
     }
 
     try {

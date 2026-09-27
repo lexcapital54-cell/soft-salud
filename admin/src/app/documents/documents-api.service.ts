@@ -46,6 +46,23 @@ export class DocumentsApiService {
       .pipe(retryOnDisconnect());
   }
 
+  /** Profesional aprobador del consultorio seleccionado (Aprobó). */
+  getBrand() {
+    return this.http
+      .get<{
+        clinicId: string;
+        clinicName: string;
+        professionalName: string;
+        professionalCard: string | null;
+        professionalUserId: string | null;
+        elaboratedBy: string;
+        hasSignature: boolean;
+        signatureBase64: string | null;
+        city: string | null;
+      }>(this.withClinic(`${API}/documents/brand`))
+      .pipe(retryOnDisconnect());
+  }
+
   signedArchive(period?: string) {
     return this.http
       .get<SignedArchive>(
@@ -138,6 +155,23 @@ export class DocumentsApiService {
     );
   }
 
+  deleteFilePermanent(fileId: string) {
+    return this.http.post<RequirementDetail>(
+      this.withClinic(`${API}/documents/files/${fileId}/delete-permanent`),
+      {},
+    );
+  }
+
+  updateFileMeta(
+    fileId: string,
+    body: { expiresAt?: string; periodLabel?: string; notes?: string },
+  ) {
+    return this.http.post<RequirementDetail>(
+      this.withClinic(`${API}/documents/files/${fileId}/update`),
+      body,
+    );
+  }
+
   setRequirementEnabled(requirementId: string, enabled: boolean) {
     return this.http.post<DocumentsOverview>(
       this.withClinic(`${API}/documents/requirements/${requirementId}/enabled`),
@@ -145,10 +179,189 @@ export class DocumentsApiService {
     );
   }
 
+  setRequirementClinicSignature(
+    requirementId: string,
+    requiresClinicSignature: boolean,
+  ) {
+    return this.http.post<DocumentsOverview>(
+      this.withClinic(
+        `${API}/documents/requirements/${requirementId}/clinic-signature`,
+      ),
+      { requiresClinicSignature },
+    );
+  }
+
   setAllEnabled(enabled: boolean) {
     return this.http.post<DocumentsOverview>(
       this.withClinic(`${API}/documents/requirements/enable-all`),
       { enabled },
+    );
+  }
+
+  listCategories() {
+    return this.http.get<
+      Array<{
+        id: string;
+        code: string;
+        name: string;
+        pillar: string;
+        sortOrder: number;
+      }>
+    >(`${API}/documents/categories`);
+  }
+
+  getAssignmentCatalog(clinicId: string, sourceClinicId?: string) {
+    const params = new URLSearchParams({ clinicId });
+    if (sourceClinicId) params.set('sourceClinicId', sourceClinicId);
+    return this.http.get<{
+      clinic: { id: string; name: string; specialty: string };
+      sourceClinic: { id: string; name: string; specialty: string } | null;
+      peerClinics: Array<{ id: string; name: string }>;
+      items: Array<{
+        code: string;
+        title: string;
+        description: string | null;
+        isMandatory: boolean;
+        requiresClinicSignature: boolean;
+        category: {
+          id: string;
+          code: string;
+          name: string;
+          pillar: string;
+          sortOrder: number;
+        };
+        alreadyAssigned: boolean;
+        assignedEnabled: boolean;
+        assignedRequirementId: string | null;
+      }>;
+      selectedCodes: string[];
+    }>(`${API}/documents/catalog?${params.toString()}`);
+  }
+
+  assignRequirements(
+    clinicId: string,
+    body: {
+      codes: string[];
+      syncDisabled?: boolean;
+      sourceClinicId?: string;
+    },
+  ) {
+    return this.http.post<{
+      clinicId: string;
+      created: number;
+      enabled: number;
+      disabled: number;
+      skippedUnknown: number;
+      selectedCount: number;
+      overview: DocumentsOverview;
+      catalog: {
+        clinic: { id: string; name: string; specialty: string };
+        sourceClinic: { id: string; name: string; specialty: string } | null;
+        peerClinics: Array<{ id: string; name: string }>;
+        items: Array<{
+          code: string;
+          title: string;
+          description: string | null;
+          isMandatory: boolean;
+          requiresClinicSignature: boolean;
+          category: {
+            id: string;
+            code: string;
+            name: string;
+            pillar: string;
+            sortOrder: number;
+          };
+          alreadyAssigned: boolean;
+          assignedEnabled: boolean;
+          assignedRequirementId: string | null;
+        }>;
+        selectedCodes: string[];
+      };
+    }>(`${API}/documents/requirements/assign?clinicId=${encodeURIComponent(clinicId)}`, body);
+  }
+
+  createRequirement(body: {
+    categoryId: string;
+    code: string;
+    title: string;
+    description?: string;
+    isMandatory?: boolean;
+    requiresClinicSignature?: boolean;
+  }) {
+    return this.http.post<DocumentsOverview>(
+      this.withClinic(`${API}/documents/requirements`),
+      body,
+    );
+  }
+
+  clearClinicDocuments() {
+    return this.http.post<{
+      clinicId: string;
+      deletedRequirements: number;
+      overview: DocumentsOverview;
+    }>(this.withClinic(`${API}/documents/clear`), {});
+  }
+
+  replicateDocuments(body: {
+    sourceClinicId: string;
+    targetClinicIds?: string[];
+    includeFiles?: boolean;
+  }) {
+    return this.http.post<{
+      sourceClinicId: string;
+      sourceClinicName: string;
+      specialty: string;
+      requirementCount: number;
+      targets: Array<{
+        clinicId: string;
+        clinicName: string;
+        created: number;
+        updated: number;
+        filesCopied: number;
+      }>;
+    }>(`${API}/documents/replicate`, body);
+  }
+
+  importMasterPack(opts: {
+    clinicId: string;
+    files?: File[];
+    relativePaths?: string[];
+    zip?: File | null;
+    ensureStructure?: boolean;
+  }) {
+    const form = new FormData();
+    if (opts.zip) {
+      form.append('zip', opts.zip, opts.zip.name);
+    }
+    if (opts.files?.length) {
+      for (const file of opts.files) {
+        form.append('files', file, file.name);
+      }
+      if (opts.relativePaths?.length) {
+        form.append('relativePaths', JSON.stringify(opts.relativePaths));
+      }
+    }
+    form.append(
+      'ensureStructure',
+      opts.ensureStructure === false ? 'false' : 'true',
+    );
+    return this.http.post<{
+      clinicId: string;
+      clinicName: string;
+      packRootHint: string;
+      stats: {
+        imported: number;
+        skippedDup: number;
+        skippedMeta: number;
+        unmapped: string[];
+        missingCode: string[];
+        covered: number;
+        totalRequirements: number;
+      };
+      overview: DocumentsOverview;
+    }>(
+      `${API}/documents/import-master-pack?clinicId=${encodeURIComponent(opts.clinicId)}`,
+      form,
     );
   }
 }

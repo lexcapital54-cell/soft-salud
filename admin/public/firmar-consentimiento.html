@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <title>Firmar consentimiento · HABILISALUD</title>
+  <style>
+    :root { --brand:#0d7377; --ink:#003d4c; --paper:#f3f7f8; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100svh; font-family: "DM Sans", system-ui, sans-serif;
+      background: linear-gradient(180deg, #e8f4f4 0%, var(--paper) 40%, #fff 100%);
+      color: var(--ink); padding: 20px;
+    }
+    .wrap { width: min(720px, 100%); margin: 0 auto; }
+    .brand { color: #000; text-decoration: none; font-size: 1.05rem; }
+    .card {
+      margin-top: 14px; background: #fff; border: 1px solid #d7e3e6;
+      border-radius: 22px; padding: 22px; box-shadow: 0 12px 32px rgba(0,45,92,.08);
+    }
+    .eyebrow { margin: 0; color: var(--brand); text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
+    h1 { margin: 8px 0 8px; font-weight: 600; font-size: 1.45rem; }
+    .meta { color: #5a7075; font-size: .92rem; margin-bottom: 14px; }
+    .doc {
+      max-height: 42vh; overflow: auto; border: 1px solid #e2ecee;
+      border-radius: 14px; padding: 14px; background: #fafcfc; font-size: .95rem; line-height: 1.45;
+    }
+    .pad-wrap {
+      margin-top: 14px; border: 2px dashed #0d7377; border-radius: 16px;
+      background: #fff; overflow: hidden;
+    }
+    canvas { display: block; width: 100%; height: 180px; touch-action: none; cursor: crosshair; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    button {
+      border: 0; border-radius: 999px; padding: 12px 18px; font: inherit; cursor: pointer;
+    }
+    .primary { background: var(--ink); color: #fff; }
+    .ghost { background: #e8f1f2; color: var(--ink); }
+    button:disabled { opacity: .55; cursor: wait; }
+    .error { color: #8a1f1f; }
+    .ok { color: #0d5c5f; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="brand" href="/consultorio.html">HABILISALUD</a>
+    <div class="card" id="main">
+      <p class="eyebrow">Firma digital remota</p>
+      <h1 id="title">Cargando…</h1>
+      <p class="meta" id="meta"></p>
+      <div class="doc" id="doc"></div>
+      <p class="meta" style="margin-top:14px">Dibuje su firma abajo con el dedo o el mouse:</p>
+      <div class="pad-wrap"><canvas id="pad" width="680" height="180"></canvas></div>
+      <div class="actions">
+        <button type="button" class="ghost" id="clearBtn">Limpiar</button>
+        <button type="button" class="primary" id="signBtn">Firmar y enviar</button>
+      </div>
+      <p id="msg" class="meta" style="margin-top:12px"></p>
+    </div>
+    <div class="card hidden" id="done">
+      <h1>Firma registrada</h1>
+      <p class="ok" id="doneMsg">Gracias. Su firma quedó vinculada a la historia clínica.</p>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var token = params.get('token') || '';
+      var msg = document.getElementById('msg');
+      var canvas = document.getElementById('pad');
+      var ctx = canvas.getContext('2d');
+      var drawing = false;
+      var hasStroke = false;
+
+      function setMsg(text, isError) {
+        msg.textContent = text || '';
+        msg.className = 'meta ' + (isError ? 'error' : '');
+      }
+
+      function fitCanvas() {
+        var rect = canvas.getBoundingClientRect();
+        var ratio = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(rect.width * ratio);
+        canvas.height = Math.floor(180 * ratio);
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.lineWidth = 2.2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#102028';
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, rect.width, 180);
+      }
+
+      function pos(e) {
+        var r = canvas.getBoundingClientRect();
+        var t = e.touches ? e.touches[0] : e;
+        return { x: t.clientX - r.left, y: t.clientY - r.top };
+      }
+
+      function start(e) {
+        e.preventDefault();
+        drawing = true;
+        var p = pos(e);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+      }
+      function move(e) {
+        if (!drawing) return;
+        e.preventDefault();
+        var p = pos(e);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+        hasStroke = true;
+      }
+      function end() { drawing = false; }
+
+      canvas.addEventListener('mousedown', start);
+      canvas.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', end);
+      canvas.addEventListener('touchstart', start, { passive: false });
+      canvas.addEventListener('touchmove', move, { passive: false });
+      canvas.addEventListener('touchend', end);
+
+      document.getElementById('clearBtn').onclick = function () {
+        hasStroke = false;
+        fitCanvas();
+      };
+
+      document.getElementById('signBtn').onclick = async function () {
+        if (!hasStroke) {
+          setMsg('Dibuje su firma antes de enviar.', true);
+          return;
+        }
+        var btn = document.getElementById('signBtn');
+        btn.disabled = true;
+        setMsg('Enviando firma…');
+        try {
+          var res = await fetch('/api/public/remote-consent/' + encodeURIComponent(token) + '/sign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ signatureBase64: canvas.toDataURL('image/png') }),
+          });
+          var data = await res.json().catch(function () { return {}; });
+          if (!res.ok) throw new Error(data.message || 'No se pudo registrar la firma');
+          document.getElementById('main').classList.add('hidden');
+          document.getElementById('done').classList.remove('hidden');
+          document.getElementById('doneMsg').textContent = data.message || 'Firma registrada.';
+        } catch (err) {
+          setMsg(err.message || 'Error al firmar', true);
+          btn.disabled = false;
+        }
+      };
+
+      async function load() {
+        if (!token) {
+          setMsg('Enlace incompleto. Solicite uno nuevo a su profesional.', true);
+          document.getElementById('signBtn').disabled = true;
+          return;
+        }
+        try {
+          var res = await fetch('/api/public/remote-consent/' + encodeURIComponent(token));
+          var data = await res.json().catch(function () { return {}; });
+          if (!res.ok) throw new Error(data.message || 'Enlace no válido');
+          document.getElementById('title').textContent = data.template.title;
+          document.getElementById('meta').textContent =
+            data.clinicName + ' · ' + data.patientName +
+            ' · Caduca: ' + new Date(data.expiresAt).toLocaleString('es-CO');
+          document.getElementById('doc').innerHTML = data.template.bodyHtml || '';
+          fitCanvas();
+        } catch (err) {
+          setMsg(err.message || 'No se pudo cargar el documento', true);
+          document.getElementById('signBtn').disabled = true;
+        }
+      }
+
+      window.addEventListener('resize', fitCanvas);
+      load();
+    })();
+  </script>
+</body>
+</html>

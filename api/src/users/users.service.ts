@@ -6,10 +6,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Clinic } from '../clinics/clinic.entity';
 import { UserRole } from '../common/enums';
 import { CreateClinicAdminDto } from './dto/create-clinic-admin.dto';
+import {
+  CreateStaffUserDto,
+  STAFF_CREATABLE_ROLES,
+  UpdateStaffUserDto,
+} from './dto/create-staff-user.dto';
 import { toPublicUser, User } from './user.entity';
 
 @Injectable()
@@ -35,6 +40,16 @@ export class UsersService {
     });
   }
 
+  private toStaffUser(u: User) {
+    return {
+      ...toPublicUser(u),
+      professionalCard: u.professionalCard,
+      createdAt: u.createdAt,
+      /** Contraseña actual (última asignada por admin). Solo en endpoints SUPER_ADMIN. */
+      currentPassword: u.passwordReminder ?? null,
+    };
+  }
+
   async listClinicAdmins() {
     const users = await this.usersRepository.find({
       where: { role: UserRole.ADMIN },
@@ -44,7 +59,44 @@ export class UsersService {
     return users.map(toPublicUser);
   }
 
+  /** Lista usuarios de consultorio (admin, profesional, recepción, auditor). */
+  async listStaffUsers(clinicId?: string, role?: UserRole) {
+    const where: {
+      role?: UserRole | ReturnType<typeof In>;
+      clinicId?: string;
+    } = {
+      role: In([...STAFF_CREATABLE_ROLES]),
+    };
+    if (clinicId?.trim()) where.clinicId = clinicId.trim();
+    if (role && (STAFF_CREATABLE_ROLES as readonly UserRole[]).includes(role)) {
+      where.role = role;
+    }
+
+    const users = await this.usersRepository.find({
+      where,
+      relations: { clinic: true },
+      order: { createdAt: 'DESC' },
+    });
+    return users.map((u) => this.toStaffUser(u));
+  }
+
   async createClinicAdmin(dto: CreateClinicAdminDto) {
+    return this.createStaffUser({
+      clinicId: dto.clinicId,
+      fullName: dto.fullName,
+      email: dto.email,
+      password: dto.password,
+      role: UserRole.ADMIN,
+    });
+  }
+
+  async createStaffUser(dto: CreateStaffUserDto) {
+    if (!(STAFF_CREATABLE_ROLES as readonly UserRole[]).includes(dto.role)) {
+      throw new BadRequestException(
+        'Rol no permitido. Use ADMIN, HEALTH_PROFESSIONAL, RECEPTIONIST o AUDITOR.',
+      );
+    }
+
     const clinic = await this.clinicsRepository.findOne({
       where: { id: dto.clinicId },
     });
@@ -63,16 +115,64 @@ export class UsersService {
 
     const user = this.usersRepository.create({
       email,
-      fullName: dto.fullName,
+      fullName: dto.fullName.trim(),
       passwordHash: await bcrypt.hash(dto.password, 10),
-      role: UserRole.ADMIN,
+      passwordReminder: dto.password,
+      role: dto.role,
       clinicId: clinic.id,
+      professionalCard: dto.professionalCard?.trim() || null,
       isActive: true,
     });
 
     const saved = await this.usersRepository.save(user);
     saved.clinic = clinic;
-    return toPublicUser(saved);
+    return this.toStaffUser(saved);
+  }
+
+  async resetPassword(userId: string, password: string) {
+    const user = await this.findById(userId);
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+    if (user.role === UserRole.SUPER_ADMIN) {
+      throw new BadRequestException(
+        'No se puede resetear la contraseña del superadministrador desde este módulo.',
+      );
+    }
+    if (!(STAFF_CREATABLE_ROLES as readonly UserRole[]).includes(user.role)) {
+      throw new BadRequestException('Este tipo de usuario no se gestiona aquí.');
+    }
+
+    const previousPassword = user.passwordReminder ?? null;
+    user.passwordHash = await bcrypt.hash(password, 10);
+    user.passwordReminder = password;
+    await this.usersRepository.save(user);
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      previousPassword,
+      currentPassword: password,
+      message: 'Contraseña actualizada correctamente.',
+    };
+  }
+
+  async updateStaffUser(userId: string, dto: UpdateStaffUserDto) {
+    const user = await this.findById(userId);
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+    if (user.role === UserRole.SUPER_ADMIN) {
+      throw new BadRequestException('No se puede editar el superadministrador aquí.');
+    }
+    if (!(STAFF_CREATABLE_ROLES as readonly UserRole[]).includes(user.role)) {
+      throw new BadRequestException('Este tipo de usuario no se gestiona aquí.');
+    }
+
+    if (dto.fullName !== undefined) user.fullName = dto.fullName.trim();
+    if (dto.professionalCard !== undefined) {
+      user.professionalCard = dto.professionalCard.trim() || null;
+    }
+    if (dto.isActive !== undefined) user.isActive = dto.isActive;
+
+    const saved = await this.usersRepository.save(user);
+    return this.toStaffUser(saved);
   }
 
   async ensureSuperAdmin(params: {

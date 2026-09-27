@@ -140,6 +140,11 @@ export class CreatePatientDto {
   @IsOptional()
   @IsString()
   @MaxLength(120)
+  profession?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
   occupation?: string;
 
   @IsOptional()
@@ -161,6 +166,41 @@ export class CreatePatientDto {
   @IsString()
   @MaxLength(60)
   emergencyRelationship?: string;
+
+  /** Representante legal / acudiente (obligatorio en UI si menor de 18). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  guardianFullName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  guardianDocumentType?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  guardianDocumentNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  guardianRelationship?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  guardianPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(180)
+  guardianEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  photoUrl?: string;
 }
 
 export class UpdatePatientDto extends PartialType(CreatePatientDto) {}

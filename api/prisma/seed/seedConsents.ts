@@ -123,6 +123,101 @@ const PSYCHOLOGY_CONSENTS_V1: ConsentSeed[] = [
 </section>
 `.trim(),
   },
+  {
+    code: 'DISSENT_HOSPITALIZATION',
+    title:
+      'Disentimiento de hospitalización / remisión a urgencias (rechazo informado)',
+    bodyHtml: `
+<section>
+  <h2>DISENTIMIENTO DE HOSPITALIZACIÓN Y/O REMISIÓN A URGENCIAS</h2>
+  <p><strong>Ciudad y Fecha:</strong> ___________________________</p>
+
+  <p>Yo, ________________________________________________, identificado(a) con documento No. _________________, obrando en nombre propio o en representación legal del(la) paciente ________________________________________________, declaro que el/la profesional _____________________________________, TP ______________, me ha informado de manera clara sobre:</p>
+  <ol>
+    <li>La recomendación clínica de hospitalización y/o remisión a un servicio de urgencias.</li>
+    <li>Los riesgos razonablemente previsibles de no seguir dicha recomendación (incluyendo posible deterioro, crisis o daño a sí mismo/a o a terceros).</li>
+    <li>Las alternativas disponibles y las limitaciones del manejo ambulatorio en este momento.</li>
+  </ol>
+
+  <p><strong>Declaración de disentimiento:</strong> Habiendo comprendido la información, <strong>rechazo de manera libre, consciente e informada</strong> la hospitalización y/o remisión sugerida, asumiendo la responsabilidad por las consecuencias de esta decisión. Entiendo que puedo reconsiderarla en cualquier momento y solicitar nuevamente valoración.</p>
+
+  <p>Se me ha indicado la ruta de atención en caso de emergencia (líneas de urgencias / 123 / servicio de salud más cercano) y que el profesional documentará este disentimiento en la historia clínica conforme a la Ley 1090 de 2006 y la Resolución 1995 de 1999.</p>
+
+  <p>En constancia firman paciente o acudiente y el/la profesional tratante.</p>
+</section>
+`.trim(),
+  },
+];
+
+const PHYSIOTHERAPY_CONSENTS_V1: ConsentSeed[] = [
+  {
+    code: 'HABEAS_DATA',
+    title:
+      'Autorización para el tratamiento de datos personales y sensibles (Ley 1581 de 2012)',
+    bodyHtml: `
+<section>
+  <h2>AUTORIZACIÓN PARA EL TRATAMIENTO DE DATOS PERSONALES Y SENSIBLES (LEY 1581 DE 2012)</h2>
+  <p><strong>Ciudad y Fecha:</strong> ___________________________</p>
+
+  <p>Yo, ________________________________________________, identificado(a) con C.C. / C.E. / T.I. No. _________________ de _________________, obrando en nombre propio o en representación legal del menor/paciente ________________________________________________, autorizo de manera previa, expresa e informada al consultorio de fisioterapia / profesional tratante para realizar la recolección, almacenamiento, uso, circulación y supresión de mis datos personales y <strong>datos sensibles</strong>, conforme a lo dispuesto en la Ley 1581 de 2012 y el Decreto 1377 de 2013.</p>
+
+  <h3>1. Finalidad del Tratamiento</h3>
+  <p>Entiendo y acepto que mis datos personales y sensibles (relacionados con mi estado de salud física, funcionalidad, antecedentes clínicos, diagnósticos e intervenciones fisioterapéuticas) serán utilizados estrictamente para:</p>
+  <ul>
+    <li>Prestación integral de servicios de fisioterapia (evaluación, diagnóstico fisioterapéutico y tratamiento).</li>
+    <li>Apertura, actualización y custodia de la Historia Clínica, en cumplimiento de la Resolución 1995 de 1999 y demás normas aplicables.</li>
+    <li>Gestión administrativa: agendamiento, recordatorios, facturación y reportes al sistema de salud cuando aplique.</li>
+  </ul>
+
+  <h3>2. Tratamiento de Datos Sensibles</h3>
+  <p>Se me ha informado que, por tratarse de datos relativos a mi salud (datos sensibles), <strong>no estoy obligado(a) a autorizar su tratamiento</strong> para fines distintos a la prestación del servicio. La recolección de datos clínicos es requisito para brindarme la atención solicitada.</p>
+
+  <h3>3. Derechos del Titular</h3>
+  <p>Conozco mis derechos de conocer, actualizar y rectificar datos; solicitar prueba de esta autorización; ser informado del uso; presentar quejas ante la SIC; y revocar la autorización cuando la ley lo permita, sin perjuicio de la custodia legal de la historia clínica.</p>
+
+  <p>Leído el presente documento, otorgo mi consentimiento libre, consciente y voluntario.</p>
+</section>
+`.trim(),
+  },
+  {
+    code: 'FT_INFORMED',
+    title: 'Consentimiento informado para evaluación y tratamiento fisioterapéutico',
+    bodyHtml: `
+<section>
+  <h2>CONSENTIMIENTO INFORMADO PARA EVALUACIÓN Y TRATAMIENTO FISIOTERAPÉUTICO</h2>
+  <p><strong>Ciudad y Fecha:</strong> ___________________________</p>
+
+  <p>Yo, ________________________________________________, identificado(a) con documento No. _________________, obrando en nombre propio o como representante legal del paciente ________________________________________________, declaro que he sido informado(a) de manera clara por el/la fisioterapeuta _____________________________________, con Tarjeta Profesional No. ______________, sobre:</p>
+
+  <ol>
+    <li><strong>Naturaleza de la intervención:</strong> evaluación fisioterapéutica, diagnóstico fisioterapéutico y plan de intervención (ejercicio terapéutico, modalidades físicas, educación, etc.) según criterio profesional.</li>
+    <li><strong>Beneficios esperados:</strong> mejorar función, aliviar dolor, recuperar movilidad/fuerza/equilibrio o prevenir complicaciones, según el caso clínico.</li>
+    <li><strong>Riesgos y molestias:</strong> dolor muscular transitorio, fatiga, irritación cutánea por modalidades, o agravamiento temporal de síntomas. Se me indicó reportar inmediatamente cualquier malestar intenso.</li>
+    <li><strong>Alternativas:</strong> otras opciones de rehabilitación, remisión a otro profesional o no intervenir, con las consecuencias clínicas que ello implica.</li>
+    <li><strong>Confidencialidad y datos:</strong> la información clínica se custodia conforme a la Ley 1581 de 2012 y la normativa de historia clínica.</li>
+    <li><strong>Participación voluntaria:</strong> puedo suspender o rechazar procedimientos en cualquier momento, informando al profesional.</li>
+  </ol>
+
+  <p>Habiendo resuelto mis dudas, autorizo el inicio de la evaluación y/o tratamiento fisioterapéutico propuesto.</p>
+</section>
+`.trim(),
+  },
+  {
+    code: 'FT_TELEHEALTH',
+    title: 'Consentimiento para atención virtual de fisioterapia',
+    bodyHtml: `
+<section>
+  <h2>Consentimiento informado — fisioterapia en modalidad virtual</h2>
+  <p>El/la paciente (o representante legal) autoriza la prestación de servicios de fisioterapia mediante medios tecnológicos, complementarios o alternativos a la atención presencial, con registro en historia clínica y protección de datos (Ley 1581 de 2012).</p>
+  <ul>
+    <li>Disponer de espacio seguro y dispositivo adecuado durante la sesión.</li>
+    <li>Entender limitaciones de la valoración remota frente a la presencial.</li>
+    <li>En dolor agudo intenso, mareo, caída o emergencia, priorizar atención presencial/urgencia.</li>
+  </ul>
+  <p>Este consentimiento puede revocarse en cualquier momento sin afectar la atención ya prestada ni las obligaciones de conservación documental.</p>
+</section>
+`.trim(),
+  },
 ];
 
 export async function seedConsents(prisma: PrismaClient) {
@@ -157,5 +252,34 @@ export async function seedConsents(prisma: PrismaClient) {
     upserted += 1;
   }
 
-  return { templates: upserted, specialty: 'PSYCHOLOGY', version: 1 };
+  for (const item of PHYSIOTHERAPY_CONSENTS_V1) {
+    await prisma.consentTemplate.upsert({
+      where: {
+        specialty_code_version: {
+          specialty: ClinicSpecialty.PHYSIOTHERAPY,
+          code: item.code,
+          version: 1,
+        },
+      },
+      create: {
+        specialty: ClinicSpecialty.PHYSIOTHERAPY,
+        code: item.code,
+        title: item.title,
+        bodyHtml: item.bodyHtml,
+        bodyMarkdown: item.bodyMarkdown ?? null,
+        version: 1,
+        isActive: true,
+        clinicId: null,
+      },
+      update: {
+        title: item.title,
+        bodyHtml: item.bodyHtml,
+        bodyMarkdown: item.bodyMarkdown ?? null,
+        isActive: true,
+      },
+    });
+    upserted += 1;
+  }
+
+  return { templates: upserted, version: 1 };
 }

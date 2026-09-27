@@ -6,6 +6,6 @@ import { EmailSmtpProvider, WhatsappDevProvider } from './notification-providers
 @Module({
   controllers: [NotificationsController],
   providers: [NotificationsService, WhatsappDevProvider, EmailSmtpProvider],
-  exports: [NotificationsService],
+  exports: [NotificationsService, EmailSmtpProvider],
 })
 export class NotificationsModule {}

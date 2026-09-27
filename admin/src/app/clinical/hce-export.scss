@@ -1,0 +1,162 @@
+.hce-export-page {
+  min-height: 100vh;
+  background: #f4f7f8;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+
+  .left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    font-weight: 700;
+    color: #003d4c;
+    text-decoration: none;
+  }
+}
+
+.panel {
+  max-width: 1100px;
+  margin: 24px auto;
+  padding: 24px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 45, 92, 0.06);
+
+  h1 {
+    margin: 0 0 8px;
+    color: #003d4c;
+    font-size: 1.35rem;
+  }
+}
+
+.search-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin: 20px 0;
+
+  label.grow {
+    flex: 1 1 280px;
+  }
+
+  input {
+    width: 100%;
+    margin-top: 4px;
+  }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 0.92rem;
+
+  th,
+  td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.82rem;
+  }
+}
+
+.pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.78rem;
+
+  &.signed {
+    background: #d1fae5;
+    color: #065f46;
+  }
+}
+
+button.small {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+
+.banner {
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 12px 0;
+
+  &.error {
+    background: #fef2f2;
+    color: #991b1b;
+  }
+
+  &.ok {
+    background: #ecfdf5;
+    color: #065f46;
+  }
+}
+
+.muted {
+  color: #64748b;
+}
+
+.muted.small {
+  font-size: 0.85rem;
+}
+
+.primary,
+.ghost {
+  border-radius: 8px;
+  padding: 9px 14px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.primary {
+  background: #003d4c;
+  color: #fff;
+  border: none;
+}
+
+.ghost {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  color: #003d4c;
+}
+
+.primary:disabled,
+.ghost:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+input {
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+}

@@ -9,5 +9,8 @@ const ADMIN_URL =
 
 /** Enlace de acceso al admin según el portal: profesional o administrativo. */
 export function loginUrl(tipo: 'profesional' | 'admin') {
-  return `${ADMIN_URL}/login?tipo=${tipo}`
+  if (tipo === 'profesional') {
+    return `${ADMIN_URL}/login-profesional.html?_=${Date.now()}`
+  }
+  return `${ADMIN_URL}/login-admin.html?_=${Date.now()}`
 }
