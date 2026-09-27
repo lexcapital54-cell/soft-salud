@@ -915,7 +915,7 @@
             /></label>
             <label
               >Fecha de digitación
-              @if (canEditAttendanceMeta()) {
+              @if (canEditDocumentedAt()) {
                 <input
                   type="datetime-local"
                   [value]="documentedAtLocal()"
@@ -927,17 +927,23 @@
               } @else {
                 <input
                   [ngModel]="
-                    (content.documentedAt || encounter()?.createdAt || encounter()?.startedAt)
-                      | date: 'dd/MM/yyyy HH:mm'
+                    (content.documentedAt ||
+                      encounter()?.createdAt ||
+                      encounter()?.startedAt ||
+                      systemClock()) | date: 'dd/MM/yyyy HH:mm'
                   "
                   readonly
-                  title="Fecha en que se digitó la historia (no cambia al guardar o sellar)"
+                  title="Fecha y hora actuales del sistema; quedan fijas al crear la atención"
                 />
               }
             </label>
             <label
               >Inicio atención
-              <input [ngModel]="encounter()?.startedAt | date: 'dd/MM/yyyy HH:mm'" readonly />
+              <input
+                [ngModel]="(encounter()?.startedAt || systemClock()) | date: 'dd/MM/yyyy HH:mm'"
+                readonly
+                title="Hora del sistema al abrir la atención"
+              />
             </label>
             <label
               >Servicio
@@ -1026,8 +1032,12 @@
               </p>
             }
           </div>
-          @if (!canEditAttendanceMeta() && canWrite()) {
-            <p class="muted small">Seleccione un paciente para editar modalidad y datos RIPS.</p>
+          @if (canWrite() && !encounter() && !isLocked()) {
+            <p class="muted small">
+              La <strong>fecha de digitación</strong> y el <strong>inicio de atención</strong> se toman
+              de la fecha y hora del sistema al crear la atención. Elija la
+              <strong>modalidad</strong> (presencial o virtual) desde ya.
+            </p>
           } @else if (isLocked() && canWrite()) {
             <p class="muted small">
               Historia sellada: la <strong>fecha de digitación</strong> y la

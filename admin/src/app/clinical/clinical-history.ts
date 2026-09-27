@@ -501,6 +501,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   attachmentFile: File | null = null;
 
   readonly now = new Date();
+  /** Hora del sistema para una atención aún no creada (se refresca cada 30 s). */
+  readonly systemClock = signal(new Date());
+  private readonly systemClockTimer = setInterval(() => this.systemClock.set(new Date()), 30_000);
 
   isSoap() {
     return this.noteFormat() === 'SOAP';
@@ -580,8 +583,12 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   /** Fecha de digitación y modalidad: editables también con la HC sellada. */
   canEditAttendanceMeta(): boolean {
     if (!this.canWrite()) return false;
-    if (this.encounter()) return true;
-    return !this.isLocked() && !!this.selectedPatientId;
+    return !!this.encounter() || !this.isLocked();
+  }
+
+  /** Fecha de digitación editable solo cuando la atención ya existe en BD. */
+  canEditDocumentedAt(): boolean {
+    return this.canWrite() && !!this.encounter();
   }
 
   documentedAtLocal(): string {
@@ -678,7 +685,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     if (!this.selectedPatientId) {
       return throwError(() => ({ error: { message: 'Seleccione un paciente.' } }));
     }
-    return this.api.createEncounter(this.selectedPatientId).pipe(
+    return this.api.createEncounter(this.selectedPatientId, this.modality).pipe(
       tap((enc) => {
         this.pendingEncounterForPatient = null;
         // applyEncounter reemplaza el formulario: antes se respalda lo escrito mientras respondía.
@@ -1417,7 +1424,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     this.pendingEncounterForPatient = patientId;
     this.loading.set(true);
     this.error.set('');
-    this.api.createEncounter(patientId).subscribe({
+    this.api.createEncounter(patientId, this.modality).subscribe({
       next: (enc) => {
         this.pendingEncounterForPatient = null;
         this.writeLocalDraftNow();
@@ -1557,6 +1564,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     this.writeLocalDraftNow();
+    clearInterval(this.systemClockTimer);
     if (this.saveToastTimer) clearTimeout(this.saveToastTimer);
     this.autosaveErrorsSub?.unsubscribe();
     this.setWorkDirty(false);
@@ -1857,7 +1865,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
     this.loading.set(true);
     this.error.set('');
-    this.api.createEncounter(this.selectedPatientId).subscribe({
+    this.api.createEncounter(this.selectedPatientId, this.modality).subscribe({
       next: (enc) => {
         this.applyEncounter(enc);
         this.loading.set(false);

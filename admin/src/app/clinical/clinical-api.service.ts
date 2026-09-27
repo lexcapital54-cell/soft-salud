@@ -110,8 +110,11 @@ export class ClinicalApiService {
     return this.http.get<Encounter | null>(`${API}/encounters/for-patient/${patientId}`);
   }
 
-  createEncounter(patientId: string) {
-    return this.http.post<Encounter>(`${API}/encounters`, { patientId });
+  createEncounter(patientId: string, modality?: string) {
+    return this.http.post<Encounter>(`${API}/encounters`, {
+      patientId,
+      ...(modality ? { modality } : {}),
+    });
   }
 
   saveDraft(
