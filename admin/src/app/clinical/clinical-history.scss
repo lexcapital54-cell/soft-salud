@@ -424,6 +424,14 @@ button:disabled {
   border: 1px solid #e8c4a8;
 }
 
+.banner.error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+
 .measure-warnings ul {
   margin: 6px 0 0;
   padding-left: 18px;

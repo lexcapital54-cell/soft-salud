@@ -1225,19 +1225,36 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     return null;
   }
 
+  /** Error de carga mostrado junto a las fotos y radiografías (además del aviso general). */
+  readonly mediaError = signal('');
+
+  private showMediaError(message: string) {
+    const text = Array.isArray(message) ? message.join(' ') : message;
+    this.mediaError.set(text);
+    this.error.set(text);
+  }
+
+  /** Sube la foto o imagen; si la atención aún no está abierta, la abre primero. */
   private uploadDentalFile(file: File, label: string, category: 'PHOTO' | 'IMAGE') {
-    const enc = this.encounter();
-    if (!enc) {
-      this.error.set('Inicie la atención antes de subir archivos.');
+    if (!this.encounter() && !this.selectedPatientId) {
+      this.showMediaError('Seleccione o cree el paciente antes de subir fotografías o radiografías.');
       return null;
     }
-    const form = new FormData();
-    form.append('file', file);
-    form.append('encounterId', enc.id);
-    if (enc.clinicalRecord?.id) form.append('clinicalRecordId', enc.clinicalRecord.id);
-    form.append('label', label);
-    form.append('category', category);
-    return this.api.uploadAttachment(form);
+    if (file.size > 25 * 1024 * 1024) {
+      this.showMediaError(`${file.name} pesa más de 25 MB; redúzcala antes de subirla.`);
+      return null;
+    }
+    return this.withEncounterReady().pipe(
+      switchMap((enc) => {
+        const form = new FormData();
+        form.append('file', file);
+        form.append('encounterId', enc.id);
+        if (enc.clinicalRecord?.id) form.append('clinicalRecordId', enc.clinicalRecord.id);
+        form.append('label', label);
+        form.append('category', category);
+        return this.api.uploadAttachment(form);
+      }),
+    );
   }
 
   uploadDentalPhoto(slotKey: string, label: string, group: string, event: Event) {
@@ -1248,6 +1265,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     const req = this.uploadDentalFile(file, `Foto ${group.toLowerCase()} — ${label}`, 'PHOTO');
     if (!req) return;
     this.dentalPhotoUploading.set(slotKey);
+    this.mediaError.set('');
     req.subscribe({
       next: (att) => {
         this.dentalPhotoUploading.set(null);
@@ -1262,7 +1280,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => {
         this.dentalPhotoUploading.set(null);
-        this.error.set(err?.error?.message || 'No se pudo subir la fotografía.');
+        this.showMediaError(err?.error?.message || 'No se pudo subir la fotografía.');
       },
     });
   }
@@ -1282,18 +1300,20 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     const req = this.uploadDentalFile(file, `${row.type || 'Imagen diagnóstica'} — ${file.name}`, 'IMAGE');
     if (!req) return;
     this.imagingUploading.set(index);
+    this.mediaError.set('');
     req.subscribe({
       next: (att) => {
         this.imagingUploading.set(null);
-        row.attachmentId = att.id;
-        row.fileName = file.name;
-        if (!row.date) row.date = new Date().toISOString().slice(0, 10);
+        const target = this.dental().imaging[index] ?? row;
+        target.attachmentId = att.id;
+        target.fileName = file.name;
+        if (!target.date) target.date = new Date().toISOString().slice(0, 10);
         this.attachments.set([att, ...this.attachments()]);
         this.onClinicalFieldChange();
       },
       error: (err) => {
         this.imagingUploading.set(null);
-        this.error.set(err?.error?.message || 'No se pudo subir la imagen.');
+        this.showMediaError(err?.error?.message || 'No se pudo subir la imagen.');
       },
     });
   }
