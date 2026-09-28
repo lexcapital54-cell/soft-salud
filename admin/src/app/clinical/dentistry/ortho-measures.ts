@@ -1,3 +1,4 @@
+import { skeletalClassForAnb } from './ceph-geometry';
 import { DentistryContent } from './dentistry.models';
 
 type Ortho = DentistryContent['orthodontics'];
@@ -184,7 +185,7 @@ export function anbFrom(o: Ortho): string | null {
 export function skeletalClassFromAnb(o: Ortho): string | null {
   const anb = checkMeasure('cephalometry.anb', anbFrom(o) ?? o.cephalometry.anb);
   if (anb.value === null || anb.state === 'invalid') return null;
-  return anb.value < 0 ? 'Clase III' : anb.value > 4 ? 'Clase II' : 'Clase I';
+  return skeletalClassForAnb(anb.value);
 }
 
 export function growthPatternFromFma(o: Ortho): string | null {

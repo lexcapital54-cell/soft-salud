@@ -2346,7 +2346,7 @@
                         Trazado cefalométrico sobre la radiografía lateral
                         @if (dental().orthodontics.cephTracing.tracedAt) {
                           <span class="muted small">
-                            · {{ cephPointCount() }} de 12 puntos ·
+                            · {{ cephPointCount() }} de {{ cephLandmarkTotal }} puntos ·
                             {{ dental().orthodontics.cephTracing.tracedAt | date: 'dd/MM/yyyy HH:mm' }}
                           </span>
                         }

@@ -1,28 +1,86 @@
 import { Component, ElementRef, OnInit, ViewChild, computed, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CEPH_LANDMARKS, CEPH_LINES, CephLandmarkKey, CephResult, cephValueText, computeCeph } from './ceph-geometry';
+import {
+  CEPH_LANDMARKS,
+  CEPH_LINES,
+  CephLandmarkKey,
+  CephResult,
+  cephValueText,
+  computeCeph,
+  skeletalClassForAnb,
+  skeletalPatternText,
+} from './ceph-geometry';
 import { CephTracing } from './dentistry.models';
-import { OrthoMeasureKey, OrthoMeasureStatus, checkMeasure } from './ortho-measures';
+import { ORTHO_MEASURE_RULES, OrthoMeasureKey, fmt } from './ortho-measures';
 
 export interface CephRadiographOption {
   attachmentId: string;
   label: string;
 }
 
-interface MeasureRow {
+interface MetricDef {
   key: keyof CephResult;
-  rule: OrthoMeasureKey;
   label: string;
+  name: string;
+  unit: '°' | '%';
   needs: CephLandmarkKey[];
+  /** Rango posible; fuera de él los puntos están mal ubicados. */
+  min: number;
+  max: number;
+  norm: [number, number];
+  interpret: (v: number) => string;
+  primary?: boolean;
 }
 
-const MEASURES: MeasureRow[] = [
-  { key: 'sna', rule: 'cephalometry.sna', label: 'SNA', needs: ['S', 'N', 'A'] },
-  { key: 'snb', rule: 'cephalometry.snb', label: 'SNB', needs: ['S', 'N', 'B'] },
-  { key: 'anb', rule: 'cephalometry.anb', label: 'ANB', needs: ['S', 'N', 'A', 'B'] },
-  { key: 'fma', rule: 'cephalometry.fma', label: 'FMA', needs: ['Po', 'Or', 'Go', 'Me'] },
-  { key: 'impa', rule: 'cephalometry.impa', label: 'IMPA', needs: ['Go', 'Me', 'L1T', 'L1A'] },
-  { key: 'upperIncisor', rule: 'cephalometry.upperIncisor', label: 'U1-SN', needs: ['S', 'N', 'U1T', 'U1A'] },
+type MetricTone = 'ok' | 'low' | 'high' | 'invalid';
+
+const TONE_BADGE: Record<MetricTone, string> = { ok: 'Normal', low: 'Disminuido', high: 'Aumentado', invalid: 'Revisar puntos' };
+
+function fromRule(rule: OrthoMeasureKey) {
+  const r = ORTHO_MEASURE_RULES[rule];
+  return { min: r.min, max: r.max, norm: r.norm!, interpret: r.interpret };
+}
+
+const METRICS: MetricDef[] = [
+  { key: 'sna', label: 'SNA', name: 'Posición del maxilar', unit: '°', needs: ['S', 'N', 'A'], primary: true, ...fromRule('cephalometry.sna') },
+  { key: 'snb', label: 'SNB', name: 'Posición de la mandíbula', unit: '°', needs: ['S', 'N', 'B'], primary: true, ...fromRule('cephalometry.snb') },
+  { key: 'anb', label: 'ANB', name: 'Relación maxilomandibular', unit: '°', needs: ['S', 'N', 'A', 'B'], primary: true, ...fromRule('cephalometry.anb') },
+  { key: 'fma', label: 'FMA', name: 'Frankfort / plano mandibular', unit: '°', needs: ['Po', 'Or', 'Go', 'Me'], ...fromRule('cephalometry.fma') },
+  {
+    key: 'snGoGn',
+    label: 'SN-GoGn',
+    name: 'Divergencia facial',
+    unit: '°',
+    needs: ['S', 'N', 'Go', 'Gn'],
+    min: 5,
+    max: 70,
+    norm: [27, 37],
+    interpret: (v) => (v < 27 ? 'Hipodivergente (braquifacial)' : v > 37 ? 'Hiperdivergente (dolicofacial)' : 'Normodivergente'),
+  },
+  {
+    key: 'facialAngle',
+    label: 'Ángulo facial',
+    name: 'Posición del mentón (Downs)',
+    unit: '°',
+    needs: ['Po', 'Or', 'N', 'Pog'],
+    min: 60,
+    max: 110,
+    norm: [82, 95],
+    interpret: (v) => (v < 82 ? 'Mentón retruido' : v > 95 ? 'Mentón protruido' : 'Normal'),
+  },
+  {
+    key: 'jarabak',
+    label: 'Jarabak',
+    name: 'Altura facial S-Go / N-Me',
+    unit: '%',
+    needs: ['S', 'Go', 'N', 'Me'],
+    min: 40,
+    max: 90,
+    norm: [59, 63],
+    interpret: (v) => (v < 59 ? 'Crecimiento horario (vertical)' : v > 63 ? 'Crecimiento antihorario (horizontal)' : 'Crecimiento equilibrado'),
+  },
+  { key: 'impa', label: 'IMPA', name: 'Inclinación incisivo inferior', unit: '°', needs: ['Go', 'Me', 'L1T', 'L1A'], ...fromRule('cephalometry.impa') },
+  { key: 'upperIncisor', label: 'U1-SN', name: 'Inclinación incisivo superior', unit: '°', needs: ['S', 'N', 'U1T', 'U1A'], ...fromRule('cephalometry.upperIncisor') },
 ];
 
 @Component({
@@ -61,8 +119,8 @@ const MEASURES: MeasureRow[] = [
 
       @if (!tracing().attachmentId) {
         <p class="ceph-empty">
-          Seleccione o suba la radiografía cefálica lateral. Luego marque los puntos en orden y el sistema calcula
-          SNA, SNB, ANB, FMA, IMPA y U1-SN.
+          Seleccione o suba la radiografía cefálica lateral. Luego marque los puntos fiduciarios en orden y el sistema
+          calcula SNA, SNB, ANB, FMA, SN-GoGn, ángulo facial, Jarabak, IMPA y U1-SN, y sugiere la clase esquelética.
         </p>
       } @else {
         <div class="ceph-body">
@@ -125,66 +183,97 @@ const MEASURES: MeasureRow[] = [
           </div>
 
           <aside class="ceph-side">
-            <p class="ceph-h">Puntos cefalométricos <span>{{ placedCount() }}/{{ landmarks.length }}</span></p>
-            <ol class="ceph-points">
-              @for (l of landmarks; track l.key) {
-                <li>
-                  <button
-                    type="button"
-                    [class.on]="l.key === active()"
-                    [class.done]="isPlaced(l.key)"
-                    [disabled]="disabled()"
-                    (click)="active.set(l.key)"
-                  >
-                    <b>{{ l.short }}</b> {{ l.label }}
-                    @if (isPlaced(l.key)) {
-                      <span class="ok" aria-label="marcado">✓</span>
-                    }
-                  </button>
-                </li>
-              }
-            </ol>
-            @if (!disabled()) {
-              @if (activeLandmark(); as a) {
-                <p class="ceph-hint">
-                  <strong>{{ a.label }}:</strong> {{ a.hint }}
-                  {{ isPlaced(a.key) ? 'Arrastre el punto para ajustarlo o haga clic en otro sitio para moverlo.' : 'Haga clic sobre la radiografía.' }}
-                </p>
-                <div class="ceph-actions">
-                  @if (isPlaced(a.key)) {
-                    <button type="button" class="linkish" (click)="removePoint(a.key)">Quitar este punto</button>
-                  }
-                  @if (placedCount()) {
-                    <button type="button" class="linkish danger" (click)="resetPoints()">Borrar todo el trazado</button>
-                  }
-                </div>
-              } @else if (placedCount() === landmarks.length) {
-                <p class="ceph-hint">Trazado completo. Seleccione un punto de la lista para ajustarlo.</p>
-              }
-            }
-
-            <p class="ceph-h">Medidas del trazado</p>
-            <table class="ceph-measures">
-              <tbody>
-                @for (m of measureRows(); track m.key) {
-                  <tr>
-                    <th>{{ m.label }}</th>
-                    @if (m.value !== null) {
-                      <td class="v">{{ m.text }}°</td>
-                      <td [class]="'st ' + m.status!.state">{{ m.status!.message }}</td>
-                    } @else {
-                      <td class="v">—</td>
-                      <td class="st empty">Faltan: {{ m.missing }}</td>
-                    }
-                  </tr>
+            <section class="ceph-panel">
+              <p class="ceph-h">Puntos fiduciarios <span>{{ placedCount() }}/{{ landmarks.length }}</span></p>
+              <div class="ceph-progress" role="progressbar" [attr.aria-valuenow]="placedCount()" aria-valuemin="0" [attr.aria-valuemax]="landmarks.length">
+                <span [style.width.%]="(placedCount() / landmarks.length) * 100"></span>
+              </div>
+              <ol class="ceph-points">
+                @for (l of landmarks; track l.key) {
+                  <li>
+                    <button
+                      type="button"
+                      [class.on]="l.key === active()"
+                      [class.done]="isPlaced(l.key)"
+                      [disabled]="disabled()"
+                      (click)="active.set(l.key)"
+                    >
+                      <b>{{ l.short }}</b> {{ l.label }}
+                      @if (isPlaced(l.key)) {
+                        <span class="ok" aria-label="marcado">✓</span>
+                      }
+                    </button>
+                  </li>
                 }
-              </tbody>
-            </table>
+              </ol>
+              @if (!disabled()) {
+                @if (activeLandmark(); as a) {
+                  <p class="ceph-hint">
+                    <strong>{{ a.label }}:</strong> {{ a.hint }}
+                    {{ isPlaced(a.key) ? 'Arrastre el punto para ajustarlo o haga clic en otro sitio para moverlo.' : 'Haga clic sobre la radiografía.' }}
+                  </p>
+                  <div class="ceph-actions">
+                    @if (isPlaced(a.key)) {
+                      <button type="button" class="linkish" (click)="removePoint(a.key)">Quitar este punto</button>
+                    }
+                    @if (placedCount()) {
+                      <button type="button" class="linkish danger" (click)="resetPoints()">Borrar todo el trazado</button>
+                    }
+                  </div>
+                } @else if (placedCount() === landmarks.length) {
+                  <p class="ceph-hint">Trazado completo. Seleccione un punto de la lista para ajustarlo.</p>
+                }
+              }
+            </section>
+
+            @let sk = skeletal();
+            <section class="ceph-panel ceph-dx" [attr.data-tone]="sk?.tone ?? 'empty'">
+              <div class="ceph-dx-head">
+                <p class="ceph-h">Diagnóstico esqueletal sugerido</p>
+                @if (sk) {
+                  <span class="ceph-badge" [attr.data-tone]="sk.tone">{{ sk.cls ?? 'Revisar' }}</span>
+                }
+              </div>
+              <label class="ceph-dx-field">
+                <span class="sr-only">Patrón esqueletal sugerido</span>
+                <input type="text" readonly [value]="sk?.text ?? ''" placeholder="Marque S, N, A y B para calcular el ANB" />
+              </label>
+              <p class="ceph-dx-reason">
+                {{ sk ? sk.reason : 'Regla: ANB > 4° → Clase II · ANB < 0° → Clase III · 0° a 4° → Clase I.' }}
+              </p>
+            </section>
+
+            <section class="ceph-metrics">
+              @for (m of metricCards(); track m.key) {
+                <article class="ceph-metric" [class.primary]="m.primary" [attr.data-tone]="m.tone ?? 'empty'">
+                  <header>
+                    <span class="lbl">{{ m.label }}</span>
+                    @if (m.tone) {
+                      <span class="ceph-badge" [attr.data-tone]="m.tone">{{ m.badge }}</span>
+                    }
+                  </header>
+                  <p class="val">
+                    @if (m.value !== null) {
+                      {{ m.text }}<small>{{ m.unit }}</small>
+                    } @else {
+                      —
+                    }
+                  </p>
+                  <p class="name">{{ m.name }}</p>
+                  <p class="detail">{{ m.value !== null ? m.message : 'Faltan: ' + m.missing }}</p>
+                  <p class="norm">Norma {{ m.normText }}</p>
+                </article>
+              }
+            </section>
+
             @if (!disabled()) {
               <button type="button" class="ceph-apply" [disabled]="!hasAnyResult()" (click)="applyResult()">
-                Pasar medidas al análisis cefalométrico
+                Pasar medidas y clase esquelética a la historia
               </button>
-              <p class="ceph-note">Reemplaza SNA, SNB, ANB, FMA, IMPA y U1-SN con las medidas del trazado. Wits se sigue registrando a mano.</p>
+              <p class="ceph-note">
+                Reemplaza SNA, SNB, ANB, FMA, IMPA, U1-SN y la clase esquelética. SN-GoGn, ángulo facial y Jarabak son de
+                referencia y se recalculan desde los puntos guardados. Wits se sigue registrando a mano.
+              </p>
             }
           </aside>
         </div>
@@ -209,9 +298,9 @@ const MEASURES: MeasureRow[] = [
       width: 26px; height: 26px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 1rem;
     }
     .ceph-empty { margin: 8px 0; color: #64748b; font-size: 0.86rem; }
-    .ceph-body { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; align-items: start; }
-    @media (max-width: 1100px) { .ceph-body { grid-template-columns: 1fr; } }
-    .ceph-stage-wrap { overflow: auto; max-height: 72vh; border-radius: 10px; background: #0b1220; }
+    .ceph-body { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; }
+    @media (max-width: 1180px) { .ceph-body { grid-template-columns: 1fr; } }
+    .ceph-stage-wrap { overflow: auto; max-height: 78vh; border-radius: 12px; background: #0b1220; box-shadow: inset 0 0 0 1px #1e293b; }
     .ceph-stage { position: relative; min-width: 100%; }
     .ceph-stage img { display: block; width: 100%; height: auto; user-select: none; }
     .ceph-overlay { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
@@ -224,8 +313,60 @@ const MEASURES: MeasureRow[] = [
     .ceph-pt circle:not(.hit) { fill: #ef4444; stroke: #fff; }
     .ceph-pt.on circle:not(.hit) { fill: #22c55e; }
     .ceph-pt text { fill: #fff; stroke: #0b1220; paint-order: stroke; font-weight: 700; font-family: system-ui, sans-serif; }
-    .ceph-side { display: flex; flex-direction: column; gap: 8px; }
-    .ceph-h { margin: 4px 0 0; font-weight: 700; font-size: 0.85rem; color: #0f172a; display: flex; justify-content: space-between; }
+    .ceph-side { display: flex; flex-direction: column; gap: 10px; }
+    .ceph-panel {
+      display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px;
+      border: 1px solid #e2e8f0; background: #fff; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    }
+    .ceph-h { margin: 0; font-weight: 700; font-size: 0.85rem; color: #0f172a; display: flex; justify-content: space-between; }
+    .ceph-progress { height: 6px; border-radius: 99px; background: #e2e8f0; overflow: hidden; }
+    .ceph-progress span { display: block; height: 100%; background: linear-gradient(90deg, #0ea5e9, #10b981); transition: width 0.2s; }
+    .ceph-badge {
+      display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 99px; white-space: nowrap;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em; border: 1px solid transparent;
+    }
+    .ceph-badge[data-tone='ok'] { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .ceph-badge[data-tone='low'] { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+    .ceph-badge[data-tone='high'] { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+    .ceph-badge[data-tone='invalid'] { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+    .ceph-badge[data-tone='c2'] { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+    .ceph-badge[data-tone='c3'] { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
+    .ceph-dx { border-left: 4px solid #cbd5e1; }
+    .ceph-dx[data-tone='ok'] { border-left-color: #22c55e; }
+    .ceph-dx[data-tone='c2'] { border-left-color: #f97316; }
+    .ceph-dx[data-tone='c3'] { border-left-color: #8b5cf6; }
+    .ceph-dx[data-tone='invalid'] { border-left-color: #ef4444; }
+    .ceph-dx-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .ceph-dx-field input {
+      width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1;
+      background: #f8fafc; font-size: 0.95rem; font-weight: 700; color: #0f172a;
+    }
+    .ceph-dx[data-tone='c2'] .ceph-dx-field input { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+    .ceph-dx[data-tone='c3'] .ceph-dx-field input { background: #f5f3ff; border-color: #ddd6fe; color: #5b21b6; }
+    .ceph-dx[data-tone='ok'] .ceph-dx-field input { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+    .ceph-dx-reason { margin: 0; font-size: 0.76rem; color: #475569; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .ceph-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    @media (max-width: 1180px) { .ceph-metrics { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
+    .ceph-metric {
+      display: flex; flex-direction: column; gap: 2px; padding: 9px 10px; border-radius: 10px;
+      border: 1px solid #e2e8f0; background: #fff; border-top: 3px solid #e2e8f0; min-width: 0;
+    }
+    .ceph-metric.primary { background: #f8fafc; }
+    .ceph-metric[data-tone='ok'] { border-top-color: #22c55e; }
+    .ceph-metric[data-tone='low'] { border-top-color: #3b82f6; }
+    .ceph-metric[data-tone='high'] { border-top-color: #f59e0b; }
+    .ceph-metric[data-tone='invalid'] { border-top-color: #ef4444; }
+    .ceph-metric header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px; }
+    .ceph-metric .lbl { font-size: 0.72rem; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.03em; }
+    .ceph-metric .val { margin: 2px 0 0; font-size: 1.35rem; font-weight: 800; color: #0f172a; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .ceph-metric .val small { font-size: 0.8rem; font-weight: 700; color: #64748b; margin-left: 1px; }
+    .ceph-metric[data-tone='empty'] .val { color: #cbd5e1; }
+    .ceph-metric .name { margin: 0; font-size: 0.68rem; color: #64748b; }
+    .ceph-metric .detail { margin: 2px 0 0; font-size: 0.72rem; color: #1e293b; font-weight: 600; }
+    .ceph-metric[data-tone='empty'] .detail { color: #94a3b8; font-weight: 500; }
+    .ceph-metric[data-tone='invalid'] .detail { color: #b42318; }
+    .ceph-metric .norm { margin: 0; font-size: 0.66rem; color: #94a3b8; }
     .ceph-h span { color: #64748b; font-weight: 600; }
     .ceph-points { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
     .ceph-points button {
@@ -240,14 +381,6 @@ const MEASURES: MeasureRow[] = [
     .ceph-actions { display: flex; gap: 12px; flex-wrap: wrap; }
     .linkish { border: 0; background: none; padding: 0; color: #00798c; font: inherit; font-size: 0.8rem; font-weight: 600; text-decoration: underline; cursor: pointer; }
     .linkish.danger { color: #b42318; }
-    .ceph-measures { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-    .ceph-measures th { text-align: left; padding: 4px 6px 4px 0; color: #0f172a; white-space: nowrap; }
-    .ceph-measures td { padding: 4px 6px; border-top: 1px solid #f1f5f9; }
-    .ceph-measures td.v { font-weight: 700; white-space: nowrap; }
-    .ceph-measures td.st { font-size: 0.74rem; color: #64748b; }
-    .ceph-measures td.st.ok { color: #0f7a4b; }
-    .ceph-measures td.st.out { color: #a15c07; }
-    .ceph-measures td.st.invalid { color: #b42318; }
     .ceph-apply {
       margin-top: 4px; padding: 8px 12px; border-radius: 8px; border: 0; cursor: pointer;
       background: #00798c; color: #fff; font-weight: 700; font-size: 0.85rem;
@@ -313,22 +446,55 @@ export class OrthoCephTracingComponent implements OnInit {
 
   readonly result = computed(() => computeCeph(this.points()));
 
-  readonly measureRows = computed(() => {
+  readonly metricCards = computed(() => {
     const res = this.result();
     const pts = this.points();
-    return MEASURES.map((m) => {
+    return METRICS.map((m) => {
       const value = res[m.key];
-      const text = cephValueText(value);
-      const status: OrthoMeasureStatus | null = value === null ? null : checkMeasure(m.rule, text);
+      const tone: MetricTone | null =
+        value === null ? null : value < m.min || value > m.max ? 'invalid' : value < m.norm[0] ? 'low' : value > m.norm[1] ? 'high' : 'ok';
       const missing = m.needs
         .filter((k) => !pts[k])
         .map((k) => CEPH_LANDMARKS.find((l) => l.key === k)!.short)
         .join(', ');
-      return { key: m.key, label: m.label, value, text, status, missing };
+      return {
+        key: m.key,
+        label: m.label,
+        name: m.name,
+        unit: m.unit,
+        primary: !!m.primary,
+        value,
+        text: cephValueText(value),
+        tone,
+        badge: tone ? TONE_BADGE[tone] : '',
+        message: value === null ? '' : tone === 'invalid' ? `Valor imposible (${fmt(m.min)} a ${fmt(m.max)} ${m.unit})` : m.interpret(value),
+        normText: `${fmt(m.norm[0])} a ${fmt(m.norm[1])} ${m.unit}`,
+        missing,
+      };
     });
   });
 
-  readonly hasAnyResult = computed(() => Object.values(this.result()).some((v) => v !== null));
+  /** Motor de reglas: clase esquelética a partir del ANB del trazado. */
+  readonly skeletal = computed(() => {
+    const anb = this.result().anb;
+    if (anb === null) return null;
+    const rule = ORTHO_MEASURE_RULES['cephalometry.anb'];
+    if (anb < rule.min || anb > rule.max) {
+      return { cls: null, tone: 'invalid', text: '', reason: `ANB de ${fmt(anb)}° no es posible: revise los puntos S, N, A y B.` };
+    }
+    const cls = skeletalClassForAnb(anb);
+    const reason =
+      cls === 'Clase II' ? `ANB ${fmt(anb)}° > 4°: maxilar adelantado respecto a la mandíbula.`
+      : cls === 'Clase III' ? `ANB ${fmt(anb)}° < 0°: mandíbula adelantada respecto al maxilar.`
+      : `ANB ${fmt(anb)}° entre 0° y 4°: relación maxilomandibular normal.`;
+    const tone = cls === 'Clase II' ? 'c2' : cls === 'Clase III' ? 'c3' : 'ok';
+    return { cls, tone, text: skeletalPatternText(cls), reason };
+  });
+
+  readonly hasAnyResult = computed(() => {
+    const r = this.result();
+    return [r.sna, r.snb, r.anb, r.fma, r.impa, r.upperIncisor].some((v) => v !== null);
+  });
 
   ngOnInit() {
     this.active.set(this.firstMissing());

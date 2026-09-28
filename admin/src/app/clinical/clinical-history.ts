@@ -85,7 +85,7 @@ import {
   orthoMeasureErrors,
   skeletalClassFromAnb,
 } from './dentistry/ortho-measures';
-import { CephResult, cephValueText } from './dentistry/ceph-geometry';
+import { CEPH_LANDMARKS, CephResult, cephValueText } from './dentistry/ceph-geometry';
 import { CephRadiographOption, OrthoCephTracingComponent } from './dentistry/ortho-ceph-tracing';
 import {
   ORTHO_ARCH_WIRES,
@@ -546,6 +546,8 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       }));
   }
 
+  readonly cephLandmarkTotal = CEPH_LANDMARKS.length;
+
   cephPointCount() {
     return Object.keys(this.dental().orthodontics.cephTracing.points).length;
   }
@@ -585,12 +587,18 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   applyCephResult(res: CephResult) {
     if (this.clinicalFormDisabled()) return;
     const c = this.dental().orthodontics.cephalometry;
-    const fields: Array<keyof CephResult> = ['sna', 'snb', 'anb', 'fma', 'impa', 'upperIncisor'];
+    const fields = ['sna', 'snb', 'anb', 'fma', 'impa', 'upperIncisor'] as const;
     for (const f of fields) {
       if (res[f] !== null) c[f] = cephValueText(res[f]);
     }
+    const skeletal = skeletalClassFromAnb(this.dental().orthodontics);
+    if (skeletal) c.skeletalClass = skeletal;
     this.onClinicalFieldChange();
-    this.message.set('Medidas del trazado copiadas al análisis cefalométrico.');
+    this.message.set(
+      skeletal
+        ? `Medidas del trazado copiadas al análisis cefalométrico. Clase esquelética: ${skeletal}.`
+        : 'Medidas del trazado copiadas al análisis cefalométrico.',
+    );
   }
 
   // ── Controles de ortodoncia por cita ──
