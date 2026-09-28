@@ -241,7 +241,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
           </svg>
           <div>
             <strong>ODONTOGRAMA</strong>
-            <span>Odontología General <i>|</i> Ortodoncia</span>
+            <span>{{ specialtyLabel() }}</span>
           </div>
         </div>
         <p class="odg-print-meta">
@@ -706,7 +706,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
       <footer class="odg-foot">
         <span class="odg-foot-brand">
           <svg viewBox="0 0 40 44" aria-hidden="true"><path [attr.d]="logoPath" fill="none" stroke="#fff" stroke-width="2.4" /></svg>
-          Odontología y Ortodoncia <i>|</i> Precisión en cada detalle
+          {{ specialtyLabel() }} <i>|</i> Precisión en cada detalle
         </span>
         <em>Tu sonrisa, nuestro propósito</em>
       </footer>
@@ -874,6 +874,7 @@ export class DentalOdontogram implements OnDestroy {
   readonly professionalName = input('');
   readonly professionalCard = input('');
   readonly orthoMarks = input(true);
+  readonly specialtyLabel = input('Odontología General');
   readonly changed = output<void>();
   /** Pide a la historia guardar el borrador. */
   readonly save = output<void>();

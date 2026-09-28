@@ -7,6 +7,12 @@ import { PHYSIOTHERAPY_CUPS_CATALOG } from './physiotherapy-cups.catalog';
 import { DENTISTRY_CIE_CATALOG } from './dentistry-cie.catalog';
 import { DENTISTRY_CUPS_CATALOG } from './dentistry-cups.catalog';
 
+/** Ortodoncia usa los mismos catálogos CIE-10 y CUPS odontológicos. */
+function catalogSpecialty(specialty?: ClinicSpecialty | string | null): string {
+  const spec = (specialty || '').toUpperCase();
+  return spec === ClinicSpecialty.ORTHODONTICS ? ClinicSpecialty.DENTISTRY : spec;
+}
+
 @Injectable()
 export class CatalogsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -17,7 +23,7 @@ export class CatalogsService {
    */
   async searchCie(q?: string, take = 20, specialty?: ClinicSpecialty | string | null) {
     const query = q?.trim();
-    const spec = (specialty || '').toUpperCase();
+    const spec = catalogSpecialty(specialty);
 
     if (spec === ClinicSpecialty.PHYSIOTHERAPY || spec === 'PHYSIOTHERAPY') {
       return this.filterStatic(
@@ -155,7 +161,7 @@ export class CatalogsService {
 
   async searchCups(q?: string, take = 20, specialty?: ClinicSpecialty | string | null) {
     const query = q?.trim().toLowerCase();
-    const spec = (specialty || '').toUpperCase();
+    const spec = catalogSpecialty(specialty);
 
     if (spec === ClinicSpecialty.PHYSIOTHERAPY || spec === 'PHYSIOTHERAPY') {
       return this.filterStatic(

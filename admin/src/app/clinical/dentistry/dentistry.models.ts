@@ -281,10 +281,31 @@ export interface DentistryContent {
       curveOfSpee: string;
     };
     habits: Record<string, boolean>;
+    cephalometry: {
+      sna: string;
+      snb: string;
+      anb: string;
+      wits: string;
+      fma: string;
+      impa: string;
+      upperIncisor: string;
+      skeletalClass: string;
+      growthPattern: string;
+    };
+    models: {
+      upperDiscrepancy: string;
+      lowerDiscrepancy: string;
+      bolton: string;
+      archForm: string;
+    };
     measurements: string;
     diagnosis: string;
+    phase: string;
+    objectives: string;
+    extractions: string;
     appliance: string;
     estimatedDuration: string;
+    retention: string;
     notes: string;
   };
   photos: Record<string, PhotoSlotValue>;
@@ -387,9 +408,24 @@ export const DENTAL_CONSENT_OPTIONS: CheckItem[] = [
   { key: 'ODO_IMAGE_USE', label: 'Uso de imágenes con autorización' },
   { key: 'ODO_ANESTHESIA', label: 'Anestesia local' },
   { key: 'ODO_AESTHETIC', label: 'Procedimientos estéticos' },
+  { key: 'ORT_RETENTION', label: 'Fase de retención ortodóncica' },
   { key: 'ODO_TELEHEALTH', label: 'Atención virtual' },
   { key: 'HABEAS_DATA', label: 'Tratamiento de datos (Habeas Data)' },
 ];
+
+/** Deben coincidir con las plantillas sembradas para cada especialidad (seedConsents). */
+export const ORTHO_CONSENT_KEYS = new Set([
+  'ODO_ORTHODONTICS',
+  'ORT_RETENTION',
+  'ODO_EXTRACTION',
+  'ODO_PHOTOS',
+  'ODO_IMAGE_USE',
+  'ODO_TELEHEALTH',
+  'HABEAS_DATA',
+]);
+export const DENTAL_ONLY_CONSENT_KEYS = new Set(
+  DENTAL_CONSENT_OPTIONS.map((c) => c.key).filter((k) => k !== 'ODO_ORTHODONTICS' && k !== 'ORT_RETENTION'),
+);
 
 export const CLASS_OPTIONS = ['Clase I', 'Clase II', 'Clase III', 'No evaluable'];
 
@@ -535,10 +571,26 @@ export function emptyDentistry(): DentistryContent {
         curveOfSpee: '',
       },
       habits: {},
+      cephalometry: {
+        sna: '',
+        snb: '',
+        anb: '',
+        wits: '',
+        fma: '',
+        impa: '',
+        upperIncisor: '',
+        skeletalClass: '',
+        growthPattern: '',
+      },
+      models: { upperDiscrepancy: '', lowerDiscrepancy: '', bolton: '', archForm: '' },
       measurements: '',
       diagnosis: '',
+      phase: '',
+      objectives: '',
+      extractions: '',
       appliance: '',
       estimatedDuration: '',
+      retention: '',
       notes: '',
     },
     photos: {},
@@ -638,6 +690,8 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
       ...ortho,
       facial: { ...base.orthodontics.facial, ...(ortho.facial || {}) },
       intraoral: { ...base.orthodontics.intraoral, ...(ortho.intraoral || {}) },
+      cephalometry: { ...base.orthodontics.cephalometry, ...(ortho.cephalometry || {}) },
+      models: { ...base.orthodontics.models, ...(ortho.models || {}) },
       habits: {},
     },
     photos: { ...(raw.photos || {}) },
@@ -666,7 +720,18 @@ export function hasOrthodonticData(d: DentistryContent) {
     Object.values(o.facial).some((v) => v.trim()) ||
     Object.values(o.intraoral).some((v) => v.trim()) ||
     Object.values(o.habits).some(Boolean) ||
+    hasOrthoSpecialistData(d) ||
     [o.measurements, o.diagnosis, o.appliance, o.estimatedDuration, o.notes].some((v) => v.trim())
+  );
+}
+
+/** Cefalometría, análisis de modelos y planificación: bloques propios del consultorio de ortodoncia. */
+export function hasOrthoSpecialistData(d: DentistryContent) {
+  const o = d.orthodontics;
+  return (
+    Object.values(o.cephalometry).some((v) => v.trim()) ||
+    Object.values(o.models).some((v) => v.trim()) ||
+    [o.phase, o.objectives, o.extractions, o.retention].some((v) => v.trim())
   );
 }
 

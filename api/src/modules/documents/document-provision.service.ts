@@ -36,10 +36,13 @@ export class DocumentProvisionService {
       return { skipped: false as const, physiotherapy: { empty: true } };
     }
 
-    if (clinic?.specialty === ClinicSpecialty.DENTISTRY) {
+    if (
+      clinic?.specialty === ClinicSpecialty.DENTISTRY ||
+      clinic?.specialty === ClinicSpecialty.ORTHODONTICS
+    ) {
       // El checklist de psicología no aplica: el SUPER_ADMIN carga la documentación odontológica.
       this.logger.log(
-        `Gestión documental odontología: sin auto-carga de psicología para ${clinic.name}.`,
+        `Gestión documental odontología / ortodoncia: sin auto-carga de psicología para ${clinic.name}.`,
       );
       return { skipped: false as const, dentistry: { empty: true } };
     }

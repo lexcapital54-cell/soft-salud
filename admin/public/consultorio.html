@@ -375,7 +375,8 @@
       var labels = {
         PSYCHOLOGY: 'Psicología',
         PHYSIOTHERAPY: 'Fisioterapia',
-        DENTISTRY: 'Odontología / Ortodoncia',
+        DENTISTRY: 'Odontología',
+        ORTHODONTICS: 'Ortodoncia',
         MEDICINE: 'Medicina',
         AESTHETIC: 'Medicina estética',
       };
@@ -420,7 +421,7 @@
         document.getElementById('docs').hidden = false;
       }
 
-      var billingOk = ['PSYCHOLOGY', 'PHYSIOTHERAPY', 'DENTISTRY'].indexOf(user.specialty) !== -1;
+      var billingOk = ['PSYCHOLOGY', 'PHYSIOTHERAPY', 'DENTISTRY', 'ORTHODONTICS'].indexOf(user.specialty) !== -1;
       if (billingOk) {
         document.getElementById('billing').hidden = false;
       }

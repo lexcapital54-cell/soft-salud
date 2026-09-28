@@ -44,6 +44,7 @@ import { DentalOdontogram } from './dentistry/dental-odontogram';
 import {
   ALLERGY_ITEMS,
   DENTAL_CONSENT_OPTIONS,
+  DENTAL_ONLY_CONSENT_KEYS,
   DENTAL_SERVICES,
   DENTAL_SYMPTOMS,
   DENTAL_SYSTEMS,
@@ -54,6 +55,7 @@ import {
   MEDICAL_CONDITIONS,
   MEDICATION_GROUPS,
   ORDER_TYPES,
+  ORTHO_CONSENT_KEYS,
   ORTHO_HABITS,
   PHOTO_SLOTS,
   TREATMENT_STATUSES,
@@ -67,6 +69,7 @@ import {
   emptyOrderRow,
   emptyPrescriptionRow,
   emptyTreatmentRow,
+  hasOrthoSpecialistData,
   hasOrthodonticData,
   normalizeDentistry,
   validateDentistryForSeal,
@@ -304,13 +307,20 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     return snap === 'PHYSIOTHERAPY' || snap.includes('FISIOTER');
   }
 
-  /** Consultorio de odontología / ortodoncia (HC-ODO-001). */
+  /** Historia con bloques odontológicos: consultorio de odontología (HC-ODO-001) o de ortodoncia (HC-ORT-001). */
   isDentistryClinic() {
     const specialty = String(this.user()?.specialty || '').toUpperCase();
-    if (specialty === 'DENTISTRY') return true;
+    if (specialty === 'DENTISTRY' || specialty === 'ORTHODONTICS') return true;
     if (String(this.content?.profile || '').toUpperCase() === 'DENTISTRY') return true;
     const snap = String(this.encounter()?.specialtySnapshot || '').toUpperCase();
-    return snap === 'DENTISTRY' || snap.includes('ODONT');
+    return snap === 'DENTISTRY' || snap === 'ORTHODONTICS' || snap.includes('ODONT') || snap.includes('ORTODON');
+  }
+
+  /** Consultorio de ortodoncia (especialista): la evaluación ortodóntica completa es el eje de la historia. */
+  isOrthoClinic() {
+    const snap = String(this.encounter()?.specialtySnapshot || '').toUpperCase();
+    if (snap) return snap === 'ORTHODONTICS' || snap.includes('ORTODON');
+    return String(this.user()?.specialty || '').toUpperCase() === 'ORTHODONTICS';
   }
 
   /** Acceso tipado al bloque odontológico (se completa con defaults si viene parcial). */
@@ -318,7 +328,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     if (!this.content.dentistry) {
       this.content.dentistry = normalizeDentistry();
     }
-    return this.content.dentistry;
+    const d = this.content.dentistry;
+    if (!d.service && this.isOrthoClinic()) d.service = 'ORTODONCIA';
+    return d;
   }
 
   readonly dentalSystems = DENTAL_SYSTEMS;
@@ -430,6 +442,32 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     { key: 'curveOfSpee', label: 'Curva de Spee', options: ['Plana', 'Normal', 'Profunda'] },
   ];
 
+  readonly orthoCephFields: DentalField<DentistryContent['orthodontics']['cephalometry']>[] = [
+    { key: 'sna', label: 'SNA (°)', placeholder: '82' },
+    { key: 'snb', label: 'SNB (°)', placeholder: '80' },
+    { key: 'anb', label: 'ANB (°)', placeholder: '2' },
+    { key: 'wits', label: 'Wits (mm)', placeholder: '0' },
+    { key: 'fma', label: 'FMA (°)', placeholder: '25' },
+    { key: 'impa', label: 'IMPA (°)', placeholder: '90' },
+    { key: 'upperIncisor', label: 'Incisivo superior U1-SN (°)', placeholder: '103' },
+    { key: 'skeletalClass', label: 'Clase esquelética', options: ['Clase I', 'Clase II', 'Clase III'] },
+    { key: 'growthPattern', label: 'Patrón de crecimiento', options: ['Neutro', 'Horizontal', 'Vertical'] },
+  ];
+
+  readonly orthoModelFields: DentalField<DentistryContent['orthodontics']['models']>[] = [
+    { key: 'upperDiscrepancy', label: 'Discrepancia superior (mm)', placeholder: '-3' },
+    { key: 'lowerDiscrepancy', label: 'Discrepancia inferior (mm)', placeholder: '-2' },
+    { key: 'bolton', label: 'Índice de Bolton', placeholder: 'Anterior 77,2 % · total 91,3 %' },
+    { key: 'archForm', label: 'Forma de arcada', options: ['Ovoide', 'Cuadrada', 'Triangular'] },
+  ];
+
+  readonly orthoPhases = ['Interceptiva / ortopedia', 'Correctiva', 'Preparación quirúrgica (ortognática)', 'Retención'];
+
+  /** Bloques del ortodoncista; en odontología solo aparecen si la historia ya los traía. */
+  showOrthoSpecialistFields() {
+    return this.isOrthoClinic() || hasOrthoSpecialistData(this.dental());
+  }
+
   /** Módulos de la historia odontológica (menú superior). */
   odoModules() {
     const ortho = this.showOrthoModule();
@@ -439,7 +477,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       { id: 'hce-section-3', label: 'Antecedentes' },
       { id: 'odo-examen', label: 'Examen clínico' },
       { id: 'odontograma', label: 'Odontograma' },
-      ...(ortho ? [{ id: 'odo-ortodoncia', label: 'Ortodoncia' }] : []),
+      ...(ortho ? [{ id: 'odo-ortodoncia', label: this.isOrthoClinic() ? 'Evaluación ortodóntica' : 'Ortodoncia' }] : []),
       { id: 'odo-imagenes', label: 'Fotos y radiografías' },
       { id: 'odo-diagnosticos', label: 'Diagnóstico' },
       { id: 'odo-plan', label: 'Plan de tratamiento' },
@@ -461,41 +499,31 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     return n >= 7 && !this.showOrthoModule() ? n - 1 : n;
   }
 
+  /** En odontología la ortodoncia solo aparece si la historia ya la traía registrada (no se pierde información). */
   showOrthoModule() {
     const d = this.dental();
-    return d.service === 'ORTODONCIA' || d.includeOrtho || hasOrthodonticData(d);
+    return this.isOrthoClinic() || d.service === 'ORTODONCIA' || d.includeOrtho || hasOrthodonticData(d);
   }
 
-  readonly dentalFocusOptions = [
-    { key: 'ODONTOLOGIA', label: 'Odontología' },
-    { key: 'ORTODONCIA', label: 'Ortodoncia' },
-    { key: 'AMBAS', label: 'Ambas' },
-  ] as const;
-
-  dentalFocus(): '' | 'ODONTOLOGIA' | 'ORTODONCIA' | 'AMBAS' {
-    const d = this.dental();
-    if (d.service === 'ORTODONCIA') return 'ORTODONCIA';
-    if (d.includeOrtho) return 'AMBAS';
-    return d.service ? 'ODONTOLOGIA' : '';
+  /** Servicios del consultorio de odontología: la ortodoncia es una especialidad aparte. */
+  dentalServiceOptions() {
+    const current = this.dental().service;
+    return this.dentalServices.filter((s) => s.key !== 'ORTODONCIA' || current === 'ORTODONCIA');
   }
 
-  /** Cambio rápido de enfoque; conserva la especialidad elegida (endodoncia, periodoncia…) si no es ortodoncia. */
-  setDentalFocus(focus: 'ODONTOLOGIA' | 'ORTODONCIA' | 'AMBAS') {
-    const d = this.dental();
-    const generalService = d.service && d.service !== 'ORTODONCIA' ? d.service : 'GENERAL';
-    if (focus === 'ORTODONCIA') {
-      d.service = 'ORTODONCIA';
-      d.includeOrtho = false;
-    } else {
-      d.service = generalService;
-      d.includeOrtho = focus === 'AMBAS';
-    }
-    this.onClinicalFieldChange();
+  dentalSpecialtyLabel() {
+    return this.isOrthoClinic() ? 'Ortodoncia' : 'Odontología';
   }
 
-  onDentalServiceChange() {
-    if (this.dental().service === 'ORTODONCIA') this.dental().includeOrtho = false;
-    this.onClinicalFieldChange();
+  dentalRecordCode() {
+    return this.isOrthoClinic() ? 'HC-ORT-001' : 'HC-ODO-001';
+  }
+
+  /** Consentimientos disponibles según la especialidad (conserva los ya exigidos en la atención). */
+  dentalConsentChoices() {
+    const required = new Set(this.dental().requiredConsents);
+    const allowed = this.isOrthoClinic() ? ORTHO_CONSENT_KEYS : DENTAL_ONLY_CONSENT_KEYS;
+    return this.dentalConsentOptions.filter((c) => allowed.has(c.key) || required.has(c.key));
   }
 
   /** Fuera de Periodoncia solo se piden los hallazgos básicos; el resto aparece si ya tiene dato. */
@@ -1380,7 +1408,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
         ? 'Historia clínica — Fisioterapia (SOAP)'
         : 'Historia clínica — Fisioterapia';
     }
-    if (this.isDentistryClinic()) return 'Historia clínica — Odontología (HC-ODO-001)';
+    if (this.isDentistryClinic()) return `Historia clínica — ${this.dentalSpecialtyLabel()} (${this.dentalRecordCode()})`;
     if (this.isPsychologyClinic()) {
       return this.noteFormat() === 'SOAP'
         ? 'Evolución Psicológica (SOAP)'
@@ -1829,6 +1857,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   hceTitle() {
     if (this.isPhysiotherapyClinic()) {
       return 'HISTORIA CLÍNICA ELECTRÓNICA – FISIOTERAPIA';
+    }
+    if (this.isOrthoClinic()) {
+      return 'HISTORIA CLÍNICA DE ORTODONCIA Y ODONTOGRAMA';
     }
     if (this.isDentistryClinic()) {
       return 'HISTORIA CLÍNICA ODONTOLÓGICA Y ODONTOGRAMA';
@@ -3014,7 +3045,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
           this.isPhysiotherapyClinic()
             ? 'Historia sellada. Abajo en sección 3 verá valoración funcional (EVA 1–10 y Daniels).'
             : this.isDentistryClinic()
-              ? 'Historia odontológica sellada. Abajo verá el odontograma; registre cada sesión en «Notas de evolución / control».'
+              ? `Historia de ${this.dentalSpecialtyLabel().toLowerCase()} sellada. Abajo verá el odontograma; registre cada sesión en «Notas de evolución / control».`
               : 'Historia sellada cargada. Arriba ve el contenido guardado; abajo las notas de evolución / control.',
         );
         queueMicrotask(() => {
@@ -4313,7 +4344,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       this.collectContent();
       const issues = validateDentistryForSeal(this.content.careMinimum.motive, this.dental());
       if (issues.length) {
-        this.error.set(`Antes de sellar la historia odontológica: ${issues.join(' ')}`);
+        this.error.set(`Antes de sellar la historia de ${this.dentalSpecialtyLabel().toLowerCase()}: ${issues.join(' ')}`);
         return;
       }
     }

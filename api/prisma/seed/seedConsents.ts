@@ -452,10 +452,39 @@ const DENTISTRY_CONSENTS_V1: ConsentSeed[] = [
   },
 ];
 
+const ORTHODONTICS_SHARED_CODES = [
+  'HABEAS_DATA',
+  'ODO_ORTHODONTICS',
+  'ODO_TELEHEALTH',
+  'ODO_EXTRACTION',
+  'ODO_PHOTOS',
+  'ODO_IMAGE_USE',
+];
+
+const ORTHODONTICS_CONSENTS_V1: ConsentSeed[] = [
+  ...DENTISTRY_CONSENTS_V1.filter((c) => ORTHODONTICS_SHARED_CODES.includes(c.code)),
+  {
+    code: 'ORT_RETENTION',
+    title: 'Consentimiento informado para fase de retención ortodóncica',
+    bodyHtml: odoConsent(
+      'CONSENTIMIENTO INFORMADO PARA FASE DE RETENCIÓN ORTODÓNCICA',
+      `
+  <ol>
+    <li><strong>Procedimiento:</strong> retiro de la aparatología activa e instalación de retenedores fijos y/o removibles para mantener los resultados del tratamiento.</li>
+    <li><strong>Uso:</strong> los retenedores removibles deben usarse según las indicaciones (tiempo completo al inicio y luego nocturno); los fijos requieren higiene cuidadosa y controles.</li>
+    <li><strong>Riesgos:</strong> recidiva o movimiento dental si no se usan los retenedores, desprendimiento o fractura del retenedor, acumulación de placa y caries.</li>
+    <li><strong>Compromisos:</strong> asistir a los controles de retención, informar de inmediato pérdida o daño del retenedor y mantener una higiene rigurosa.</li>
+  </ol>`,
+      'Habiendo resuelto mis dudas, acepto la fase de retención y sus cuidados.',
+    ),
+  },
+];
+
 const CONSENTS_BY_SPECIALTY: Array<[ClinicSpecialty, ConsentSeed[]]> = [
   [ClinicSpecialty.PSYCHOLOGY, PSYCHOLOGY_CONSENTS_V1],
   [ClinicSpecialty.PHYSIOTHERAPY, PHYSIOTHERAPY_CONSENTS_V1],
   [ClinicSpecialty.DENTISTRY, DENTISTRY_CONSENTS_V1],
+  [ClinicSpecialty.ORTHODONTICS, ORTHODONTICS_CONSENTS_V1],
 ];
 
 export async function seedConsents(prisma: PrismaClient) {

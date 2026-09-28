@@ -282,10 +282,31 @@ export const DENTISTRY_CONTENT_DEFAULTS = {
       curveOfSpee: '',
     },
     habits: {},
+    cephalometry: {
+      sna: '',
+      snb: '',
+      anb: '',
+      wits: '',
+      fma: '',
+      impa: '',
+      upperIncisor: '',
+      skeletalClass: '',
+      growthPattern: '',
+    },
+    models: {
+      upperDiscrepancy: '',
+      lowerDiscrepancy: '',
+      bolton: '',
+      archForm: '',
+    },
     measurements: '',
     diagnosis: '',
+    phase: '',
+    objectives: '',
+    extractions: '',
     appliance: '',
     estimatedDuration: '',
+    retention: '',
     notes: '',
   },
   photos: {},
@@ -326,6 +347,19 @@ export const HCE_ODO_SCHEMA = {
   },
 };
 
+/** Historia Clínica de Ortodoncia (HC-ORT-001): mismos bloques odontológicos con la evaluación ortodóntica completa. */
+export const HCE_ORT_SCHEMA = {
+  version: 1,
+  specialty: 'ORTHODONTICS',
+  code: 'HC-ORT-001',
+  sections: HCE_ODO_SCHEMA.sections,
+  contentDefaults: {
+    ...HCE_PSI_SCHEMA.contentDefaults,
+    profile: 'DENTISTRY',
+    dentistry: { ...DENTISTRY_CONTENT_DEFAULTS, service: 'ORTODONCIA' },
+  },
+};
+
 /** Nota de evolución SOAP (FOLLOW_UP) — vive en ClinicalRecord.content JSONB */
 export const SOAP_CONTENT_DEFAULTS = {
   profile: 'SOAP',
@@ -354,8 +388,13 @@ const TEMPLATE_BY_SPECIALTY: Record<
   },
   DENTISTRY: {
     code: 'HCE_ODO',
-    name: 'Historia Clínica – Odontología / Ortodoncia (HC-ODO-001)',
+    name: 'Historia Clínica – Odontología (HC-ODO-001)',
     schemaJson: HCE_ODO_SCHEMA,
+  },
+  ORTHODONTICS: {
+    code: 'HCE_ORT',
+    name: 'Historia Clínica – Ortodoncia (HC-ORT-001)',
+    schemaJson: HCE_ORT_SCHEMA,
   },
   MEDICINE: {
     code: 'HCE_MED',
@@ -386,6 +425,9 @@ export function contentDefaultsForSpecialty(specialty: ClinicSpecialty) {
   if (specialty === ClinicSpecialty.DENTISTRY) {
     return HCE_ODO_SCHEMA.contentDefaults;
   }
+  if (specialty === ClinicSpecialty.ORTHODONTICS) {
+    return HCE_ORT_SCHEMA.contentDefaults;
+  }
   return HCE_PSI_SCHEMA.contentDefaults;
 }
 
@@ -401,6 +443,8 @@ export function externalCodePrefixForSpecialty(specialty: ClinicSpecialty) {
       return 'HC-AES';
     case ClinicSpecialty.PHYSIOTHERAPY:
       return 'HC-FT';
+    case ClinicSpecialty.ORTHODONTICS:
+      return 'HC-ORT';
     default:
       return 'HC-GEN';
   }

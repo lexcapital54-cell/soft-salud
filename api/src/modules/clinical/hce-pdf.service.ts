@@ -203,7 +203,7 @@ export class HcePdfService {
   private themeFor(specialty: ClinicSpecialty | string) {
     if (specialty === ClinicSpecialty.PSYCHOLOGY) return PSI_THEME;
     if (specialty === ClinicSpecialty.PHYSIOTHERAPY) return FT_THEME;
-    if (specialty === ClinicSpecialty.DENTISTRY) return ODO_THEME;
+    if (specialty === ClinicSpecialty.DENTISTRY || specialty === ClinicSpecialty.ORTHODONTICS) return ODO_THEME;
     return DEFAULT_THEME;
   }
 
@@ -274,11 +274,14 @@ export class HcePdfService {
         ? 'Historia clínica — Fisioterapia'
         : specialty === ClinicSpecialty.DENTISTRY
           ? 'HC-ODO-001'
-          : specialty === ClinicSpecialty.PSYCHOLOGY
-            ? 'Historia clínica — Psicología'
-            : 'Historia clínica';
+          : specialty === ClinicSpecialty.ORTHODONTICS
+            ? 'HC-ORT-001'
+            : specialty === ClinicSpecialty.PSYCHOLOGY
+              ? 'Historia clínica — Psicología'
+              : 'Historia clínica';
     const isPhysio = specialty === ClinicSpecialty.PHYSIOTHERAPY;
-    const isDental = specialty === ClinicSpecialty.DENTISTRY;
+    const isOrthoClinic = specialty === ClinicSpecialty.ORTHODONTICS;
+    const isDental = specialty === ClinicSpecialty.DENTISTRY || isOrthoClinic;
     const dental = (content.dentistry || {}) as Record<string, unknown>;
     const dentalService = [
       DENTAL_SERVICE_LABELS[String(dental.service || '')] || '',
@@ -291,9 +294,11 @@ export class HcePdfService {
       {
         text: isPhysio
           ? 'HISTORIA CLÍNICA FISIOTERAPIA'
-          : isDental
-            ? 'HISTORIA CLÍNICA ODONTOLÓGICA Y ODONTOGRAMA'
-            : 'HISTORIA CLÍNICA',
+          : isOrthoClinic
+            ? 'HISTORIA CLÍNICA DE ORTODONCIA Y ODONTOGRAMA'
+            : isDental
+              ? 'HISTORIA CLÍNICA ODONTOLÓGICA Y ODONTOGRAMA'
+              : 'HISTORIA CLÍNICA',
         style: 'docTitle',
         alignment: 'center',
         margin: [0, 0, 0, 4],
@@ -1041,6 +1046,8 @@ export class HcePdfService {
 
     const facial = obj(ortho.facial);
     const oIntra = obj(ortho.intraoral);
+    const ceph = obj(ortho.cephalometry);
+    const models = obj(ortho.models);
     const orthoText = [
       lines([
         ['Tipo facial', facial.facialType],
@@ -1067,11 +1074,32 @@ export class HcePdfService {
         ['Curva de Spee', oIntra.curveOfSpee],
       ]),
       lines([
+        ['SNA', ceph.sna],
+        ['SNB', ceph.snb],
+        ['ANB', ceph.anb],
+        ['Wits', ceph.wits],
+        ['FMA', ceph.fma],
+        ['IMPA', ceph.impa],
+        ['Incisivo superior (U1-SN)', ceph.upperIncisor],
+        ['Clase esquelética', ceph.skeletalClass],
+        ['Patrón de crecimiento', ceph.growthPattern],
+      ]),
+      lines([
+        ['Discrepancia superior', models.upperDiscrepancy],
+        ['Discrepancia inferior', models.lowerDiscrepancy],
+        ['Bolton', models.bolton],
+        ['Forma de arcada', models.archForm],
+      ]),
+      lines([
         ['Hábitos', flags(ortho.habits, ORTHO_HABIT_LABELS)],
-        ['Análisis / mediciones', ortho.measurements],
+        ['Otras mediciones', ortho.measurements],
         ['Diagnóstico ortodóncico', ortho.diagnosis],
+        ['Fase de tratamiento', ortho.phase],
+        ['Objetivos de tratamiento', ortho.objectives],
+        ['Extracciones', ortho.extractions],
         ['Aparatología', ortho.appliance],
         ['Duración estimada', ortho.estimatedDuration],
+        ['Plan de retención', ortho.retention],
         ['Observaciones', ortho.notes],
       ]),
     ]

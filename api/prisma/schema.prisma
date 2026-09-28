@@ -25,6 +25,7 @@ enum ClinicSpecialty {
   MEDICINE
   AESTHETIC
   PHYSIOTHERAPY
+  ORTHODONTICS
 
   @@map("clinics_specialty_enum")
 }

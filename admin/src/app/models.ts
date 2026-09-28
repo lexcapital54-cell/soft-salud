@@ -10,7 +10,8 @@ export type ClinicSpecialty =
   | 'DENTISTRY'
   | 'MEDICINE'
   | 'AESTHETIC'
-  | 'PHYSIOTHERAPY';
+  | 'PHYSIOTHERAPY'
+  | 'ORTHODONTICS';
 
 export type DashboardType = 'CLINICAL_HISTORY' | 'CLINICAL_HISTORY_WITH_DOCS';
 
@@ -77,7 +78,8 @@ export interface Clinic {
 
 export const SPECIALTY_LABELS: Record<ClinicSpecialty, string> = {
   PSYCHOLOGY: 'Psicología',
-  DENTISTRY: 'Odontología / Ortodoncia',
+  DENTISTRY: 'Odontología',
+  ORTHODONTICS: 'Ortodoncia',
   MEDICINE: 'Medicina',
   AESTHETIC: 'Medicina estética',
   PHYSIOTHERAPY: 'Fisioterapia',

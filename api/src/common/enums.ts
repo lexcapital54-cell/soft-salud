@@ -12,6 +12,7 @@ export enum ClinicSpecialty {
   MEDICINE = 'MEDICINE',
   AESTHETIC = 'AESTHETIC',
   PHYSIOTHERAPY = 'PHYSIOTHERAPY',
+  ORTHODONTICS = 'ORTHODONTICS',
 }
 
 export enum DashboardType {

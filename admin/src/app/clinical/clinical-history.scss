@@ -2208,33 +2208,14 @@ label.photo-btn {
   font-weight: 700;
   color: #0d9488;
 }
-.odo-focus {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.odo-specialty {
   margin-right: 8px;
-  padding: 3px 4px 3px 10px;
-  background: #fff;
-  border: 1px solid #0d9488;
-  border-radius: 999px;
-}
-.odo-focus span {
+  padding: 4px 12px;
   font-size: 12px;
   font-weight: 700;
-  color: #0b5563;
-}
-.odo-nav .odo-focus button {
-  border-color: transparent;
-  font-weight: 600;
-}
-.odo-nav .odo-focus button.on {
-  background: #0d9488;
-  border-color: #0d9488;
   color: #fff;
-}
-.odo-nav .odo-focus button:disabled {
-  cursor: default;
-  opacity: 0.7;
+  background: #0d9488;
+  border-radius: 999px;
 }
 .odo-admin-toggle {
   display: flex;
