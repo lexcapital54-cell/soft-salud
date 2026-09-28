@@ -163,6 +163,8 @@ export const PHOTO_SLOTS: Array<{ key: string; label: string; group: 'Extraoral'
 
 export interface DentistryContent {
   service: DentalService;
+  /** Ortodoncia junto con el servicio principal (consulta combinada). */
+  includeOrtho: boolean;
   currentIllness: string;
   antecedents: {
     personal: string;
@@ -426,6 +428,7 @@ export function emptyImagingRow(): ImagingRow {
 export function emptyDentistry(): DentistryContent {
   return {
     service: '',
+    includeOrtho: false,
     currentIllness: '',
     antecedents: {
       personal: '',
@@ -607,6 +610,7 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
     ...base,
     ...raw,
     service: raw.service === 'ODONTOLOGIA' ? 'GENERAL' : raw.service || '',
+    includeOrtho: raw.service !== 'ORTODONCIA' && !!raw.includeOrtho,
     antecedents: { ...base.antecedents, ...(raw.antecedents || {}) },
     medicalConditions: { ...(raw.medicalConditions || {}) },
     allergies: { ...(raw.allergies || {}) },

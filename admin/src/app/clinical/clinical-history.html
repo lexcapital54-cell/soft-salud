@@ -769,6 +769,19 @@
         @if (isDentistryClinic()) {
           <nav class="odo-nav" aria-label="Módulos de la historia odontológica">
             <strong>Historia clínica odontológica</strong>
+            <div class="odo-focus" role="group" aria-label="Tipo de consulta">
+              <span>Consulta:</span>
+              @for (f of dentalFocusOptions; track f.key) {
+                <button
+                  type="button"
+                  [class.on]="dentalFocus() === f.key"
+                  [disabled]="clinicalFormDisabled()"
+                  (click)="setDentalFocus(f.key)"
+                >
+                  {{ f.label }}
+                </button>
+              }
+            </div>
             @for (m of odoModules(); track m.id) {
               <button type="button" (click)="scrollToOdo(m.id)">
                 <span>{{ m.n }}</span>{{ m.label }}
@@ -1099,7 +1112,7 @@
                 <select
                   [(ngModel)]="dental().service"
                   [disabled]="clinicalFormDisabled()"
-                  (ngModelChange)="onClinicalFieldChange()"
+                  (ngModelChange)="onDentalServiceChange()"
                   title="Define los módulos y campos que se muestran en la historia"
                 >
                   <option value="">Seleccione…</option>
@@ -1108,6 +1121,17 @@
                   }
                 </select>
               </label>
+              @if (dental().service && dental().service !== 'ORTODONCIA') {
+                <label class="checkbox-inline">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="dental().includeOrtho"
+                    [disabled]="clinicalFormDisabled()"
+                    (ngModelChange)="onClinicalFieldChange()"
+                  />
+                  Incluir ortodoncia en esta consulta
+                </label>
+              }
             }
             <label
               >Modalidad
@@ -1705,9 +1729,9 @@
                     <p class="muted small">
                       Historia clínica odontológica (HC-ODO-001).
                       @if (dental().service) {
-                        Consulta de <strong>{{ dentalServiceLabel(dental().service) }}</strong>: la historia muestra los campos de ese servicio.
+                        Consulta de <strong>{{ dentalServiceLabel(dental().service) }}{{ dental().includeOrtho ? ' + Ortodoncia' : '' }}</strong>: la historia muestra los campos de ese servicio.
                       } @else {
-                        Elija el <strong>tipo de consulta odontológica</strong> en Datos de la atención para adaptar los campos.
+                        Elija el tipo de consulta (<strong>Odontología, Ortodoncia o Ambas</strong>) en la barra superior de la historia.
                       }
                     </p>
                   </div>

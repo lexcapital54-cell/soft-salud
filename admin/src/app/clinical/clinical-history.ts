@@ -463,7 +463,39 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   showOrthoModule() {
     const d = this.dental();
-    return d.service === 'ORTODONCIA' || hasOrthodonticData(d);
+    return d.service === 'ORTODONCIA' || d.includeOrtho || hasOrthodonticData(d);
+  }
+
+  readonly dentalFocusOptions = [
+    { key: 'ODONTOLOGIA', label: 'Odontología' },
+    { key: 'ORTODONCIA', label: 'Ortodoncia' },
+    { key: 'AMBAS', label: 'Ambas' },
+  ] as const;
+
+  dentalFocus(): '' | 'ODONTOLOGIA' | 'ORTODONCIA' | 'AMBAS' {
+    const d = this.dental();
+    if (d.service === 'ORTODONCIA') return 'ORTODONCIA';
+    if (d.includeOrtho) return 'AMBAS';
+    return d.service ? 'ODONTOLOGIA' : '';
+  }
+
+  /** Cambio rápido de enfoque; conserva la especialidad elegida (endodoncia, periodoncia…) si no es ortodoncia. */
+  setDentalFocus(focus: 'ODONTOLOGIA' | 'ORTODONCIA' | 'AMBAS') {
+    const d = this.dental();
+    const generalService = d.service && d.service !== 'ORTODONCIA' ? d.service : 'GENERAL';
+    if (focus === 'ORTODONCIA') {
+      d.service = 'ORTODONCIA';
+      d.includeOrtho = false;
+    } else {
+      d.service = generalService;
+      d.includeOrtho = focus === 'AMBAS';
+    }
+    this.onClinicalFieldChange();
+  }
+
+  onDentalServiceChange() {
+    if (this.dental().service === 'ORTODONCIA') this.dental().includeOrtho = false;
+    this.onClinicalFieldChange();
   }
 
   /** Fuera de Periodoncia solo se piden los hallazgos básicos; el resto aparece si ya tiene dato. */

@@ -280,7 +280,12 @@ export class HcePdfService {
     const isPhysio = specialty === ClinicSpecialty.PHYSIOTHERAPY;
     const isDental = specialty === ClinicSpecialty.DENTISTRY;
     const dental = (content.dentistry || {}) as Record<string, unknown>;
-    const dentalService = DENTAL_SERVICE_LABELS[String(dental.service || '')] || '';
+    const dentalService = [
+      DENTAL_SERVICE_LABELS[String(dental.service || '')] || '',
+      dental.includeOrtho && dental.service !== 'ORTODONCIA' ? DENTAL_SERVICE_LABELS['ORTODONCIA'] : '',
+    ]
+      .filter(Boolean)
+      .join(' + ');
 
     const body: Content[] = [
       {

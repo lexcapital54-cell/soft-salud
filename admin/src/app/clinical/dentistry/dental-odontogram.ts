@@ -660,14 +660,16 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
               <input type="checkbox" [checked]="showSurfaces()" (change)="showSurfaces.set($any($event.target).checked)" />
               Mostrar cuadros de superficies
             </label>
-            <label class="odg-check">
-              <input type="checkbox" [checked]="data().orthoArches.upper" [disabled]="disabled()" (change)="toggleArch('upper', $any($event.target).checked)" />
-              Arco ortodóntico superior
-            </label>
-            <label class="odg-check">
-              <input type="checkbox" [checked]="data().orthoArches.lower" [disabled]="disabled()" (change)="toggleArch('lower', $any($event.target).checked)" />
-              Arco ortodóntico inferior
-            </label>
+            @if (showOrthoMarks() || data().orthoArches.upper || data().orthoArches.lower) {
+              <label class="odg-check">
+                <input type="checkbox" [checked]="data().orthoArches.upper" [disabled]="disabled()" (change)="toggleArch('upper', $any($event.target).checked)" />
+                Arco ortodóntico superior
+              </label>
+              <label class="odg-check">
+                <input type="checkbox" [checked]="data().orthoArches.lower" [disabled]="disabled()" (change)="toggleArch('lower', $any($event.target).checked)" />
+                Arco ortodóntico inferior
+              </label>
+            }
           </section>
           <section>
             <h4>Acciones</h4>
@@ -886,9 +888,10 @@ export class DentalOdontogram implements OnDestroy {
   readonly surfaceTools = SURFACE_TOOLS;
   readonly conditionTools = CONDITION_TOOLS;
   /** Con la consulta de ortodoncia (o si el odontograma ya tiene aparatología) se ofrecen brackets, bandas y separadores. */
-  private readonly showOrthoMarks = computed(() => {
+  readonly showOrthoMarks = computed(() => {
     this.version();
     if (this.orthoMarks()) return true;
+    if (this.data().orthoArches.upper || this.data().orthoArches.lower) return true;
     return Object.values(this.data().odontogram).some((r) => r?.marks?.some((m) => ORTHO_MARKS.has(m)));
   });
   readonly markTools = computed(() => (this.showOrthoMarks() ? MARK_TOOLS : MARK_TOOLS.filter((t) => !ORTHO_MARKS.has(t.key))));

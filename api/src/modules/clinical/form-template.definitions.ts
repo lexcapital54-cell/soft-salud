@@ -175,6 +175,7 @@ export const HCE_FT_SCHEMA = {
 /** Bloque odontológico por defecto (vive en ClinicalRecord.content.dentistry). */
 export const DENTISTRY_CONTENT_DEFAULTS = {
   service: '',
+  includeOrtho: false,
   currentIllness: '',
   antecedents: {
     personal: '',
