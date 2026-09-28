@@ -80,15 +80,32 @@
   }
 
   <div class="setup card">
-    <h2>Paciente y atención</h2>
+    <div class="setup-head">
+      <h2>Paciente y atención</h2>
+      <div class="patient-mode" role="tablist" aria-label="Paciente">
+        <button
+          type="button"
+          role="tab"
+          [class.on]="patientMode === 'select'"
+          [attr.aria-selected]="patientMode === 'select'"
+          (click)="patientMode = 'select'"
+        >
+          Paciente existente
+        </button>
+        @if (canWrite()) {
+          <button
+            type="button"
+            role="tab"
+            [class.on]="patientMode === 'create'"
+            [attr.aria-selected]="patientMode === 'create'"
+            (click)="patientMode = 'create'"
+          >
+            + Crear paciente nuevo
+          </button>
+        }
+      </div>
+    </div>
     <div class="row">
-      <label>
-        Modo
-        <select [(ngModel)]="patientMode">
-          <option value="select">Seleccionar existente</option>
-          <option value="create">Crear paciente</option>
-        </select>
-      </label>
       @if (patientMode === 'select') {
         <label class="grow">
           Paciente
@@ -138,7 +155,7 @@
     }
     @if (canWrite() && !encounter() && !selectedPatientId && patientMode === 'select') {
       <p class="banner tip" style="margin-top: 12px">
-        Seleccione un paciente (o créelo). Puede abrir otra pestaña con <strong>+</strong> sin
+        Seleccione un paciente o pulse <strong>+ Crear paciente nuevo</strong>. Puede abrir otra pestaña con <strong>+</strong> sin
         guardar la historia actual: cada pestaña conserva su propio borrador en este navegador.
       </p>
     }
@@ -220,7 +237,10 @@
         </label>
         <label>Teléfono <input [(ngModel)]="patientForm.phone" /></label>
       </div>
-      <button type="button" class="primary" (click)="createPatient()">Crear paciente</button>
+      <div class="setup-create-actions">
+        <button type="button" class="primary" (click)="createPatient()">Crear paciente</button>
+        <button type="button" class="ghost" (click)="patientMode = 'select'">Cancelar</button>
+      </div>
     }
 
     @if (encounters().length) {

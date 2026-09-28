@@ -450,6 +450,51 @@ button:disabled {
   font-weight: 500;
 }
 
+.setup-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+
+.setup-head h2 {
+  margin: 0;
+}
+
+.patient-mode {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid #d6e2e6;
+  border-radius: 999px;
+  background: #f4f8f9;
+}
+
+.patient-mode button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 16px;
+  background: transparent;
+  color: #35525a;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.patient-mode button.on {
+  background: var(--hce-accent, #0d7377);
+  color: #fff;
+}
+
+.setup-create-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
 .row {
   display: flex;
   flex-wrap: wrap;
