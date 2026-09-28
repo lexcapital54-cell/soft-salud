@@ -28,6 +28,7 @@ export class AdminDashboard {
   readonly showClinicAdminPassword = signal(false);
   readonly showAdminPassword = signal(false);
   readonly openDashboardMenuId = signal<string | null>(null);
+  readonly busyClinicId = signal<string | null>(null);
 
   readonly clinicForm = this.fb.nonNullable.group({
     name: ['', Validators.required],
@@ -118,6 +119,88 @@ export class AdminDashboard {
               : 'No se pudo actualizar el dashboard.',
           ),
         );
+      },
+    });
+  }
+
+  toggleClinicActive(clinic: Clinic) {
+    const next = !clinic.isActive;
+    const question = next
+      ? `¿Reactivar «${clinic.name}»? Sus usuarios podrán volver a ingresar.`
+      : `¿Desactivar «${clinic.name}»? Sus usuarios no podrán ingresar, pero no se borra ningún dato (pacientes, historias clínicas, documentos). Se puede reactivar después.`;
+    if (!window.confirm(question)) return;
+    this.busyClinicId.set(clinic.id);
+    this.api.setClinicActive(clinic.id, next).subscribe({
+      next: (updated) => {
+        this.busyClinicId.set(null);
+        this.error.set('');
+        this.message.set(`Consultorio «${updated.name}» ${next ? 'reactivado' : 'desactivado'}.`);
+        this.refresh();
+      },
+      error: (err) => {
+        this.busyClinicId.set(null);
+        this.message.set('');
+        this.error.set(this.readError(err, 'No se pudo cambiar el estado del consultorio.'));
+      },
+    });
+  }
+
+  deleteClinic(clinic: Clinic) {
+    this.busyClinicId.set(clinic.id);
+    this.api.clinicDeletionCheck(clinic.id).subscribe({
+      next: (check) => {
+        this.busyClinicId.set(null);
+        if (!check.canDelete) {
+          this.message.set('');
+          this.error.set(
+            `No se puede eliminar «${check.name}»: tiene ${check.blockers.join(', ')}. ` +
+              'Las historias clínicas deben conservarse por ley. Use «Desactivar» para cerrar el acceso sin borrar datos.',
+          );
+          return;
+        }
+        const typed = window.prompt(
+          `Eliminar «${check.name}» de forma permanente.\n\n` +
+            `No tiene pacientes ni historias clínicas. Se borrarán su configuración, documentos de habilitación` +
+            (check.users ? ` y ${check.users} usuario(s) que solo pertenecen a este consultorio` : '') +
+            `.\n\nEsta acción no se puede deshacer. Escriba el nombre exacto del consultorio para confirmar:`,
+        );
+        if (typed === null) return;
+        if (typed.trim() !== check.name.trim()) {
+          this.message.set('');
+          this.error.set('El nombre no coincide. No se eliminó el consultorio.');
+          return;
+        }
+        const pin = window.prompt('Ingrese la clave de confirmación de 4 dígitos para eliminar:');
+        if (pin === null) return;
+        if (!/^\d{4}$/.test(pin.trim())) {
+          this.message.set('');
+          this.error.set('La clave de confirmación debe tener 4 dígitos. No se eliminó el consultorio.');
+          return;
+        }
+        this.busyClinicId.set(clinic.id);
+        this.api.deleteClinic(clinic.id, typed, pin.trim()).subscribe({
+          next: (res) => {
+            this.busyClinicId.set(null);
+            this.error.set('');
+            this.message.set(
+              `Consultorio «${res.name}» eliminado.` +
+                (res.usersDeactivated.length
+                  ? ` Usuarios desactivados (tenían registros asociados): ${res.usersDeactivated.join(', ')}.`
+                  : ''),
+            );
+            this.refresh();
+          },
+          error: (err) => {
+            this.busyClinicId.set(null);
+            this.message.set('');
+            this.error.set(this.readError(err, 'No se pudo eliminar el consultorio.'));
+          },
+        });
+      },
+      error: (err) => {
+        this.busyClinicId.set(null);
+        this.message.set('');
+        this.error.set(this.readError(err, 'No se pudo verificar el consultorio.'));
       },
     });
   }

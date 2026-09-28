@@ -41,6 +41,29 @@ export class AdminApiService {
     return this.http.post<Clinic>(`${API}/clinics/${clinicId}/dashboard`, { dashboardType });
   }
 
+  clinicDeletionCheck(clinicId: string) {
+    return this.http.get<{
+      id: string;
+      name: string;
+      canDelete: boolean;
+      blockers: string[];
+      users: number;
+    }>(`${API}/clinics/${clinicId}/deletion-check`);
+  }
+
+  deleteClinic(clinicId: string, confirmName: string, confirmPin: string) {
+    return this.http.post<{
+      deleted: boolean;
+      name: string;
+      usersDeleted: number;
+      usersDeactivated: string[];
+    }>(`${API}/clinics/${clinicId}/delete`, { confirmName, confirmPin });
+  }
+
+  setClinicActive(clinicId: string, isActive: boolean) {
+    return this.http.post<Clinic>(`${API}/clinics/${clinicId}/update`, { isActive });
+  }
+
   listClinicAdmins() {
     return this.http.get<ClinicAdmin[]>(`${API}/users`);
   }

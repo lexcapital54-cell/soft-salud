@@ -258,6 +258,23 @@ th {
   font-size: 13px;
   cursor: pointer;
   white-space: nowrap;
+  margin: 2px;
+}
+
+.action-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.action-danger {
+  border-color: #b42318;
+  background: #fff;
+  color: #b42318;
+}
+
+.action-danger:hover:not(:disabled) {
+  background: #b42318;
+  color: #fff;
 }
 
 .menu {

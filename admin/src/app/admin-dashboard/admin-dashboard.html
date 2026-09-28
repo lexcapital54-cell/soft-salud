@@ -205,6 +205,32 @@
                         </button>
                       </div>
                     }
+                    @if (clinic.hasClinicalData || !clinic.isActive) {
+                      <button
+                        type="button"
+                        class="action-btn"
+                        [disabled]="busyClinicId() === clinic.id"
+                        [title]="
+                          clinic.hasClinicalData
+                            ? 'Tiene historias clínicas: se conserva y solo se puede desactivar'
+                            : ''
+                        "
+                        (click)="toggleClinicActive(clinic)"
+                      >
+                        {{ clinic.isActive ? 'Desactivar' : 'Reactivar' }}
+                      </button>
+                    }
+                    @if (!clinic.hasClinicalData) {
+                      <button
+                        type="button"
+                        class="action-btn action-danger"
+                        [disabled]="busyClinicId() === clinic.id"
+                        title="Sin historias clínicas: se puede eliminar"
+                        (click)="deleteClinic(clinic)"
+                      >
+                        Eliminar
+                      </button>
+                    }
                   </div>
                 </td>
               </tr>

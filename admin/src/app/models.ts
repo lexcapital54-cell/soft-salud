@@ -70,6 +70,8 @@ export interface Clinic {
   phone: string | null;
   isActive: boolean;
   admins?: ClinicAdmin[];
+  /** Tiene pacientes, historias u otros registros: solo se puede desactivar. */
+  hasClinicalData?: boolean;
   createdAt: string;
 }
 
