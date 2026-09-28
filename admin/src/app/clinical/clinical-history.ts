@@ -22,6 +22,7 @@ import {
   catchError,
   firstValueFrom,
   forkJoin,
+  from,
   map,
   of,
   switchMap,
@@ -39,6 +40,7 @@ import { OpenEncountersAlert } from './open-encounters-alert';
 import { VoiceDictationBtn } from './voice-dictation-btn';
 import { ClinicalListenBtn } from './clinical-listen-btn';
 import { formatClinicalFreeText } from './clinical-text-format';
+import { compressImageForUpload } from './image-compress';
 import { ConsentSigner } from './consent-signer';
 import { DentalOdontogram } from './dentistry/dental-odontogram';
 import {
@@ -1240,14 +1242,17 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       this.showMediaError('Seleccione o cree el paciente antes de subir fotografías o radiografías.');
       return null;
     }
-    if (file.size > 25 * 1024 * 1024) {
-      this.showMediaError(`${file.name} pesa más de 25 MB; redúzcala antes de subirla.`);
+    const isImage = file.type.startsWith('image/');
+    const maxMb = isImage ? 25 : 10;
+    if (file.size > maxMb * 1024 * 1024) {
+      this.showMediaError(`${file.name} pesa más de ${maxMb} MB; redúzcalo antes de subirlo.`);
       return null;
     }
-    return this.withEncounterReady().pipe(
-      switchMap((enc) => {
+    return from(compressImageForUpload(file)).pipe(
+      switchMap((upload) => this.withEncounterReady().pipe(map((enc) => ({ enc, upload })))),
+      switchMap(({ enc, upload }) => {
         const form = new FormData();
-        form.append('file', file);
+        form.append('file', upload);
         form.append('encounterId', enc.id);
         if (enc.clinicalRecord?.id) form.append('clinicalRecordId', enc.clinicalRecord.id);
         form.append('label', label);
