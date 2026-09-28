@@ -2174,6 +2174,7 @@
                   [dentitionLabel]="dental().intraoral.dentition"
                   [orthoMarks]="showOrthoModule()"
                   [specialtyLabel]="isOrthoClinic() ? 'Ortodoncia' : 'Odontología General'"
+                  [orthoMode]="isOrthoClinic()"
                   (changed)="onClinicalFieldChange()"
                   (save)="saveDraftOnly()"
                 />

@@ -113,6 +113,26 @@ export const DENTAL_ORDER_TYPE_LABELS: Record<string, string> = {
   OTRO: 'Otro',
 };
 
+export const ORTHO_BRACKET_LABELS: Record<string, string> = {
+  METALICO: 'Brackets metálicos',
+  CERAMICO: 'Brackets cerámicos',
+  AUTOLIGADO: 'Brackets autoligables',
+};
+
+export const ORTHO_APPLIANCE_LABELS: Record<string, string> = {
+  ALINEADOR: 'Alineador',
+  EXPANSOR: 'Expansor palatino',
+  ARCO_LINGUAL: 'Arco lingual',
+  RETENEDOR: 'Retenedor',
+};
+
+export const ORTHO_PLAN_PHASE_LABELS: Record<string, string> = {
+  F1: 'Fase 1: alineación y nivelación',
+  F2: 'Fase 2: corrección de discrepancias',
+  F3: 'Fase 3: finalización y detalles',
+  F4: 'Fase 4: retención',
+};
+
 /** Hallazgos del odontograma (incluye los valores del formato v1). */
 export const DENTAL_TOOTH_LABELS: Record<string, string> = {
   CARIES: 'Caries',
@@ -134,6 +154,33 @@ export const DENTAL_TOOTH_LABELS: Record<string, string> = {
   BANDA: 'Banda',
   SEPARADOR: 'Separador',
   OTRO: 'Otra observación',
+  ERUPCION: 'Diente en erupción',
+  SUPERNUMERARIO: 'Diente supernumerario',
+  TEMPORAL: 'Diente temporal',
+  PROTESIS_REMOVIBLE: 'Prótesis removible',
+  LIGADURA_ELASTICA: 'Ligadura elástica',
+  LIGADURA_METALICA: 'Ligadura metálica',
+  GANCHO: 'Gancho',
+  CADENA: 'Cadena elástica',
+  RESORTE: 'Resorte',
+  BOTON: 'Botón / Stop',
+  TUBO: 'Tubo molar',
+  TAD: 'Mini tornillo (TAD)',
+  PROTRUSION: 'Protrusión',
+  RETRUSION: 'Retrusión',
+  EXPANSION: 'Expansión',
+  CONTRACCION: 'Contracción',
+  ROTACION: 'Rotación',
+  INTRUSION: 'Intrusión',
+  EXTRUSION: 'Extrusión',
+  MORDIDA_CRUZADA: 'Mordida cruzada',
+  MORDIDA_ABIERTA: 'Mordida abierta',
+  SOBREMORDIDA: 'Sobremordida',
+  LINEA_MEDIA: 'Desviación de línea media',
+  APINAMIENTO: 'Apiñamiento',
+  DIASTEMA: 'Diastema',
+  AUSENCIA_ESPACIO: 'Ausencia de espacio',
+  ESPACIO: 'Espacio en tratamiento',
   SANO: 'Sano',
   CARIADO: 'Caries',
   OBTURADO: 'Obturación',

@@ -3,7 +3,15 @@ import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   ALL_TOOLS,
+  BRACKET_TYPES,
   CONDITION_TOOLS,
+  ORTHO_APPLIANCES,
+  ORTHO_CONDITION_TOOLS,
+  ORTHO_DEVICE_TOOLS,
+  ORTHO_MOVEMENT_TOOLS,
+  ORTHO_OCCLUSION_TOOLS,
+  ORTHO_PLAN_PHASES,
+  ORTHO_TOOLS,
   DECIDUOUS_LOWER,
   DECIDUOUS_UPPER,
   DentalTool,
@@ -115,9 +123,61 @@ const VIEWS: Array<{ key: ViewKind; label: string; icon: string }> = [
   { key: 'OCLUSAL', label: 'Vista oclusal', icon: 'M5 19 C5 9 8 5 12 5 C16 5 19 9 19 19 M9 17 A1.5 1.5 0 1 0 9 16.9 M15 17 A1.5 1.5 0 1 0 15 16.9 M12 9 A1.5 1.5 0 1 0 12 8.9' },
 ];
 
-type LegendIcon = 'dot' | 'x' | 'triangle' | 'bracket' | 'band' | 'wire' | 'ring' | 'pocket' | 'arrows' | 'fistula' | 'bolt' | 'star';
+type LegendIcon =
+  | 'dot'
+  | 'x'
+  | 'triangle'
+  | 'bracket'
+  | 'band'
+  | 'wire'
+  | 'ring'
+  | 'pocket'
+  | 'arrows'
+  | 'fistula'
+  | 'bolt'
+  | 'star'
+  | 'tooth'
+  | 'temporal'
+  | 'circle'
+  | 'super'
+  | 'lig-e'
+  | 'lig-m'
+  | 'hook'
+  | 'chain'
+  | 'spring'
+  | 'button'
+  | 'tube'
+  | 'tad'
+  | 'arrow-up'
+  | 'arrow-down'
+  | 'arrow-left'
+  | 'arrow-right'
+  | 'rotate'
+  | 'ibeam'
+  | 'midline'
+  | 'crossbite'
+  | 'openbite'
+  | 'overbite'
+  | 'midshift'
+  | 'crowding'
+  | 'diastema'
+  | 'nospace'
+  | 'space'
+  | 'bracket-ceramic'
+  | 'bracket-self'
+  | 'aligner'
+  | 'expander'
+  | 'lingual'
+  | 'retainer';
 
-const LEGEND: Array<{ label: string; color: string; icon: LegendIcon }> = [
+interface LegendItem {
+  key?: string;
+  label: string;
+  color: string;
+  icon: LegendIcon;
+}
+
+const LEGEND: LegendItem[] = [
   { label: 'Caries', color: '#e53935', icon: 'dot' },
   { label: 'Brackets', color: '#1d4ed8', icon: 'bracket' },
   { label: 'Obturación', color: '#1e63d6', icon: 'dot' },
@@ -148,6 +208,136 @@ const QUICK_ACTIONS: Array<{ key: QuickKey; label: string; icon: string }> = [
   { key: 'BRACKET', label: 'Agregar bracket', icon: 'M4 7 H20 V17 H4 Z M4 12 H20 M9 7 V17 M15 7 V17' },
   { key: 'NOTE', label: 'Agregar nota', icon: 'M5 4 H14 L19 9 V20 H5 Z M14 4 V9 H19 M8 13 H16 M8 16 H13' },
 ];
+
+const LEGEND_BY_LABEL = new Map(LEGEND.map((l) => [l.label, l]));
+
+/** Convenciones del odontograma de ortodoncia, agrupadas como en la plantilla impresa. */
+const ORTHO_LEGEND: Array<{ title: string; items: LegendItem[] }> = [
+  {
+    title: 'Piezas dentales',
+    items: [
+      { key: 'PRESENTE', label: 'Diente presente', color: '#94a3b8', icon: 'tooth' },
+      { key: 'AUSENTE', label: 'Diente ausente', color: '#6b7280', icon: 'x' },
+      { key: 'EXTRACCION_INDICADA', label: 'Extracción indicada', color: '#dc2626', icon: 'x' },
+      { key: 'INCLUIDO', label: 'Diente incluido', color: '#1d4ed8', icon: 'circle' },
+      { key: 'ERUPCION', label: 'Diente en erupción', color: '#1d4ed8', icon: 'triangle' },
+      { key: 'SUPERNUMERARIO', label: 'Diente supernumerario', color: '#0f766e', icon: 'super' },
+      { key: 'TEMPORAL', label: 'Diente temporal', color: '#64748b', icon: 'temporal' },
+    ],
+  },
+  {
+    title: 'Ortodoncia',
+    items: [
+      { key: 'BRACKET', label: 'Bracket', color: '#1d4ed8', icon: 'bracket' },
+      { key: 'ARCO', label: 'Arco ortodóntico', color: '#10306b', icon: 'wire' },
+      { key: 'LIGADURA_ELASTICA', label: 'Ligadura elástica', color: '#ec4899', icon: 'lig-e' },
+      { key: 'LIGADURA_METALICA', label: 'Ligadura metálica', color: '#6b7280', icon: 'lig-m' },
+      { key: 'GANCHO', label: 'Gancho', color: '#0f172a', icon: 'hook' },
+      { key: 'CADENA', label: 'Cadena elástica', color: '#7c3aed', icon: 'chain' },
+      { key: 'RESORTE', label: 'Resorte', color: '#0891b2', icon: 'spring' },
+      { key: 'BOTON', label: 'Botón / Stop', color: '#0f172a', icon: 'button' },
+      { key: 'TUBO', label: 'Tubo molar', color: '#475569', icon: 'tube' },
+      { key: 'BANDA', label: 'Bandas', color: '#1d4ed8', icon: 'band' },
+      { key: 'SEPARADOR', label: 'Separador', color: '#7c3aed', icon: 'ring' },
+    ],
+  },
+  {
+    title: 'Tipo de maloclusión / movimiento',
+    items: [
+      { key: 'PROTRUSION', label: 'Protrusión', color: '#dc2626', icon: 'arrow-up' },
+      { key: 'RETRUSION', label: 'Retrusión', color: '#dc2626', icon: 'arrow-down' },
+      { key: 'EXPANSION', label: 'Expansión', color: '#2563eb', icon: 'arrow-left' },
+      { key: 'CONTRACCION', label: 'Contracción', color: '#2563eb', icon: 'arrow-right' },
+      { key: 'ROTACION', label: 'Rotación', color: '#0f172a', icon: 'rotate' },
+      { key: 'INTRUSION', label: 'Intrusión', color: '#dc2626', icon: 'ibeam' },
+      { key: 'EXTRUSION', label: 'Extrusión', color: '#16a34a', icon: 'ibeam' },
+      { key: 'MIDLINE', label: 'Línea media', color: '#5b8fc7', icon: 'midline' },
+    ],
+  },
+  {
+    title: 'Problemas dentales',
+    items: [
+      { key: 'CARIES', label: 'Caries', color: '#e53935', icon: 'dot' },
+      { key: 'RESTAURACION', label: 'Obturación', color: '#1e63d6', icon: 'dot' },
+      { key: 'SELLANTE', label: 'Sellante', color: '#14b8a6', icon: 'dot' },
+      { key: 'FRACTURA', label: 'Fractura', color: '#f97316', icon: 'dot' },
+      { key: 'ENDODONCIA', label: 'Endodoncia', color: '#f5b301', icon: 'dot' },
+      { key: 'CORONA', label: 'Corona', color: '#8e24aa', icon: 'dot' },
+      { key: 'PROTESIS', label: 'Prótesis fija', color: '#16a34a', icon: 'dot' },
+      { key: 'PROTESIS_REMOVIBLE', label: 'Prótesis removible', color: '#0284c7', icon: 'dot' },
+      { key: 'IMPLANTE', label: 'Implante', color: '#64748b', icon: 'dot' },
+      { key: 'TRAUMA', label: 'Trauma', color: '#1e3a8a', icon: 'bolt' },
+      { key: 'MOVILIDAD', label: 'Movilidad', color: '#0b3a6e', icon: 'arrows' },
+      { key: 'FISTULA', label: 'Fístula', color: '#db2777', icon: 'fistula' },
+      { key: 'LESION', label: 'Lesión periodontal', color: '#e11d48', icon: 'pocket' },
+      { key: 'OTRO', label: 'Otra observación', color: '#0f172a', icon: 'star' },
+    ],
+  },
+  {
+    title: 'Tipo de aparato',
+    items: [
+      { key: 'BT_METALICO', label: 'Brackets metálicos', color: '#94a3b8', icon: 'bracket' },
+      { key: 'BT_CERAMICO', label: 'Brackets cerámicos', color: '#94a3b8', icon: 'bracket-ceramic' },
+      { key: 'BT_AUTOLIGADO', label: 'Brackets autoligables', color: '#475569', icon: 'bracket-self' },
+      { key: 'AP_ALINEADOR', label: 'Alineador', color: '#0ea5e9', icon: 'aligner' },
+      { key: 'AP_EXPANSOR', label: 'Expansor palatino', color: '#334155', icon: 'expander' },
+      { key: 'TAD', label: 'Mini tornillo (TAD)', color: '#0f766e', icon: 'tad' },
+      { key: 'AP_ARCO_LINGUAL', label: 'Arco lingual', color: '#334155', icon: 'lingual' },
+      { key: 'AP_RETENEDOR', label: 'Retenedor', color: '#16a34a', icon: 'retainer' },
+    ],
+  },
+  {
+    title: 'Otras convenciones',
+    items: [
+      { key: 'MORDIDA_CRUZADA', label: 'Mordida cruzada', color: '#b45309', icon: 'crossbite' },
+      { key: 'MORDIDA_ABIERTA', label: 'Mordida abierta', color: '#0369a1', icon: 'openbite' },
+      { key: 'SOBREMORDIDA', label: 'Sobremordida', color: '#9a3412', icon: 'overbite' },
+      { key: 'LINEA_MEDIA', label: 'Desviación de línea media', color: '#1e40af', icon: 'midshift' },
+      { key: 'APINAMIENTO', label: 'Apiñamiento', color: '#9333ea', icon: 'crowding' },
+      { key: 'DIASTEMA', label: 'Diastema', color: '#0d9488', icon: 'diastema' },
+      { key: 'AUSENCIA_ESPACIO', label: 'Ausencia de espacio', color: '#be123c', icon: 'nospace' },
+      { key: 'ESPACIO', label: 'Espacio en tratamiento', color: '#0369a1', icon: 'space' },
+    ],
+  },
+];
+
+const ORTHO_LEGEND_BY_KEY = new Map(ORTHO_LEGEND.flatMap((g) => g.items).map((l) => [l.key!, l]));
+
+const TOOL_BY_KEY = new Map(ALL_TOOLS.map((t) => [t.key as string, t]));
+const tools = (...keys: string[]) =>
+  keys.map((k) => (k === 'PROTESIS' ? { ...TOOL_BY_KEY.get(k)!, label: 'Prótesis fija' } : TOOL_BY_KEY.get(k)!));
+
+/** Secciones del menú del diente en ortodoncia; las superficies van entre la segunda y la tercera. */
+const ORTHO_POP_TOP = [
+  { title: 'Piezas dentales', tools: tools('AUSENTE', 'EXTRACCION_INDICADA', 'INCLUIDO', 'ERUPCION', 'SUPERNUMERARIO', 'TEMPORAL'), healthy: true, arch: false },
+  {
+    title: 'Problemas dentales',
+    tools: tools('ENDODONCIA', 'CORONA', 'PROTESIS', 'PROTESIS_REMOVIBLE', 'IMPLANTE', 'TRAUMA', 'MOVILIDAD', 'FISTULA', 'LESION', 'OTRO'),
+    healthy: false,
+    arch: false,
+  },
+];
+const ORTHO_POP_BOTTOM = [
+  {
+    title: 'Ortodoncia',
+    tools: tools('BRACKET', ...ORTHO_DEVICE_TOOLS.map((t) => t.key as string), 'BANDA', 'SEPARADOR'),
+    healthy: false,
+    arch: true,
+  },
+  { title: 'Tipo de maloclusión / movimiento', tools: ORTHO_MOVEMENT_TOOLS, healthy: false, arch: false },
+  { title: 'Otras convenciones', tools: ORTHO_OCCLUSION_TOOLS, healthy: false, arch: false },
+];
+
+const MOVEMENT_KEYS = new Set<string>(ORTHO_MOVEMENT_TOOLS.map((t) => t.key));
+const OCCLUSION_KEYS = new Set<string>(ORTHO_OCCLUSION_TOOLS.map((t) => t.key));
+const ORTHO_ONLY_KEYS = new Set<string>(ORTHO_TOOLS.map((t) => t.key));
+
+const BRACKET_STYLES: Record<string, { fill: string; stroke: string; slot: string; clip?: boolean }> = {
+  METALICO: { fill: '#94a3b8', stroke: '#64748b', slot: '#334155' },
+  CERAMICO: { fill: '#f8fafc', stroke: '#94a3b8', slot: '#94a3b8' },
+  AUTOLIGADO: { fill: '#475569', stroke: '#334155', slot: '#e2e8f0', clip: true },
+};
+const DEFAULT_BRACKET = { fill: '#1d4ed8', stroke: '#1d4ed8', slot: '#bfdbfe', clip: false };
 
 const ORTHO_MARKS = new Set<string>(['BRACKET', 'BANDA', 'SEPARADOR']);
 const ORTHO_LEGEND_ICONS = new Set<LegendIcon>(['bracket', 'band', 'wire', 'ring']);
@@ -196,6 +386,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
   'EXTRACCION_INDICADA',
   'IMPLANTE',
   'PROTESIS',
+  'PROTESIS_REMOVIBLE',
   'CORONA',
   'CARIES',
   'ENDODONCIA',
@@ -230,14 +421,24 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
             <stop offset="0" stop-color="#f0fdf4" />
             <stop offset="1" stop-color="#b7f0cc" />
           </linearGradient>
+          <linearGradient id="odg-crown-sky" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#f0f9ff" />
+            <stop offset="1" stop-color="#b6e0f7" />
+          </linearGradient>
         </defs>
       </svg>
 
       <header class="odg-head">
-        <div class="odg-brand">
+        <div class="odg-brand" [class.ortho]="orthoMode()">
           <svg viewBox="0 0 40 44" aria-hidden="true">
             <path [attr.d]="logoPath" fill="#0b3a6e" />
             <path d="M12 12 C12 8 16 7 19 9" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.7" />
+            @if (orthoMode()) {
+              <path d="M5 19 H35" stroke="#fff" stroke-width="1.6" />
+              <rect x="9" y="16" width="6" height="6" rx="1.2" fill="#fff" />
+              <rect x="17" y="16" width="6" height="6" rx="1.2" fill="#fff" />
+              <rect x="25" y="16" width="6" height="6" rx="1.2" fill="#fff" />
+            }
           </svg>
           <div>
             <strong>ODONTOGRAMA</strong>
@@ -260,7 +461,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
         }
       </header>
 
-      <div class="odg-body">
+      <div class="odg-body" [class.ortho]="orthoMode()">
         <div class="odg-left">
           <div class="odg-main" #mainArea>
             <div class="odg-chart">
@@ -284,6 +485,9 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                           @if (showSurfaces()) {
                             <ng-container *ngTemplateOutlet="squareTpl; context: { $implicit: tooth, small: row.small }" />
                           }
+                        }
+                        @if (orthoMode() && !row.upper) {
+                          <ng-container *ngTemplateOutlet="badgesTpl; context: { $implicit: tooth }" />
                         }
                         <svg
                           class="odg-svg"
@@ -332,13 +536,50 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                               @if (hasMark(tooth, 'BANDA')) {
                                 <rect [attr.x]="shape(tooth).crownLeft + 1" y="70" [attr.width]="shape(tooth).crownRight - shape(tooth).crownLeft - 2" height="11" rx="2" fill="rgba(29,78,216,0.18)" stroke="#1d4ed8" stroke-width="1.6" />
                               }
+                              @if (hasAppliance('ALINEADOR') && !has(tooth, 'AUSENTE')) {
+                                <path [attr.d]="shape(tooth).crown" fill="rgba(56,189,248,0.18)" stroke="#0ea5e9" stroke-width="1.6" transform="translate(25 77) scale(1.1) translate(-25 -77)" />
+                              }
                               @if (archActive(row.upper) && !has(tooth, 'AUSENTE')) {
                                 <line [attr.x1]="shape(tooth).crownLeft - 8" y1="74" [attr.x2]="shape(tooth).crownRight + 8" y2="74" stroke="#10306b" stroke-width="2" />
                                 <circle cx="25" cy="74" r="3" fill="#10306b" />
                               }
+                              @if (hasMark(tooth, 'CADENA')) {
+                                @for (x of chainXs(tooth); track x) {
+                                  <circle [attr.cx]="x" cy="74" r="2.6" fill="none" stroke="#7c3aed" stroke-width="1.8" />
+                                }
+                              }
+                              @if (hasMark(tooth, 'RESORTE')) {
+                                <path [attr.d]="springPath(tooth)" fill="none" stroke="#0891b2" stroke-width="1.7" stroke-linejoin="round" />
+                              }
+                              @if (hasMark(tooth, 'TUBO')) {
+                                <rect x="16" y="68.5" width="18" height="11" rx="2" fill="#475569" />
+                                <rect x="30.5" y="71" width="6" height="6" rx="1.2" fill="#fff" stroke="#475569" stroke-width="1.4" />
+                              }
                               @if (hasMark(tooth, 'BRACKET')) {
-                                <rect x="18.5" y="69" width="13" height="10" rx="2" fill="#1d4ed8" />
-                                <line x1="18.5" y1="74" x2="31.5" y2="74" stroke="#bfdbfe" stroke-width="1.4" />
+                                <rect x="18.5" y="69" width="13" height="10" rx="2" [attr.fill]="bracketStyle().fill" [attr.stroke]="bracketStyle().stroke" stroke-width="0.8" />
+                                <line x1="18.5" y1="74" x2="31.5" y2="74" [attr.stroke]="bracketStyle().slot" stroke-width="1.4" />
+                                @if (bracketStyle().clip) {
+                                  <rect x="21" y="71" width="8" height="6" rx="1" fill="none" stroke="#e2e8f0" stroke-width="1" />
+                                }
+                              }
+                              @if (hasMark(tooth, 'LIGADURA_METALICA')) {
+                                <rect x="15.5" y="65.5" width="19" height="17" rx="3.5" fill="none" stroke="#6b7280" stroke-width="1.8" />
+                                <path d="M32 66.5 L37 61" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" />
+                              }
+                              @if (hasMark(tooth, 'LIGADURA_ELASTICA')) {
+                                <rect x="17" y="67" width="16" height="14" rx="3" fill="none" stroke="#ec4899" stroke-width="2.4" />
+                              }
+                              @if (hasMark(tooth, 'GANCHO')) {
+                                <path [attr.d]="hookPath(tooth)" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round" />
+                              }
+                              @if (hasMark(tooth, 'BOTON')) {
+                                <rect x="22.5" y="83" width="5" height="9" rx="1.5" fill="#0f172a" stroke="#fff" stroke-width="0.8" />
+                              }
+                              @if (hasMark(tooth, 'TAD')) {
+                                <g [attr.transform]="'translate(' + mesialX(tooth) + ' 0)'">
+                                  <rect x="-3.5" y="49" width="7" height="4" rx="1" fill="#0f766e" />
+                                  <path d="M0 49 L0 28 M-2.8 45 L2.8 43 M-2.8 40 L2.8 38 M-2.8 35 L2.8 33" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" />
+                                </g>
                               }
                               @if (hasMark(tooth, 'SEPARADOR')) {
                                 <circle [attr.cx]="mesialX(tooth)" cy="64" r="4.5" fill="none" stroke="#7c3aed" stroke-width="2" />
@@ -361,8 +602,22 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                                 <path d="M25 3 L27.3 8.2 L33 8.8 L28.7 12.6 L30 18.2 L25 15.3 L20 18.2 L21.3 12.6 L17 8.8 L22.7 8.2 Z" fill="#0f172a" stroke="#fff" stroke-width="0.8" />
                               }
                             </g>
+                            @if (has(tooth, 'TEMPORAL')) {
+                              <path [attr.d]="shape(tooth).crown" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="4 3" />
+                            }
                             @if (has(tooth, 'INCLUIDO')) {
-                              <path d="M25 60 L39 88 L11 88 Z" fill="rgba(255,255,255,0.4)" stroke="#475569" stroke-width="2" stroke-linejoin="round" />
+                              @if (orthoMode()) {
+                                <circle cx="25" cy="80" r="10" fill="rgba(255,255,255,0.4)" stroke="#1d4ed8" stroke-width="2.2" />
+                              } @else {
+                                <path d="M25 60 L39 88 L11 88 Z" fill="rgba(255,255,255,0.4)" stroke="#475569" stroke-width="2" stroke-linejoin="round" />
+                              }
+                            }
+                            @if (has(tooth, 'ERUPCION')) {
+                              <path d="M25 60 L39 88 L11 88 Z" fill="rgba(255,255,255,0.4)" stroke="#1d4ed8" stroke-width="2.2" stroke-linejoin="round" />
+                            }
+                            @if (has(tooth, 'SUPERNUMERARIO')) {
+                              <circle cx="25" cy="80" r="10" fill="rgba(255,255,255,0.4)" stroke="#0f766e" stroke-width="2.2" />
+                              <path d="M15 80 H35" stroke="#0f766e" stroke-width="2.2" />
                             }
                             @if (has(tooth, 'AUSENTE')) {
                               <circle cx="25" cy="80" r="10" fill="rgba(148,163,184,0.45)" stroke="#6b7280" stroke-width="1.6" />
@@ -373,7 +628,37 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                               <path d="M20 75 L30 85 M30 75 L20 85" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" />
                             }
                           </g>
+                          @for (m of movementMarks(tooth); track m; let i = $index; let n = $count) {
+                            <g [attr.transform]="moveTransform(row.upper, i, n)">
+                              @switch (m) {
+                                @case ('PROTRUSION') {
+                                  <path d="M12 28 V4 M5 11 L12 3 L19 11" fill="none" stroke="#dc2626" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+                                }
+                                @case ('RETRUSION') {
+                                  <path d="M12 2 V26 M5 19 L12 27 L19 19" fill="none" stroke="#dc2626" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+                                }
+                                @case ('EXPANSION') {
+                                  <path d="M23 15 H2 M9 8 L1.5 15 L9 22" fill="none" stroke="#2563eb" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+                                }
+                                @case ('CONTRACCION') {
+                                  <path d="M1 15 H22 M15 8 L22.5 15 L15 22" fill="none" stroke="#2563eb" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+                                }
+                                @case ('ROTACION') {
+                                  <path d="M19 9 A9 9 0 1 0 21 17 M20.5 3.5 L19.2 9.4 L13.4 8.2" fill="none" stroke="#0f172a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                                }
+                                @case ('INTRUSION') {
+                                  <path d="M12 3 V27 M5 3 H19 M5 27 H19" fill="none" stroke="#dc2626" stroke-width="3.2" stroke-linecap="round" />
+                                }
+                                @case ('EXTRUSION') {
+                                  <path d="M12 3 V27 M5 3 H19 M5 27 H19" fill="none" stroke="#16a34a" stroke-width="3.2" stroke-linecap="round" />
+                                }
+                              }
+                            </g>
+                          }
                         </svg>
+                        @if (orthoMode() && row.upper) {
+                          <ng-container *ngTemplateOutlet="badgesTpl; context: { $implicit: tooth }" />
+                        }
                         @if (!row.upper) {
                           @if (showSurfaces()) {
                             <ng-container *ngTemplateOutlet="squareTpl; context: { $implicit: tooth, small: row.small }" />
@@ -408,6 +693,14 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                   </polygon>
                 }
               </svg>
+            </ng-template>
+
+            <ng-template #badgesTpl let-tooth>
+              <div class="odg-badges" (click)="onToothClick(tooth, $event)">
+                @for (b of occlusionMarks(tooth); track b.key) {
+                  <span class="odg-ico" [title]="b.label"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: b }" /></span>
+                }
+              </div>
             </ng-template>
 
             <ng-template #occlusal>
@@ -456,6 +749,18 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                           }
                         </g>
                       }
+                      @if (arch.upper && hasAppliance('EXPANSOR') && arch.geo.expander; as ex) {
+                        <path [attr.d]="ex.arms" fill="none" stroke="#334155" stroke-width="2.2" stroke-linecap="round" />
+                        <rect [attr.x]="ex.x - 14" [attr.y]="ex.y - 10" width="28" height="20" rx="4" fill="#e2e8f0" stroke="#334155" stroke-width="1.6" />
+                        <circle [attr.cx]="ex.x" [attr.cy]="ex.y" r="3.5" fill="#fff" stroke="#334155" stroke-width="1.4" />
+                        <path [attr.d]="'M' + (ex.x - 2) + ' ' + ex.y + ' H' + (ex.x + 2)" stroke="#334155" stroke-width="1.2" />
+                      }
+                      @if (!arch.upper && hasAppliance('ARCO_LINGUAL') && arch.geo.lingual) {
+                        <path [attr.d]="arch.geo.lingual" fill="none" stroke="#334155" stroke-width="2.2" stroke-linecap="round" />
+                      }
+                      @if (hasAppliance('RETENEDOR') && arch.geo.retainer) {
+                        <path [attr.d]="arch.geo.retainer" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round" />
+                      }
                     </svg>
                   </div>
                   @if (last && occlusalArches().length > 1) {
@@ -487,6 +792,11 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                         </button>
                       }
                     </div>
+                    @if (orthoMode()) {
+                      @for (sec of orthoPopTop; track sec.title) {
+                        <ng-container *ngTemplateOutlet="popSecTpl; context: { $implicit: sec, tooth: tooth }" />
+                      }
+                    } @else {
                     <p class="odg-pop-title">Estado del diente</p>
                     <div class="odg-chips">
                       <button type="button" class="odg-chip" [class.on]="!record(tooth)" (click)="setHealthy(tooth)">
@@ -494,16 +804,17 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                       </button>
                       @for (t of conditionTools; track t.key) {
                         <button type="button" class="odg-chip" [class.on]="has(tooth, $any(t.key))" (click)="toggleCondition(tooth, $any(t.key))">
-                          <span class="dot" [style.background]="t.color"></span>{{ t.label }}
+                          <span class="odg-ico"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: legendFor(t) }" /></span>{{ t.label }}
                         </button>
                       }
                     </div>
+                    }
                     <p class="odg-pop-title">Superficies <span>elija el hallazgo y toque la superficie</span></p>
                     <div class="odg-pop-surfaces">
                       <div class="odg-chips">
                         @for (t of surfaceTools; track t.key) {
                           <button type="button" class="odg-chip" [class.on]="popSurfaceTool() === t.key" (click)="popSurfaceTool.set($any(t.key))">
-                            <span class="dot" [style.background]="t.color"></span>{{ t.label }}
+                            <span class="odg-ico"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: legendFor(t) }" /></span>{{ t.label }}
                           </button>
                         }
                       </div>
@@ -526,11 +837,16 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                         <text x="18" y="20.5" class="sq-l">{{ surfaceLetter(tooth, 'center') }}</text>
                       </svg>
                     </div>
+                    @if (orthoMode()) {
+                      @for (sec of orthoPopBottom; track sec.title) {
+                        <ng-container *ngTemplateOutlet="popSecTpl; context: { $implicit: sec, tooth: tooth }" />
+                      }
+                    } @else {
                     <p class="odg-pop-title">Marcas y aparatología</p>
                     <div class="odg-chips">
                       @for (t of markTools(); track t.key) {
                         <button type="button" class="odg-chip" [class.on]="hasMark(tooth, $any(t.key))" (click)="toggleMark(tooth, $any(t.key))">
-                          <span class="dot" [style.background]="t.color"></span>{{ t.label }}
+                          <span class="odg-ico"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: legendFor(t) }" /></span>{{ t.label }}
                         </button>
                       }
                       @if (showOrthoMarks()) {
@@ -541,11 +857,38 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                           [title]="'Aplica a toda la arcada ' + (isUpperTooth(tooth) ? 'superior' : 'inferior')"
                           (click)="toggleArch(isUpperTooth(tooth) ? 'upper' : 'lower', !archActive(isUpperTooth(tooth)))"
                         >
-                          <span class="dot" style="background:#10306b"></span>Arco ortodóntico ({{ isUpperTooth(tooth) ? 'sup.' : 'inf.' }})
+                          <span class="odg-ico"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: legendFor({ label: 'Arco ortodóntico', color: '#10306b' }) }" /></span>Arco ortodóntico ({{ isUpperTooth(tooth) ? 'sup.' : 'inf.' }})
                         </button>
                       }
                     </div>
+                    }
                   }
+                  <ng-template #popSecTpl let-sec let-tooth="tooth">
+                    <p class="odg-pop-title">{{ sec.title }}</p>
+                    <div class="odg-chips">
+                      @if (sec.healthy) {
+                        <button type="button" class="odg-chip" [class.on]="!record(tooth)" (click)="setHealthy(tooth)">
+                          <span class="odg-ico"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: legendFor({ key: 'PRESENTE', label: 'Sano', color: '#94a3b8' }) }" /></span>Sano
+                        </button>
+                      }
+                      @for (t of sec.tools; track t.key) {
+                        <button type="button" class="odg-chip" [class.on]="toolOn(tooth, t)" (click)="toggleTool(tooth, t)">
+                          <span class="odg-ico"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: legendFor(t) }" /></span>{{ t.label }}
+                        </button>
+                      }
+                      @if (sec.arch) {
+                        <button
+                          type="button"
+                          class="odg-chip"
+                          [class.on]="archActive(isUpperTooth(tooth))"
+                          [title]="'Aplica a toda la arcada ' + (isUpperTooth(tooth) ? 'superior' : 'inferior')"
+                          (click)="toggleArch(isUpperTooth(tooth) ? 'upper' : 'lower', !archActive(isUpperTooth(tooth)))"
+                        >
+                          <span class="odg-ico"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: legendFor({ key: 'ARCO', label: 'Arco ortodóntico', color: '#10306b' }) }" /></span>Arco ortodóntico ({{ isUpperTooth(tooth) ? 'sup.' : 'inf.' }})
+                        </button>
+                      }
+                    </div>
+                  </ng-template>
                   <label class="odg-note">
                     Nota del diente
                     <input
@@ -566,7 +909,35 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
             }
           </div>
 
-          <div class="odg-cards">
+          <div class="odg-cards" [class.ortho]="orthoMode()">
+            @if (orthoMode()) {
+              <section class="odg-card" [class.odg-empty]="!data().orthoChart.planPhases.length">
+                <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 H16 V6 H8 Z M6 5 H4 V21 H20 V5 H18 M8 11 L10 13 L14 9 M8 17 H16" /></svg>Plan de tratamiento</h4>
+                <div class="odg-checks">
+                  @for (p of planPhases; track p.key) {
+                    <label class="odg-check">
+                      <input type="checkbox" [checked]="data().orthoChart.planPhases.includes(p.key)" [disabled]="disabled()" (change)="togglePlanPhase(p.key)" />
+                      {{ p.label }}
+                    </label>
+                  }
+                </div>
+              </section>
+              <section class="odg-card" [class.odg-empty]="!data().orthoChart.bracketType && !data().orthoChart.appliances.length">
+                <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12 H21 M6 9 H10 V15 H6 Z M14 9 H18 V15 H14 Z" /></svg>Tipo de aparato</h4>
+                <div class="odg-apps">
+                  @for (b of bracketTypes; track b.key) {
+                    <button type="button" class="odg-chip" [class.on]="data().orthoChart.bracketType === b.key" [disabled]="disabled()" (click)="setBracketType(b.key)">
+                      <span class="odg-ico"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: legendFor({ key: 'BT_' + b.key, label: b.label, color: '#94a3b8' }) }" /></span>{{ b.label }}
+                    </button>
+                  }
+                  @for (a of appliances; track a.key) {
+                    <button type="button" class="odg-chip" [class.on]="hasAppliance(a.key)" [disabled]="disabled()" (click)="toggleAppliance(a.key)">
+                      <span class="odg-ico"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: legendFor({ key: 'AP_' + a.key, label: a.label, color: '#334155' }) }" /></span>{{ a.label }}
+                    </button>
+                  }
+                </div>
+              </section>
+            }
             <section class="odg-card" [class.odg-empty]="!data().odontogramNotes?.trim()">
               <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3 H15 L19 7 V21 H5 Z M8 10 H16 M8 14 H16 M8 18 H13" /></svg>Notas</h4>
               <textarea
@@ -579,15 +950,43 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
               ></textarea>
             </section>
           </div>
+          @if (orthoMode()) {
+            <section class="odg-card odg-legend-wide">
+              <h4>Convenciones</h4>
+              <div class="odg-legend-groups">
+                @for (g of orthoLegend; track g.title) {
+                  <div class="odg-legend-group">
+                    <h5>{{ g.title }}</h5>
+                    <ul class="odg-legend one">
+                      @for (item of g.items; track item.key) {
+                        <li>
+                          <span class="odg-ico"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: legendFor(item) }" /></span>
+                          {{ item.label }}
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
+              </div>
+            </section>
+          }
         </div>
 
         <aside class="odg-side">
-          <section class="odg-side-legend">
-            <h4>Convenciones</h4>
-            <ul class="odg-legend">
-              @for (item of legend(); track item.label) {
-                <li>
-                  <span class="odg-ico">
+          @if (!orthoMode()) {
+            <section class="odg-side-legend">
+              <h4>Convenciones</h4>
+              <ul class="odg-legend">
+                @for (item of legend(); track item.label) {
+                  <li>
+                    <span class="odg-ico"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: item }" /></span>
+                    {{ item.label }}
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+            <ng-template #legendIco let-item>
                     @switch (item.icon) {
                       @case ('dot') {
                         <span class="lg-dot" [style.background]="item.color" [style.box-shadow]="'0 0 0 3px ' + item.color + '33'"></span>
@@ -625,13 +1024,107 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                       @case ('star') {
                         <svg viewBox="0 0 20 20"><path d="M10 1.8 L12.4 7 L18 7.6 L13.8 11.4 L15 17 L10 14.1 L5 17 L6.2 11.4 L2 7.6 L7.6 7 Z" [attr.fill]="item.color" /></svg>
                       }
+                      @case ('tooth') {
+                        <svg viewBox="0 0 20 20"><path [attr.d]="toothIcon" fill="#fff" [attr.stroke]="item.color" stroke-width="1.4" stroke-linejoin="round" /></svg>
+                      }
+                      @case ('temporal') {
+                        <svg viewBox="0 0 20 20"><path [attr.d]="toothIcon" fill="none" [attr.stroke]="item.color" stroke-width="1.5" stroke-dasharray="2.2 1.6" transform="translate(10 10) scale(0.85) translate(-10 -10)" /></svg>
+                      }
+                      @case ('circle') {
+                        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5" fill="none" [attr.stroke]="item.color" stroke-width="2" /></svg>
+                      }
+                      @case ('super') {
+                        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5" fill="none" [attr.stroke]="item.color" stroke-width="1.8" /><path d="M3.5 10 H16.5" [attr.stroke]="item.color" stroke-width="1.8" /></svg>
+                      }
+                      @case ('lig-e') {
+                        <svg viewBox="0 0 20 20"><rect x="6" y="7" width="8" height="6" rx="1.2" fill="#94a3b8" /><rect x="3.5" y="4.5" width="13" height="11" rx="2.5" fill="none" [attr.stroke]="item.color" stroke-width="2.2" /></svg>
+                      }
+                      @case ('lig-m') {
+                        <svg viewBox="0 0 20 20"><rect x="2" y="7.5" width="16" height="5" rx="2" [attr.fill]="item.color" /><path d="M6 7.5 L8 12.5 M10 7.5 L12 12.5 M14 7.5 L16 12.5" stroke="#e5e7eb" stroke-width="1" /></svg>
+                      }
+                      @case ('hook') {
+                        <svg viewBox="0 0 20 20"><path d="M8 18 V8 Q8 3 12.5 3 Q16 3 16 6.5" fill="none" [attr.stroke]="item.color" stroke-width="2.2" stroke-linecap="round" /></svg>
+                      }
+                      @case ('chain') {
+                        <svg viewBox="0 0 20 20">@for (x of [3, 7.7, 12.3, 17]; track x) {<circle [attr.cx]="x" cy="10" r="2.3" fill="none" [attr.stroke]="item.color" stroke-width="1.7" />}</svg>
+                      }
+                      @case ('spring') {
+                        <svg viewBox="0 0 20 20"><path d="M1 10 L3 6 L5 14 L7 6 L9 14 L11 6 L13 14 L15 6 L17 14 L19 10" fill="none" [attr.stroke]="item.color" stroke-width="1.6" stroke-linejoin="round" /></svg>
+                      }
+                      @case ('button') {
+                        <svg viewBox="0 0 20 20"><rect x="7.5" y="3" width="5" height="14" rx="1.5" [attr.fill]="item.color" /></svg>
+                      }
+                      @case ('tube') {
+                        <svg viewBox="0 0 20 20"><rect x="2" y="6.5" width="12" height="7" rx="1.5" [attr.fill]="item.color" /><rect x="12.5" y="7.5" width="5.5" height="5" rx="1" fill="#fff" [attr.stroke]="item.color" stroke-width="1.6" /></svg>
+                      }
+                      @case ('tad') {
+                        <svg viewBox="0 0 20 20"><rect x="6" y="2" width="8" height="3.5" rx="1" [attr.fill]="item.color" /><path d="M10 5.5 V18 M7.5 8 L12.5 9.5 M7.5 11 L12.5 12.5 M7.5 14 L12.5 15.5" fill="none" [attr.stroke]="item.color" stroke-width="1.6" stroke-linecap="round" /></svg>
+                      }
+                      @case ('arrow-up') {
+                        <svg viewBox="0 0 20 20"><path d="M10 18 V3 M4.5 8.5 L10 3 L15.5 8.5" fill="none" [attr.stroke]="item.color" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      }
+                      @case ('arrow-down') {
+                        <svg viewBox="0 0 20 20"><path d="M10 2 V17 M4.5 11.5 L10 17 L15.5 11.5" fill="none" [attr.stroke]="item.color" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      }
+                      @case ('arrow-left') {
+                        <svg viewBox="0 0 20 20"><path d="M18 10 H3 M8.5 4.5 L3 10 L8.5 15.5" fill="none" [attr.stroke]="item.color" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      }
+                      @case ('arrow-right') {
+                        <svg viewBox="0 0 20 20"><path d="M2 10 H17 M11.5 4.5 L17 10 L11.5 15.5" fill="none" [attr.stroke]="item.color" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      }
+                      @case ('rotate') {
+                        <svg viewBox="0 0 20 20"><path d="M15.5 6 A6.5 6.5 0 1 0 16.8 11.5 M16.3 1.8 L15.6 6.3 L11.2 5.6" fill="none" [attr.stroke]="item.color" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      }
+                      @case ('ibeam') {
+                        <svg viewBox="0 0 20 20"><path d="M10 3 V17 M6 3 H14 M6 17 H14" fill="none" [attr.stroke]="item.color" stroke-width="2.6" stroke-linecap="round" /></svg>
+                      }
+                      @case ('midline') {
+                        <svg viewBox="0 0 20 20"><path d="M10 1 V19" [attr.stroke]="item.color" stroke-width="2" stroke-dasharray="3 2" /></svg>
+                      }
+                      @case ('crossbite') {
+                        <svg viewBox="0 0 20 20"><path d="M2 6 Q10 15 18 6 M2 14 Q10 5 18 14" fill="none" [attr.stroke]="item.color" stroke-width="1.9" stroke-linecap="round" /></svg>
+                      }
+                      @case ('openbite') {
+                        <svg viewBox="0 0 20 20"><path d="M2 4 Q10 9 18 4 M2 16 Q10 11 18 16" fill="none" [attr.stroke]="item.color" stroke-width="1.9" stroke-linecap="round" /><path d="M10 8.5 V11.5" [attr.stroke]="item.color" stroke-width="1.4" stroke-dasharray="1.2 1" /></svg>
+                      }
+                      @case ('overbite') {
+                        <svg viewBox="0 0 20 20"><rect x="5.5" y="8" width="9" height="10" rx="2.5" fill="#fff" [attr.stroke]="item.color" stroke-width="1.5" /><rect x="4.5" y="2" width="11" height="11" rx="2.5" [attr.fill]="item.color + '40'" [attr.stroke]="item.color" stroke-width="1.8" /></svg>
+                      }
+                      @case ('midshift') {
+                        <svg viewBox="0 0 20 20"><path d="M7 2 V18" stroke="#94a3b8" stroke-width="1.6" /><path d="M13 2 V18" [attr.stroke]="item.color" stroke-width="1.8" stroke-dasharray="2.5 1.8" /><path d="M8 10 H12 M10.3 8.3 L12 10 L10.3 11.7" fill="none" [attr.stroke]="item.color" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      }
+                      @case ('crowding') {
+                        <svg viewBox="0 0 20 20"><rect x="2.5" y="4.5" width="7.5" height="11" rx="3" fill="#fff" [attr.stroke]="item.color" stroke-width="1.6" transform="rotate(-14 6.2 10)" /><rect x="9.5" y="4.5" width="7.5" height="11" rx="3" fill="#fff" [attr.stroke]="item.color" stroke-width="1.6" transform="rotate(14 13.2 10)" /></svg>
+                      }
+                      @case ('diastema') {
+                        <svg viewBox="0 0 20 20"><rect x="1" y="4" width="6" height="12" rx="2.5" fill="#fff" [attr.stroke]="item.color" stroke-width="1.6" /><rect x="13" y="4" width="6" height="12" rx="2.5" fill="#fff" [attr.stroke]="item.color" stroke-width="1.6" /><path d="M8.5 10 H11.5" [attr.stroke]="item.color" stroke-width="1.6" stroke-linecap="round" /></svg>
+                      }
+                      @case ('nospace') {
+                        <svg viewBox="0 0 20 20"><path d="M1 10 H7.5 M5 7.5 L7.5 10 L5 12.5 M19 10 H12.5 M15 7.5 L12.5 10 L15 12.5 M10 4 V16" fill="none" [attr.stroke]="item.color" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      }
+                      @case ('space') {
+                        <svg viewBox="0 0 20 20"><path d="M3 10 H17" [attr.stroke]="item.color" stroke-width="1.8" stroke-dasharray="2.4 1.8" /><path d="M3 5 V15 M17 5 V15" [attr.stroke]="item.color" stroke-width="1.8" stroke-linecap="round" /></svg>
+                      }
+                      @case ('bracket-ceramic') {
+                        <svg viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="10" rx="2.5" fill="#f8fafc" [attr.stroke]="item.color" stroke-width="1.4" /><path d="M3 10 H17" [attr.stroke]="item.color" stroke-width="1.4" /></svg>
+                      }
+                      @case ('bracket-self') {
+                        <svg viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="10" rx="2.5" [attr.fill]="item.color" /><rect x="6" y="7" width="8" height="6" rx="1" fill="none" stroke="#e2e8f0" stroke-width="1.2" /><path d="M3 10 H6 M14 10 H17" stroke="#e2e8f0" stroke-width="1.2" /></svg>
+                      }
+                      @case ('aligner') {
+                        <svg viewBox="0 0 20 20"><path d="M2.5 5 Q2.5 16 10 17 Q17.5 16 17.5 5 L13.5 5 Q13.5 12.5 10 13 Q6.5 12.5 6.5 5 Z" [attr.fill]="item.color + '33'" [attr.stroke]="item.color" stroke-width="1.5" stroke-linejoin="round" /></svg>
+                      }
+                      @case ('expander') {
+                        <svg viewBox="0 0 20 20"><path d="M1 10 H5 M15 10 H19" [attr.stroke]="item.color" stroke-width="1.8" stroke-linecap="round" /><rect x="5" y="5.5" width="10" height="9" rx="2" fill="#e2e8f0" [attr.stroke]="item.color" stroke-width="1.5" /><circle cx="10" cy="10" r="2" fill="#fff" [attr.stroke]="item.color" stroke-width="1.2" /></svg>
+                      }
+                      @case ('lingual') {
+                        <svg viewBox="0 0 20 20"><path d="M4 4 V9 Q4 17 10 17 Q16 17 16 9 V4" fill="none" [attr.stroke]="item.color" stroke-width="1.9" /><rect x="1.8" y="1.8" width="4.4" height="4" rx="1" [attr.fill]="item.color" /><rect x="13.8" y="1.8" width="4.4" height="4" rx="1" [attr.fill]="item.color" /></svg>
+                      }
+                      @case ('retainer') {
+                        <svg viewBox="0 0 20 20"><path d="M3 3 Q3 17 10 17 Q17 17 17 3" fill="none" [attr.stroke]="item.color" stroke-width="2" stroke-linecap="round" /><path d="M6.5 6 Q6.5 13 10 13 Q13.5 13 13.5 6" fill="none" [attr.stroke]="item.color" stroke-width="1.2" stroke-dasharray="1.8 1.4" /></svg>
+                      }
                     }
-                  </span>
-                  {{ item.label }}
-                </li>
-              }
-            </ul>
-          </section>
+            </ng-template>
           @if (!disabled()) {
             <section>
               <h4>Herramientas</h4>
@@ -649,10 +1142,11 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                       type="button"
                       class="odg-swatch"
                       [class.on]="paintTool() === t.key"
-                      [style.background]="t.color"
                       [title]="t.label"
                       (click)="paintTool.set(t.key)"
-                    ></button>
+                    >
+                      <span class="odg-ico"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: legendFor(t) }" /></span>
+                    </button>
                   }
                 </div>
                 <p class="odg-hint strong">Pintando: {{ toolLabel(paintTool()) }}</p>
@@ -718,14 +1212,18 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
           </span>
         }
         @for (c of counts(); track c.label) {
-          <span class="odg-count"><span class="dot" [style.background]="c.color"></span>{{ c.label }}: {{ c.value }}</span>
+          <span class="odg-count"><span class="odg-ico"><ng-container *ngTemplateOutlet="legendIco; context: { $implicit: legendFor(c) }" /></span>{{ c.label }}: {{ c.value }}</span>
         }
       </div>
 
       <footer class="odg-foot">
         <span class="odg-foot-brand">
           <svg viewBox="0 0 40 44" aria-hidden="true"><path [attr.d]="logoPath" fill="none" stroke="#fff" stroke-width="2.4" /></svg>
-          {{ specialtyLabel() }} <i>|</i> Precisión en cada detalle
+          @if (orthoMode()) {
+            Ortodoncia <i>|</i> Estética <i>|</i> Función <i>|</i> Salud oral
+          } @else {
+            {{ specialtyLabel() }} <i>|</i> Precisión en cada detalle
+          }
         </span>
         <em>Tu sonrisa, nuestro propósito</em>
       </footer>
@@ -740,12 +1238,30 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     .odg-brand svg { width: 42px; height: 46px; }
     .odg-brand strong { display: block; font-size: 30px; font-weight: 800; letter-spacing: 0.02em; color: var(--ink); line-height: 1; }
     .odg-brand span { display: block; margin-top: 4px; font-size: 14px; color: var(--ink); }
+    .odg-brand.ortho span { margin-top: 2px; font-size: 30px; font-weight: 800; line-height: 1; letter-spacing: 0.03em; text-transform: uppercase; color: #4a9fd8; }
     .odg-brand i, .odg-foot i { font-style: normal; opacity: 0.5; margin: 0 6px; }
     .odg-print-meta { display: none; margin: 0; gap: 6px 22px; flex-wrap: wrap; font-size: 13px; color: #1e293b; }
     .odg-print-meta b { color: var(--ink); }
     .odg-tagline { justify-self: end; margin: 0; font-size: 16px; font-weight: 700; line-height: 1.25; color: var(--ink); text-align: right; }
     .odg-tagline small { display: block; font-size: 12.5px; font-weight: 500; color: #475569; }
     .odg-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; padding: 14px; }
+    .odg-badges { display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 2px; min-height: 19px; max-width: 62px; cursor: pointer; }
+    .odg-badges .odg-ico, .odg-badges .odg-ico svg { width: 19px; height: 19px; }
+    .odg-count .odg-ico, .odg-count .odg-ico svg { width: 15px; height: 15px; }
+    .odg-count .lg-dot { width: 10px; height: 10px; }
+    .odg-legend-groups { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
+    .odg-legend-group h5 { margin: 0 0 7px; padding-bottom: 5px; border-bottom: 1px solid var(--line); font-size: 10.5px; font-weight: 800; color: var(--ink); text-transform: uppercase; letter-spacing: 0.03em; }
+    .odg-legend.one { grid-template-columns: 1fr; gap: 6px; font-size: 12px; }
+    .odg-legend.one .odg-ico, .odg-legend.one .odg-ico svg { width: 19px; height: 19px; }
+    .odg-legend.one .lg-dot { width: 13px; height: 13px; }
+    .odg-legend-wide .odg-legend-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 22px; }
+    .odg-legend-wide .odg-legend.one { grid-template-columns: 1fr 1fr; gap: 7px 10px; }
+    .odg-cards.ortho { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .odg-checks { display: flex; flex-direction: column; gap: 9px; padding: 4px 2px; }
+    .odg-checks .odg-check { font-size: 13px; }
+    .odg-apps { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .odg-apps .odg-chip { padding: 6px 8px; font-size: 12px; }
+    .odg-apps .odg-chip:disabled { cursor: default; }
     .odg-left { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     .odg-main { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; overflow-x: auto; padding: 14px 10px; background: rgba(255, 255, 255, 0.82); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 4px 16px rgba(11, 58, 110, 0.05); }
     .odg-chart { position: relative; width: max-content; min-width: 100%; margin: 0 auto; padding: 0 104px; box-sizing: border-box; }
@@ -837,7 +1353,9 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     .odg-hint { margin: 0; font-size: 11.5px; color: #64748b; }
     .odg-hint.strong { color: var(--ink); font-weight: 700; }
     .odg-palette { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; padding: 8px; background: #fff; border-radius: 8px; box-shadow: 0 4px 14px rgba(11, 58, 110, 0.12); }
-    .odg-swatch { width: 100%; aspect-ratio: 1; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #cbd5e1; cursor: pointer; padding: 0; }
+    .odg-swatch { display: grid; place-items: center; width: 100%; aspect-ratio: 1; border-radius: 6px; border: 1px solid var(--line); background: #fff; cursor: pointer; padding: 0; }
+    .odg-swatch .odg-ico, .odg-swatch .odg-ico svg { width: 17px; height: 17px; }
+    .odg-swatch .lg-dot { width: 12px; height: 12px; }
     .odg-swatch:hover { transform: scale(1.12); }
     .odg-swatch.on { box-shadow: 0 0 0 2px var(--ink); transform: scale(1.12); }
     .odg-seg { display: flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
@@ -864,6 +1382,8 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     }
     @container (max-width: 980px) {
       .odg-body { grid-template-columns: 1fr; }
+      .odg-cards.ortho { grid-template-columns: 1fr; }
+      .odg-legend-wide .odg-legend-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .odg-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
     }
     @container (max-width: 560px) {
@@ -877,6 +1397,10 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
       .odg-print-meta { display: flex; }
       .odg-tagline { display: block; }
       .odg-body { grid-template-columns: minmax(0, 1fr) 260px; }
+      .odg-body.ortho { grid-template-columns: 1fr; }
+      .odg-body.ortho .odg-side { display: none; }
+      .odg-cards.ortho { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .odg-legend-wide .odg-legend-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .odg-side { display: flex; }
       .odg-card textarea { border: none; resize: none; padding: 0; min-height: 0; }
       .odg { box-shadow: none; break-inside: avoid; }
@@ -894,6 +1418,8 @@ export class DentalOdontogram implements OnDestroy {
   readonly professionalCard = input('');
   readonly orthoMarks = input(true);
   readonly specialtyLabel = input('Odontología General');
+  /** Consultorio de ortodoncia: convenciones, menú del diente y tarjetas propias de la especialidad. */
+  readonly orthoMode = input(false);
   readonly changed = output<void>();
   /** Pide a la historia guardar el borrador. */
   readonly save = output<void>();
@@ -915,7 +1441,116 @@ export class DentalOdontogram implements OnDestroy {
     return Object.values(this.data().odontogram).some((r) => r?.marks?.some((m) => ORTHO_MARKS.has(m)));
   });
   readonly markTools = computed(() => (this.showOrthoMarks() ? MARK_TOOLS : MARK_TOOLS.filter((t) => !ORTHO_MARKS.has(t.key))));
-  readonly allTools = computed(() => (this.showOrthoMarks() ? ALL_TOOLS : ALL_TOOLS.filter((t) => !ORTHO_MARKS.has(t.key))));
+  readonly allTools = computed(() => {
+    if (this.orthoMode()) return ALL_TOOLS;
+    return ALL_TOOLS.filter((t) => !ORTHO_ONLY_KEYS.has(t.key) && (this.showOrthoMarks() || !ORTHO_MARKS.has(t.key)));
+  });
+  readonly orthoLegend = ORTHO_LEGEND;
+  readonly orthoPopTop = ORTHO_POP_TOP;
+  readonly orthoPopBottom = ORTHO_POP_BOTTOM;
+  readonly planPhases = ORTHO_PLAN_PHASES;
+  readonly bracketTypes = BRACKET_TYPES;
+  readonly appliances = ORTHO_APPLIANCES;
+  readonly toothIcon =
+    'M10 4 C7 2 3 3 3 7 C3 10 5 12 5.5 16 C6 18.5 8 18 8.2 15.5 C8.4 13.5 9 12.5 10 12.5 C11 12.5 11.6 13.5 11.8 15.5 C12 18 14 18.5 14.5 16 C15 12 17 10 17 7 C17 3 13 2 10 4 Z';
+
+  legendFor(tool: { key?: string; label: string; color: string }): LegendItem {
+    const key = tool.key as string | undefined;
+    if (this.orthoMode() && key) {
+      const type = this.data().orthoChart.bracketType;
+      if (key === 'BRACKET' && type) return { ...ORTHO_LEGEND_BY_KEY.get('BT_' + type)!, label: tool.label };
+      const item = ORTHO_LEGEND_BY_KEY.get(key);
+      if (item) return item;
+    }
+    return LEGEND_BY_LABEL.get(tool.label) ?? (key ? ORTHO_LEGEND_BY_KEY.get(key) : undefined) ?? { ...tool, icon: 'dot' };
+  }
+
+  readonly bracketStyle = computed(() => {
+    this.version();
+    return BRACKET_STYLES[this.data().orthoChart.bracketType] ?? DEFAULT_BRACKET;
+  });
+
+  hasAppliance(key: string) {
+    this.version();
+    return this.data().orthoChart.appliances.includes(key);
+  }
+
+  movementMarks(tooth: number) {
+    return (this.record(tooth)?.marks || []).filter((m) => MOVEMENT_KEYS.has(m));
+  }
+
+  /** Ubica los símbolos de movimiento sobre la raíz, sin reflejarlos en la mandíbula; si hay varios se reducen en cuadrícula. */
+  moveTransform(upper: boolean, i: number, n: number) {
+    const baseY = upper ? 8 : 62;
+    if (n === 1) return `translate(13 ${baseY})`;
+    const s = 0.55;
+    const cx = i % 2 ? 31 : 19;
+    const cy = baseY + 8 + Math.floor(i / 2) * 15;
+    return `translate(${cx - 12 * s} ${cy - 15 * s}) scale(${s})`;
+  }
+
+  occlusionMarks(tooth: number): LegendItem[] {
+    return (this.record(tooth)?.marks || []).filter((m) => OCCLUSION_KEYS.has(m)).map((m) => ORTHO_LEGEND_BY_KEY.get(m)!);
+  }
+
+  chainXs(tooth: number) {
+    const s = this.shape(tooth);
+    const out: number[] = [];
+    for (let x = s.crownLeft - 2; x <= s.crownRight + 2; x += 5.5) out.push(Math.round(x * 10) / 10);
+    return out;
+  }
+
+  springPath(tooth: number) {
+    const s = this.shape(tooth);
+    const x0 = s.crownLeft - 5;
+    const x1 = s.crownRight + 5;
+    let d = `M${x0} 74`;
+    let up = true;
+    for (let x = x0 + 2.5; x < x1; x += 2.5) {
+      d += ` L${x} ${up ? 70 : 78}`;
+      up = !up;
+    }
+    return `${d} L${x1} 74`;
+  }
+
+  hookPath(tooth: number) {
+    const x = this.shape(tooth).crownRight - 5;
+    return `M${x - 4} 70 H${x} V62 Q${x} 58 ${x - 4} 58`;
+  }
+
+  toolOn(tooth: number, tool: DentalToolDef) {
+    return tool.scope === 'condition' ? this.has(tooth, tool.key as ToothCondition) : this.hasMark(tooth, tool.key as ToothMark);
+  }
+
+  toggleTool(tooth: number, tool: DentalToolDef) {
+    if (tool.scope === 'condition') this.toggleCondition(tooth, tool.key as ToothCondition);
+    else this.toggleMark(tooth, tool.key as ToothMark);
+  }
+
+  togglePlanPhase(key: string) {
+    if (this.disabled()) return;
+    const chart = this.data().orthoChart;
+    chart.planPhases = chart.planPhases.includes(key)
+      ? chart.planPhases.filter((k) => k !== key)
+      : ORTHO_PLAN_PHASES.map((p) => p.key).filter((k) => k === key || chart.planPhases.includes(k));
+    this.bump();
+  }
+
+  setBracketType(key: string) {
+    if (this.disabled()) return;
+    const chart = this.data().orthoChart;
+    chart.bracketType = chart.bracketType === key ? '' : key;
+    this.bump();
+  }
+
+  toggleAppliance(key: string) {
+    if (this.disabled()) return;
+    const chart = this.data().orthoChart;
+    chart.appliances = chart.appliances.includes(key)
+      ? chart.appliances.filter((k) => k !== key)
+      : ORTHO_APPLIANCES.map((a) => a.key).filter((k) => k === key || chart.appliances.includes(k));
+    this.bump();
+  }
   readonly legend = computed(() => (this.showOrthoMarks() ? LEGEND : LEGEND.filter((l) => !ORTHO_LEGEND_ICONS.has(l.icon))));
   readonly quickActions = computed(() => (this.showOrthoMarks() ? QUICK_ACTIONS : QUICK_ACTIONS.filter((q) => q.key !== 'BRACKET')));
   readonly logoPath = LOGO_PATH;
@@ -965,7 +1600,7 @@ export class DentalOdontogram implements OnDestroy {
     const view = this.view();
     const dentition = this.dentition();
     const temporal = dentition === 'TEMPORAL';
-    const out: Array<{ label: string; teeth: Array<{ tooth: number; x: number; y: number; r: number; a: number; labelY: number }> }> = [];
+    const out: Array<ReturnType<DentalOdontogram['buildArch']>> = [];
     if (view !== 'MANDIBULA') {
       out.push(this.buildArch('Vista oclusal superior', temporal ? DECIDUOUS_UPPER : PERMANENT_UPPER, true));
     }
@@ -1021,6 +1656,7 @@ export class DentalOdontogram implements OnDestroy {
       for (const key of found) tally.set(key, (tally.get(key) || 0) + 1);
     }
     return ALL_TOOLS.filter((t) => tally.get(t.key)).map((t) => ({
+      key: t.key as string,
       label: t.label,
       color: t.color,
       value: tally.get(t.key) || 0,
@@ -1164,12 +1800,14 @@ export class DentalOdontogram implements OnDestroy {
 
   crownFill(tooth: number) {
     if (this.has(tooth, 'PROTESIS')) return 'url(#odg-crown-green)';
+    if (this.has(tooth, 'PROTESIS_REMOVIBLE')) return 'url(#odg-crown-sky)';
     if (this.has(tooth, 'CORONA')) return 'url(#odg-crown-purple)';
     return 'url(#odg-enamel)';
   }
 
   crownStroke(tooth: number) {
     if (this.has(tooth, 'PROTESIS')) return '#16a34a';
+    if (this.has(tooth, 'PROTESIS_REMOVIBLE')) return '#0284c7';
     if (this.has(tooth, 'CORONA')) return '#8e24aa';
     return '#b9a07a';
   }
@@ -1291,9 +1929,39 @@ export class DentalOdontogram implements OnDestroy {
       const labelY = upper ? y + r + 7 : y - r - 2.5;
       const deg = (theta * 180) / Math.PI;
       const a = Math.round(upper ? 90 - deg : deg - 90);
-      return { tooth, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, r, a, labelY };
+      return { tooth, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, r, a, labelY, theta };
     });
-    return { label, teeth: points };
+
+    // Aparatos por lingual/palatino: se trazan sobre una elipse interior a la arcada.
+    const at = (theta: number, inset: number) => {
+      const px = cx + (rx - inset) * Math.cos(theta);
+      const py = upper ? cy - (ry - inset) * Math.sin(theta) : cy + (ry - inset) * Math.sin(theta);
+      return `${Math.round(px * 10) / 10} ${Math.round(py * 10) / 10}`;
+    };
+    const pair = (...positions: number[]) => {
+      for (const pos of positions) {
+        const found = points.filter((p) => p.tooth % 10 === pos);
+        if (found.length === 2) return [found[0].theta, found[1].theta] as const;
+      }
+      return null;
+    };
+    const curve = (range: readonly [number, number] | null, inset: number) => {
+      if (!range) return '';
+      const steps = 24;
+      const parts: string[] = [];
+      for (let i = 0; i <= steps; i++) parts.push(at(range[0] + ((range[1] - range[0]) * i) / steps, inset));
+      return `M${parts.join(' L')}`;
+    };
+    const molars = pair(6, 5);
+    const center = { x: cx, y: upper ? cy - ry * 0.5 : cy + ry * 0.5 };
+    const geo = {
+      lingual: curve(molars, 22),
+      retainer: curve(pair(3), 17),
+      expander: molars
+        ? { x: center.x, y: center.y, arms: `M${at(molars[0], 14)} L${center.x} ${center.y} M${at(molars[1], 14)} L${center.x} ${center.y}` }
+        : null,
+    };
+    return { label, upper, teeth: points, geo };
   }
 
   setMode(mode: Mode) {
@@ -1392,8 +2060,9 @@ export class DentalOdontogram implements OnDestroy {
       this.setHealthy(tooth);
       return;
     }
-    if (CONDITION_TOOLS.some((t) => t.key === tool)) this.toggleCondition(tooth, tool as ToothCondition);
-    else if (MARK_TOOLS.some((t) => t.key === tool)) this.toggleMark(tooth, tool as ToothMark);
+    const def = TOOL_BY_KEY.get(tool);
+    if (def?.scope === 'condition') this.toggleCondition(tooth, tool as ToothCondition);
+    else if (def?.scope === 'mark') this.toggleMark(tooth, tool as ToothMark);
   }
 
   toggleCondition(tooth: number, condition: ToothCondition) {

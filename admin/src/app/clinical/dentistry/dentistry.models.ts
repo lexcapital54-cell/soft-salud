@@ -37,7 +37,11 @@ export type ToothCondition =
   | 'CORONA'
   | 'PROTESIS'
   | 'IMPLANTE'
-  | 'INCLUIDO';
+  | 'INCLUIDO'
+  | 'ERUPCION'
+  | 'SUPERNUMERARIO'
+  | 'TEMPORAL'
+  | 'PROTESIS_REMOVIBLE';
 /** Marcas complementarias (periodontales, trauma y aparatología de ortodoncia). */
 export type ToothMark =
   | 'MOVILIDAD'
@@ -47,7 +51,30 @@ export type ToothMark =
   | 'BRACKET'
   | 'BANDA'
   | 'SEPARADOR'
-  | 'OTRO';
+  | 'OTRO'
+  | 'LIGADURA_ELASTICA'
+  | 'LIGADURA_METALICA'
+  | 'GANCHO'
+  | 'CADENA'
+  | 'RESORTE'
+  | 'BOTON'
+  | 'TUBO'
+  | 'TAD'
+  | 'PROTRUSION'
+  | 'RETRUSION'
+  | 'EXPANSION'
+  | 'CONTRACCION'
+  | 'ROTACION'
+  | 'INTRUSION'
+  | 'EXTRUSION'
+  | 'MORDIDA_CRUZADA'
+  | 'MORDIDA_ABIERTA'
+  | 'SOBREMORDIDA'
+  | 'LINEA_MEDIA'
+  | 'APINAMIENTO'
+  | 'DIASTEMA'
+  | 'AUSENCIA_ESPACIO'
+  | 'ESPACIO';
 
 export type DentalTool = SurfaceState | ToothCondition | ToothMark | 'SANO';
 
@@ -252,6 +279,8 @@ export interface DentistryContent {
   };
   odontogram: Record<string, ToothRecord>;
   orthoArches: { upper: boolean; lower: boolean };
+  /** Odontograma de ortodoncia: tipo de brackets, aparatos del caso y fases del plan cumplidas. */
+  orthoChart: { bracketType: string; appliances: string[]; planPhases: string[] };
   odontogramNotes: string;
   orthodontics: {
     facial: {
@@ -542,6 +571,7 @@ export function emptyDentistry(): DentistryContent {
     },
     odontogram: {},
     orthoArches: { upper: false, lower: false },
+    orthoChart: { bracketType: '', appliances: [], planPhases: [] },
     odontogramNotes: '',
     orthodontics: {
       facial: {
@@ -621,6 +651,10 @@ const CONDITION_KEYS: ToothCondition[] = [
   'PROTESIS',
   'IMPLANTE',
   'INCLUIDO',
+  'ERUPCION',
+  'SUPERNUMERARIO',
+  'TEMPORAL',
+  'PROTESIS_REMOVIBLE',
 ];
 
 function normalizeTooth(raw: ToothRecord): ToothRecord {
@@ -685,6 +719,11 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
     periodontal: { ...base.periodontal, ...(raw.periodontal || {}) },
     odontogram,
     orthoArches: { ...base.orthoArches, ...(raw.orthoArches || {}) },
+    orthoChart: {
+      bracketType: raw.orthoChart?.bracketType || '',
+      appliances: [...(raw.orthoChart?.appliances || [])],
+      planPhases: [...(raw.orthoChart?.planPhases || [])],
+    },
     orthodontics: {
       ...base.orthodontics,
       ...ortho,
@@ -776,7 +815,74 @@ export const MARK_TOOLS: DentalToolDef[] = [
   { key: 'OTRO', label: 'Otra observación', color: '#0f172a', scope: 'mark' },
 ];
 
-export const ALL_TOOLS: DentalToolDef[] = [...SURFACE_TOOLS, ...CONDITION_TOOLS, ...MARK_TOOLS];
+/** Piezas dentales propias del odontograma de ortodoncia. */
+export const ORTHO_CONDITION_TOOLS: DentalToolDef[] = [
+  { key: 'ERUPCION', label: 'Diente en erupción', color: '#1d4ed8', scope: 'condition' },
+  { key: 'SUPERNUMERARIO', label: 'Diente supernumerario', color: '#0f766e', scope: 'condition' },
+  { key: 'TEMPORAL', label: 'Diente temporal', color: '#64748b', scope: 'condition' },
+  { key: 'PROTESIS_REMOVIBLE', label: 'Prótesis removible', color: '#0284c7', scope: 'condition' },
+];
+
+export const ORTHO_DEVICE_TOOLS: DentalToolDef[] = [
+  { key: 'LIGADURA_ELASTICA', label: 'Ligadura elástica', color: '#ec4899', scope: 'mark' },
+  { key: 'LIGADURA_METALICA', label: 'Ligadura metálica', color: '#6b7280', scope: 'mark' },
+  { key: 'GANCHO', label: 'Gancho', color: '#0f172a', scope: 'mark' },
+  { key: 'CADENA', label: 'Cadena elástica', color: '#7c3aed', scope: 'mark' },
+  { key: 'RESORTE', label: 'Resorte', color: '#0891b2', scope: 'mark' },
+  { key: 'BOTON', label: 'Botón / Stop', color: '#0f172a', scope: 'mark' },
+  { key: 'TUBO', label: 'Tubo molar', color: '#475569', scope: 'mark' },
+  { key: 'TAD', label: 'Mini tornillo (TAD)', color: '#0f766e', scope: 'mark' },
+];
+
+export const ORTHO_MOVEMENT_TOOLS: DentalToolDef[] = [
+  { key: 'PROTRUSION', label: 'Protrusión', color: '#dc2626', scope: 'mark' },
+  { key: 'RETRUSION', label: 'Retrusión', color: '#dc2626', scope: 'mark' },
+  { key: 'EXPANSION', label: 'Expansión', color: '#2563eb', scope: 'mark' },
+  { key: 'CONTRACCION', label: 'Contracción', color: '#2563eb', scope: 'mark' },
+  { key: 'ROTACION', label: 'Rotación', color: '#0f172a', scope: 'mark' },
+  { key: 'INTRUSION', label: 'Intrusión', color: '#dc2626', scope: 'mark' },
+  { key: 'EXTRUSION', label: 'Extrusión', color: '#16a34a', scope: 'mark' },
+];
+
+export const ORTHO_OCCLUSION_TOOLS: DentalToolDef[] = [
+  { key: 'MORDIDA_CRUZADA', label: 'Mordida cruzada', color: '#b45309', scope: 'mark' },
+  { key: 'MORDIDA_ABIERTA', label: 'Mordida abierta', color: '#0369a1', scope: 'mark' },
+  { key: 'SOBREMORDIDA', label: 'Sobremordida', color: '#9a3412', scope: 'mark' },
+  { key: 'LINEA_MEDIA', label: 'Desviación de línea media', color: '#1e40af', scope: 'mark' },
+  { key: 'APINAMIENTO', label: 'Apiñamiento', color: '#9333ea', scope: 'mark' },
+  { key: 'DIASTEMA', label: 'Diastema', color: '#0d9488', scope: 'mark' },
+  { key: 'AUSENCIA_ESPACIO', label: 'Ausencia de espacio', color: '#be123c', scope: 'mark' },
+  { key: 'ESPACIO', label: 'Espacio en tratamiento', color: '#0369a1', scope: 'mark' },
+];
+
+export const ORTHO_TOOLS: DentalToolDef[] = [
+  ...ORTHO_CONDITION_TOOLS,
+  ...ORTHO_DEVICE_TOOLS,
+  ...ORTHO_MOVEMENT_TOOLS,
+  ...ORTHO_OCCLUSION_TOOLS,
+];
+
+export const ALL_TOOLS: DentalToolDef[] = [...SURFACE_TOOLS, ...CONDITION_TOOLS, ...MARK_TOOLS, ...ORTHO_TOOLS];
+
+export const BRACKET_TYPES: Array<{ key: string; label: string }> = [
+  { key: 'METALICO', label: 'Brackets metálicos' },
+  { key: 'CERAMICO', label: 'Brackets cerámicos' },
+  { key: 'AUTOLIGADO', label: 'Brackets autoligables' },
+];
+
+export const ORTHO_APPLIANCES: Array<{ key: string; label: string }> = [
+  { key: 'ALINEADOR', label: 'Alineador' },
+  { key: 'EXPANSOR', label: 'Expansor palatino' },
+  { key: 'ARCO_LINGUAL', label: 'Arco lingual' },
+  { key: 'RETENEDOR', label: 'Retenedor' },
+];
+
+export const ORTHO_PLAN_PHASES: Array<{ key: string; label: string }> = [
+  { key: 'F1', label: 'Fase 1: alineación y nivelación' },
+  { key: 'F2', label: 'Fase 2: corrección de discrepancias' },
+  { key: 'F3', label: 'Fase 3: finalización y detalles' },
+  { key: 'F4', label: 'Fase 4: retención' },
+];
 
 export const SURFACE_LABELS: Record<ToothSurface, string> = {
   V: 'Vestibular',

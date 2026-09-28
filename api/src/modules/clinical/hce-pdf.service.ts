@@ -30,7 +30,10 @@ import {
   DENTAL_TOOTH_LABELS,
   DENTAL_TREATMENT_LABELS,
   DENTAL_TREATMENT_STATUS_LABELS,
+  ORTHO_APPLIANCE_LABELS,
+  ORTHO_BRACKET_LABELS,
   ORTHO_HABIT_LABELS,
+  ORTHO_PLAN_PHASE_LABELS,
 } from './dentistry-labels';
 
 type EncounterPdfRow = Encounter & {
@@ -1031,11 +1034,21 @@ export class HcePdfService {
     const archText = [arches.upper === true ? 'superior' : '', arches.lower === true ? 'inferior' : '']
       .filter(Boolean)
       .join(' e ');
-    if (str(dental.odontogramNotes) || archText) {
+    const chart = obj(dental.orthoChart);
+    const list = (v: unknown, labels: Record<string, string>) =>
+      (Array.isArray(v) ? v : []).map((k) => labels[str(k)] || str(k)).filter(Boolean);
+    const bracketText = ORTHO_BRACKET_LABELS[str(chart.bracketType)] || '';
+    const applianceText = list(chart.appliances, ORTHO_APPLIANCE_LABELS).join(', ');
+    const phaseText = list(chart.planPhases, ORTHO_PLAN_PHASE_LABELS).join('; ');
+    const chartLines = [
+      bracketText || applianceText ? `Tipo de aparato: ${[bracketText, applianceText].filter(Boolean).join(', ')}.` : '',
+      phaseText ? `Fases del plan cumplidas: ${phaseText}.` : '',
+    ];
+    if (str(dental.odontogramNotes) || archText || chartLines.some(Boolean)) {
       sections.push(
         this.section(
           toothRows.length ? 'Observaciones del odontograma' : 'Odontograma',
-          [archText ? `Aparatología de ortodoncia en arco ${archText}.` : '', str(dental.odontogramNotes)]
+          [archText ? `Aparatología de ortodoncia en arco ${archText}.` : '', ...chartLines, str(dental.odontogramNotes)]
             .filter(Boolean)
             .join('\n'),
           titleColor,
