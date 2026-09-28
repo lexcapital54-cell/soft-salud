@@ -29,7 +29,7 @@ const PSYCHOLOGY_CONSENTS_V1: ConsentSeed[] = [
   <p>Entiendo y acepto que mis datos personales y sensibles (relacionados con mi estado de salud física y mental, antecedentes clínicos, diagnósticos, y procesos terapéuticos) serán utilizados estrictamente para las siguientes finalidades:</p>
   <ul>
     <li>Prestación integral de servicios de salud (evaluación, diagnóstico y tratamiento).</li>
-    <li>Apertura, actualización y custodia de la Historia Clínica Electrónica, en estricto cumplimiento de la Resolución 1995 de 1999 y la Resolución 1732 de 2026 del Ministerio de Salud y Protección Social.</li>
+    <li>Apertura, actualización y custodia de la Historia Clínica Electrónica, en estricto cumplimiento de la Resolución 1995 de 1999 y la Resolución 3100 de 2019 del Ministerio de Salud y Protección Social.</li>
     <li>Gestión administrativa: agendamiento de citas, recordatorios vía plataformas de mensajería (WhatsApp/Email/SMS), facturación electrónica y reporte de RIPS al Ministerio.</li>
   </ul>
 
@@ -57,7 +57,7 @@ const PSYCHOLOGY_CONSENTS_V1: ConsentSeed[] = [
   <ol>
     <li><strong>Naturaleza de la Intervención:</strong> Comprendo que el objetivo es realizar una evaluación y/o intervención psicológica. Entiendo que los resultados dependen en gran medida de mi compromiso y participación activa.</li>
     <li><strong>Confidencialidad y Secreto Profesional (Ley 1090 de 2006):</strong> Todo lo que se discuta en las sesiones se mantendrá en estricta confidencialidad. Sin embargo, entiendo que el profesional está obligado a romper el secreto profesional si: a) Existe un riesgo inminente contra mi vida o integridad física; b) Existe un riesgo inminente contra la vida o integridad de terceros; c) Se sospecha de abuso o vulneración de derechos de menores o población vulnerable; d) Existe una orden de autoridad judicial competente.</li>
-    <li><strong>Tratamiento de Datos Personales (Ley 1581 de 2012):</strong> Autorizo el tratamiento de mis datos personales y sensibles (datos de salud y emocionales) exclusivamente para fines vinculados a la prestación del servicio de salud, apertura de la historia clínica y facturación, garantizando que estos serán custodiados bajo las medidas de seguridad vigentes (Res. 1995 de 1999 y Res. 1732 de 2026).</li>
+    <li><strong>Tratamiento de Datos Personales (Ley 1581 de 2012):</strong> Autorizo el tratamiento de mis datos personales y sensibles (datos de salud y emocionales) exclusivamente para fines vinculados a la prestación del servicio de salud, apertura de la historia clínica y facturación, garantizando que estos serán custodiados bajo las medidas de seguridad vigentes (Res. 1995 de 1999 y Res. 3100 de 2019).</li>
     <li><strong>Riesgos y Beneficios:</strong> Entiendo que el proceso psicológico puede traer a la superficie emociones o recuerdos difíciles, lo cual es parte del proceso terapéutico. A su vez, los beneficios esperados incluyen el desarrollo de herramientas de afrontamiento y mejoramiento de mi bienestar emocional.</li>
     <li><strong>Libertad de Participación:</strong> Entiendo que mi participación es completamente voluntaria y tengo el derecho de suspender o abandonar el tratamiento en el momento que lo considere pertinente, sin penalidad alguna, asumiendo la responsabilidad sobre dicha decisión.</li>
   </ol>

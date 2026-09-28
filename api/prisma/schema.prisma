@@ -239,7 +239,7 @@ enum EquipmentStatus {
   OUT_OF_SERVICE
 }
 
-/// Los siete estándares de habilitación (Res. 1732 de 2026, que deroga la Res. 3100 de 2019) más el pilar de
+/// Los siete estándares de habilitación (Res. 3100 de 2019) más el pilar de
 /// SG-SST (Dec. 1072 de 2015). DOCUMENTACION_LEGAL agrupa lo administrativo
 /// que el checklist del consultorio exige pero no cae en ningún estándar.
 enum DocumentPillar {
@@ -1189,7 +1189,7 @@ model DocumentCategory {
   id        String         @id @default(uuid()) @db.Uuid
   code      String         @unique @db.VarChar(40)
   name      String         @db.VarChar(160)
-  /// Estándar de habilitación (Res. 1732 de 2026) o pilar SG-SST al que se agrupa en el dashboard.
+  /// Estándar de habilitación (Res. 3100 de 2019) o pilar SG-SST al que se agrupa en el dashboard.
   pillar    DocumentPillar @default(PROCESOS_PRIORITARIOS)
   sortOrder Int            @default(0) @map("sort_order")
 

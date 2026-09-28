@@ -737,7 +737,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     .odg-meta dt { font-size: 12px; font-weight: 700; color: var(--ink); }
     .odg-meta dd { margin: 4px 0 0; font-size: 13px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; background: #fff; box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04); }
     .odg-tagline { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 17px; line-height: 1.2; color: var(--ink); text-align: right; }
-    .odg-body { display: grid; grid-template-columns: minmax(0, 1fr) 285px; gap: 14px; padding: 14px; }
+    .odg-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; padding: 14px; }
     .odg-left { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     .odg-main { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; overflow-x: auto; padding: 14px 10px; background: rgba(255, 255, 255, 0.82); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 4px 16px rgba(11, 58, 110, 0.05); }
     .odg-chart { position: relative; width: max-content; min-width: 100%; margin: 0 auto; padding: 0 104px; box-sizing: border-box; }
@@ -821,8 +821,10 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
 
     .odg-side { display: flex; flex-direction: column; gap: 12px; }
     .odg-side section { display: flex; flex-direction: column; gap: 10px; padding: 12px; background: rgba(255, 255, 255, 0.85); border: 1px solid var(--line); border-radius: 12px; }
-    .odg-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 9px 8px; font-size: 12px; color: #1e293b; }
-    .odg-legend li { display: flex; align-items: center; gap: 8px; }
+    .odg-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 11px 10px; font-size: 13.5px; font-weight: 500; color: #1e293b; }
+    .odg-legend li { display: flex; align-items: center; gap: 9px; line-height: 1.2; }
+    .odg-legend .odg-ico, .odg-legend .odg-ico svg { width: 26px; height: 26px; }
+    .odg-legend .lg-dot { width: 17px; height: 17px; }
     .odg-ico { display: grid; place-items: center; width: 20px; height: 20px; flex: none; }
     .odg-ico svg { width: 20px; height: 20px; }
     .lg-dot { width: 13px; height: 13px; border-radius: 50%; }
