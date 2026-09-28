@@ -75,7 +75,7 @@ export interface Clinic {
 
 export const SPECIALTY_LABELS: Record<ClinicSpecialty, string> = {
   PSYCHOLOGY: 'Psicología',
-  DENTISTRY: 'Odontología',
+  DENTISTRY: 'Odontología / Ortodoncia',
   MEDICINE: 'Medicina',
   AESTHETIC: 'Medicina estética',
   PHYSIOTHERAPY: 'Fisioterapia',

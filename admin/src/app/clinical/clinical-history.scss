@@ -240,6 +240,14 @@
   text-decoration: none;
 }
 
+.brand-odo {
+  letter-spacing: 0.04em;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0b5563 !important;
+  text-decoration: none;
+}
+
 .hce-page.specialty-psychology .block h3,
 .hce-page.specialty-psychology .topbar .brand-dulcemente {
   color: var(--hce-title);
@@ -1959,4 +1967,135 @@ label.photo-btn {
 
 .anexos-file-hint {
   margin: 0 0 12px;
+}
+
+.span-3 {
+  grid-column: span 3;
+}
+
+/* HC-ODO-001 (odontología / ortodoncia) */
+.odo-hce {
+  border-color: #b2dfdb;
+  background: #fbfefd;
+}
+
+.hce-page.specialty-dentistry .block h3 {
+  color: #0b5563;
+}
+
+.odo-attention {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #b2dfdb;
+}
+
+.odo-mt {
+  margin-top: 12px;
+}
+
+.odo-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px 14px;
+  margin-bottom: 12px;
+}
+
+.odo-checks .checkbox-inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.odo-vitals {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.odo-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 10px;
+}
+
+.odo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.odo-table th {
+  text-align: left;
+  font-weight: 600;
+  color: #0b5563;
+  padding: 6px;
+  border-bottom: 1px solid #b2dfdb;
+  white-space: nowrap;
+}
+
+.odo-table td {
+  padding: 4px;
+  vertical-align: top;
+}
+
+.odo-table input,
+.odo-table select {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+}
+
+.odo-table .odo-wide {
+  min-width: 240px;
+  width: 45%;
+}
+
+.odo-table .odo-narrow {
+  max-width: 90px;
+}
+
+.odo-suggest-cell {
+  position: relative;
+  min-width: 110px;
+}
+
+.odo-suggest {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  width: min(420px, 80vw);
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 2px 0 0;
+  padding: 4px 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #b2dfdb;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(11, 85, 99, 0.15);
+}
+
+.odo-suggest button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.odo-suggest button:hover {
+  background: #e0f2f1;
+}
+
+@media (max-width: 900px) {
+  .odo-vitals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .span-3 {
+    grid-column: 1 / -1;
+  }
 }

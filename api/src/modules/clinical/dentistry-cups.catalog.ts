@@ -1,0 +1,38 @@
+/**
+ * Catálogo CUPS odontología / ortodoncia (referencial, validar contra la resolución CUPS vigente).
+ * Solo consultorio DENTISTRY; si el código no aparece se completa con la tabla general de CUPS.
+ */
+export const DENTISTRY_CUPS_CATALOG: Array<{ code: string; description: string }> = [
+  { code: "890203", description: "Consulta de primera vez por odontología general" },
+  { code: "890303", description: "Consulta de control o de seguimiento por odontología general" },
+  { code: "890703", description: "Consulta de urgencias por odontología general" },
+  { code: "890204", description: "Consulta de primera vez por odontología especializada (ortodoncia)" },
+  { code: "890304", description: "Consulta de control o de seguimiento por odontología especializada (ortodoncia)" },
+  { code: "997002", description: "Control de placa dental" },
+  { code: "997106", description: "Topicación de flúor en barniz" },
+  { code: "997107", description: "Aplicación de sellantes de fotocurado" },
+  { code: "997301", description: "Detartraje supragingival" },
+  { code: "997305", description: "Raspaje y alisado radicular (campo abierto)" },
+  { code: "232101", description: "Obturación dental con amalgama" },
+  { code: "232102", description: "Obturación dental con resina de fotocurado" },
+  { code: "232103", description: "Obturación dental con ionómero de vidrio" },
+  { code: "232200", description: "Obturación temporal" },
+  { code: "237101", description: "Pulpotomía" },
+  { code: "237301", description: "Terapia de conducto radicular en diente unirradicular" },
+  { code: "237302", description: "Terapia de conducto radicular en diente birradicular" },
+  { code: "237303", description: "Terapia de conducto radicular en diente multirradicular" },
+  { code: "230101", description: "Exodoncia de diente temporal unirradicular" },
+  { code: "230102", description: "Exodoncia de diente temporal multirradicular" },
+  { code: "230201", description: "Exodoncia de diente permanente unirradicular" },
+  { code: "230202", description: "Exodoncia de diente permanente multirradicular" },
+  { code: "231100", description: "Exodoncia quirúrgica de diente incluido" },
+  { code: "234101", description: "Corona en metal-porcelana" },
+  { code: "234201", description: "Núcleo o poste colado" },
+  { code: "870451", description: "Radiografía periapical" },
+  { code: "870455", description: "Radiografía panorámica (ortopantomografía)" },
+  { code: "870456", description: "Radiografía cefálica lateral (cefalometría)" },
+  { code: "244101", description: "Aparatología fija de ortodoncia (instalación)" },
+  { code: "244102", description: "Control de ortodoncia con aparatología fija" },
+  { code: "244201", description: "Aparatología removible de ortodoncia / ortopedia" },
+  { code: "244301", description: "Retenedor de ortodoncia" },
+];

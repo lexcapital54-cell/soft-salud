@@ -172,6 +172,89 @@ export const HCE_FT_SCHEMA = {
   },
 };
 
+/** Bloque odontológico por defecto (vive en ClinicalRecord.content.dentistry). */
+export const DENTISTRY_CONTENT_DEFAULTS = {
+  service: '',
+  antecedents: {
+    personal: '',
+    family: '',
+    pathological: '',
+    obgyn: '',
+    allergic: '',
+    pharmacological: '',
+    surgical: '',
+    smoking: '',
+    smokingDetail: '',
+    alcohol: '',
+    alcoholDetail: '',
+    oralHabits: '',
+  },
+  systemsReview: {},
+  systemsReviewNotes: '',
+  vitals: {
+    bloodPressure: '',
+    heartRate: '',
+    respiratoryRate: '',
+    temperature: '',
+    spo2: '',
+  },
+  extraoral: {
+    symmetry: '',
+    tmj: '',
+    lymphNodes: '',
+    skin: '',
+    lips: '',
+  },
+  intraoral: {
+    hygiene: '',
+    mucosa: '',
+    tongue: '',
+    palate: '',
+    floorOfMouth: '',
+    glands: '',
+    dentition: '',
+    occlusion: '',
+    occlusionNotes: '',
+  },
+  odontogram: {},
+  odontogramNotes: '',
+  diagnoses: [],
+  treatmentPlan: [],
+  closure: {
+    closedAt: '',
+    caseStatus: '',
+    treatmentResult: '',
+  },
+};
+
+/** Historia Clínica Odontología / Ortodoncia (HC-ODO-001). */
+export const HCE_ODO_SCHEMA = {
+  version: 1,
+  specialty: 'DENTISTRY',
+  code: 'HC-ODO-001',
+  sections: [
+    'patientIdentification',
+    'careData',
+    'antecedents',
+    'systemsReview',
+    'vitals',
+    'extraoralExam',
+    'intraoralExam',
+    'odontogram',
+    'diagnoses',
+    'treatmentPlan',
+    'evolutions',
+    'consents',
+    'closure',
+    'attachments',
+  ],
+  contentDefaults: {
+    ...HCE_PSI_SCHEMA.contentDefaults,
+    profile: 'DENTISTRY',
+    dentistry: DENTISTRY_CONTENT_DEFAULTS,
+  },
+};
+
 /** Nota de evolución SOAP (FOLLOW_UP) — vive en ClinicalRecord.content JSONB */
 export const SOAP_CONTENT_DEFAULTS = {
   profile: 'SOAP',
@@ -200,8 +283,8 @@ const TEMPLATE_BY_SPECIALTY: Record<
   },
   DENTISTRY: {
     code: 'HCE_ODO',
-    name: 'Historia Clínica – Odontología (plantilla base)',
-    schemaJson: { ...HCE_PSI_SCHEMA, specialty: 'DENTISTRY', stub: true },
+    name: 'Historia Clínica – Odontología / Ortodoncia (HC-ODO-001)',
+    schemaJson: HCE_ODO_SCHEMA,
   },
   MEDICINE: {
     code: 'HCE_MED',
@@ -228,6 +311,9 @@ export function templateDefinitionForSpecialty(specialty: ClinicSpecialty) {
 export function contentDefaultsForSpecialty(specialty: ClinicSpecialty) {
   if (specialty === ClinicSpecialty.PHYSIOTHERAPY) {
     return HCE_FT_SCHEMA.contentDefaults;
+  }
+  if (specialty === ClinicSpecialty.DENTISTRY) {
+    return HCE_ODO_SCHEMA.contentDefaults;
   }
   return HCE_PSI_SCHEMA.contentDefaults;
 }

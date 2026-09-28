@@ -233,7 +233,7 @@ export class HceLocalDraftService {
     if (soap && (text(soap.subjective) || text(soap.objective) || text(soap.assessment) || text(soap.plan))) {
       return true;
     }
-    if (collectText(c.physiotherapy).length) {
+    if (collectText(c.physiotherapy).length || collectText(c.dentistry).length) {
       return true;
     }
     if (draft.diagnoses?.some((d) => (d.cieCode || '').trim() || (d.description || '').trim())) {
@@ -285,6 +285,7 @@ export class HceLocalDraftService {
       ...(c?.medications || []),
       ...(assessment?.managementPlan || []),
       ...collectText(c?.physiotherapy),
+      ...collectText(c?.dentistry),
     ];
     let score = chunks.reduce((n, s) => n + (s || '').trim().length, 0);
     score += (draft.diagnoses?.length || 0) * 40;

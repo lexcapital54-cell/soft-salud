@@ -38,6 +38,15 @@ import { HceLocalDraftService, HceLocalDraft } from './hce-local-draft.service';
 import { OpenEncountersAlert } from './open-encounters-alert';
 import { formatClinicalFreeText } from './clinical-text-format';
 import { ConsentSigner } from './consent-signer';
+import { DentalOdontogram } from './dentistry/dental-odontogram';
+import {
+  DENTAL_SYSTEMS,
+  DentistryContent,
+  emptyDentalDiagnosis,
+  emptyTreatmentRow,
+  normalizeDentistry,
+  validateDentistryForSeal,
+} from './dentistry/dentistry.models';
 import { PatientConsentRecord } from './consent.models';
 import { DOCUMENT_TYPES } from './document-types';
 import { WEBSITE_URL } from '../api.config';
@@ -186,6 +195,7 @@ function emptyContent(): ClinicalContent {
     DatePipe,
     DecimalPipe,
     ConsentSigner,
+    DentalOdontogram,
     OpenEncountersAlert,
   ],
   providers: [ClinicalAutosaveService],
@@ -249,6 +259,171 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     return snap === 'PHYSIOTHERAPY' || snap.includes('FISIOTER');
   }
 
+  /** Consultorio de odontología / ortodoncia (HC-ODO-001). */
+  isDentistryClinic() {
+    const specialty = String(this.user()?.specialty || '').toUpperCase();
+    if (specialty === 'DENTISTRY') return true;
+    if (String(this.content?.profile || '').toUpperCase() === 'DENTISTRY') return true;
+    const snap = String(this.encounter()?.specialtySnapshot || '').toUpperCase();
+    return snap === 'DENTISTRY' || snap.includes('ODONT');
+  }
+
+  /** Acceso tipado al bloque odontológico (se completa con defaults si viene parcial). */
+  dental(): DentistryContent {
+    if (!this.content.dentistry) {
+      this.content.dentistry = normalizeDentistry();
+    }
+    return this.content.dentistry;
+  }
+
+  readonly dentalSystems = DENTAL_SYSTEMS;
+
+  readonly dentalAntecedentKeys: Array<{ key: keyof DentistryContent['antecedents']; label: string }> = [
+    { key: 'personal', label: 'Personales' },
+    { key: 'family', label: 'Familiares' },
+    { key: 'pathological', label: 'Patológicos' },
+    { key: 'obgyn', label: 'Gineco-obstétricos' },
+    { key: 'allergic', label: 'Alérgicos' },
+    { key: 'pharmacological', label: 'Farmacológicos' },
+    { key: 'surgical', label: 'Quirúrgicos' },
+    { key: 'oralHabits', label: 'Hábitos orales (bruxismo, onicofagia, respiración oral…)' },
+  ];
+
+  readonly dentalExtraoralKeys: Array<{ key: keyof DentistryContent['extraoral']; label: string; placeholder: string }> = [
+    { key: 'symmetry', label: 'Simetría facial', placeholder: 'Simétrica / asimetría…' },
+    { key: 'tmj', label: 'ATM', placeholder: 'Sin ruidos, apertura normal / chasquido, desviación…' },
+    { key: 'lymphNodes', label: 'Ganglios', placeholder: 'No palpables / adenopatías…' },
+    { key: 'skin', label: 'Piel', placeholder: 'Normal / lesiones…' },
+    { key: 'lips', label: 'Labios', placeholder: 'Normales / queilitis, lesiones…' },
+  ];
+
+  readonly dentalIntraoralKeys: Array<{ key: keyof DentistryContent['intraoral']; label: string; placeholder: string }> = [
+    { key: 'mucosa', label: 'Mucosa', placeholder: 'Rosada, húmeda / lesiones…' },
+    { key: 'tongue', label: 'Lengua', placeholder: 'Normal / saburral, fisurada…' },
+    { key: 'palate', label: 'Paladar', placeholder: 'Normal / torus, lesiones…' },
+    { key: 'floorOfMouth', label: 'Piso de boca', placeholder: 'Normal / lesiones…' },
+    { key: 'glands', label: 'Glándulas salivales', placeholder: 'Flujo normal / xerostomía…' },
+  ];
+
+  /** Autocompletado CIE-10 / CUPS por fila en diagnósticos y plan odontológico. */
+  readonly dentalCieRow = signal<number | null>(null);
+  readonly dentalCieResults = signal<CatalogCode[]>([]);
+  readonly dentalCupsRow = signal<number | null>(null);
+  readonly dentalCupsResults = signal<CatalogCode[]>([]);
+  private dentalSearchTimer?: ReturnType<typeof setTimeout>;
+
+  onDentalCieInput(index: number, value: string) {
+    this.onClinicalFieldChange();
+    clearTimeout(this.dentalSearchTimer);
+    const q = (value || '').trim();
+    if (q.length < 2) {
+      this.dentalCieResults.set([]);
+      return;
+    }
+    this.dentalSearchTimer = setTimeout(() => {
+      this.api.searchCie(q).subscribe({
+        next: (rows) => {
+          this.dentalCieRow.set(index);
+          this.dentalCieResults.set(rows.slice(0, 8));
+        },
+        error: () => this.dentalCieResults.set([]),
+      });
+    }, 200);
+  }
+
+  pickDentalCie(index: number, item: CatalogCode) {
+    const row = this.dental().diagnoses[index];
+    if (!row) return;
+    row.cieCode = item.code;
+    if (!row.description.trim()) row.description = item.description;
+    this.dentalCieResults.set([]);
+    this.dentalCieRow.set(null);
+    this.onClinicalFieldChange();
+  }
+
+  onDentalCupsInput(index: number, value: string) {
+    this.onClinicalFieldChange();
+    clearTimeout(this.dentalSearchTimer);
+    const q = (value || '').trim();
+    if (q.length < 2) {
+      this.dentalCupsResults.set([]);
+      return;
+    }
+    this.dentalSearchTimer = setTimeout(() => {
+      this.api.searchCups(q).subscribe({
+        next: (rows) => {
+          this.dentalCupsRow.set(index);
+          this.dentalCupsResults.set(rows.slice(0, 8));
+        },
+        error: () => this.dentalCupsResults.set([]),
+      });
+    }, 200);
+  }
+
+  pickDentalCups(index: number, item: CatalogCode) {
+    const row = this.dental().treatmentPlan[index];
+    if (!row) return;
+    row.code = item.code;
+    if (!row.description.trim()) row.description = item.description;
+    this.dentalCupsResults.set([]);
+    this.dentalCupsRow.set(null);
+    this.onClinicalFieldChange();
+  }
+
+  closeDentalSuggestions() {
+    setTimeout(() => {
+      this.dentalCieResults.set([]);
+      this.dentalCupsResults.set([]);
+    }, 150);
+  }
+
+  addDentalDiagnosis() {
+    this.dental().diagnoses.push(emptyDentalDiagnosis());
+    this.onClinicalFieldChange();
+  }
+
+  removeDentalDiagnosis(index: number) {
+    const rows = this.dental().diagnoses;
+    rows.splice(index, 1);
+    if (!rows.length) rows.push(emptyDentalDiagnosis());
+    this.onClinicalFieldChange();
+  }
+
+  addTreatmentRow() {
+    this.dental().treatmentPlan.push(emptyTreatmentRow());
+    this.onClinicalFieldChange();
+  }
+
+  removeTreatmentRow(index: number) {
+    const rows = this.dental().treatmentPlan;
+    rows.splice(index, 1);
+    if (!rows.length) rows.push(emptyTreatmentRow());
+    this.onClinicalFieldChange();
+  }
+
+  toggleDentalSystem(key: string, checked: boolean) {
+    const map = this.dental().systemsReview;
+    if (checked) map[key] = true;
+    else delete map[key];
+    this.onClinicalFieldChange();
+  }
+
+  /** Número visible de cada bloque compartido según la plantilla de la especialidad. */
+  hceSectionNumber(key: 'cie' | 'cups' | 'rda' | 'consent' | 'audit' | 'annex'): string {
+    const map = this.isDentistryClinic()
+      ? { cie: '9', cups: '10.1', rda: '', consent: '12', audit: '14', annex: '15' }
+      : this.isPhysiotherapyClinic()
+        ? { cie: '5', cups: '6', rda: '7', consent: '8', audit: '9', annex: '10' }
+        : { cie: '4', cups: '5', rda: '6', consent: '7', audit: '8', annex: '9' };
+    const n = map[key];
+    return n ? `${n}. ` : '';
+  }
+
+  /** Examen mental obligatorio en las notas de control (solo psicología). */
+  requiresMentalExamInEvolution() {
+    return !this.isPhysiotherapyClinic() && !this.isDentistryClinic();
+  }
+
   /** Filas legibles de valoración funcional (solo FT). */
   ftFunctionalSummaryRows(): Array<{ label: string; value: string }> {
     if (!this.isPhysiotherapyClinic()) return [];
@@ -291,7 +466,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   isPsychologyClinic() {
-    if (this.isPhysiotherapyClinic()) return false;
+    if (this.isPhysiotherapyClinic() || this.isDentistryClinic()) return false;
     const specialty = String(this.user()?.specialty || '').toUpperCase();
     return specialty === 'PSYCHOLOGY';
   }
@@ -516,6 +691,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
         ? 'Historia clínica — Fisioterapia (SOAP)'
         : 'Historia clínica — Fisioterapia';
     }
+    if (this.isDentistryClinic()) return 'Historia clínica — Odontología (HC-ODO-001)';
     if (this.isPsychologyClinic()) {
       return this.noteFormat() === 'SOAP'
         ? 'Evolución Psicológica (SOAP)'
@@ -938,6 +1114,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     if (this.isPhysiotherapyClinic()) {
       return 'HISTORIA CLÍNICA ELECTRÓNICA – FISIOTERAPIA';
     }
+    if (this.isDentistryClinic()) {
+      return 'HISTORIA CLÍNICA ODONTOLÓGICA Y ODONTOGRAMA';
+    }
     if (this.isPsychologyClinic()) {
       return 'HISTORIA CLÍNICA ELECTRÓNICA – PSICOLOGÍA';
     }
@@ -1309,6 +1488,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
           ...(draft.content.physiotherapy?.closure || {}),
         },
       },
+      ...(this.isDentistryClinic() || draft.content.dentistry
+        ? { dentistry: normalizeDentistry(draft.content.dentistry) }
+        : {}),
       assessment: {
         ...emptyContent().assessment,
         ...(draft.content.assessment || {}),
@@ -1932,7 +2114,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     this.applyDefaultResidence();
     this.syncWorkspacePatient(enc.patient);
     // Fisioterapia: siempre HC-FT completo (nunca SOAP de psicología).
-    const format = this.isPhysiotherapyClinic()
+    const format = this.isPhysiotherapyClinic() || this.isDentistryClinic()
       ? 'FULL'
       : enc.clinicalRecord?.noteFormat ||
         (enc.clinicalRecord
@@ -1948,7 +2130,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       profile:
         this.isPhysiotherapyClinic()
           ? 'PHYSIOTHERAPY'
-          : serverContent.profile || (format === 'SOAP' ? 'SOAP' : 'FULL'),
+          : this.isDentistryClinic()
+            ? 'DENTISTRY'
+            : serverContent.profile || (format === 'SOAP' ? 'SOAP' : 'FULL'),
       soap: {
         ...emptySoap(),
         ...(serverContent.soap || {}),
@@ -2001,6 +2185,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
           ...(serverContent.physiotherapy?.closure || {}),
         },
       },
+      ...(this.isDentistryClinic() || serverContent.dentistry
+        ? { dentistry: normalizeDentistry(serverContent.dentistry) }
+        : {}),
       assessment: {
         ...emptyContent().assessment,
         ...(serverContent.assessment || {}),
@@ -2099,7 +2286,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     if (this.isLocked() || this.skipLocalRestoreOnce) {
       this.skipLocalRestoreOnce = false;
       // En FT mostramos el formulario completo (solo lectura) para ver EVA/Daniels/goniometría.
-      this.showInitialHistory.set(this.isPhysiotherapyClinic());
+      this.showInitialHistory.set(this.isPhysiotherapyClinic() || this.isDentistryClinic());
       this.localDrafts.clearAllFor({
         encounterId: enc.id,
         tabKey: this.tabKey() || this.instanceId,
@@ -2110,7 +2297,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
         this.message.set(
           this.isPhysiotherapyClinic()
             ? 'Historia sellada. Abajo en sección 3 verá valoración funcional (EVA 1–10 y Daniels).'
-            : 'Historia sellada cargada. Arriba ve el contenido guardado; abajo las notas de evolución / control.',
+            : this.isDentistryClinic()
+              ? 'Historia odontológica sellada. Abajo verá el odontograma; registre cada sesión en «Notas de evolución / control».'
+              : 'Historia sellada cargada. Arriba ve el contenido guardado; abajo las notas de evolución / control.',
         );
         queueMicrotask(() => {
           if (this.isPhysiotherapyClinic()) {
@@ -2951,13 +3140,13 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     const composed = this.composeEvolutionNote();
     if (composed.trim().length < 5) {
       this.error.set(
-        this.isPhysiotherapyClinic()
+        !this.requiresMentalExamInEvolution()
           ? 'Escriba la nota de esta sesión (evolución / control) antes de firmar.'
           : 'Escriba la nota de esta sesión y/o el examen mental antes de firmar el control.',
       );
       return;
     }
-    if (!this.isPhysiotherapyClinic() && !(this.evolutionMentalExam || '').trim()) {
+    if (this.requiresMentalExamInEvolution() && !(this.evolutionMentalExam || '').trim()) {
       this.error.set('El examen mental es obligatorio en cada nota de control.');
       return;
     }
@@ -3064,12 +3253,17 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     const parts: string[] = [];
     const session = this.evolutionNote.trim();
     const mental = this.evolutionMentalExam.trim();
-    if (session) parts.push(`Evolución terapéutica:\n${session}`);
+    const dentalNote = this.isDentistryClinic();
+    if (session) {
+      parts.push(dentalNote ? `Procedimientos realizados:\n${session}` : `Evolución terapéutica:\n${session}`);
+    }
     if (mental) {
       parts.push(
-        this.isPhysiotherapyClinic()
-          ? `Evaluación / hallazgos de la sesión:\n${mental}`
-          : `Examen mental:\n${mental}`,
+        dentalNote
+          ? `Respuesta del paciente:\n${mental}`
+          : this.isPhysiotherapyClinic()
+            ? `Evaluación / hallazgos de la sesión:\n${mental}`
+            : `Examen mental:\n${mental}`,
       );
     }
 
@@ -3163,7 +3357,19 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     } else {
       this.content.profile = this.isPhysiotherapyClinic()
         ? 'PHYSIOTHERAPY'
-        : 'FULL';
+        : this.isDentistryClinic()
+          ? 'DENTISTRY'
+          : 'FULL';
+      if (this.isDentistryClinic()) {
+        // Los diagnósticos odontológicos alimentan los diagnósticos CIE-10 de la atención (RIPS/RDA).
+        this.diagnoses = this.dental()
+          .diagnoses.filter((d) => d.cieCode.trim())
+          .map((d, i) => ({
+            cieCode: d.cieCode.trim().toUpperCase(),
+            description: (d.description || '').trim() || d.cieCode.trim(),
+            type: i === 0 ? ('PRINCIPAL' as const) : ('RELATED' as const),
+          }));
+      }
       this.content.allergies = this.allergiesText
         .split(',')
         .map((s) => s.trim())
@@ -3366,6 +3572,14 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     if (!this.canWrite()) {
       this.error.set('Su rol no permite editar la historia clínica.');
       return;
+    }
+    if (this.isDentistryClinic()) {
+      this.collectContent();
+      const issues = validateDentistryForSeal(this.content.careMinimum.motive, this.dental());
+      if (issues.length) {
+        this.error.set(`Antes de sellar la historia odontológica: ${issues.join(' ')}`);
+        return;
+      }
     }
     const pending = this.saveBlockers();
     if (pending) {

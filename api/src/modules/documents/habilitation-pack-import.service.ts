@@ -43,8 +43,8 @@ export class HabilitationPackImportService implements OnModuleInit {
       where: {
         isActive: true,
         dashboardType: DashboardType.CLINICAL_HISTORY_WITH_DOCS,
-        // El pack de psicología no aplica a fisioterapia.
-        specialty: { not: 'PHYSIOTHERAPY' },
+        // El pack de psicología no aplica a fisioterapia ni odontología.
+        specialty: { notIn: ['PHYSIOTHERAPY', 'DENTISTRY'] },
       },
       select: { id: true, name: true },
     });
@@ -126,9 +126,9 @@ export class HabilitationPackImportService implements OnModuleInit {
     ) {
       return null;
     }
-    if (clinic.specialty === 'PHYSIOTHERAPY') {
+    if (clinic.specialty === 'PHYSIOTHERAPY' || clinic.specialty === 'DENTISTRY') {
       this.logger.log(
-        `Omitiendo pack de psicología para fisioterapia «${clinic.name}».`,
+        `Omitiendo pack de psicología para «${clinic.name}» (${clinic.specialty}).`,
       );
       this.done.add(clinicId);
       return null;

@@ -4,6 +4,8 @@ import { PrismaService } from '../../prisma/prisma.module';
 import { PSYCHOLOGY_CUPS_CATALOG } from './psychology-cups.catalog';
 import { PHYSIOTHERAPY_CIE_CATALOG } from './physiotherapy-cie.catalog';
 import { PHYSIOTHERAPY_CUPS_CATALOG } from './physiotherapy-cups.catalog';
+import { DENTISTRY_CIE_CATALOG } from './dentistry-cie.catalog';
+import { DENTISTRY_CUPS_CATALOG } from './dentistry-cups.catalog';
 
 @Injectable()
 export class CatalogsService {
@@ -30,6 +32,47 @@ export class CatalogsService {
         query,
         take,
       );
+    }
+
+    if (spec === ClinicSpecialty.DENTISTRY) {
+      const fromStatic = this.filterStatic(
+        DENTISTRY_CIE_CATALOG.map((row) => ({
+          id: `cie-odo-${row.code}`,
+          code: row.code,
+          description: row.description,
+          cie11Code: '',
+          category: row.category || 'ODONTOLOGÍA',
+          source: 'CIE' as const,
+        })),
+        query,
+        take,
+      );
+      if (fromStatic.length >= take || !query) return fromStatic;
+      const used = new Set(fromStatic.map((m) => m.code.toUpperCase()));
+      const fromCie = await this.prisma.cieCode.findMany({
+        where: {
+          isActive: true,
+          OR: [
+            { code: { contains: query, mode: 'insensitive' } },
+            { description: { contains: query, mode: 'insensitive' } },
+          ],
+        },
+        take: take + used.size,
+        orderBy: { code: 'asc' },
+      });
+      for (const row of fromCie) {
+        if (used.has(row.code.toUpperCase())) continue;
+        fromStatic.push({
+          id: row.id,
+          code: row.code,
+          description: row.description,
+          cie11Code: '',
+          category: 'CIE-10',
+          source: 'CIE' as const,
+        });
+        if (fromStatic.length >= take) break;
+      }
+      return fromStatic;
     }
 
     const catalogWhere = {
@@ -129,7 +172,9 @@ export class CatalogsService {
     const staticSource =
       spec === ClinicSpecialty.PSYCHOLOGY || spec === 'PSYCHOLOGY' || !spec
         ? PSYCHOLOGY_CUPS_CATALOG
-        : [];
+        : spec === ClinicSpecialty.DENTISTRY
+          ? DENTISTRY_CUPS_CATALOG
+          : [];
 
     const fromStatic = staticSource
       .filter((row) => {
@@ -152,7 +197,12 @@ export class CatalogsService {
     }
 
     // Fisioterapia ya retornó arriba; otras especialidades no psic no mezclan CUPS de psicología.
-    if (spec && spec !== ClinicSpecialty.PSYCHOLOGY && spec !== 'PSYCHOLOGY') {
+    if (
+      spec &&
+      spec !== ClinicSpecialty.PSYCHOLOGY &&
+      spec !== 'PSYCHOLOGY' &&
+      spec !== ClinicSpecialty.DENTISTRY
+    ) {
       const fromDbOnly = await this.prisma.cupsCode.findMany({
         where: {
           isActive: true,

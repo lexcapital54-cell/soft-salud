@@ -1,3 +1,5 @@
+import type { DentistryContent } from './dentistry/dentistry.models';
+
 export type CareModality = 'IN_PERSON' | 'VIRTUAL';
 export type DiagnosisType = 'PRINCIPAL' | 'RELATED' | 'IMPRESSION';
 export type ClinicalRecordStatus = 'DRAFT' | 'SIGNED' | 'CLOSED';
@@ -137,7 +139,7 @@ export interface PhysiotherapyContent {
 }
 
 export interface ClinicalContent {
-  profile?: 'FULL' | 'SOAP' | 'PHYSIOTHERAPY' | string;
+  profile?: 'FULL' | 'SOAP' | 'PHYSIOTHERAPY' | 'DENTISTRY' | string;
   soap?: SoapContent;
   careMinimum: {
     motive: string;
@@ -177,6 +179,8 @@ export interface ClinicalContent {
   risks: { suicideRisk: string; notes: string };
   /** Bloques específicos de HC-FT-001 (fisioterapia). */
   physiotherapy?: PhysiotherapyContent;
+  /** Bloques específicos de HC-ODO-001 (odontología / ortodoncia). */
+  dentistry?: DentistryContent;
   rdaMeta: {
     includedEvents: string[];
     deviceId: string;

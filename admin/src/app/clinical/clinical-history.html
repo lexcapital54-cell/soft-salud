@@ -3,6 +3,7 @@
   [class.embedded-page]="embedded()"
   [class.specialty-psychology]="isPsychologyClinic()"
   [class.specialty-physiotherapy]="isPhysiotherapyClinic()"
+  [class.specialty-dentistry]="isDentistryClinic()"
 >
   @if (!embedded()) {
   <header class="topbar">
@@ -20,6 +21,10 @@
       } @else if (isPhysiotherapyClinic()) {
         <a class="brand brand-ft" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()"
           >HC FISIOTERAPIA</a
+        >
+      } @else if (isDentistryClinic()) {
+        <a class="brand brand-odo" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()"
+          >HC ODONTOLOGÍA</a
         >
       } @else {
         <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()"
@@ -270,7 +275,7 @@
               <div>
                 <h3>4. Notas de evolución / control</h3>
                 <p class="muted small">
-                  @if (isPhysiotherapyClinic()) {
+                  @if (isPhysiotherapyClinic() || isDentistryClinic()) {
                     Registre aquí la evolución de <strong>esta sesión</strong> del paciente. La
                     historia inicial queda sellada; no es necesario volver a llenarla.
                   } @else {
@@ -350,14 +355,16 @@
                 }
               </label>
               <label
-                >Evolución terapéutica
+                >{{ isDentistryClinic() ? 'Procedimientos realizados' : 'Evolución terapéutica' }}
                 <textarea
                     rows="6"
                     [(ngModel)]="evolutionNote"
                     [placeholder]="
-                      isPhysiotherapyClinic()
-                        ? 'Qué se trabajó, respuesta al tratamiento, avances funcionales, acuerdos…'
-                        : 'Qué se trabajó, evidenció, acuerdos, tareas…'
+                      isDentistryClinic()
+                        ? 'Diente(s) intervenidos, procedimiento, materiales, anestesia, indicaciones…'
+                        : isPhysiotherapyClinic()
+                          ? 'Qué se trabajó, respuesta al tratamiento, avances funcionales, acuerdos…'
+                          : 'Qué se trabajó, evidenció, acuerdos, tareas…'
                     "
                     (focusout)="onClinicalTextBlur($event)"
                   ></textarea>
@@ -369,6 +376,16 @@
                       rows="5"
                       [(ngModel)]="evolutionMentalExam"
                       placeholder="Dolor, movilidad, fuerza, funcionalidad, tolerancia al ejercicio…"
+                      (focusout)="onClinicalTextBlur($event)"
+                    ></textarea>
+                </label>
+              } @else if (isDentistryClinic()) {
+                <label
+                  >Respuesta del paciente (opcional)
+                  <textarea
+                      rows="4"
+                      [(ngModel)]="evolutionMentalExam"
+                      placeholder="Tolerancia al procedimiento, dolor, sangrado, próximos pasos…"
                       (focusout)="onClinicalTextBlur($event)"
                     ></textarea>
                 </label>
@@ -554,6 +571,27 @@
                     }
                   </ul>
                 </div>
+              }
+            } @else if (isDentistryClinic()) {
+              @if (dental().service) {
+                <div class="sealed-field">
+                  <strong>Servicio</strong>
+                  <p>{{ dental().service === 'ORTODONCIA' ? 'Ortodoncia' : 'Odontología general' }}</p>
+                </div>
+              }
+              @if (content.careMinimum?.motive) {
+                <div class="sealed-field">
+                  <strong>Motivo de consulta</strong>
+                  <p>{{ content.careMinimum.motive }}</p>
+                </div>
+              }
+              @for (dx of dental().diagnoses; track $index) {
+                @if (dx.cieCode || dx.description) {
+                  <div class="sealed-field">
+                    <strong>Diagnóstico {{ dx.cieCode }}{{ dx.rdaCode ? ' · RDA ' + dx.rdaCode : '' }}</strong>
+                    <p>{{ dx.description }}{{ dx.tooth ? ' (diente ' + dx.tooth + ')' : '' }}</p>
+                  </div>
+                }
               }
             } @else {
               @if (content.careMinimum?.motive) {
@@ -1032,6 +1070,32 @@
               </p>
             }
           </div>
+          @if (isDentistryClinic()) {
+            <div class="grid-4 odo-attention">
+              <label
+                >Servicio odontológico
+                <select
+                  [(ngModel)]="dental().service"
+                  [disabled]="clinicalFormDisabled()"
+                  (ngModelChange)="onClinicalFieldChange()"
+                >
+                  <option value="">Seleccione…</option>
+                  <option value="ODONTOLOGIA">Odontología general</option>
+                  <option value="ORTODONCIA">Ortodoncia</option>
+                </select>
+              </label>
+              <label class="span-3"
+                >Motivo de consulta
+                <textarea
+                  rows="2"
+                  [(ngModel)]="content.careMinimum.motive"
+                  [readonly]="clinicalFormDisabled()"
+                  (ngModelChange)="onClinicalFieldChange()"
+                  placeholder="En palabras del paciente: dolor, control, estética, ortodoncia…"
+                ></textarea>
+              </label>
+            </div>
+          }
           @if (canWrite() && !encounter() && !isLocked()) {
             <p class="muted small">
               La <strong>fecha de digitación</strong> y el <strong>inicio de atención</strong> se toman
@@ -1537,6 +1601,415 @@
                   </div>
                 }
               </section>
+            } @else if (isDentistryClinic()) {
+              <section class="block odo-hce" id="hce-section-3">
+                <div class="section3-head">
+                  <div>
+                    <h3>3. Antecedentes</h3>
+                    <p class="muted small">
+                      Historia clínica odontológica y odontograma (HC-ODO-001). Escriba «Niega» o
+                      «No refiere» cuando no aplique.
+                    </p>
+                  </div>
+                </div>
+                <div class="ft-grid-2">
+                  @for (item of dentalAntecedentKeys; track item.key) {
+                    <label>
+                      {{ item.label }}
+                      <textarea
+                        rows="2"
+                        [(ngModel)]="dental().antecedents[item.key]"
+                        [readonly]="clinicalFormDisabled()"
+                      ></textarea>
+                    </label>
+                  }
+                </div>
+                <h4>Hábitos</h4>
+                <div class="grid-4">
+                  <label
+                    >Tabaquismo
+                    <select [(ngModel)]="dental().antecedents.smoking" [disabled]="clinicalFormDisabled()">
+                      <option value="">Seleccione…</option>
+                      <option value="No">No</option>
+                      <option value="Sí">Sí</option>
+                      <option value="Exfumador">Exfumador</option>
+                    </select>
+                  </label>
+                  <label
+                    >Detalle tabaquismo
+                    <input
+                      [(ngModel)]="dental().antecedents.smokingDetail"
+                      [readonly]="clinicalFormDisabled()"
+                      placeholder="Cigarrillos/día, años…"
+                    />
+                  </label>
+                  <label
+                    >Alcohol
+                    <select [(ngModel)]="dental().antecedents.alcohol" [disabled]="clinicalFormDisabled()">
+                      <option value="">Seleccione…</option>
+                      <option value="No">No</option>
+                      <option value="Ocasional">Ocasional</option>
+                      <option value="Frecuente">Frecuente</option>
+                    </select>
+                  </label>
+                  <label
+                    >Detalle alcohol
+                    <input
+                      [(ngModel)]="dental().antecedents.alcoholDetail"
+                      [readonly]="clinicalFormDisabled()"
+                      placeholder="Frecuencia, cantidad…"
+                    />
+                  </label>
+                </div>
+              </section>
+
+              <section class="block odo-hce">
+                <h3>4. Revisión por sistemas</h3>
+                <p class="muted small">Marque los sistemas con hallazgos o síntomas referidos.</p>
+                <div class="odo-checks">
+                  @for (sys of dentalSystems; track sys.key) {
+                    <label class="checkbox-inline">
+                      <input
+                        type="checkbox"
+                        [checked]="!!dental().systemsReview[sys.key]"
+                        [disabled]="clinicalFormDisabled()"
+                        (change)="toggleDentalSystem(sys.key, $any($event.target).checked)"
+                      />
+                      {{ sys.label }}
+                    </label>
+                  }
+                </div>
+                <label>
+                  Observaciones
+                  <textarea
+                    rows="2"
+                    [(ngModel)]="dental().systemsReviewNotes"
+                    [readonly]="clinicalFormDisabled()"
+                    placeholder="Detalle de los sistemas marcados…"
+                  ></textarea>
+                </label>
+              </section>
+
+              <section class="block odo-hce">
+                <h3>5. Signos vitales</h3>
+                <div class="odo-vitals">
+                  <label
+                    >PA (mmHg)
+                    <input
+                      [(ngModel)]="dental().vitals.bloodPressure"
+                      [readonly]="clinicalFormDisabled()"
+                      placeholder="120/80"
+                    />
+                  </label>
+                  <label
+                    >FC (lpm)
+                    <input
+                      type="number"
+                      min="30"
+                      max="220"
+                      [(ngModel)]="dental().vitals.heartRate"
+                      [readonly]="clinicalFormDisabled()"
+                    />
+                  </label>
+                  <label
+                    >FR (rpm)
+                    <input
+                      type="number"
+                      min="5"
+                      max="60"
+                      [(ngModel)]="dental().vitals.respiratoryRate"
+                      [readonly]="clinicalFormDisabled()"
+                    />
+                  </label>
+                  <label
+                    >Temperatura (°C)
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="34"
+                      max="42"
+                      [(ngModel)]="dental().vitals.temperature"
+                      [readonly]="clinicalFormDisabled()"
+                    />
+                  </label>
+                  <label
+                    >SatO2 (%)
+                    <input
+                      type="number"
+                      min="50"
+                      max="100"
+                      [(ngModel)]="dental().vitals.spo2"
+                      [readonly]="clinicalFormDisabled()"
+                    />
+                  </label>
+                </div>
+              </section>
+
+              <section class="block odo-hce">
+                <h3>6. Examen extraoral</h3>
+                <div class="ft-grid-2">
+                  @for (item of dentalExtraoralKeys; track item.key) {
+                    <label>
+                      {{ item.label }}
+                      <input
+                        [(ngModel)]="dental().extraoral[item.key]"
+                        [readonly]="clinicalFormDisabled()"
+                        [placeholder]="item.placeholder"
+                      />
+                    </label>
+                  }
+                </div>
+              </section>
+
+              <section class="block odo-hce">
+                <h3>7. Examen intraoral</h3>
+                <div class="grid-3">
+                  <label
+                    >Higiene oral
+                    <select [(ngModel)]="dental().intraoral.hygiene" [disabled]="clinicalFormDisabled()">
+                      <option value="">Seleccione…</option>
+                      <option value="Buena">Buena</option>
+                      <option value="Regular">Regular</option>
+                      <option value="Deficiente">Deficiente</option>
+                    </select>
+                  </label>
+                  <label
+                    >Dentición
+                    <select [(ngModel)]="dental().intraoral.dentition" [disabled]="clinicalFormDisabled()">
+                      <option value="">Seleccione…</option>
+                      <option value="Temporal">Temporal</option>
+                      <option value="Mixta">Mixta</option>
+                      <option value="Permanente">Permanente</option>
+                    </select>
+                  </label>
+                  <label
+                    >Oclusión (clase de Angle)
+                    <select [(ngModel)]="dental().intraoral.occlusion" [disabled]="clinicalFormDisabled()">
+                      <option value="">Seleccione…</option>
+                      <option value="Clase I">Clase I</option>
+                      <option value="Clase II división 1">Clase II división 1</option>
+                      <option value="Clase II división 2">Clase II división 2</option>
+                      <option value="Clase III">Clase III</option>
+                      <option value="No evaluable">No evaluable</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="ft-grid-2 odo-mt">
+                  @for (item of dentalIntraoralKeys; track item.key) {
+                    <label>
+                      {{ item.label }}
+                      <input
+                        [(ngModel)]="dental().intraoral[item.key]"
+                        [readonly]="clinicalFormDisabled()"
+                        [placeholder]="item.placeholder"
+                      />
+                    </label>
+                  }
+                  <label>
+                    Observaciones de oclusión
+                    <input
+                      [(ngModel)]="dental().intraoral.occlusionNotes"
+                      [readonly]="clinicalFormDisabled()"
+                      placeholder="Overjet, overbite, mordida cruzada, apiñamiento, línea media…"
+                    />
+                  </label>
+                </div>
+              </section>
+
+              <section class="block odo-hce" id="odontograma">
+                <h3>8. Odontograma</h3>
+                <p class="muted small">
+                  Elija un estado y haga clic sobre la superficie del diente. Ausente, Endodoncia y
+                  Corona se aplican al diente completo (clic de nuevo para quitarlo). Clic en el
+                  número del diente para agregar una nota.
+                </p>
+                <app-dental-odontogram
+                  [data]="dental()"
+                  [disabled]="clinicalFormDisabled()"
+                  (changed)="onClinicalFieldChange()"
+                />
+                <label class="odo-mt">
+                  Observaciones del odontograma
+                  <textarea
+                    rows="2"
+                    [(ngModel)]="dental().odontogramNotes"
+                    [readonly]="clinicalFormDisabled()"
+                  ></textarea>
+                </label>
+              </section>
+
+              <section class="block odo-hce" id="odo-diagnosticos">
+                <h3>9. Diagnósticos</h3>
+                <p class="muted small">
+                  El primer diagnóstico con código CIE-10 queda como principal en RIPS / RDA. Escriba
+                  al menos 2 caracteres para buscar en el catálogo odontológico.
+                </p>
+                <div class="odo-table-wrap">
+                  <table class="odo-table">
+                    <thead>
+                      <tr>
+                        <th>CIE-10</th>
+                        <th>Código RDA (odontológico)</th>
+                        <th>Descripción</th>
+                        <th>Diente</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (dx of dental().diagnoses; track $index; let i = $index) {
+                        <tr>
+                          <td class="odo-suggest-cell">
+                            <input
+                              [(ngModel)]="dx.cieCode"
+                              (ngModelChange)="onDentalCieInput(i, $event)"
+                              (blur)="closeDentalSuggestions()"
+                              [readonly]="clinicalFormDisabled()"
+                              placeholder="K021"
+                              autocomplete="off"
+                            />
+                            @if (dentalCieRow() === i && dentalCieResults().length) {
+                              <ul class="odo-suggest">
+                                @for (item of dentalCieResults(); track item.id) {
+                                  <li>
+                                    <button type="button" (mousedown)="pickDentalCie(i, item)">
+                                      <strong>{{ item.code }}</strong> {{ item.description }}
+                                    </button>
+                                  </li>
+                                }
+                              </ul>
+                            }
+                          </td>
+                          <td>
+                            <input
+                              [(ngModel)]="dx.rdaCode"
+                              [readonly]="clinicalFormDisabled()"
+                              placeholder="Código RDA"
+                            />
+                          </td>
+                          <td class="odo-wide">
+                            <input [(ngModel)]="dx.description" [readonly]="clinicalFormDisabled()" />
+                          </td>
+                          <td>
+                            <input
+                              class="odo-narrow"
+                              [(ngModel)]="dx.tooth"
+                              [readonly]="clinicalFormDisabled()"
+                              placeholder="36"
+                            />
+                          </td>
+                          <td>
+                            @if (!clinicalFormDisabled()) {
+                              <button
+                                type="button"
+                                class="ghost"
+                                title="Quitar fila"
+                                (click)="removeDentalDiagnosis(i)"
+                              >
+                                ✕
+                              </button>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                @if (!clinicalFormDisabled()) {
+                  <button type="button" class="ghost" (click)="addDentalDiagnosis()">
+                    + Agregar diagnóstico
+                  </button>
+                }
+              </section>
+
+              <section class="block odo-hce" id="odo-plan">
+                <h3>10. Plan de tratamiento</h3>
+                <div class="odo-table-wrap">
+                  <table class="odo-table">
+                    <thead>
+                      <tr>
+                        <th>Código (CUPS)</th>
+                        <th>Descripción</th>
+                        <th>Diente / sector</th>
+                        <th>Prioridad</th>
+                        <th>N° sesiones</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of dental().treatmentPlan; track $index; let i = $index) {
+                        <tr>
+                          <td class="odo-suggest-cell">
+                            <input
+                              [(ngModel)]="row.code"
+                              (ngModelChange)="onDentalCupsInput(i, $event)"
+                              (blur)="closeDentalSuggestions()"
+                              [readonly]="clinicalFormDisabled()"
+                              autocomplete="off"
+                            />
+                            @if (dentalCupsRow() === i && dentalCupsResults().length) {
+                              <ul class="odo-suggest">
+                                @for (item of dentalCupsResults(); track item.id) {
+                                  <li>
+                                    <button type="button" (mousedown)="pickDentalCups(i, item)">
+                                      <strong>{{ item.code }}</strong> {{ item.description }}
+                                    </button>
+                                  </li>
+                                }
+                              </ul>
+                            }
+                          </td>
+                          <td class="odo-wide">
+                            <input [(ngModel)]="row.description" [readonly]="clinicalFormDisabled()" />
+                          </td>
+                          <td>
+                            <input
+                              class="odo-narrow"
+                              [(ngModel)]="row.tooth"
+                              [readonly]="clinicalFormDisabled()"
+                              placeholder="16 / sup."
+                            />
+                          </td>
+                          <td>
+                            <select [(ngModel)]="row.priority" [disabled]="clinicalFormDisabled()">
+                              <option value="">—</option>
+                              <option value="ALTA">Alta</option>
+                              <option value="MEDIA">Media</option>
+                              <option value="BAJA">Baja</option>
+                            </select>
+                          </td>
+                          <td>
+                            <input
+                              class="odo-narrow"
+                              type="number"
+                              min="1"
+                              max="99"
+                              [(ngModel)]="row.sessions"
+                              [readonly]="clinicalFormDisabled()"
+                            />
+                          </td>
+                          <td>
+                            @if (!clinicalFormDisabled()) {
+                              <button
+                                type="button"
+                                class="ghost"
+                                title="Quitar fila"
+                                (click)="removeTreatmentRow(i)"
+                              >
+                                ✕
+                              </button>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                @if (!clinicalFormDisabled()) {
+                  <button type="button" class="ghost" (click)="addTreatmentRow()">
+                    + Agregar procedimiento al plan
+                  </button>
+                }
+              </section>
             } @else if (isSoap()) {
               <section class="block" id="hce-section-3">
                 <div class="section3-head">
@@ -1692,7 +2165,7 @@
           </p>
         }
 
-        @if (!isAuditor() || !content._redacted) {
+        @if ((!isAuditor() || !content._redacted) && !isDentistryClinic()) {
           <section
             class="block cie-block"
             id="cie-section"
@@ -1700,11 +2173,7 @@
             (change)="onDiagnosisFormInput($event)"
           >
             <h3>
-              @if (isPhysiotherapyClinic()) {
-                5. Diagnósticos (CIE-10)
-              } @else {
-                4. Diagnósticos (CIE-10)
-              }
+              {{ hceSectionNumber('cie') }}Diagnósticos (CIE-10)
             </h3>
             @if (!encounter() && !selectedPatientId) {
               <p class="banner tip">Seleccione un paciente arriba para ver y editar los CIE-10.</p>
@@ -1855,11 +2324,7 @@
             (change)="onProcedureFormInput($event)"
           >
             <h3>
-              @if (isPhysiotherapyClinic()) {
-                6. Procedimientos (CUPS)
-              } @else {
-                5. Procedimientos (CUPS)
-              }
+              {{ hceSectionNumber('cups') }}{{ isDentistryClinic() ? 'Procedimientos realizados en la sesión (CUPS)' : 'Procedimientos (CUPS)' }}
             </h3>
             @if (!encounter() && !selectedPatientId) {
               <p class="banner tip">Seleccione un paciente arriba para ver y editar los CUPS.</p>
@@ -1987,6 +2452,56 @@
           </section>
         }
 
+        @if (isDentistryClinic() && (!isAuditor() || !content._redacted)) {
+          <section class="block control-mode" id="odo-evoluciones-en-formulario">
+            <div class="control-mode-head">
+              <div>
+                <h3>11. Evolución</h3>
+                <p class="muted small">
+                  Notas por fecha: procedimientos realizados, respuesta del paciente y firma del
+                  profesional.
+                </p>
+              </div>
+            </div>
+            @if (evolutions().length) {
+              <ul class="evolutions">
+                @for (ev of evolutions(); track ev.id) {
+                  <li>
+                    <p class="ev-head">
+                      Atención: {{ evolutionAttentionDateOf(ev) | date: 'dd/MM/yyyy HH:mm' }}
+                      <span class="muted"
+                        >· Registrado: {{ ev.signedAt | date: 'dd/MM/yyyy HH:mm' }}</span
+                      >
+                      @if (evolutionIsBackdated(ev)) {
+                        <span class="pill">Registro posterior</span>
+                      }
+                    </p>
+                    <p class="ev-note">{{ ev.content.note }}</p>
+                    <p class="muted small">
+                      Firma: {{ ev.content.professionalName || ev.author?.fullName }}
+                      @if (ev.content.verificationCode) {
+                        · {{ ev.content.verificationCode }}
+                      }
+                    </p>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="muted small empty-evolutions">Aún no hay notas de evolución firmadas.</p>
+            }
+            @if (!isLocked()) {
+              <p class="banner tip">
+                Primero complete y pulse <strong>Guardar historia clínica</strong> (sellado). Después
+                registre y firme cada sesión en «Notas de evolución / control».
+              </p>
+            } @else if (canWrite()) {
+              <button type="button" class="ghost" (click)="scrollToEvolutions()">
+                Registrar evolución de esta sesión
+              </button>
+            }
+          </section>
+        }
+
         @if (!isSoap() && (!isAuditor() || !content._redacted)) {
           <section
             class="block rda-info"
@@ -1994,11 +2509,7 @@
             (change)="onClinicalFormInput($event)"
           >
             <h3>
-              @if (isPhysiotherapyClinic()) {
-                7. Registro Digital de Atención (RDA) — Res. 1888 de 2025
-              } @else {
-                6. Registro Digital de Atención (RDA) — Res. 1888 de 2025
-              }
+              {{ hceSectionNumber('rda') }}Registro Digital de Atención (RDA) — Res. 1888 de 2025
             </h3>
             <p class="muted small">
               <strong>¿Para qué es?</strong> Es el paquete digital (formato FHIR) que HabiliSALUD
@@ -2110,11 +2621,7 @@
           @if (canWrite() && (!isLocked() || patientConsentPending())) {
           <section class="block consent-block" id="consent-section">
             <h3>
-              @if (isPhysiotherapyClinic()) {
-                8. Consentimientos y firmas (paciente + profesional)
-              } @else {
-                7. Consentimientos (plantilla legal + firma)
-              }
+              {{ hceSectionNumber('consent') }}{{ isDentistryClinic() ? 'Consentimiento informado y tratamiento de datos (firmas)' : isPhysiotherapyClinic() ? 'Consentimientos y firmas (paciente + profesional)' : 'Consentimientos (plantilla legal + firma)' }}
             </h3>
             @if (patientConsentPending()) {
               <p class="banner tip">
@@ -2212,13 +2719,53 @@
           </section>
           }
 
+          @if (isDentistryClinic() && (!isAuditor() || !content._redacted)) {
+            <section
+              class="block odo-hce"
+              id="odo-cierre"
+              (input)="onClinicalFormInput($event)"
+              (change)="onClinicalFormInput($event)"
+            >
+              <h3>13. Cierre de historia</h3>
+              <div class="grid-3">
+                <label
+                  >Fecha de cierre
+                  <input
+                    type="date"
+                    [(ngModel)]="dental().closure.closedAt"
+                    [readonly]="clinicalFormDisabled()"
+                  />
+                </label>
+                <label
+                  >Estado del caso
+                  <select [(ngModel)]="dental().closure.caseStatus" [disabled]="clinicalFormDisabled()">
+                    <option value="">Seleccione…</option>
+                    <option value="En tratamiento">En tratamiento</option>
+                    <option value="Tratamiento terminado">Tratamiento terminado</option>
+                    <option value="Remitido">Remitido</option>
+                    <option value="Abandono">Abandono</option>
+                    <option value="Alta">Alta</option>
+                  </select>
+                </label>
+                <label
+                  >Resultado del tratamiento
+                  <input
+                    [(ngModel)]="dental().closure.treatmentResult"
+                    [readonly]="clinicalFormDisabled()"
+                    placeholder="Objetivos logrados, indicaciones de control…"
+                  />
+                </label>
+              </div>
+              <p class="muted small">
+                La firma del profesional se registra al pulsar <strong>Guardar historia clínica</strong>
+                (sellado con código de verificación).
+              </p>
+            </section>
+          }
+
           <section class="block">
             <h3>
-              @if (isPhysiotherapyClinic()) {
-                9. Control de acceso y auditoría
-              } @else {
-                8. Control de acceso y auditoría
-              }
+              {{ hceSectionNumber('audit') }}Control de acceso y auditoría
             </h3>
             <p class="muted">
               El guardado, el sellado y cada nota de evolución quedan registrados en auditoría del
@@ -2228,11 +2775,7 @@
 
           <section class="block" id="anexos-section">
             <h3>
-              @if (isPhysiotherapyClinic()) {
-                10. Anexos
-              } @else {
-                9. Anexos
-              }
+              {{ hceSectionNumber('annex') }}Anexos
             </h3>
             <p class="muted small">
               <strong>Opcional.</strong> Adjunte informes u otros documentos del paciente. Al pulsar
@@ -2556,7 +3099,7 @@
         @if (isLocked()) {
           <strong>Modo control</strong>
           <span class="muted small">
-            @if (isPhysiotherapyClinic()) {
+            @if (isPhysiotherapyClinic() || isDentistryClinic()) {
               Identificación + nota de evolución de esta sesión. Historia inicial en «Consultar».
             } @else {
               Identificación + nota de esta sesión + examen mental. Historia inicial en «Consultar».

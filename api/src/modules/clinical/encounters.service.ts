@@ -1102,11 +1102,25 @@ export class EncountersService {
       'treatmentObjectives',
       'interventionPlan',
     ].some((key) => text(physio[key]));
+    const dental = (content.dentistry ?? {}) as Record<string, unknown>;
+    const hasDentalCore =
+      (Array.isArray(dental.diagnoses) &&
+        dental.diagnoses.some(
+          (d) =>
+            text((d as Record<string, unknown>)?.cieCode) ||
+            text((d as Record<string, unknown>)?.description),
+        )) ||
+      (Array.isArray(dental.treatmentPlan) &&
+        dental.treatmentPlan.some((r) =>
+          text((r as Record<string, unknown>)?.description),
+        )) ||
+      Object.keys((dental.odontogram ?? {}) as object).length > 0;
 
     if (
       !text(care.motive) &&
       !text(assessment.impressionNarrative) &&
-      !hasPhysioCore
+      !hasPhysioCore &&
+      !hasDentalCore
     ) {
       throw new BadRequestException(
         'Registre al menos el motivo de consulta, la impresión diagnóstica o el contenido clínico de la atención antes de firmar.',

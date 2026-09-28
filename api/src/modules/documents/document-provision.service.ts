@@ -36,6 +36,14 @@ export class DocumentProvisionService {
       return { skipped: false as const, physiotherapy: { empty: true } };
     }
 
+    if (clinic?.specialty === ClinicSpecialty.DENTISTRY) {
+      // El checklist de psicología no aplica: el SUPER_ADMIN carga la documentación odontológica.
+      this.logger.log(
+        `Gestión documental odontología: sin auto-carga de psicología para ${clinic.name}.`,
+      );
+      return { skipped: false as const, dentistry: { empty: true } };
+    }
+
     const excelPath =
       process.env.HABILITATION_EXCEL_PATH ||
       path.join(

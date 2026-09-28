@@ -220,65 +220,117 @@ const PHYSIOTHERAPY_CONSENTS_V1: ConsentSeed[] = [
   },
 ];
 
+const DENTISTRY_CONSENTS_V1: ConsentSeed[] = [
+  {
+    code: 'HABEAS_DATA',
+    title:
+      'Autorización para el tratamiento de datos personales y sensibles (Ley 1581 de 2012)',
+    bodyHtml: `
+<section>
+  <h2>AUTORIZACIÓN PARA EL TRATAMIENTO DE DATOS PERSONALES Y SENSIBLES (LEY 1581 DE 2012)</h2>
+  <p><strong>Ciudad y Fecha:</strong> ___________________________</p>
+
+  <p>Yo, ________________________________________________, identificado(a) con C.C. / C.E. / T.I. No. _________________ de _________________, obrando en nombre propio o en representación legal del menor/paciente ________________________________________________, autorizo de manera previa, expresa e informada al consultorio odontológico / profesional tratante para realizar la recolección, almacenamiento, uso, circulación y supresión de mis datos personales y <strong>datos sensibles</strong>, conforme a lo dispuesto en la Ley 1581 de 2012 y el Decreto 1377 de 2013.</p>
+
+  <h3>1. Finalidad del Tratamiento</h3>
+  <p>Entiendo y acepto que mis datos personales y sensibles (estado de salud general y bucal, antecedentes, odontograma, radiografías, fotografías clínicas, diagnósticos y tratamientos) serán utilizados estrictamente para:</p>
+  <ul>
+    <li>Prestación integral de servicios de odontología y/u ortodoncia (valoración, diagnóstico y tratamiento).</li>
+    <li>Apertura, actualización y custodia de la Historia Clínica Odontológica, en cumplimiento de la Resolución 1995 de 1999 y demás normas aplicables.</li>
+    <li>Gestión administrativa: agendamiento, recordatorios, facturación y reportes al sistema de salud (RIPS / RDA) cuando aplique.</li>
+  </ul>
+
+  <h3>2. Tratamiento de Datos Sensibles</h3>
+  <p>Se me ha informado que, por tratarse de datos relativos a mi salud (datos sensibles), <strong>no estoy obligado(a) a autorizar su tratamiento</strong> para fines distintos a la prestación del servicio. La recolección de datos clínicos es requisito para brindarme la atención solicitada.</p>
+
+  <h3>3. Derechos del Titular</h3>
+  <p>Conozco mis derechos de conocer, actualizar y rectificar datos; solicitar prueba de esta autorización; ser informado del uso; presentar quejas ante la SIC; y revocar la autorización cuando la ley lo permita, sin perjuicio de la custodia legal de la historia clínica.</p>
+
+  <p>Leído el presente documento, otorgo mi consentimiento libre, consciente y voluntario.</p>
+</section>
+`.trim(),
+  },
+  {
+    code: 'ODO_INFORMED',
+    title: 'Consentimiento informado para valoración y tratamiento odontológico',
+    bodyHtml: `
+<section>
+  <h2>CONSENTIMIENTO INFORMADO PARA VALORACIÓN Y TRATAMIENTO ODONTOLÓGICO</h2>
+  <p><strong>Ciudad y Fecha:</strong> ___________________________</p>
+
+  <p>Yo, ________________________________________________, identificado(a) con documento No. _________________, obrando en nombre propio o como representante legal del paciente ________________________________________________, declaro que he sido informado(a) de manera clara por el/la odontólogo(a) _____________________________________, con Registro Profesional No. ______________, sobre:</p>
+
+  <ol>
+    <li><strong>Naturaleza de la intervención:</strong> examen clínico, odontograma, toma de radiografías cuando se requieran y el plan de tratamiento propuesto (operatoria, endodoncia, periodoncia, cirugía oral, prótesis u otros).</li>
+    <li><strong>Beneficios esperados:</strong> restablecer la salud bucal, aliviar dolor, recuperar función masticatoria y estética, y prevenir complicaciones.</li>
+    <li><strong>Riesgos y molestias:</strong> sensibilidad dental, dolor o inflamación postoperatoria, sangrado, reacciones a la anestesia local, parestesia transitoria, fractura de restauraciones o necesidad de tratamientos adicionales.</li>
+    <li><strong>Alternativas:</strong> otras opciones terapéuticas, remisión a especialista o no realizar el tratamiento, con las consecuencias clínicas que ello implica.</li>
+    <li><strong>Compromisos del paciente:</strong> seguir las indicaciones de higiene y cuidado, asistir a los controles e informar cambios en mi estado de salud o medicamentos.</li>
+    <li><strong>Participación voluntaria:</strong> puedo suspender o rechazar procedimientos en cualquier momento, informando al profesional.</li>
+  </ol>
+
+  <p>Habiendo resuelto mis dudas, autorizo la valoración y/o el tratamiento odontológico propuesto.</p>
+</section>
+`.trim(),
+  },
+  {
+    code: 'ODO_ORTHODONTICS',
+    title: 'Consentimiento informado para tratamiento de ortodoncia',
+    bodyHtml: `
+<section>
+  <h2>CONSENTIMIENTO INFORMADO PARA TRATAMIENTO DE ORTODONCIA</h2>
+  <p><strong>Ciudad y Fecha:</strong> ___________________________</p>
+
+  <p>Yo, ________________________________________________, identificado(a) con documento No. _________________, obrando en nombre propio o como representante legal del paciente ________________________________________________, declaro que se me ha explicado:</p>
+
+  <ol>
+    <li><strong>Objetivo:</strong> corregir la posición dental y/o la relación de los maxilares mediante aparatología fija o removible, según el diagnóstico ortodóncico.</li>
+    <li><strong>Duración:</strong> el tiempo estimado es orientativo y depende del crecimiento, la colaboración del paciente y la asistencia a controles.</li>
+    <li><strong>Riesgos:</strong> descalcificación o caries por higiene deficiente, reabsorción radicular, molestias en la ATM, recidiva si no se usan los retenedores, lesiones en mucosa por la aparatología.</li>
+    <li><strong>Compromisos:</strong> higiene rigurosa, asistencia a controles, cuidado de la aparatología y uso de retenedores al finalizar.</li>
+    <li><strong>Alternativas:</strong> no tratar, tratamiento interceptivo o combinado con cirugía ortognática, según el caso.</li>
+  </ol>
+
+  <p>Habiendo resuelto mis dudas, autorizo el inicio del tratamiento de ortodoncia propuesto.</p>
+</section>
+`.trim(),
+  },
+];
+
+const CONSENTS_BY_SPECIALTY: Array<[ClinicSpecialty, ConsentSeed[]]> = [
+  [ClinicSpecialty.PSYCHOLOGY, PSYCHOLOGY_CONSENTS_V1],
+  [ClinicSpecialty.PHYSIOTHERAPY, PHYSIOTHERAPY_CONSENTS_V1],
+  [ClinicSpecialty.DENTISTRY, DENTISTRY_CONSENTS_V1],
+];
+
 export async function seedConsents(prisma: PrismaClient) {
   let upserted = 0;
 
-  for (const item of PSYCHOLOGY_CONSENTS_V1) {
-    await prisma.consentTemplate.upsert({
-      where: {
-        specialty_code_version: {
-          specialty: ClinicSpecialty.PSYCHOLOGY,
-          code: item.code,
-          version: 1,
+  for (const [specialty, items] of CONSENTS_BY_SPECIALTY) {
+    for (const item of items) {
+      await prisma.consentTemplate.upsert({
+        where: {
+          specialty_code_version: { specialty, code: item.code, version: 1 },
         },
-      },
-      create: {
-        specialty: ClinicSpecialty.PSYCHOLOGY,
-        code: item.code,
-        title: item.title,
-        bodyHtml: item.bodyHtml,
-        bodyMarkdown: item.bodyMarkdown ?? null,
-        version: 1,
-        isActive: true,
-        clinicId: null,
-      },
-      update: {
-        title: item.title,
-        bodyHtml: item.bodyHtml,
-        bodyMarkdown: item.bodyMarkdown ?? null,
-        isActive: true,
-      },
-    });
-    upserted += 1;
-  }
-
-  for (const item of PHYSIOTHERAPY_CONSENTS_V1) {
-    await prisma.consentTemplate.upsert({
-      where: {
-        specialty_code_version: {
-          specialty: ClinicSpecialty.PHYSIOTHERAPY,
+        create: {
+          specialty,
           code: item.code,
+          title: item.title,
+          bodyHtml: item.bodyHtml,
+          bodyMarkdown: item.bodyMarkdown ?? null,
           version: 1,
+          isActive: true,
+          clinicId: null,
         },
-      },
-      create: {
-        specialty: ClinicSpecialty.PHYSIOTHERAPY,
-        code: item.code,
-        title: item.title,
-        bodyHtml: item.bodyHtml,
-        bodyMarkdown: item.bodyMarkdown ?? null,
-        version: 1,
-        isActive: true,
-        clinicId: null,
-      },
-      update: {
-        title: item.title,
-        bodyHtml: item.bodyHtml,
-        bodyMarkdown: item.bodyMarkdown ?? null,
-        isActive: true,
-      },
-    });
-    upserted += 1;
+        update: {
+          title: item.title,
+          bodyHtml: item.bodyHtml,
+          bodyMarkdown: item.bodyMarkdown ?? null,
+          isActive: true,
+        },
+      });
+      upserted += 1;
+    }
   }
 
   return { templates: upserted, version: 1 };

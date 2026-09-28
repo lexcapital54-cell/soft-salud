@@ -2,7 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const PdfPrinter = require('pdfmake') as new (fonts: Record<string, unknown>) => {
+const PdfPrinter = require('pdfmake') as new (
+  fonts: Record<string, unknown>,
+) => {
   createPdfKitDocument: (doc: unknown) => NodeJS.EventEmitter & {
     on: (event: string, cb: (...args: unknown[]) => void) => void;
     end: () => void;
@@ -85,6 +87,46 @@ const FT_THEME = {
   light: '#E1F0FF',
 };
 
+/** Paleta HC-ODO-001 (odontología — verde azulado). */
+const ODO_THEME = {
+  title: '#0B5563',
+  accent: '#1B998B',
+  rose: '#1B998B',
+  gold: '#0B5563',
+  muted: '#5B7178',
+  body: '#1a1a1a',
+};
+
+const DENTAL_STATE_LABELS: Record<string, string> = {
+  SANO: 'Sano',
+  CARIADO: 'Cariado',
+  OBTURADO: 'Obturado',
+  AUSENTE: 'Ausente',
+  ENDODONCIA: 'Endodoncia',
+  CORONA: 'Corona',
+};
+
+const DENTAL_SURFACE_LABELS: Record<string, string> = {
+  V: 'Vestibular',
+  L: 'Lingual/Palatino',
+  M: 'Mesial',
+  D: 'Distal',
+  O: 'Oclusal/Incisal',
+};
+
+const DENTAL_SYSTEM_LABELS: Record<string, string> = {
+  cardiovascular: 'Cardiovascular',
+  respiratory: 'Respiratorio',
+  gastrointestinal: 'Gastrointestinal',
+  genitourinary: 'Genitourinario',
+  endocrine: 'Endocrino',
+  neurological: 'Neurológico',
+  hematologic: 'Hematológico',
+  musculoskeletal: 'Osteomuscular',
+  skin: 'Piel y anexos',
+  psychiatric: 'Mental / emocional',
+};
+
 /** Paleta HabiliSALUD genérica (otras especialidades). */
 const DEFAULT_THEME = {
   title: '#003D4C',
@@ -122,14 +164,23 @@ export class HcePdfService {
       specialty === ClinicSpecialty.PSYCHOLOGY
         ? this.loadMembreteImages()
         : null;
-    const doc = this.buildDocument(encounter, clinic, specialty, images, patientSignature ?? null);
+    const doc = this.buildDocument(
+      encounter,
+      clinic,
+      specialty,
+      images,
+      patientSignature ?? null,
+    );
     return this.renderBuffer(doc);
   }
 
   suggestedFileName(encounter: EncounterPdfRow): string {
     const doc = encounter.patient.documentNumber || 'sin-doc';
     const code = encounter.externalCode || encounter.id.slice(0, 8);
-    const last = (encounter.patient.lastName || 'paciente').replace(/\s+/g, '_');
+    const last = (encounter.patient.lastName || 'paciente').replace(
+      /\s+/g,
+      '_',
+    );
     return `HC_${last}_${doc}_${code}.pdf`.replace(/[^\w.-]+/g, '_');
   }
 
@@ -147,6 +198,7 @@ export class HcePdfService {
   private themeFor(specialty: ClinicSpecialty | string) {
     if (specialty === ClinicSpecialty.PSYCHOLOGY) return PSI_THEME;
     if (specialty === ClinicSpecialty.PHYSIOTHERAPY) return FT_THEME;
+    if (specialty === ClinicSpecialty.DENTISTRY) return ODO_THEME;
     return DEFAULT_THEME;
   }
 
@@ -163,7 +215,15 @@ export class HcePdfService {
     const candidates = [
       path.join(process.cwd(), 'assets', 'hce-membrete', fileName),
       path.join(process.cwd(), 'api', 'assets', 'hce-membrete', fileName),
-      path.join(__dirname, '..', '..', '..', 'assets', 'hce-membrete', fileName),
+      path.join(
+        __dirname,
+        '..',
+        '..',
+        '..',
+        'assets',
+        'hce-membrete',
+        fileName,
+      ),
     ];
     return candidates.find((p) => fs.existsSync(p)) || null;
   }
@@ -188,7 +248,11 @@ export class HcePdfService {
     const patient = encounter.patient;
     const record = encounter.clinicalRecord;
     const content = (record?.content || {}) as Record<string, unknown>;
-    const patientName = [patient.firstName, patient.lastName, patient.secondLastName]
+    const patientName = [
+      patient.firstName,
+      patient.lastName,
+      patient.secondLastName,
+    ]
       .filter(Boolean)
       .join(' ');
     const fmt = (d?: Date | string | null) =>
@@ -203,14 +267,28 @@ export class HcePdfService {
     const specialtyLabel =
       specialty === ClinicSpecialty.PHYSIOTHERAPY
         ? 'Historia clínica — Fisioterapia'
-        : specialty === ClinicSpecialty.PSYCHOLOGY
-          ? 'Historia clínica — Psicología'
-          : 'Historia clínica';
+        : specialty === ClinicSpecialty.DENTISTRY
+          ? 'HC-ODO-001'
+          : specialty === ClinicSpecialty.PSYCHOLOGY
+            ? 'Historia clínica — Psicología'
+            : 'Historia clínica';
     const isPhysio = specialty === ClinicSpecialty.PHYSIOTHERAPY;
+    const isDental = specialty === ClinicSpecialty.DENTISTRY;
+    const dental = (content.dentistry || {}) as Record<string, unknown>;
+    const dentalService =
+      dental.service === 'ORTODONCIA'
+        ? 'Ortodoncia'
+        : dental.service === 'ODONTOLOGIA'
+          ? 'Odontología general'
+          : '';
 
     const body: Content[] = [
       {
-        text: isPhysio ? 'HISTORIA CLÍNICA FISIOTERAPIA' : 'HISTORIA CLÍNICA',
+        text: isPhysio
+          ? 'HISTORIA CLÍNICA FISIOTERAPIA'
+          : isDental
+            ? 'HISTORIA CLÍNICA ODONTOLÓGICA Y ODONTOGRAMA'
+            : 'HISTORIA CLÍNICA',
         style: 'docTitle',
         alignment: 'center',
         margin: [0, 0, 0, 4],
@@ -245,7 +323,12 @@ export class HcePdfService {
             'Modalidad',
             encounter.modality === 'VIRTUAL' ? 'Virtual' : 'Presencial',
           ],
-          ['Servicio', encounter.serviceType || 'Consulta externa'],
+          [
+            'Servicio',
+            [encounter.serviceType || 'Consulta externa', dentalService]
+              .filter(Boolean)
+              .join(' — '),
+          ],
           ['IPS / consultorio', clinic.name],
         ],
         theme.title,
@@ -266,7 +349,12 @@ export class HcePdfService {
       const assessment = (content.assessment || {}) as Record<string, unknown>;
       const band = { banded: true as const };
       body.push(
-        this.section('Motivo de consulta', care.motive as string, theme.title, band),
+        this.section(
+          'Motivo de consulta',
+          care.motive as string,
+          theme.title,
+          band,
+        ),
         this.section(
           'Enfermedad actual',
           care.presentIllness as string,
@@ -299,6 +387,8 @@ export class HcePdfService {
           band,
         ),
       );
+    } else if (isDental) {
+      body.push(...this.dentalSections(content, dental, theme.title));
     } else {
       const care = (content.careMinimum || {}) as Record<string, unknown>;
       const mental = (content.mentalExam || {}) as Record<string, string>;
@@ -337,7 +427,7 @@ export class HcePdfService {
       );
     }
 
-    if (encounter.diagnoses?.length) {
+    if (encounter.diagnoses?.length && !isDental) {
       body.push({
         text: 'Diagnósticos (CIE-10)',
         style: 'sectionTitle',
@@ -443,7 +533,9 @@ export class HcePdfService {
         [
           [
             'Profesional',
-            String(signature.professionalName || encounter.professional.fullName),
+            String(
+              signature.professionalName || encounter.professional.fullName,
+            ),
           ],
           [
             'Tarjeta',
@@ -457,10 +549,7 @@ export class HcePdfService {
             'Fecha de sellado',
             fmt(record?.signedAt || (signature.signedAt as string)),
           ],
-          [
-            'Código verificación',
-            String(signature.verificationCode || '—'),
-          ],
+          ['Código verificación', String(signature.verificationCode || '—')],
         ],
         theme.title,
       ),
@@ -512,7 +601,8 @@ export class HcePdfService {
     }
 
     const professionalName =
-      String(signature.professionalName || '').trim() || encounter.professional.fullName;
+      String(signature.professionalName || '').trim() ||
+      encounter.professional.fullName;
     const header: TDocumentDefinitions['header'] =
       isPsychology && images
         ? () =>
@@ -661,8 +751,12 @@ export class HcePdfService {
    * Examen mental una sola vez. Al guardar, la HC copia la descripción libre
    * (`narrative`) en `appearance` para RDA: un texto ya impreso no se repite.
    */
-  private mentalExamSections(mental: Record<string, string>, titleColor: string): Content[] {
-    const normalize = (v?: string | null) => (v || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  private mentalExamSections(
+    mental: Record<string, string>,
+    titleColor: string,
+  ): Content[] {
+    const normalize = (v?: string | null) =>
+      (v || '').replace(/\s+/g, ' ').trim().toLowerCase();
     const fields: Array<[string, string | undefined]> = [
       ['Examen mental', mental.narrative],
       ['Examen mental — aspecto', mental.appearance],
@@ -684,6 +778,304 @@ export class HcePdfService {
       sections.push(this.section(title, value, titleColor));
     }
     return sections;
+  }
+
+  private dentalSections(
+    content: Record<string, unknown>,
+    dental: Record<string, unknown>,
+    titleColor: string,
+  ): Content[] {
+    const band = { banded: true as const };
+    const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+    const obj = (v: unknown) =>
+      v && typeof v === 'object' ? (v as Record<string, unknown>) : {};
+    const rows = (v: unknown) =>
+      Array.isArray(v) ? (v as Array<Record<string, unknown>>) : [];
+    const lines = (pairs: Array<[string, unknown]>) =>
+      pairs
+        .filter(([, v]) => str(v))
+        .map(([label, v]) => `${label}: ${str(v)}`)
+        .join('\n');
+    const care = obj(content.careMinimum);
+    const ant = obj(dental.antecedents);
+    const vitals = obj(dental.vitals);
+    const extra = obj(dental.extraoral);
+    const intra = obj(dental.intraoral);
+    const closure = obj(dental.closure);
+    const systems = obj(dental.systemsReview);
+    const sections: Content[] = [];
+
+    sections.push(
+      this.section('Motivo de consulta', str(care.motive), titleColor, band),
+    );
+    sections.push(
+      this.section(
+        'Antecedentes',
+        lines([
+          ['Personales', ant.personal],
+          ['Familiares', ant.family],
+          ['Patológicos', ant.pathological],
+          ['Gineco-obstétricos', ant.obgyn],
+          ['Alérgicos', ant.allergic],
+          ['Farmacológicos', ant.pharmacological],
+          ['Quirúrgicos', ant.surgical],
+          [
+            'Tabaquismo',
+            [ant.smoking, ant.smokingDetail]
+              .map(str)
+              .filter(Boolean)
+              .join(' — '),
+          ],
+          [
+            'Alcohol',
+            [ant.alcohol, ant.alcoholDetail]
+              .map(str)
+              .filter(Boolean)
+              .join(' — '),
+          ],
+          ['Hábitos orales', ant.oralHabits],
+        ]),
+        titleColor,
+        band,
+      ),
+    );
+    const altered = Object.entries(systems)
+      .filter(([, v]) => v === true)
+      .map(([k]) => DENTAL_SYSTEM_LABELS[k] || k);
+    sections.push(
+      this.section(
+        'Revisión por sistemas',
+        [
+          altered.length ? `Con hallazgos: ${altered.join(', ')}` : '',
+          str(dental.systemsReviewNotes),
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        titleColor,
+        band,
+      ),
+    );
+    sections.push(
+      this.section(
+        'Signos vitales',
+        lines([
+          ['PA', vitals.bloodPressure],
+          ['FC (lpm)', vitals.heartRate],
+          ['FR (rpm)', vitals.respiratoryRate],
+          ['Temperatura (°C)', vitals.temperature],
+          ['SatO2 (%)', vitals.spo2],
+        ]),
+        titleColor,
+        band,
+      ),
+    );
+    sections.push(
+      this.section(
+        'Examen extraoral',
+        lines([
+          ['Simetría facial', extra.symmetry],
+          ['ATM', extra.tmj],
+          ['Ganglios', extra.lymphNodes],
+          ['Piel', extra.skin],
+          ['Labios', extra.lips],
+        ]),
+        titleColor,
+        band,
+      ),
+    );
+    sections.push(
+      this.section(
+        'Examen intraoral',
+        lines([
+          ['Higiene oral', intra.hygiene],
+          ['Mucosa', intra.mucosa],
+          ['Lengua', intra.tongue],
+          ['Paladar', intra.palate],
+          ['Piso de boca', intra.floorOfMouth],
+          ['Glándulas salivales', intra.glands],
+          ['Dentición', intra.dentition],
+          [
+            'Oclusión',
+            [intra.occlusion, intra.occlusionNotes]
+              .map(str)
+              .filter(Boolean)
+              .join(' — '),
+          ],
+        ]),
+        titleColor,
+        band,
+      ),
+    );
+
+    const odontogram = obj(dental.odontogram);
+    const teeth = Object.keys(odontogram).sort((a, b) => Number(a) - Number(b));
+    const toothRows = teeth
+      .map((tooth) => {
+        const t = obj(odontogram[tooth]);
+        const whole = DENTAL_STATE_LABELS[str(t.status)] || '';
+        const surfaces = Object.entries(obj(t.surfaces))
+          .filter(([, v]) => str(v) && v !== 'SANO')
+          .map(
+            ([k, v]) =>
+              `${DENTAL_SURFACE_LABELS[k] || k}: ${DENTAL_STATE_LABELS[str(v)] || str(v)}`,
+          )
+          .join(', ');
+        return [
+          tooth,
+          whole || (surfaces ? '—' : 'Sano'),
+          surfaces || '—',
+          str(t.note),
+        ];
+      })
+      .filter(
+        ([, whole, surfaces, note]) =>
+          whole !== 'Sano' || surfaces !== '—' || note,
+      );
+    if (toothRows.length || str(dental.odontogramNotes)) {
+      if (toothRows.length) {
+        sections.push({
+          unbreakable: toothRows.length <= 20,
+          stack: [
+            this.bandTitle('Odontograma', titleColor),
+            {
+              table: {
+                widths: ['10%', '18%', '*', '24%'],
+                body: [
+                  ['Diente', 'Estado', 'Superficies', 'Nota'],
+                  ...toothRows.map((r) =>
+                    r.map((c) => ({ text: c || '—', fontSize: 9 })),
+                  ),
+                ],
+              },
+              layout: 'lightHorizontalLines',
+              margin: [0, 0, 0, 6],
+            },
+          ],
+        });
+      } else {
+        sections.push(this.bandTitle('Odontograma', titleColor));
+      }
+      if (str(dental.odontogramNotes)) {
+        sections.push({
+          text: str(dental.odontogramNotes),
+          style: 'body',
+          margin: [0, 0, 0, 6],
+        });
+      }
+    }
+
+    const dx = rows(dental.diagnoses).filter(
+      (d) => str(d.cieCode) || str(d.description),
+    );
+    if (dx.length) {
+      sections.push({
+        unbreakable: dx.length <= 15,
+        stack: [
+          this.bandTitle(
+            'Diagnósticos (CIE-10 / RDA odontológico)',
+            titleColor,
+          ),
+          {
+            table: {
+              widths: ['14%', '16%', '*', '12%'],
+              body: [
+                ['CIE-10', 'Código RDA', 'Descripción', 'Diente'],
+                ...dx.map((d) => [
+                  str(d.cieCode) || '—',
+                  str(d.rdaCode) || '—',
+                  {
+                    text: str(d.description) || '—',
+                    alignment: 'justify' as const,
+                  },
+                  str(d.tooth) || '—',
+                ]),
+              ],
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 6],
+          },
+        ],
+      });
+    }
+
+    const plan = rows(dental.treatmentPlan).filter(
+      (r) => str(r.description) || str(r.code),
+    );
+    if (plan.length) {
+      const priority: Record<string, string> = {
+        ALTA: 'Alta',
+        MEDIA: 'Media',
+        BAJA: 'Baja',
+      };
+      sections.push({
+        unbreakable: plan.length <= 15,
+        stack: [
+          this.bandTitle('Plan de tratamiento', titleColor),
+          {
+            table: {
+              widths: ['14%', '*', '14%', '12%', '10%'],
+              body: [
+                [
+                  'Código',
+                  'Descripción',
+                  'Diente/sector',
+                  'Prioridad',
+                  'Sesiones',
+                ],
+                ...plan.map((r) => [
+                  str(r.code) || '—',
+                  {
+                    text: str(r.description) || '—',
+                    alignment: 'justify' as const,
+                  },
+                  str(r.tooth) || '—',
+                  priority[str(r.priority)] || '—',
+                  String(r.sessions ?? '') || '—',
+                ]),
+              ],
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 6],
+          },
+        ],
+      });
+    }
+
+    sections.push(
+      this.section(
+        'Cierre de historia',
+        lines([
+          ['Fecha de cierre', closure.closedAt],
+          ['Estado del caso', closure.caseStatus],
+          ['Resultado del tratamiento', closure.treatmentResult],
+        ]),
+        titleColor,
+        band,
+      ),
+    );
+    return sections;
+  }
+
+  private bandTitle(title: string, titleColor: string): Content {
+    return {
+      table: {
+        widths: ['*'],
+        body: [
+          [
+            {
+              text: title.toUpperCase(),
+              bold: true,
+              color: '#FFFFFF',
+              fontSize: 10,
+              fillColor: titleColor,
+              margin: [8, 5, 8, 5],
+            },
+          ],
+        ],
+      },
+      layout: 'noBorders',
+      margin: [0, 8, 0, 3],
+    };
   }
 
   private section(
