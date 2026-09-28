@@ -2099,11 +2099,8 @@
                   [recordCode]="encounter()?.externalCode || ''"
                   [recordDate]="(clinicalDocumentDate() | date: 'dd/MM/yyyy') || ''"
                   (changed)="onClinicalFieldChange()"
+                  (save)="saveDraftOnly()"
                 />
-                <label class="odo-mt">
-                  Observaciones del odontograma
-                  <textarea rows="2" [(ngModel)]="dental().odontogramNotes" [readonly]="clinicalFormDisabled()"></textarea>
-                </label>
               </section>
 
               @if (showOrthoModule()) {

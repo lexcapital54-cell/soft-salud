@@ -108,12 +108,50 @@ const MODES: Array<{ key: Mode; label: string; icon: string }> = [
   { key: 'NOTE', label: 'Agregar nota', icon: 'M5 3 H15 L19 7 V21 H5 Z M8 10 H16 M8 14 H16 M8 18 H13' },
 ];
 
-const VIEWS: Array<{ key: ViewKind; label: string }> = [
-  { key: 'COMPLETA', label: 'Vista completa' },
-  { key: 'MAXILAR', label: 'Solo maxilar' },
-  { key: 'MANDIBULA', label: 'Solo mandíbula' },
-  { key: 'OCLUSAL', label: 'Vista oclusal' },
+const VIEWS: Array<{ key: ViewKind; label: string; icon: string }> = [
+  { key: 'COMPLETA', label: 'Vista completa', icon: 'M12 5 C9 2 4 3 4 8 C4 12 6 14 7 20 C8 22 10 21 10 18 C10 16 11 15 12 15 C13 15 14 16 14 18 C14 21 16 22 17 20 C18 14 20 12 20 8 C20 3 15 2 12 5 Z' },
+  { key: 'MAXILAR', label: 'Solo maxilar', icon: 'M4 17 C4 9 8 5 12 5 C16 5 20 9 20 17 M7 17 C7 11 9 8 12 8 C15 8 17 11 17 17' },
+  { key: 'MANDIBULA', label: 'Solo mandíbula', icon: 'M4 7 C4 15 8 19 12 19 C16 19 20 15 20 7 M7 7 C7 13 9 16 12 16 C15 16 17 13 17 7' },
+  { key: 'OCLUSAL', label: 'Vista oclusal', icon: 'M5 19 C5 9 8 5 12 5 C16 5 19 9 19 19 M9 17 A1.5 1.5 0 1 0 9 16.9 M15 17 A1.5 1.5 0 1 0 15 16.9 M12 9 A1.5 1.5 0 1 0 12 8.9' },
 ];
+
+type LegendIcon = 'dot' | 'x' | 'triangle' | 'bracket' | 'band' | 'wire' | 'ring' | 'wave' | 'bolt' | 'star';
+
+const LEGEND: Array<{ label: string; color: string; icon: LegendIcon }> = [
+  { label: 'Caries', color: '#e53935', icon: 'dot' },
+  { label: 'Brackets', color: '#1d4ed8', icon: 'bracket' },
+  { label: 'Obturación', color: '#1e63d6', icon: 'dot' },
+  { label: 'Arco ortodóntico', color: '#10306b', icon: 'wire' },
+  { label: 'Endodoncia', color: '#f5b301', icon: 'dot' },
+  { label: 'Bandas', color: '#1d4ed8', icon: 'band' },
+  { label: 'Corona', color: '#8e24aa', icon: 'dot' },
+  { label: 'Separador', color: '#7c3aed', icon: 'ring' },
+  { label: 'Prótesis', color: '#16a34a', icon: 'dot' },
+  { label: 'Lesión periodontal', color: '#e11d48', icon: 'wave' },
+  { label: 'Implante', color: '#64748b', icon: 'dot' },
+  { label: 'Movilidad', color: '#0b3a6e', icon: 'wave' },
+  { label: 'Sellante', color: '#14b8a6', icon: 'dot' },
+  { label: 'Fístula', color: '#db2777', icon: 'dot' },
+  { label: 'Fractura', color: '#f97316', icon: 'dot' },
+  { label: 'Trauma', color: '#1e3a8a', icon: 'bolt' },
+  { label: 'Diente ausente', color: '#6b7280', icon: 'x' },
+  { label: 'Otra observación', color: '#0f172a', icon: 'star' },
+  { label: 'Extracción indicada', color: '#dc2626', icon: 'x' },
+  { label: 'Diente incluido', color: '#475569', icon: 'triangle' },
+];
+
+type QuickKey = 'CARIES' | 'RESTAURACION' | 'BRACKET' | 'NOTE';
+
+const QUICK_ACTIONS: Array<{ key: QuickKey; label: string; icon: string }> = [
+  { key: 'CARIES', label: 'Agregar caries', icon: 'M12 3 A9 9 0 1 0 12.01 3 Z M9 9 L15 15 M15 9 L9 15' },
+  { key: 'RESTAURACION', label: 'Agregar obturación', icon: 'M12 3 C8 3 5 6 5 10 C5 15 9 21 12 21 C15 21 19 15 19 10 C19 6 16 3 12 3 Z M9 10 H15 V14 H9 Z' },
+  { key: 'BRACKET', label: 'Agregar bracket', icon: 'M4 7 H20 V17 H4 Z M4 12 H20 M9 7 V17 M15 7 V17' },
+  { key: 'NOTE', label: 'Agregar nota', icon: 'M5 4 H14 L19 9 V20 H5 Z M14 4 V9 H19 M8 13 H16 M8 16 H13' },
+];
+
+/** Silueta del logo (muela). */
+const LOGO_PATH =
+  'M20 7 C14 2 4 2 3 12 C2 20 6 26 8 34 C9 40 13 42 14 36 C15 30 17 27 20 27 C23 27 25 30 26 36 C27 42 31 40 32 34 C34 26 38 20 37 12 C36 2 26 2 20 7 Z';
 
 const DENTITIONS: Array<{ key: Dentition; label: string }> = [
   { key: 'PERMANENTE', label: 'Permanente' },
@@ -170,361 +208,420 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     <div class="odg">
       <svg class="odg-defs" aria-hidden="true" focusable="false">
         <defs>
-          <linearGradient id="odg-enamel" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#ffffff" />
-            <stop offset="0.55" stop-color="#f8f4ea" />
-            <stop offset="1" stop-color="#e9dfc9" />
+          <linearGradient id="odg-enamel" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#e9e2d2" />
+            <stop offset="0.35" stop-color="#ffffff" />
+            <stop offset="0.7" stop-color="#fbf8f1" />
+            <stop offset="1" stop-color="#e2d8c3" />
           </linearGradient>
           <linearGradient id="odg-root" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stop-color="#e8d6b0" />
-            <stop offset="0.5" stop-color="#f6ead0" />
-            <stop offset="1" stop-color="#dcc79c" />
-          </linearGradient>
-          <linearGradient id="odg-gum" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#f7b8c0" />
-            <stop offset="1" stop-color="#ec8f9c" />
+            <stop offset="0" stop-color="#e3d3b1" />
+            <stop offset="0.5" stop-color="#f7eedb" />
+            <stop offset="1" stop-color="#d8c49c" />
           </linearGradient>
           <linearGradient id="odg-crown-purple" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stop-color="#faf1ff" />
-            <stop offset="1" stop-color="#e3c8f3" />
+            <stop offset="1" stop-color="#dcc0f0" />
           </linearGradient>
           <linearGradient id="odg-crown-green" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stop-color="#f0fdf4" />
-            <stop offset="1" stop-color="#bbf7d0" />
+            <stop offset="1" stop-color="#b7f0cc" />
           </linearGradient>
         </defs>
       </svg>
+
       <header class="odg-head">
         <div class="odg-brand">
           <svg viewBox="0 0 40 44" aria-hidden="true">
-            <path
-              d="M20 7 C14 2 4 2 3 12 C2 20 6 26 8 34 C9 40 13 42 14 36 C15 30 17 27 20 27 C23 27 25 30 26 36 C27 42 31 40 32 34 C34 26 38 20 37 12 C36 2 26 2 20 7 Z"
-              fill="#fff"
-            />
+            <path [attr.d]="logoPath" fill="#0b3a6e" />
+            <path d="M12 12 C12 8 16 7 19 9" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.7" />
           </svg>
           <div>
             <strong>ODONTOGRAMA</strong>
-            <span>Odontología general | Ortodoncia</span>
+            <span>Odontología General <i>|</i> Ortodoncia</span>
           </div>
         </div>
         <dl class="odg-meta">
-          <div><dt>Paciente</dt><dd>{{ patientName() || '—' }}</dd></div>
-          <div><dt>Edad</dt><dd>{{ patientAge() || '—' }}</dd></div>
-          <div><dt>Historia clínica</dt><dd>{{ recordCode() || '—' }}</dd></div>
-          <div><dt>Fecha</dt><dd>{{ recordDate() || '—' }}</dd></div>
+          <div class="wide"><dt>Paciente:</dt><dd>{{ patientName() || '—' }}</dd></div>
+          <div><dt>Edad:</dt><dd>{{ patientAge() || '—' }}</dd></div>
+          <div><dt>Historia clínica:</dt><dd>{{ recordCode() || '—' }}</dd></div>
+          <div><dt>Fecha:</dt><dd>{{ recordDate() || '—' }}</dd></div>
         </dl>
+        <p class="odg-tagline">Sonrisas saludables,<br />vidas mejores</p>
       </header>
 
       <div class="odg-body">
-        <div class="odg-main" #mainArea>
-          @if (view() !== 'OCLUSAL') {
-            @for (row of rows(); track $index) {
-              @if (row.upper && $first) {
-                <span class="odg-jaw">MAXILAR<br />SUPERIOR</span>
-              }
-              <div class="odg-row" [class.upper]="row.upper" [class.small]="row.small">
-                @for (tooth of row.teeth; track tooth; let i = $index) {
-                  <div
-                    class="odg-tooth"
-                    [class.midline]="i === row.teeth.length / 2 - 1"
-                    [class.selected]="selected() === tooth"
-                  >
-                    @if (row.upper) {
-                      <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" (click)="onToothClick(tooth, $event)">{{ tooth }}</button>
-                    } @else {
-                      <svg class="odg-square" viewBox="-2 -2 40 40" [class.small]="row.small" [attr.aria-label]="'Superficies ' + tooth">
-                        @for (pos of positions; track pos) {
-                          <polygon
-                            [attr.points]="square(pos)"
-                            [attr.fill]="surfaceFill(tooth, pos)"
-                            stroke="#9fb3c8"
-                            stroke-width="1.1"
-                            stroke-linejoin="round"
-                            (click)="onSurfaceClick(tooth, pos, $event)"
-                          >
-                            <title>{{ tooth }} · {{ surfaceTitle(tooth, pos) }}</title>
-                          </polygon>
-                        }
-                      </svg>
+        <div class="odg-left">
+          <div class="odg-main" #mainArea>
+            <div class="odg-chart">
+              @if (view() !== 'OCLUSAL') {
+                @for (row of rows(); track $index) {
+                  <div class="odg-row" [class.upper]="row.upper" [class.small]="row.small">
+                    @if ($first && row.upper) {
+                      <span class="odg-jaw">MAXILAR<br />SUPERIOR</span>
                     }
-                    <svg
-                      class="odg-svg"
-                      [attr.viewBox]="shape(tooth).viewBox"
-                      [style.width.px]="shape(tooth).width * (row.small ? 0.8 : 1.14)"
-                      [style.height.px]="row.small ? 80 : 114"
-                      (click)="onToothClick(tooth, $event)"
-                      [attr.aria-label]="'Diente ' + tooth"
-                    >
-                      <title>{{ tooth }} · {{ toothName(tooth) }}{{ summary(tooth) ? ' — ' + summary(tooth) : '' }}</title>
-                      <g [attr.transform]="row.upper ? null : 'translate(0,100) scale(1,-1)'">
-                        @if (selected() === tooth) {
-                          <ellipse cx="25" cy="60" rx="24" ry="44" class="odg-glow" />
+                    @if ($last && !row.upper) {
+                      <span class="odg-jaw bottom">MANDÍBULA<br />INFERIOR</span>
+                    }
+                    @for (tooth of row.teeth; track tooth; let i = $index) {
+                      <div
+                        class="odg-tooth"
+                        [class.midline]="i === row.teeth.length / 2 - 1"
+                        [class.selected]="selected() === tooth"
+                      >
+                        @if (row.upper) {
+                          <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" (click)="onToothClick(tooth, $event)">{{ tooth }}</button>
+                          @if (showSurfaces()) {
+                            <ng-container *ngTemplateOutlet="squareTpl; context: { $implicit: tooth, small: row.small }" />
+                          }
                         }
-                        <g [attr.opacity]="has(tooth, 'AUSENTE') ? 0.25 : 1">
-                          @if (has(tooth, 'IMPLANTE')) {
-                            <rect x="20" y="10" width="10" height="46" rx="3" fill="#94a3b8" stroke="#475569" />
-                            @for (y of screwLines; track y) {
-                              <line x1="18" [attr.y1]="y" x2="32" [attr.y2]="y + 3" stroke="#475569" stroke-width="1.2" />
-                            }
-                          } @else {
-                            @for (r of shape(tooth).roots; track $index) {
-                              <path [attr.d]="r" fill="url(#odg-root)" stroke="#b89a64" stroke-width="0.9" />
-                            }
-                          }
-                        </g>
-                        <path class="odg-gum" [attr.d]="gumPath" fill="url(#odg-gum)" />
-                        <path class="odg-gum-line" [attr.d]="gumEdge" fill="none" />
-                        <g [attr.opacity]="has(tooth, 'AUSENTE') ? 0.25 : 1">
-                          <path class="odg-crown"
-                            [attr.d]="shape(tooth).crown"
-                            [attr.fill]="crownFill(tooth)"
-                            [attr.stroke]="crownStroke(tooth)"
-                            [attr.stroke-width]="crownStroke(tooth) === '#b59b6a' ? 1 : 2.4"
-                          />
-                          <path [attr.d]="shape(tooth).crown" fill="none" class="odg-shine" />
-                          @if (shape(tooth).detail) {
-                            <path [attr.d]="shape(tooth).detail" fill="none" stroke="#cdb88f" stroke-width="0.9" />
-                          }
-                          @if (has(tooth, 'ENDODONCIA')) {
-                            @for (c of shape(tooth).canals; track $index) {
-                              <path [attr.d]="c" stroke="#f5b301" stroke-width="3.2" stroke-linecap="round" />
-                            }
-                          }
-                          @for (dot of surfaceDots(tooth); track dot.surface) {
-                            @if (dot.state === 'FRACTURA') {
+                        <svg
+                          class="odg-svg"
+                          [attr.viewBox]="shape(tooth).viewBox"
+                          [style.width.px]="shape(tooth).width * (row.small ? 0.8 : 1.18)"
+                          [style.height.px]="row.small ? 80 : 118"
+                          (click)="onToothClick(tooth, $event)"
+                          [attr.aria-label]="'Diente ' + tooth"
+                        >
+                          <title>{{ tooth }} · {{ toothName(tooth) }}{{ summary(tooth) ? ' — ' + summary(tooth) : '' }}</title>
+                          <g [attr.transform]="row.upper ? null : 'translate(0,100) scale(1,-1)'">
+                            <g [attr.opacity]="has(tooth, 'AUSENTE') ? 0.75 : 1">
+                              @if (has(tooth, 'IMPLANTE')) {
+                                <rect x="20" y="10" width="10" height="46" rx="3" fill="#a3b1c2" stroke="#475569" />
+                                @for (y of screwLines; track y) {
+                                  <line x1="18" [attr.y1]="y" x2="32" [attr.y2]="y + 3" stroke="#475569" stroke-width="1.2" />
+                                }
+                              } @else {
+                                @for (r of shape(tooth).roots; track $index) {
+                                  <path [attr.d]="r" fill="url(#odg-root)" stroke="#b9a07a" stroke-width="0.8" />
+                                }
+                              }
                               <path
-                                [attr.d]="'M' + (dot.x - 6) + ' ' + (dot.y - 3) + ' l4 5 l4 -5 l4 5'"
-                                fill="none"
-                                stroke="#f97316"
-                                stroke-width="2"
+                                class="odg-crown"
+                                [attr.d]="shape(tooth).crown"
+                                [attr.fill]="crownFill(tooth)"
+                                [attr.stroke]="crownStroke(tooth)"
+                                [attr.stroke-width]="crownStroke(tooth) === '#b9a07a' ? 0.9 : 2.4"
                               />
-                            } @else {
-                              <circle [attr.cx]="dot.x" [attr.cy]="dot.y" r="4.2" [attr.fill]="color(dot.state)" stroke="#fff" stroke-width="0.8" />
+                              <path [attr.d]="shape(tooth).crown" fill="none" class="odg-shine" />
+                              @if (shape(tooth).detail) {
+                                <path [attr.d]="shape(tooth).detail" fill="none" stroke="#d6c7a6" stroke-width="0.9" />
+                              }
+                              @if (has(tooth, 'ENDODONCIA')) {
+                                @for (c of shape(tooth).canals; track $index) {
+                                  <path [attr.d]="c" stroke="#f5b301" stroke-width="3.2" stroke-linecap="round" />
+                                }
+                              }
+                              @for (dot of surfaceDots(tooth); track dot.surface) {
+                                @if (dot.state === 'FRACTURA') {
+                                  <path [attr.d]="'M' + (dot.x - 6) + ' ' + (dot.y - 3) + ' l4 5 l4 -5 l4 5'" fill="none" stroke="#f97316" stroke-width="2" />
+                                } @else {
+                                  <circle [attr.cx]="dot.x" [attr.cy]="dot.y" r="4.6" [attr.fill]="color(dot.state)" stroke="#fff" stroke-width="1" />
+                                }
+                              }
+                              @if (hasMark(tooth, 'BANDA')) {
+                                <rect [attr.x]="shape(tooth).crownLeft + 1" y="70" [attr.width]="shape(tooth).crownRight - shape(tooth).crownLeft - 2" height="11" rx="2" fill="rgba(29,78,216,0.18)" stroke="#1d4ed8" stroke-width="1.6" />
+                              }
+                              @if (archActive(row.upper) && !has(tooth, 'AUSENTE')) {
+                                <line [attr.x1]="shape(tooth).crownLeft - 8" y1="74" [attr.x2]="shape(tooth).crownRight + 8" y2="74" stroke="#10306b" stroke-width="2" />
+                                <circle cx="25" cy="74" r="3" fill="#10306b" />
+                              }
+                              @if (hasMark(tooth, 'BRACKET')) {
+                                <rect x="18.5" y="69" width="13" height="10" rx="2" fill="#1d4ed8" />
+                                <line x1="18.5" y1="74" x2="31.5" y2="74" stroke="#bfdbfe" stroke-width="1.4" />
+                              }
+                              @if (hasMark(tooth, 'SEPARADOR')) {
+                                <circle [attr.cx]="mesialX(tooth)" cy="64" r="4.5" fill="none" stroke="#7c3aed" stroke-width="2" />
+                              }
+                              @if (hasMark(tooth, 'MOVILIDAD')) {
+                                <path d="M11 60 q3.5 -4 7 0 t7 0 t7 0 t7 0" fill="none" stroke="#0b3a6e" stroke-width="1.8" />
+                              }
+                              @if (hasMark(tooth, 'LESION')) {
+                                <path d="M13 42 q3 -4 6 0 t6 0 t6 0 t6 0" fill="none" stroke="#e11d48" stroke-width="2" />
+                              }
+                              @if (hasMark(tooth, 'FISTULA')) {
+                                <circle cx="35" cy="30" r="3.6" fill="#fbcfe8" stroke="#db2777" stroke-width="1.6" />
+                              }
+                              @if (hasMark(tooth, 'TRAUMA')) {
+                                <path d="M38 58 L32 70 L37 70 L31 84" fill="none" stroke="#1e3a8a" stroke-width="2" />
+                              }
+                              @if (hasMark(tooth, 'OTRO')) {
+                                <path d="M40 50 l1.8 3.8 4.2 .6 -3 2.9 .7 4.1 -3.7 -2 -3.7 2 .7 -4.1 -3 -2.9 4.2 -.6 Z" fill="#0f172a" />
+                              }
+                            </g>
+                            @if (has(tooth, 'INCLUIDO')) {
+                              <path d="M25 60 L39 88 L11 88 Z" fill="rgba(255,255,255,0.4)" stroke="#475569" stroke-width="2" stroke-linejoin="round" />
                             }
+                            @if (has(tooth, 'AUSENTE')) {
+                              <circle cx="25" cy="80" r="10" fill="rgba(148,163,184,0.45)" stroke="#6b7280" stroke-width="1.6" />
+                              <path d="M20 75 L30 85 M30 75 L20 85" stroke="#4b5563" stroke-width="2.2" stroke-linecap="round" />
+                            }
+                            @if (has(tooth, 'EXTRACCION_INDICADA')) {
+                              <circle cx="25" cy="80" r="10" fill="rgba(220,38,38,0.12)" stroke="#dc2626" stroke-width="1.6" />
+                              <path d="M20 75 L30 85 M30 75 L20 85" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" />
+                            }
+                          </g>
+                        </svg>
+                        @if (!row.upper) {
+                          @if (showSurfaces()) {
+                            <ng-container *ngTemplateOutlet="squareTpl; context: { $implicit: tooth, small: row.small }" />
                           }
-                          @if (archActive(row.upper) && !has(tooth, 'AUSENTE')) {
-                            <line
-                              [attr.x1]="shape(tooth).crownLeft - 6"
-                              y1="76"
-                              [attr.x2]="shape(tooth).crownRight + 6"
-                              y2="76"
-                              stroke="#1e3a8a"
-                              stroke-width="1.8"
-                            />
-                          }
-                          @if (hasMark(tooth, 'BANDA')) {
-                            <rect
-                              [attr.x]="shape(tooth).crownLeft + 1"
-                              y="70"
-                              [attr.width]="shape(tooth).crownRight - shape(tooth).crownLeft - 2"
-                              height="11"
-                              rx="2"
-                              fill="rgba(29,78,216,0.18)"
-                              stroke="#1d4ed8"
-                              stroke-width="1.6"
-                            />
-                          }
-                          @if (hasMark(tooth, 'BRACKET')) {
-                            <rect x="19" y="71" width="12" height="10" rx="2" fill="#1d4ed8" />
-                            <line x1="19" y1="76" x2="31" y2="76" stroke="#bfdbfe" stroke-width="1.4" />
-                          }
-                          @if (hasMark(tooth, 'SEPARADOR')) {
-                            <circle [attr.cx]="mesialX(tooth)" cy="66" r="4.5" fill="none" stroke="#7c3aed" stroke-width="2" />
-                          }
-                          @if (hasMark(tooth, 'MOVILIDAD')) {
-                            <path d="M11 60 q3.5 -4 7 0 t7 0 t7 0 t7 0" fill="none" stroke="#0b5563" stroke-width="1.8" />
-                          }
-                          @if (hasMark(tooth, 'LESION')) {
-                            <path d="M13 42 q3 -4 6 0 t6 0 t6 0 t6 0" fill="none" stroke="#e11d48" stroke-width="2" />
-                          }
-                          @if (hasMark(tooth, 'FISTULA')) {
-                            <circle cx="35" cy="30" r="3.6" fill="#fbcfe8" stroke="#db2777" stroke-width="1.6" />
-                          }
-                          @if (hasMark(tooth, 'TRAUMA')) {
-                            <path d="M38 58 L32 70 L37 70 L31 84" fill="none" stroke="#1e3a8a" stroke-width="2" />
-                          }
-                          @if (hasMark(tooth, 'OTRO')) {
-                            <path
-                              d="M40 50 l1.8 3.8 4.2 .6 -3 2.9 .7 4.1 -3.7 -2 -3.7 2 .7 -4.1 -3 -2.9 4.2 -.6 Z"
-                              fill="#0f172a"
-                            />
-                          }
-                        </g>
-                        @if (has(tooth, 'INCLUIDO')) {
-                          <path d="M25 58 L40 90 L10 90 Z" fill="none" stroke="#475569" stroke-width="2.2" />
+                          <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" (click)="onToothClick(tooth, $event)">{{ tooth }}</button>
                         }
-                        @if (has(tooth, 'AUSENTE')) {
-                          <path d="M14 64 L36 90 M36 64 L14 90" stroke="#6b7280" stroke-width="3" stroke-linecap="round" />
-                        }
-                        @if (has(tooth, 'EXTRACCION_INDICADA')) {
-                          <path d="M9 10 L41 94 M41 10 L9 94" stroke="#dc2626" stroke-width="3" stroke-linecap="round" />
-                        }
-                      </g>
-                    </svg>
-                    @if (row.upper) {
-                      <svg class="odg-square" viewBox="-2 -2 40 40" [class.small]="row.small" [attr.aria-label]="'Superficies ' + tooth">
-                        @for (pos of positions; track pos) {
-                          <polygon
-                            [attr.points]="square(pos)"
-                            [attr.fill]="surfaceFill(tooth, pos)"
-                            stroke="#9fb3c8"
-                            stroke-width="1.1"
-                            stroke-linejoin="round"
-                            (click)="onSurfaceClick(tooth, pos, $event)"
-                          >
-                            <title>{{ tooth }} · {{ surfaceTitle(tooth, pos) }}</title>
-                          </polygon>
-                        }
-                      </svg>
-                    } @else {
-                      <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" (click)="onToothClick(tooth, $event)">{{ tooth }}</button>
+                      </div>
                     }
                   </div>
+                  @if (showOcclusalBetween() && isLastUpper($index)) {
+                    <ng-container *ngTemplateOutlet="occlusal" />
+                  }
                 }
-              </div>
-              @if (!row.upper && $last) {
-                <span class="odg-jaw bottom">MANDÍBULA<br />INFERIOR</span>
               }
-              @if (showOcclusalBetween() && isLastUpper($index)) {
+              @if (view() === 'OCLUSAL') {
                 <ng-container *ngTemplateOutlet="occlusal" />
               }
-            }
-          }
-          @if (view() === 'OCLUSAL') {
-            <ng-container *ngTemplateOutlet="occlusal" />
-          }
+            </div>
 
-          <ng-template #occlusal>
-            <div class="odg-occlusal" [class.large]="view() === 'OCLUSAL'">
-              @for (arch of occlusalArches(); track arch.label) {
-                <div class="odg-arch">
-                  <span class="odg-arch-label">{{ arch.label }}</span>
-                  <svg viewBox="0 0 240 150" [attr.aria-label]="arch.label">
-                    <path [attr.d]="arch.guide" fill="none" stroke="#cbd5e1" stroke-dasharray="3 3" />
-                    @for (t of arch.teeth; track t.tooth) {
-                      <g class="odg-occ-tooth" (click)="onToothClick(t.tooth, $event)">
-                        <circle
-                          [attr.cx]="t.x"
-                          [attr.cy]="t.y"
-                          [attr.r]="t.r"
-                          [attr.fill]="occlusalFill(t.tooth)"
-                          [attr.stroke]="selected() === t.tooth ? '#0f766e' : '#94a3b8'"
-                          [attr.stroke-width]="selected() === t.tooth ? 2.4 : 1.2"
-                        >
-                          <title>{{ t.tooth }} · {{ toothName(t.tooth) }}{{ summary(t.tooth) ? ' — ' + summary(t.tooth) : '' }}</title>
-                        </circle>
-                        @if (has(t.tooth, 'AUSENTE') || has(t.tooth, 'EXTRACCION_INDICADA')) {
-                          <path
-                            [attr.d]="'M' + (t.x - t.r * 0.6) + ' ' + (t.y - t.r * 0.6) + ' L' + (t.x + t.r * 0.6) + ' ' + (t.y + t.r * 0.6) + ' M' + (t.x + t.r * 0.6) + ' ' + (t.y - t.r * 0.6) + ' L' + (t.x - t.r * 0.6) + ' ' + (t.y + t.r * 0.6)"
-                            [attr.stroke]="has(t.tooth, 'AUSENTE') ? '#374151' : '#fff'"
-                            stroke-width="1.6"
+            <ng-template #squareTpl let-tooth let-small="small">
+              <svg class="odg-square" [class.small]="small" viewBox="-2 -2 40 40" [attr.aria-label]="'Superficies ' + tooth">
+                @for (pos of positions; track pos) {
+                  <polygon
+                    [attr.points]="square(pos)"
+                    [attr.fill]="surfaceFill(tooth, pos)"
+                    stroke="#9fb3c8"
+                    stroke-width="1.1"
+                    stroke-linejoin="round"
+                    (click)="onSurfaceClick(tooth, pos, $event)"
+                  >
+                    <title>{{ tooth }} · {{ surfaceTitle(tooth, pos) }}</title>
+                  </polygon>
+                }
+              </svg>
+            </ng-template>
+
+            <ng-template #occlusal>
+              <div class="odg-occlusal" [class.large]="view() === 'OCLUSAL'">
+                @for (arch of occlusalArches(); track arch.label; let last = $last) {
+                  @if (!last || occlusalArches().length === 1) {
+                    <span class="odg-arch-label">{{ arch.label }}</span>
+                  }
+                  <div class="odg-arch">
+                    <svg viewBox="0 0 240 150" [attr.aria-label]="arch.label">
+                      @for (t of arch.teeth; track t.tooth) {
+                        <g class="odg-occ-tooth" (click)="onToothClick(t.tooth, $event)">
+                          <ellipse
+                            [attr.cx]="t.x"
+                            [attr.cy]="t.y"
+                            [attr.rx]="t.r * 0.8"
+                            [attr.ry]="t.r"
+                            [attr.transform]="'rotate(' + t.a + ' ' + t.x + ' ' + t.y + ')'"
+                            [attr.fill]="occlusalFill(t.tooth)"
+                            [attr.stroke]="selected() === t.tooth ? '#16a34a' : '#64748b'"
+                            [attr.stroke-width]="selected() === t.tooth ? 2.4 : 1.1"
+                          >
+                            <title>{{ t.tooth }} · {{ toothName(t.tooth) }}{{ summary(t.tooth) ? ' — ' + summary(t.tooth) : '' }}</title>
+                          </ellipse>
+                          <ellipse
+                            [attr.cx]="t.x"
+                            [attr.cy]="t.y"
+                            [attr.rx]="t.r * 0.36"
+                            [attr.ry]="t.r * 0.46"
+                            [attr.transform]="'rotate(' + t.a + ' ' + t.x + ' ' + t.y + ')'"
+                            fill="none"
+                            stroke="#b8c4d3"
+                            stroke-width="0.8"
                             pointer-events="none"
                           />
-                        }
-                        @if (view() === 'OCLUSAL') {
-                          <text [attr.x]="t.x" [attr.y]="t.labelY" text-anchor="middle" class="odg-occ-num">{{ t.tooth }}</text>
-                        }
-                      </g>
-                    }
-                  </svg>
-                </div>
-              }
-            </div>
-          </ng-template>
-
-          @if (selected(); as tooth) {
-            @if (popoverOpen()) {
-              <div class="odg-pop-backdrop" (click)="closePopover()"></div>
-              <div class="odg-pop" [style.left.px]="popLeft()" [style.top.px]="popTop()" role="dialog" aria-modal="true">
-                <div class="odg-pop-head">
-                  <strong>Diente {{ tooth }}</strong>
-                  <span>{{ toothName(tooth) }}</span>
-                  <button type="button" class="odg-x" (click)="closePopover()" aria-label="Cerrar">×</button>
-                </div>
-                <p class="odg-pop-sum">{{ summary(tooth) || 'Sano, sin hallazgos' }}</p>
-                @if (!disabled()) {
-                  <p class="odg-pop-title">Estado del diente</p>
-                  <div class="odg-chips">
-                    <button type="button" class="odg-chip" [class.on]="!record(tooth)" (click)="setHealthy(tooth)">
-                      <span class="dot" style="background:#fff"></span>Sano
-                    </button>
-                    @for (t of conditionTools; track t.key) {
-                      <button type="button" class="odg-chip" [class.on]="has(tooth, $any(t.key))" (click)="toggleCondition(tooth, $any(t.key))">
-                        <span class="dot" [style.background]="t.color"></span>{{ t.label }}
-                      </button>
-                    }
+                          @if (has(t.tooth, 'AUSENTE') || has(t.tooth, 'EXTRACCION_INDICADA')) {
+                            <path
+                              [attr.d]="'M' + (t.x - t.r * 0.55) + ' ' + (t.y - t.r * 0.55) + ' L' + (t.x + t.r * 0.55) + ' ' + (t.y + t.r * 0.55) + ' M' + (t.x + t.r * 0.55) + ' ' + (t.y - t.r * 0.55) + ' L' + (t.x - t.r * 0.55) + ' ' + (t.y + t.r * 0.55)"
+                              [attr.stroke]="has(t.tooth, 'AUSENTE') ? '#374151' : '#fff'"
+                              stroke-width="1.6"
+                              pointer-events="none"
+                            />
+                          }
+                          @if (view() === 'OCLUSAL') {
+                            <text [attr.x]="t.x" [attr.y]="t.labelY" text-anchor="middle" class="odg-occ-num">{{ t.tooth }}</text>
+                          }
+                        </g>
+                      }
+                    </svg>
                   </div>
-                  <p class="odg-pop-title">Superficies <span>elija el hallazgo y toque la superficie</span></p>
-                  <div class="odg-pop-surfaces">
+                  @if (last && occlusalArches().length > 1) {
+                    <span class="odg-arch-label">{{ arch.label }}</span>
+                  }
+                }
+              </div>
+            </ng-template>
+
+            @if (selected(); as tooth) {
+              @if (popoverOpen()) {
+                <div class="odg-pop-backdrop" (click)="closePopover()"></div>
+                <div class="odg-pop" [style.left.px]="popLeft()" [style.top.px]="popTop()" role="dialog" aria-modal="true">
+                  <div class="odg-pop-head">
+                    <span class="odg-pop-num">{{ tooth }}</span>
+                    <div>
+                      <strong>Diente {{ tooth }}</strong>
+                      <span>{{ toothName(tooth) }}</span>
+                    </div>
+                    <button type="button" class="odg-x" (click)="closePopover()" aria-label="Cerrar">×</button>
+                  </div>
+                  <p class="odg-pop-sum">{{ summary(tooth) || 'Sano, sin hallazgos' }}</p>
+                  @if (!disabled()) {
+                    <div class="odg-quick">
+                      @for (q of quickActions; track q.key) {
+                        <button type="button" class="odg-quick-btn" [class.on]="quickActive(tooth, q.key)" (click)="quick(tooth, q.key)">
+                          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="q.icon" /></svg>
+                          {{ q.label }}
+                        </button>
+                      }
+                    </div>
+                    <p class="odg-pop-title">Estado del diente</p>
                     <div class="odg-chips">
-                      @for (t of surfaceTools; track t.key) {
-                        <button
-                          type="button"
-                          class="odg-chip"
-                          [class.on]="popSurfaceTool() === t.key"
-                          (click)="popSurfaceTool.set($any(t.key))"
-                        >
+                      <button type="button" class="odg-chip" [class.on]="!record(tooth)" (click)="setHealthy(tooth)">
+                        <span class="dot" style="background:#fff"></span>Sano
+                      </button>
+                      @for (t of conditionTools; track t.key) {
+                        <button type="button" class="odg-chip" [class.on]="has(tooth, $any(t.key))" (click)="toggleCondition(tooth, $any(t.key))">
                           <span class="dot" [style.background]="t.color"></span>{{ t.label }}
                         </button>
                       }
                     </div>
-                    <svg class="odg-square big" viewBox="-2 -2 40 40">
-                      @for (pos of positions; track pos) {
-                        <polygon
-                          [attr.points]="square(pos)"
-                          [attr.fill]="surfaceFill(tooth, pos)"
-                          stroke="#475569"
-                          stroke-width="0.8"
-                          (click)="toggleSurface(tooth, pos, popSurfaceTool())"
-                        >
-                          <title>{{ surfaceTitle(tooth, pos) }}</title>
-                        </polygon>
+                    <p class="odg-pop-title">Superficies <span>elija el hallazgo y toque la superficie</span></p>
+                    <div class="odg-pop-surfaces">
+                      <div class="odg-chips">
+                        @for (t of surfaceTools; track t.key) {
+                          <button type="button" class="odg-chip" [class.on]="popSurfaceTool() === t.key" (click)="popSurfaceTool.set($any(t.key))">
+                            <span class="dot" [style.background]="t.color"></span>{{ t.label }}
+                          </button>
+                        }
+                      </div>
+                      <svg class="odg-square big" viewBox="-2 -2 40 40">
+                        @for (pos of positions; track pos) {
+                          <polygon
+                            [attr.points]="square(pos)"
+                            [attr.fill]="surfaceFill(tooth, pos)"
+                            stroke="#475569"
+                            stroke-width="0.8"
+                            (click)="toggleSurface(tooth, pos, popSurfaceTool())"
+                          >
+                            <title>{{ surfaceTitle(tooth, pos) }}</title>
+                          </polygon>
+                        }
+                        <text x="18" y="7.5" class="sq-l">{{ surfaceLetter(tooth, 'top') }}</text>
+                        <text x="18" y="33.5" class="sq-l">{{ surfaceLetter(tooth, 'bottom') }}</text>
+                        <text x="5" y="20.5" class="sq-l">{{ surfaceLetter(tooth, 'left') }}</text>
+                        <text x="31" y="20.5" class="sq-l">{{ surfaceLetter(tooth, 'right') }}</text>
+                        <text x="18" y="20.5" class="sq-l">{{ surfaceLetter(tooth, 'center') }}</text>
+                      </svg>
+                    </div>
+                    <p class="odg-pop-title">Marcas y aparatología</p>
+                    <div class="odg-chips">
+                      @for (t of markTools; track t.key) {
+                        <button type="button" class="odg-chip" [class.on]="hasMark(tooth, $any(t.key))" (click)="toggleMark(tooth, $any(t.key))">
+                          <span class="dot" [style.background]="t.color"></span>{{ t.label }}
+                        </button>
                       }
-                      <text x="18" y="7.5" class="sq-l">{{ surfaceLetter(tooth, 'top') }}</text>
-                      <text x="18" y="33.5" class="sq-l">{{ surfaceLetter(tooth, 'bottom') }}</text>
-                      <text x="5" y="20.5" class="sq-l">{{ surfaceLetter(tooth, 'left') }}</text>
-                      <text x="31" y="20.5" class="sq-l">{{ surfaceLetter(tooth, 'right') }}</text>
-                      <text x="18" y="20.5" class="sq-l">{{ surfaceLetter(tooth, 'center') }}</text>
-                    </svg>
-                  </div>
-                  <p class="odg-pop-title">Marcas y aparatología</p>
-                  <div class="odg-chips">
-                    @for (t of markTools; track t.key) {
-                      <button type="button" class="odg-chip" [class.on]="hasMark(tooth, $any(t.key))" (click)="toggleMark(tooth, $any(t.key))">
-                        <span class="dot" [style.background]="t.color"></span>{{ t.label }}
-                      </button>
-                    }
-                  </div>
-                }
-                <label class="odg-note">
-                  Nota del diente
-                  <input
-                    #noteInput
-                    [ngModel]="record(tooth)?.note || ''"
-                    (ngModelChange)="setNote(tooth, $event)"
-                    [readonly]="disabled()"
-                    placeholder="Ej. sensibilidad al frío, fractura de cúspide…"
-                  />
-                </label>
-                @if (!disabled()) {
-                  <div class="odg-pop-actions">
-                    <button type="button" class="odg-link danger" (click)="clearTooth(tooth)">Borrar hallazgos del diente</button>
-                    <button type="button" class="odg-btn" (click)="closePopover()">Listo</button>
-                  </div>
+                    </div>
+                  }
+                  <label class="odg-note">
+                    Nota del diente
+                    <input
+                      [ngModel]="record(tooth)?.note || ''"
+                      (ngModelChange)="setNote(tooth, $event)"
+                      [readonly]="disabled()"
+                      placeholder="Ej. sensibilidad al frío, fractura de cúspide…"
+                    />
+                  </label>
+                  @if (!disabled()) {
+                    <div class="odg-pop-actions">
+                      <button type="button" class="odg-link danger" (click)="clearTooth(tooth)">Borrar hallazgos del diente</button>
+                      <button type="button" class="odg-btn" (click)="closePopover()">Listo</button>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
+
+          <div class="odg-cards">
+            <section class="odg-card">
+              <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 H16 V6 H8 Z M6 5 H4 V21 H20 V5 H18 M8 11 H16 M8 15 H16 M8 19 H13" /></svg>Diagnóstico / plan de tratamiento</h4>
+              <div class="odg-card-body">
+                @if (planSummary().length) {
+                  @for (line of planSummary(); track $index) {
+                    <p>{{ line }}</p>
+                  }
+                } @else {
+                  <p class="muted">Registre el diagnóstico y el plan en los módulos de Diagnóstico y Plan de tratamiento.</p>
                 }
               </div>
-            }
-          }
+            </section>
+            <section class="odg-card">
+              <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3 H15 L19 7 V21 H5 Z M8 10 H16 M8 14 H16 M8 18 H13" /></svg>Notas</h4>
+              <textarea
+                class="odg-card-body"
+                rows="3"
+                [ngModel]="data().odontogramNotes"
+                (ngModelChange)="setOdontogramNotes($event)"
+                [readonly]="disabled()"
+                placeholder="Observaciones generales del odontograma…"
+              ></textarea>
+            </section>
+            <section class="odg-card">
+              <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18 H15 M10 21 H14 M12 3 C8 3 6 6 6 9 C6 12 9 13 9 16 H15 C15 13 18 12 18 9 C18 6 16 3 12 3 Z" /></svg>Leyenda adicional</h4>
+              <ul class="odg-extra">
+                <li><span class="chk ok">✓</span><b>CIE-10:</b> diagnóstico principal y secundarios</li>
+                <li><span class="chk ok">✓</span><b>CUPS:</b> procedimientos del plan de tratamiento</li>
+                <li><span class="chk warn">●</span>Observaciones de ortodoncia (movimientos, controles)</li>
+                <li><span class="chk info">●</span>Seguimiento y evolución</li>
+              </ul>
+            </section>
+          </div>
         </div>
 
         <aside class="odg-side">
           <section>
             <h4>Convenciones</h4>
             <ul class="odg-legend">
-              @for (t of legend; track t.key) {
-                <li><span class="dot" [style.background]="t.color"></span>{{ t.label }}</li>
+              @for (item of legend; track item.label) {
+                <li>
+                  <span class="odg-ico">
+                    @switch (item.icon) {
+                      @case ('dot') {
+                        <span class="lg-dot" [style.background]="item.color" [style.box-shadow]="'0 0 0 3px ' + item.color + '33'"></span>
+                      }
+                      @case ('x') {
+                        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5" [attr.fill]="item.color + '33'" [attr.stroke]="item.color" stroke-width="1.4" /><path d="M6.5 6.5 L13.5 13.5 M13.5 6.5 L6.5 13.5" [attr.stroke]="item.color" stroke-width="1.8" stroke-linecap="round" /></svg>
+                      }
+                      @case ('triangle') {
+                        <svg viewBox="0 0 20 20"><path d="M10 3 L18 17 H2 Z" fill="none" [attr.stroke]="item.color" stroke-width="1.6" stroke-linejoin="round" /></svg>
+                      }
+                      @case ('bracket') {
+                        <svg viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="10" rx="2.5" [attr.fill]="item.color" /><path d="M3 10 H17" stroke="#dbeafe" stroke-width="1.6" /></svg>
+                      }
+                      @case ('band') {
+                        <svg viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="10" rx="2" fill="none" [attr.stroke]="item.color" stroke-width="2.2" /><path d="M7 10 H13" [attr.stroke]="item.color" stroke-width="2" /></svg>
+                      }
+                      @case ('wire') {
+                        <svg viewBox="0 0 20 20"><path d="M1 10 H19" [attr.stroke]="item.color" stroke-width="2" /><circle cx="5" cy="10" r="2" [attr.fill]="item.color" /><circle cx="15" cy="10" r="2" [attr.fill]="item.color" /></svg>
+                      }
+                      @case ('ring') {
+                        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5" fill="none" [attr.stroke]="item.color" stroke-width="2.2" /></svg>
+                      }
+                      @case ('wave') {
+                        <svg viewBox="0 0 20 20"><path d="M1 10 q2.25 -5 4.5 0 t4.5 0 t4.5 0 t4.5 0" fill="none" [attr.stroke]="item.color" stroke-width="2" /></svg>
+                      }
+                      @case ('bolt') {
+                        <svg viewBox="0 0 20 20"><path d="M11.5 1.5 L4.5 11 H9.5 L8 18.5 L15.5 8.5 H10.5 Z" [attr.fill]="item.color" /></svg>
+                      }
+                      @case ('star') {
+                        <svg viewBox="0 0 20 20"><path d="M10 1.8 L12.4 7 L18 7.6 L13.8 11.4 L15 17 L10 14.1 L5 17 L6.2 11.4 L2 7.6 L7.6 7 Z" [attr.fill]="item.color" /></svg>
+                      }
+                    }
+                  </span>
+                  {{ item.label }}
+                </li>
               }
-              <li><span class="dot wire"></span>Arco ortodóntico</li>
             </ul>
           </section>
           @if (!disabled()) {
@@ -538,7 +635,6 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                 }
               </div>
               @if (mode() === 'PAINT') {
-                <p class="odg-hint">Elija qué pintar y toque el diente o la superficie:</p>
                 <div class="odg-palette">
                   @for (t of allTools; track t.key) {
                     <button
@@ -551,7 +647,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                     ></button>
                   }
                 </div>
-                <p class="odg-hint strong">{{ toolLabel(paintTool()) }}</p>
+                <p class="odg-hint strong">Pintando: {{ toolLabel(paintTool()) }}</p>
               } @else {
                 <p class="odg-hint">{{ modeHint() }}</p>
               }
@@ -559,9 +655,11 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
           }
           <section>
             <h4>Tipos de vista</h4>
-            <div class="odg-tools two">
+            <div class="odg-tools">
               @for (v of views; track v.key) {
-                <button type="button" class="odg-tool" [class.on]="view() === v.key" (click)="view.set(v.key)">{{ v.label }}</button>
+                <button type="button" class="odg-tool" [class.on]="view() === v.key" (click)="view.set(v.key)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="v.icon" /></svg>{{ v.label }}
+                </button>
               }
             </div>
             <div class="odg-seg">
@@ -569,22 +667,38 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                 <button type="button" [class.on]="dentition() === d.key" (click)="dentition.set(d.key)">{{ d.label }}</button>
               }
             </div>
-          </section>
-          <section>
-            <h4>Arco ortodóntico</h4>
+            <label class="odg-check">
+              <input type="checkbox" [checked]="showSurfaces()" (change)="showSurfaces.set($any($event.target).checked)" />
+              Mostrar cuadros de superficies
+            </label>
             <label class="odg-check">
               <input type="checkbox" [checked]="data().orthoArches.upper" [disabled]="disabled()" (change)="toggleArch('upper', $any($event.target).checked)" />
-              Arcada superior
+              Arco ortodóntico superior
             </label>
             <label class="odg-check">
               <input type="checkbox" [checked]="data().orthoArches.lower" [disabled]="disabled()" (change)="toggleArch('lower', $any($event.target).checked)" />
-              Arcada inferior
+              Arco ortodóntico inferior
             </label>
+          </section>
+          <section>
+            <h4>Acciones</h4>
+            <div class="odg-actions">
+              @if (!disabled()) {
+                <button type="button" class="odg-action primary" (click)="onSave()">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3 H16 L21 8 V21 H3 V3 Z M7 3 V9 H15 V3 M7 21 V14 H17 V21" /></svg>
+                  {{ savedFlash() ? 'Guardado ✓' : 'Guardar' }}
+                </button>
+              }
+              <button type="button" class="odg-action" (click)="print()">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8 V3 H17 V8 M6 17 H3 V9 H21 V17 H18 M7 14 H17 V21 H7 Z" /></svg>
+                Imprimir
+              </button>
+            </div>
           </section>
         </aside>
       </div>
 
-      <footer class="odg-summary">
+      <div class="odg-summary">
         <span class="odg-cop" title="Dientes cariados, obturados y perdidos (permanentes)">
           <strong>COP-D</strong> C {{ cop().c }} · O {{ cop().o }} · P {{ cop().p }} = {{ cop().c + cop().o + cop().p }}
         </span>
@@ -596,118 +710,167 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
         @for (c of counts(); track c.label) {
           <span class="odg-count"><span class="dot" [style.background]="c.color"></span>{{ c.label }}: {{ c.value }}</span>
         }
+      </div>
+
+      <footer class="odg-foot">
+        <span class="odg-foot-brand">
+          <svg viewBox="0 0 40 44" aria-hidden="true"><path [attr.d]="logoPath" fill="none" stroke="#fff" stroke-width="2.4" /></svg>
+          Odontología y Ortodoncia <i>|</i> Precisión en cada detalle
+        </span>
+        <em>Tu sonrisa, nuestro propósito</em>
       </footer>
     </div>
   `,
   styles: `
-    :host { display: block; --odg-ink: #0b5563; --odg-accent: #0d9488; --odg-soft: #e6f5f3; --odg-line: #cfe6e3; }
+    :host { display: block; container-type: inline-size; --ink: #0b3a6e; --ink2: #10306b; --soft: #eaf2fb; --line: #d5e2f0; --bg: #f1f6fb; }
     .odg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
-    .odg { border: 1px solid var(--odg-line); border-radius: 18px; background: #fff; overflow: hidden; box-shadow: 0 10px 30px rgba(11, 85, 99, 0.08); }
-    .odg-head { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; padding: 14px 18px; background: linear-gradient(120deg, #0b5563 0%, #0d9488 100%); color: #fff; }
-    .odg-brand { display: flex; gap: 12px; align-items: center; }
-    .odg-brand svg { width: 38px; height: 42px; padding: 6px; border-radius: 12px; background: rgba(255, 255, 255, 0.16); box-sizing: content-box; }
-    .odg-brand strong { display: block; font-size: 21px; letter-spacing: 0.08em; line-height: 1; }
-    .odg-brand span { font-size: 12px; opacity: 0.85; }
-    .odg-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 0; }
-    .odg-meta dt { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8; }
-    .odg-meta dd { margin: 3px 0 0; font-size: 12.5px; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); min-width: 80px; }
-    .odg-body { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 14px; padding: 14px; background: #f6fbfa; }
-    .odg-main { position: relative; overflow-x: auto; padding: 10px 8px 14px; background: radial-gradient(ellipse at 50% 50%, #ffffff 0%, #f9fcfc 70%); border: 1px solid var(--odg-line); border-radius: 14px; }
-    .odg-jaw { display: inline-flex; margin: 2px 0 6px 6px; padding: 4px 12px; border-radius: 999px; background: var(--odg-soft); color: var(--odg-ink); font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; line-height: 1.25; }
-    .odg-jaw br { display: none; }
-    .odg-jaw.bottom { margin-top: 6px; }
-    .odg-row { display: flex; justify-content: center; align-items: flex-end; gap: 0; min-width: max-content; margin: 0 auto; }
+    .odg { position: relative; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: linear-gradient(160deg, #f7fafd 0%, #eaf1f8 100%); box-shadow: 0 12px 34px rgba(11, 58, 110, 0.1); color: #1e293b; }
+    .odg-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px 28px; padding: 16px 22px; background: rgba(255, 255, 255, 0.75); border-bottom: 1px solid var(--line); }
+    .odg-brand { display: flex; gap: 12px; align-items: center; padding-right: 26px; border-right: 1px solid var(--line); }
+    .odg-brand svg { width: 42px; height: 46px; }
+    .odg-brand strong { display: block; font-size: 30px; font-weight: 800; letter-spacing: 0.02em; color: var(--ink); line-height: 1; }
+    .odg-brand span { display: block; margin-top: 4px; font-size: 14px; color: var(--ink); }
+    .odg-brand i, .odg-foot i { font-style: normal; opacity: 0.5; margin: 0 6px; }
+    .odg-meta { display: flex; flex-wrap: wrap; gap: 10px 14px; margin: 0; }
+    .odg-meta div { min-width: 110px; }
+    .odg-meta div.wide { min-width: 180px; }
+    .odg-meta dt { font-size: 12px; font-weight: 700; color: var(--ink); }
+    .odg-meta dd { margin: 4px 0 0; font-size: 13px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; background: #fff; box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04); }
+    .odg-tagline { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 17px; line-height: 1.2; color: var(--ink); text-align: right; }
+    .odg-body { display: grid; grid-template-columns: minmax(0, 1fr) 285px; gap: 14px; padding: 14px; }
+    .odg-left { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .odg-main { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; overflow-x: auto; padding: 14px 10px; background: rgba(255, 255, 255, 0.82); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 4px 16px rgba(11, 58, 110, 0.05); }
+    .odg-chart { position: relative; width: max-content; min-width: 100%; margin: 0 auto; padding: 0 104px; box-sizing: border-box; }
+    .odg-chart::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; border-left: 2px dashed #9ec1e6; pointer-events: none; }
+    .odg-jaw { position: absolute; left: -96px; top: 50%; transform: translateY(-50%); width: 84px; padding: 8px 10px; border-radius: 6px; background: linear-gradient(90deg, #dbe8f6, #eef4fb); color: var(--ink); font-size: 11.5px; font-weight: 800; line-height: 1.25; letter-spacing: 0.02em; }
+    .odg-row { position: relative; display: flex; justify-content: center; align-items: flex-end; min-width: max-content; }
     .odg-row:not(.upper) { align-items: flex-start; }
-    .odg-row.small { margin: 6px auto; }
-    .odg-tooth { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 2px 0; border-radius: 12px; transition: background 0.15s; }
-    .odg-tooth:hover { background: rgba(13, 148, 136, 0.06); }
-    .odg-tooth.midline { margin-right: 12px; padding-right: 10px; border-right: 2px dashed #99d5cd; border-radius: 12px 0 0 12px; }
-    .odg-tooth.selected { background: rgba(13, 148, 136, 0.12); }
-    .odg-svg { cursor: pointer; display: block; transition: transform 0.15s ease; }
-    .odg-crown { filter: drop-shadow(0 1.2px 1.2px rgba(71, 52, 20, 0.22)); }
-    .odg-tooth:hover .odg-svg { transform: translateY(-1px) scale(1.03); }
-    .odg-gum { opacity: 0.95; }
-    .odg-gum-line { stroke: #d9707f; stroke-width: 0.8; }
-    .odg-shine { stroke: rgba(255, 255, 255, 0.85); stroke-width: 1.6; stroke-dasharray: 18 400; stroke-dashoffset: -6; stroke-linecap: round; }
-    .odg-glow { fill: rgba(45, 212, 191, 0.18); stroke: rgba(13, 148, 136, 0.55); stroke-width: 1; stroke-dasharray: 3 2; }
-    .odg-num { border: 1px solid transparent; background: none; font-size: 11.5px; font-weight: 700; color: #475569; cursor: pointer; padding: 1px 6px; border-radius: 999px; line-height: 1.4; }
-    .odg-num.marked { color: var(--odg-ink); background: var(--odg-soft); }
-    .odg-num.on { background: var(--odg-accent); color: #fff; }
-    .odg-square { width: 26px; height: 26px; cursor: pointer; filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.08)); }
-    .odg-square.small { width: 20px; height: 20px; }
-    .odg-square.big { width: 150px; height: 150px; filter: none; }
-    .odg-square polygon { transition: opacity 0.12s; }
+    .odg-row.small { margin: 6px 0; }
+    .odg-tooth { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 2px 1px; border-radius: 50%; }
+    .odg-tooth.midline { margin-right: 26px; }
+    .odg-tooth.selected::before { content: ''; position: absolute; left: 50%; top: 50%; width: 92px; height: 92px; transform: translate(-50%, -42%); border-radius: 50%; background: radial-gradient(circle, rgba(74, 222, 128, 0.45) 0%, rgba(74, 222, 128, 0.22) 50%, rgba(74, 222, 128, 0) 72%); box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25); pointer-events: none; }
+    .odg-row:not(.upper) .odg-tooth.selected::before { transform: translate(-50%, -58%); }
+    .odg-svg { position: relative; cursor: pointer; display: block; transition: transform 0.15s ease; }
+    .odg-tooth:hover .odg-svg { transform: scale(1.04); }
+    .odg-crown { filter: drop-shadow(0 1.5px 1.5px rgba(60, 45, 20, 0.22)); }
+    .odg-shine { stroke: rgba(255, 255, 255, 0.95); stroke-width: 1.8; stroke-dasharray: 16 400; stroke-dashoffset: -8; stroke-linecap: round; }
+    .odg-num { position: relative; width: 30px; height: 30px; border: none; border-radius: 50%; background: none; font-size: 14px; font-weight: 600; color: #334155; cursor: pointer; padding: 0; }
+    .odg-num.marked { color: var(--ink); font-weight: 800; }
+    .odg-num.on { background: #4ade80; color: #fff; font-weight: 800; box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.3); }
+    .odg-square { width: 24px; height: 24px; cursor: pointer; }
+    .odg-square.small { width: 19px; height: 19px; }
+    .odg-square.big { width: 150px; height: 150px; }
     .odg-square polygon:hover { opacity: 0.7; }
     .sq-l { font-size: 4.2px; font-weight: 700; fill: #334155; text-anchor: middle; pointer-events: none; }
-    .odg-occlusal { display: flex; justify-content: space-between; gap: 12px; margin: 10px 0; padding: 6px 0; min-width: max-content; border-top: 1px dashed var(--odg-line); border-bottom: 1px dashed var(--odg-line); }
-    .odg-occlusal.large { justify-content: center; gap: 30px; border: none; }
-    .odg-arch { display: flex; flex-direction: column; align-items: center; }
-    .odg-arch svg { width: 210px; height: 131px; }
+    .odg-occlusal { position: relative; display: flex; align-items: center; justify-content: center; gap: 28px; margin: 14px 0; }
+    .odg-occlusal.large { gap: 40px; margin: 24px 0; }
+    .odg-arch svg { display: block; width: 230px; height: 144px; overflow: visible; }
     .odg-occlusal.large .odg-arch svg { width: 360px; height: 225px; }
-    .odg-arch-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; color: var(--odg-ink); background: var(--odg-soft); border-radius: 999px; padding: 3px 12px; }
+    .odg-arch-label { padding: 8px 14px; border-radius: 6px; background: linear-gradient(90deg, #dbe8f6, #eef4fb); color: var(--ink); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; text-align: center; max-width: 110px; }
     .odg-occ-tooth { cursor: pointer; }
-    .odg-occ-num { font-size: 7px; fill: var(--odg-ink); font-weight: 700; pointer-events: none; }
+    .odg-occ-tooth:hover ellipse:first-child { stroke: var(--ink); stroke-width: 1.8; }
+    .odg-occ-num { font-size: 7px; fill: var(--ink); font-weight: 700; pointer-events: none; }
 
-    .odg-pop-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(15, 42, 48, 0.12); }
-    .odg-pop { position: fixed; z-index: 1001; width: 480px; max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow-y: auto; box-sizing: border-box; background: #fff; border: 1px solid var(--odg-line); border-radius: 16px; box-shadow: 0 24px 60px rgba(11, 85, 99, 0.28); padding: 0 18px 16px; animation: odg-pop-in 0.14s ease-out; }
+    .odg-pop-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(11, 58, 110, 0.08); }
+    .odg-pop { position: fixed; z-index: 1001; width: 480px; max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow-y: auto; box-sizing: border-box; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 22px 55px rgba(11, 58, 110, 0.25); padding: 16px 18px; animation: odg-pop-in 0.14s ease-out; }
     @keyframes odg-pop-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
-    .odg-pop-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 10px; margin: 0 -18px 10px; padding: 14px 18px; background: linear-gradient(120deg, #0b5563, #0d9488); color: #fff; border-radius: 15px 15px 0 0; }
-    .odg-pop-head strong { font-size: 18px; }
-    .odg-pop-head span { font-size: 13px; opacity: 0.9; flex: 1; }
-    .odg-x { border: none; background: rgba(255, 255, 255, 0.18); color: #fff; width: 32px; height: 32px; border-radius: 50%; font-size: 22px; line-height: 1; cursor: pointer; }
-    .odg-x:hover { background: rgba(255, 255, 255, 0.3); }
-    .odg-pop-sum { margin: 0 0 10px; padding: 8px 12px; font-size: 13px; color: var(--odg-ink); background: var(--odg-soft); border-radius: 10px; }
-    .odg-pop-title { margin: 14px 0 8px; font-size: 12px; font-weight: 700; color: var(--odg-ink); text-transform: uppercase; letter-spacing: 0.05em; }
+    .odg-pop-head { display: flex; align-items: center; gap: 12px; }
+    .odg-pop-num { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #4ade80; color: #fff; font-weight: 800; font-size: 16px; box-shadow: 0 0 0 5px rgba(74, 222, 128, 0.25); flex: none; }
+    .odg-pop-head div { flex: 1; }
+    .odg-pop-head strong { display: block; font-size: 18px; color: var(--ink); }
+    .odg-pop-head span { font-size: 13px; color: #64748b; }
+    .odg-x { border: none; background: #f1f5f9; color: #475569; width: 32px; height: 32px; border-radius: 50%; font-size: 22px; line-height: 1; cursor: pointer; }
+    .odg-x:hover { background: #e2e8f0; }
+    .odg-pop-sum { margin: 12px 0; padding: 8px 12px; font-size: 13px; color: var(--ink); background: var(--soft); border-radius: 8px; }
+    .odg-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; }
+    .odg-quick-btn { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border: none; border-radius: 8px; background: none; font-size: 14px; font-weight: 600; color: #1e293b; cursor: pointer; text-align: left; }
+    .odg-quick-btn:hover { background: var(--soft); }
+    .odg-quick-btn.on { background: var(--soft); color: var(--ink); }
+    .odg-quick-btn svg { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; flex: none; }
+    .odg-pop-title { margin: 14px 0 8px; font-size: 12px; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: 0.05em; }
     .odg-pop-title span { margin-left: 6px; font-weight: 500; text-transform: none; letter-spacing: 0; color: #64748b; }
     .odg-pop-surfaces { display: flex; gap: 16px; align-items: center; }
     .odg-pop-surfaces .odg-chips { flex: 1; grid-template-columns: 1fr; }
     .odg-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 6px; }
-    .odg-chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #d5e5e3; background: #fff; border-radius: 10px; padding: 8px 12px; font-size: 13px; text-align: left; cursor: pointer; color: #1e293b; transition: border-color 0.12s, background 0.12s; }
-    .odg-chip:hover { border-color: #8fcfc6; background: #f5fbfa; }
-    .odg-chip.on { border-color: var(--odg-accent); background: var(--odg-soft); font-weight: 600; box-shadow: inset 0 0 0 1px var(--odg-accent); }
+    .odg-chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 8px 12px; font-size: 13px; text-align: left; cursor: pointer; color: #1e293b; }
+    .odg-chip:hover { border-color: #9ec1e6; background: #f6f9fd; }
+    .odg-chip.on { border-color: var(--ink); background: var(--soft); font-weight: 600; box-shadow: inset 0 0 0 1px var(--ink); }
     .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(15, 23, 42, 0.2); flex: none; }
     .odg-chip .dot { width: 14px; height: 14px; }
-    .dot.wire { border-radius: 2px; height: 3px; border: none; background: #1e3a8a; }
-    .odg-note { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; font-size: 12px; font-weight: 700; color: var(--odg-ink); text-transform: uppercase; letter-spacing: 0.05em; }
-    .odg-note input { font: inherit; font-size: 14px; font-weight: 400; text-transform: none; letter-spacing: 0; border: 1px solid #d5e5e3; border-radius: 10px; padding: 10px 12px; }
-    .odg-note input:focus { outline: none; border-color: var(--odg-accent); box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15); }
+    .odg-note { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; font-size: 12px; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: 0.05em; }
+    .odg-note input { font: inherit; font-size: 14px; font-weight: 400; text-transform: none; letter-spacing: 0; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+    .odg-note input:focus, .odg-card textarea:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(11, 58, 110, 0.12); }
     .odg-pop-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
-    .odg-link { border: none; background: none; cursor: pointer; font-size: 13px; text-decoration: underline; color: var(--odg-ink); padding: 0; }
+    .odg-link { border: none; background: none; cursor: pointer; font-size: 13px; text-decoration: underline; color: var(--ink); padding: 0; }
     .odg-link.danger { color: #b91c1c; }
-    .odg-btn { border: none; background: var(--odg-accent); color: #fff; border-radius: 10px; padding: 9px 22px; font-size: 14px; cursor: pointer; font-weight: 600; }
-    .odg-btn:hover { background: #0b7d73; }
+    .odg-btn { border: none; background: var(--ink); color: #fff; border-radius: 8px; padding: 9px 22px; font-size: 14px; cursor: pointer; font-weight: 600; }
+
+    .odg-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .odg-card { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: rgba(255, 255, 255, 0.85); border: 1px solid var(--line); border-radius: 12px; }
+    .odg-card h4, .odg-side h4 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 12.5px; font-weight: 800; color: var(--ink); text-transform: uppercase; letter-spacing: 0.04em; }
+    .odg-card h4 svg { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+    .odg-card-body { flex: 1; min-height: 70px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font: inherit; font-size: 13px; color: #1e293b; resize: vertical; box-sizing: border-box; }
+    .odg-card-body p { margin: 0 0 4px; }
+    .odg-card-body .muted { color: #64748b; font-size: 12.5px; }
+    .odg-extra { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; }
+    .odg-extra li { display: flex; align-items: center; gap: 8px; }
+    .chk { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; color: #fff; flex: none; }
+    .chk.ok { background: #0e9f6e; }
+    .chk.warn { background: #f5b301; }
+    .chk.info { background: #3b82f6; }
 
     .odg-side { display: flex; flex-direction: column; gap: 12px; }
-    .odg-side section { border: 1px solid var(--odg-line); border-radius: 14px; padding: 12px; background: #fff; }
-    .odg-side h4 { margin: 0 0 10px; font-size: 11.5px; color: var(--odg-ink); text-transform: uppercase; letter-spacing: 0.06em; }
-    .odg-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; font-size: 11.5px; color: #1e293b; }
-    .odg-legend li { display: flex; align-items: center; gap: 6px; }
-    .odg-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .odg-tool { display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--odg-line); background: #fff; border-radius: 10px; padding: 7px 4px; font-size: 11.5px; cursor: pointer; color: var(--odg-ink); transition: background 0.12s; }
-    .odg-tool:hover { background: #f2faf9; }
-    .odg-tool svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
-    .odg-tool.on { background: var(--odg-accent); color: #fff; border-color: var(--odg-accent); }
-    .odg-hint { margin: 8px 0 4px; font-size: 11.5px; color: #64748b; }
-    .odg-hint.strong { color: var(--odg-ink); font-weight: 700; margin-top: 6px; }
-    .odg-palette { display: flex; flex-wrap: wrap; gap: 6px; }
-    .odg-swatch { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #cbd5e1; cursor: pointer; transition: transform 0.12s; }
+    .odg-side section { display: flex; flex-direction: column; gap: 10px; padding: 12px; background: rgba(255, 255, 255, 0.85); border: 1px solid var(--line); border-radius: 12px; }
+    .odg-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 9px 8px; font-size: 12px; color: #1e293b; }
+    .odg-legend li { display: flex; align-items: center; gap: 8px; }
+    .odg-ico { display: grid; place-items: center; width: 20px; height: 20px; flex: none; }
+    .odg-ico svg { width: 20px; height: 20px; }
+    .lg-dot { width: 13px; height: 13px; border-radius: 50%; }
+    .odg-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .odg-tool { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 8px 10px; font-size: 12.5px; cursor: pointer; color: var(--ink); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05); }
+    .odg-tool:hover { background: #f5f9fd; }
+    .odg-tool svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; flex: none; }
+    .odg-tool.on { background: var(--ink2); color: #fff; border-color: var(--ink2); }
+    .odg-hint { margin: 0; font-size: 11.5px; color: #64748b; }
+    .odg-hint.strong { color: var(--ink); font-weight: 700; }
+    .odg-palette { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; padding: 8px; background: #fff; border-radius: 8px; box-shadow: 0 4px 14px rgba(11, 58, 110, 0.12); }
+    .odg-swatch { width: 100%; aspect-ratio: 1; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #cbd5e1; cursor: pointer; padding: 0; }
     .odg-swatch:hover { transform: scale(1.12); }
-    .odg-swatch.on { box-shadow: 0 0 0 2px var(--odg-accent); transform: scale(1.12); }
-    .odg-seg { display: flex; margin-top: 8px; border: 1px solid var(--odg-line); border-radius: 10px; overflow: hidden; }
-    .odg-seg button { flex: 1; border: none; background: #fff; padding: 6px 2px; font-size: 11px; cursor: pointer; color: var(--odg-ink); }
-    .odg-seg button.on { background: var(--odg-soft); font-weight: 700; }
-    .odg-check { display: flex; align-items: center; gap: 6px; font-size: 12px; margin: 3px 0; }
-    .odg-summary { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--odg-line); background: #fff; font-size: 12px; color: #1e293b; }
-    .odg-cop, .odg-count { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #f3f8f8; border: 1px solid #e1eeec; }
-    .odg-cop { background: var(--odg-soft); border-color: #bfe3dd; }
-    .odg-cop strong { color: var(--odg-ink); margin-right: 2px; }
-    @media (max-width: 1100px) {
-      .odg-body { grid-template-columns: 1fr; }
-      .odg-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+    .odg-swatch.on { box-shadow: 0 0 0 2px var(--ink); transform: scale(1.12); }
+    .odg-seg { display: flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+    .odg-seg button { flex: 1; border: none; background: #fff; padding: 6px 2px; font-size: 11.5px; cursor: pointer; color: var(--ink); }
+    .odg-seg button.on { background: var(--soft); font-weight: 700; }
+    .odg-check { display: flex; align-items: center; gap: 6px; font-size: 12px; margin: 0; }
+    .odg-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .odg-action { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+    .odg-action svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+    .odg-action.primary { background: var(--ink2); border-color: var(--ink2); color: #fff; }
+
+    .odg-summary { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 14px 12px; font-size: 12px; }
+    .odg-cop, .odg-count { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #fff; border: 1px solid var(--line); }
+    .odg-cop { background: var(--soft); }
+    .odg-cop strong { color: var(--ink); }
+    .odg-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 22px; background: linear-gradient(90deg, #0b3a6e, #123f7a); color: #fff; font-size: 12.5px; }
+    .odg-foot-brand { display: inline-flex; align-items: center; gap: 12px; }
+    .odg-foot-brand svg { width: 24px; height: 26px; }
+    .odg-foot em { font-family: Georgia, 'Times New Roman', serif; font-size: 16px; }
+    @container (max-width: 1150px) {
+      .odg-head { grid-template-columns: 1fr; }
+      .odg-brand { border-right: none; }
+      .odg-tagline { display: none; }
     }
-    @media (max-width: 560px) {
+    @container (max-width: 980px) {
+      .odg-body { grid-template-columns: 1fr; }
+      .odg-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+      .odg-cards { grid-template-columns: 1fr; }
+    }
+    @container (max-width: 560px) {
       .odg-pop-surfaces { flex-direction: column; align-items: stretch; }
       .odg-square.big { align-self: center; }
+    }
+    @media print {
+      .odg-side, .odg-pop, .odg-pop-backdrop { display: none !important; }
+      .odg-body { grid-template-columns: 1fr; }
     }
   `,
 })
@@ -719,6 +882,8 @@ export class DentalOdontogram implements OnDestroy {
   readonly recordCode = input('');
   readonly recordDate = input('');
   readonly changed = output<void>();
+  /** Pide a la historia guardar el borrador. */
+  readonly save = output<void>();
 
   @ViewChild('mainArea') private mainArea?: ElementRef<HTMLElement>;
 
@@ -730,11 +895,12 @@ export class DentalOdontogram implements OnDestroy {
   readonly conditionTools = CONDITION_TOOLS;
   readonly markTools = MARK_TOOLS;
   readonly allTools = ALL_TOOLS;
-  readonly legend: DentalToolDef[] = ALL_TOOLS;
+  readonly legend = LEGEND;
+  readonly quickActions = QUICK_ACTIONS;
+  readonly logoPath = LOGO_PATH;
+  readonly showSurfaces = signal(false);
+  readonly savedFlash = signal(false);
   readonly screwLines = [16, 24, 32, 40, 48];
-  /** Encía (mismo trazo para todas las piezas; la mandíbula se refleja). */
-  readonly gumPath = 'M-20 41 H70 V65 C46 65 38 55 25 55 C12 55 4 65 -20 65 Z';
-  readonly gumEdge = 'M-20 65 C4 65 12 55 25 55 C38 55 46 65 70 65';
   private popAnchor: Element | null = null;
 
   readonly mode = signal<Mode>('SELECT');
@@ -769,7 +935,7 @@ export class DentalOdontogram implements OnDestroy {
     const view = this.view();
     const dentition = this.dentition();
     const temporal = dentition === 'TEMPORAL';
-    const out: Array<{ label: string; guide: string; teeth: Array<{ tooth: number; x: number; y: number; r: number; labelY: number }> }> = [];
+    const out: Array<{ label: string; teeth: Array<{ tooth: number; x: number; y: number; r: number; a: number; labelY: number }> }> = [];
     if (view !== 'MANDIBULA') {
       out.push(this.buildArch('Vista oclusal superior', temporal ? DECIDUOUS_UPPER : PERMANENT_UPPER, true));
     }
@@ -971,7 +1137,71 @@ export class DentalOdontogram implements OnDestroy {
   crownStroke(tooth: number) {
     if (this.has(tooth, 'PROTESIS')) return '#16a34a';
     if (this.has(tooth, 'CORONA')) return '#8e24aa';
-    return '#b59b6a';
+    return '#b9a07a';
+  }
+
+  quickActive(tooth: number, key: QuickKey) {
+    const rec = this.record(tooth);
+    if (key === 'BRACKET') return !!rec?.marks?.includes('BRACKET');
+    if (key === 'NOTE') return !!(rec?.note || '').trim();
+    return !!rec?.surfaces && Object.values(rec.surfaces).includes(key);
+  }
+
+  quick(tooth: number, key: QuickKey) {
+    if (key === 'BRACKET') this.toggleMark(tooth, 'BRACKET');
+    else if (key === 'NOTE') {
+      document.querySelector<HTMLInputElement>('.odg-pop .odg-note input')?.focus();
+    } else {
+      this.popSurfaceTool.set(key);
+      this.toggleSurfaceBySurface(tooth, 'O', key);
+    }
+  }
+
+  /** Diagnóstico principal y procedimientos del plan, para la tarjeta inferior. */
+  planSummary(): string[] {
+    this.version();
+    const d = this.data();
+    const lines: string[] = [];
+    const dx = d.diagnoses.filter((r) => r.cieCode.trim() || r.description.trim());
+    if (dx.length) lines.push(`Dx: ${[dx[0].cieCode, dx[0].description].filter((v) => v.trim()).join(' ')}`);
+    const plan = d.treatmentPlan.filter((r) => r.description.trim() && r.status !== 'CANCELADO');
+    for (const r of plan.slice(0, 4)) lines.push(`• ${r.description.trim()}${r.tooth ? ` (pza ${r.tooth})` : ''}`);
+    if (plan.length > 4) lines.push(`… y ${plan.length - 4} procedimiento(s) más`);
+    return lines;
+  }
+
+  setOdontogramNotes(value: string) {
+    if (this.disabled()) return;
+    this.data().odontogramNotes = value;
+    this.changed.emit();
+  }
+
+  onSave() {
+    this.save.emit();
+    this.savedFlash.set(true);
+    setTimeout(() => this.savedFlash.set(false), 2200);
+  }
+
+  /** Imprime solo el odontograma en una ventana aparte. */
+  print() {
+    const el = this.mainArea?.nativeElement.closest('.odg');
+    if (!el) return;
+    const win = window.open('', '_blank', 'width=1200,height=900');
+    if (!win) return;
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((n) => n.outerHTML)
+      .join('');
+    win.document.write(
+      `<!doctype html><html><head><meta charset="utf-8"><title>Odontograma</title>${styles}` +
+        `<style>body{margin:16px;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}` +
+        `.odg-side,.odg-pop,.odg-pop-backdrop{display:none!important}.odg-body{grid-template-columns:1fr!important}</style>` +
+        `</head><body>${el.outerHTML}</body></html>`,
+    );
+    win.document.close();
+    win.onload = () => {
+      win.focus();
+      win.print();
+    };
   }
 
   occlusalFill(tooth: number) {
@@ -1013,14 +1243,13 @@ export class DentalOdontogram implements OnDestroy {
       const theta = Math.PI - (mid / total) * Math.PI;
       const x = cx + rx * Math.cos(theta);
       const y = upper ? cy - ry * Math.sin(theta) : cy + ry * Math.sin(theta);
-      const r = 5.2 * widths[i];
+      const r = 6.9 * widths[i];
       const labelY = upper ? y + r + 7 : y - r - 2.5;
-      return { tooth, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, r, labelY };
+      const deg = (theta * 180) / Math.PI;
+      const a = Math.round(upper ? 90 - deg : deg - 90);
+      return { tooth, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, r, a, labelY };
     });
-    const guide = upper
-      ? `M ${cx - rx} ${cy} A ${rx} ${ry} 0 0 1 ${cx + rx} ${cy}`
-      : `M ${cx - rx} ${cy} A ${rx} ${ry} 0 0 0 ${cx + rx} ${cy}`;
-    return { label, guide, teeth: points };
+    return { label, teeth: points };
   }
 
   setMode(mode: Mode) {
@@ -1154,7 +1383,7 @@ export class DentalOdontogram implements OnDestroy {
     this.toggleSurfaceBySurface(tooth, this.surfaceAt(tooth, pos), state);
   }
 
-  private toggleSurfaceBySurface(tooth: number, surface: ToothSurface, state: SurfaceState) {
+  toggleSurfaceBySurface(tooth: number, surface: ToothSurface, state: SurfaceState) {
     if (this.disabled()) return;
     const rec = this.copy(tooth);
     if (rec.conditions?.includes('AUSENTE')) return;
