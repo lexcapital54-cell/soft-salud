@@ -2396,6 +2396,13 @@
                   <p class="muted small">
                     Análisis facial, intraoral y oclusión{{ showOrthoSpecialistFields() ? ', cefalometría, análisis de modelos, diagnóstico y planificación del tratamiento.' : ', medidas y diagnóstico.' }}
                   </p>
+                  @if (!isLocked()) {
+                    <p class="banner tip">
+                      Al firmar y sellar esta historia inicial se habilita el panel de controles de ortodoncia:
+                      línea de tiempo de citas, control rápido con procedimientos y CUPS, comparación de fotos
+                      antes / después, notas de corrección y aclaratorias, cierre de tratamiento y epicrisis en PDF.
+                    </p>
+                  }
                   <h4 class="odo-sub">Análisis facial</h4>
                   <p class="muted small">
                     Del examen extraoral:
@@ -2471,7 +2478,7 @@
                   </p>
                   @if (showOrthoSpecialistFields()) {
                     <h4 class="odo-sub">Análisis cefalométrico</h4>
-                    <details class="ceph-details" [open]="!!dental().orthodontics.cephTracing.attachmentId">
+                    <details class="ceph-details" [open]="isOrthoClinic() || !!dental().orthodontics.cephTracing.attachmentId">
                       <summary>
                         Trazado cefalométrico sobre la radiografía lateral
                         @if (dental().orthodontics.cephTracing.tracedAt) {
