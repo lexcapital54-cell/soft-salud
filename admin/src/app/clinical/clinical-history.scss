@@ -462,6 +462,128 @@ button:disabled {
   cursor: pointer;
 }
 
+.ceph-details {
+  margin: 4px 0 12px;
+}
+
+.ceph-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #00576a;
+  margin-bottom: 8px;
+}
+
+.ortho-track {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ortho-track > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.ortho-controls-wrap {
+  overflow-x: auto;
+}
+
+.ortho-controls {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.ortho-controls th,
+.ortho-controls td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #edf2f7;
+  text-align: left;
+  vertical-align: top;
+}
+
+.ortho-controls th {
+  color: #475569;
+  font-weight: 600;
+  background: #f8fafc;
+  white-space: nowrap;
+}
+
+.ortho-history-toggle {
+  display: inline-block;
+  margin-top: 10px;
+}
+
+.ortho-history {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ortho-history li {
+  border-left: 3px solid #9ccfd8;
+  padding: 4px 10px;
+  background: #fbfdfe;
+}
+
+.ortho-history-head {
+  margin: 0 0 2px;
+  font-size: 0.8rem;
+}
+
+.ortho-history-change {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #334155;
+}
+
+.ortho-history-change span {
+  color: #64748b;
+  margin-right: 4px;
+}
+
+.ortho-history-change del {
+  color: #b42318;
+}
+
+.ortho-history-change ins {
+  color: #0f7a4b;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ortho-control-form {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid #c5dde0;
+  border-radius: 12px;
+  background: #f5fafb;
+}
+
+.ortho-control-title {
+  margin: 0 0 8px;
+  font-weight: 700;
+  color: #00576a;
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.ortho-control-title .linkish {
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
 input.measure-invalid {
   border-color: #d92d20 !important;
   background: #fff5f5;

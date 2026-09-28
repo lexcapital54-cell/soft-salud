@@ -19,6 +19,7 @@ import {
   SivigilaSummary,
 } from './clinical.models';
 import { ConsentTemplate, PatientConsentRecord } from './consent.models';
+import { OrthoControl, OrthoHistoryEntry } from './dentistry/ortho-controls';
 import { API } from '../api.config';
 
 @Injectable({ providedIn: 'root' })
@@ -174,9 +175,15 @@ export class ClinicalApiService {
       currentSituation?: string;
       clinicalAttentionDate?: string;
       signatureBase64?: string;
+      orthoControl?: OrthoControl;
     },
   ) {
     return this.http.post<Encounter>(`${API}/clinical-records/${encounterId}/evolutions`, body);
+  }
+
+  /** Quién y cuándo cambió el diagnóstico, el plan y la fase de ortodoncia. */
+  orthoHistory(encounterId: string) {
+    return this.http.get<OrthoHistoryEntry[]>(`${API}/encounters/${encounterId}/ortho-history`);
   }
 
   lastCurrentSituation(patientId: string) {

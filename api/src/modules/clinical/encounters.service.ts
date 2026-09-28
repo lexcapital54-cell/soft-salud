@@ -27,8 +27,16 @@ import { missingProfileFields } from './patient-profile';
 import { ProfessionalSignatureService } from './professional-signature.service';
 import { RdaExportService } from './rda-export.service';
 import {
+  ORTHO_PLAN_AUDIT_ENTITY,
+  OrthoHistoryEntry,
+  OrthoPlanChange,
+  coalesceOrthoHistory,
+  diffOrthoPlan,
+} from './ortho-plan-audit';
+import {
   CreateEncounterDto,
   CreateEvolutionDto,
+  OrthoControlDto,
   SaveClinicalRecordDto,
   SignClinicalRecordDto,
   UpdateAttendanceMetaDto,
@@ -735,6 +743,24 @@ export class EncountersService {
           metadata: { encounterId, autosave: dto.autosave === true },
         },
       });
+
+      const orthoChanges = diffOrthoPlan(existingContent, contentToSave);
+      if (orthoChanges.length) {
+        await tx.auditLog.create({
+          data: {
+            clinicId,
+            userId: user.id,
+            action: 'UPDATE',
+            entityType: ORTHO_PLAN_AUDIT_ENTITY,
+            entityId: encounter.patientId,
+            metadata: {
+              encounterId,
+              clinicalRecordId: encounter.clinicalRecord!.id,
+              changes: orthoChanges,
+            } as unknown as Prisma.InputJsonValue,
+          },
+        });
+      }
     });
 
     // Bitácora de autoguardado fuera de la TX principal: si falla el log,
@@ -1016,6 +1042,10 @@ export class EncountersService {
       clinicalAttentionDate = parsed;
     }
 
+    const orthoControl = dto.orthoControl
+      ? await this.checkOrthoControl(record.id, dto.orthoControl, clinicalAttentionDate)
+      : null;
+
     const contentHash = this.signatures.hash([
       record.id,
       record.contentHash,
@@ -1025,6 +1055,7 @@ export class EncountersService {
       clinicalAttentionDate.toISOString(),
       user.id,
       signedAt.toISOString(),
+      ...(orthoControl ? [JSON.stringify(orthoControl)] : []),
     ]);
 
     await this.prisma.$transaction(async (tx) => {
@@ -1037,6 +1068,7 @@ export class EncountersService {
             note,
             reason,
             currentSituation,
+            ...(orthoControl ? { orthoControl } : {}),
             professionalName: user.fullName,
             professionalCard: user.professionalCard || '',
             signatureBase64,
@@ -1069,6 +1101,151 @@ export class EncountersService {
     });
 
     return this.getOne(user, encounterId);
+  }
+
+  /**
+   * Control de ortodoncia: limpia los campos y valida el orden de los eventos
+   * (instalación → retiro → retención) y la próxima cita.
+   */
+  private async checkOrthoControl(
+    clinicalRecordId: string,
+    dto: OrthoControlDto,
+    attention: Date,
+  ): Promise<Record<string, string>> {
+    const clean: Record<string, string> = { event: dto.event };
+    for (const [k, v] of Object.entries(dto)) {
+      if (k !== 'event' && typeof v === 'string' && v.trim()) clean[k] = v.trim();
+    }
+    const day = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+    const attentionDay = day(attention);
+
+    if (clean.nextAppointment) {
+      const next = new Date(`${clean.nextAppointment}T12:00:00Z`);
+      if (Number.isNaN(next.getTime())) {
+        throw new BadRequestException('Próxima cita: fecha inválida.');
+      }
+      if (clean.nextAppointment <= attentionDay) {
+        throw new BadRequestException('La próxima cita debe ser posterior a la fecha de atención.');
+      }
+      if (next.getTime() - attention.getTime() > 400 * 86_400_000) {
+        throw new BadRequestException('La próxima cita no puede ser a más de un año.');
+      }
+    }
+
+    if (dto.event === 'CONTROL') return clean;
+    const previous = await this.prisma.clinicalEvolution.findMany({
+      where: { clinicalRecordId },
+      select: { content: true, clinicalAttentionDate: true, signedAt: true },
+    });
+    const events = previous
+      .map((ev) => {
+        const control = ((ev.content ?? {}) as Record<string, unknown>).orthoControl as
+          | Record<string, unknown>
+          | undefined;
+        return {
+          event: typeof control?.event === 'string' ? control.event : '',
+          day: day(ev.clinicalAttentionDate ?? ev.signedAt),
+        };
+      })
+      .filter((e) => e.event && e.event !== 'CONTROL')
+      .sort((a, b) => a.day.localeCompare(b.day));
+    const before = events.filter((e) => e.day <= attentionDay);
+    const last = (kind: string) => [...before].reverse().find((e) => e.event === kind);
+    const lastInstall = last('INSTALACION');
+    const lastDebond = last('RETIRO');
+    const active = !!lastInstall && (!lastDebond || lastDebond.day < lastInstall.day);
+    const fmt = (d: string) => d.split('-').reverse().join('/');
+
+    if (dto.event === 'INSTALACION') {
+      if (active) {
+        throw new BadRequestException(
+          `Ya hay una instalación de aparatología activa desde el ${fmt(lastInstall!.day)}. Registre primero el retiro.`,
+        );
+      }
+      const later = events.find((e) => e.day > attentionDay);
+      if (later) {
+        throw new BadRequestException(
+          `Hay un evento de ortodoncia posterior (${fmt(later.day)}); la instalación no puede quedar antes de él.`,
+        );
+      }
+    }
+    if (dto.event === 'RETIRO' && !active) {
+      throw new BadRequestException(
+        'No hay una instalación de aparatología registrada antes de esta fecha: no se puede registrar el retiro.',
+      );
+    }
+    if (dto.event === 'RETENCION' && !lastDebond) {
+      throw new BadRequestException(
+        'La retención empieza después del retiro de la aparatología: registre primero el retiro.',
+      );
+    }
+    return clean;
+  }
+
+  /** Quién y cuándo cambió el diagnóstico, el plan y la fase de ortodoncia del paciente. */
+  async orthoHistory(user: User, encounterId: string): Promise<OrthoHistoryEntry[]> {
+    const clinicId = this.requireClinicId(user);
+    const encounter = await this.prisma.encounter.findFirst({
+      where: { id: encounterId, clinicId },
+      select: {
+        patientId: true,
+        clinicalRecord: {
+          select: {
+            content: true,
+            evolutions: {
+              select: { content: true, clinicalAttentionDate: true, signedAt: true, author: { select: { fullName: true } } },
+              orderBy: [{ clinicalAttentionDate: 'asc' }, { signedAt: 'asc' }],
+            },
+          },
+        },
+      },
+    });
+    if (!encounter) throw new NotFoundException('Encuentro no encontrado');
+
+    const logs = await this.prisma.auditLog.findMany({
+      where: { clinicId, entityType: ORTHO_PLAN_AUDIT_ENTITY, entityId: encounter.patientId },
+      orderBy: { createdAt: 'asc' },
+      take: 2000,
+      select: { createdAt: true, metadata: true, user: { select: { fullName: true } } },
+    });
+    const entries: OrthoHistoryEntry[] = logs.map((l) => ({
+      at: l.createdAt.toISOString(),
+      userName: l.user?.fullName || '—',
+      source: 'HISTORIA',
+      changes: (((l.metadata ?? {}) as Record<string, unknown>).changes as OrthoPlanChange[]) || [],
+    }));
+
+    const eventLabels: Record<string, string> = {
+      INSTALACION: 'Instalación de aparatología',
+      RETIRO: 'Retiro de aparatología',
+      RETENCION: 'Control de retención',
+    };
+    const content = (encounter.clinicalRecord?.content ?? {}) as Record<string, unknown>;
+    const dentistry = (content.dentistry ?? {}) as Record<string, unknown>;
+    let phase = String(((dentistry.orthodontics ?? {}) as Record<string, unknown>).phase ?? '').trim();
+    for (const ev of encounter.clinicalRecord?.evolutions ?? []) {
+      const control = ((ev.content ?? {}) as Record<string, unknown>).orthoControl as
+        | Record<string, string>
+        | undefined;
+      if (!control) continue;
+      const changes: OrthoPlanChange[] = [];
+      if (eventLabels[control.event]) {
+        changes.push({ field: 'event', label: 'Evento', from: '', to: eventLabels[control.event] });
+      }
+      if (control.phase && control.phase !== phase) {
+        changes.push({ field: 'phase', label: 'Fase de tratamiento', from: phase, to: control.phase });
+        phase = control.phase;
+      }
+      if (changes.length) {
+        entries.push({
+          at: (ev.clinicalAttentionDate ?? ev.signedAt).toISOString(),
+          userName: ev.author?.fullName || '—',
+          source: 'CONTROL',
+          changes,
+        });
+      }
+    }
+    return coalesceOrthoHistory(entries);
   }
 
   /** Evita sellar una historia en blanco. */

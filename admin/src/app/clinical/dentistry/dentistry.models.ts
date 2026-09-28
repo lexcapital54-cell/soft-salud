@@ -170,6 +170,23 @@ export const IMAGING_TYPES = [
   'Otros',
 ];
 
+export interface CephPoint {
+  x: number;
+  y: number;
+}
+
+/** Trazado cefalométrico sobre una radiografía lateral (coordenadas en píxeles de la imagen original). */
+export interface CephTracing {
+  attachmentId: string;
+  fileName: string;
+  points: Partial<Record<string, CephPoint>>;
+  tracedAt: string;
+}
+
+export function emptyCephTracing(): CephTracing {
+  return { attachmentId: '', fileName: '', points: {}, tracedAt: '' };
+}
+
 export interface PhotoSlotValue {
   attachmentId: string;
   fileName: string;
@@ -327,6 +344,7 @@ export interface DentistryContent {
       bolton: string;
       archForm: string;
     };
+    cephTracing: CephTracing;
     measurements: string;
     diagnosis: string;
     phase: string;
@@ -613,6 +631,7 @@ export function emptyDentistry(): DentistryContent {
         growthPattern: '',
       },
       models: { upperDiscrepancy: '', lowerDiscrepancy: '', bolton: '', archForm: '' },
+      cephTracing: emptyCephTracing(),
       measurements: '',
       diagnosis: '',
       phase: '',
@@ -731,6 +750,11 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
       intraoral: { ...base.orthodontics.intraoral, ...(ortho.intraoral || {}) },
       cephalometry: { ...base.orthodontics.cephalometry, ...(ortho.cephalometry || {}) },
       models: { ...base.orthodontics.models, ...(ortho.models || {}) },
+      cephTracing: {
+        ...emptyCephTracing(),
+        ...(ortho.cephTracing || {}),
+        points: { ...(ortho.cephTracing?.points || {}) },
+      },
       habits: {},
     },
     photos: { ...(raw.photos || {}) },
@@ -769,6 +793,7 @@ export function hasOrthoSpecialistData(d: DentistryContent) {
   const o = d.orthodontics;
   return (
     Object.values(o.cephalometry).some((v) => v.trim()) ||
+    Object.keys(o.cephTracing.points).length > 0 ||
     Object.values(o.models).some((v) => v.trim()) ||
     [o.phase, o.objectives, o.extractions, o.retention].some((v) => v.trim())
   );

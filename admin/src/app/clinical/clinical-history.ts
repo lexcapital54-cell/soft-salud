@@ -85,6 +85,20 @@ import {
   orthoMeasureErrors,
   skeletalClassFromAnb,
 } from './dentistry/ortho-measures';
+import { CephResult, cephValueText } from './dentistry/ceph-geometry';
+import { CephRadiographOption, OrthoCephTracingComponent } from './dentistry/ortho-ceph-tracing';
+import {
+  ORTHO_ARCH_WIRES,
+  ORTHO_CONTROL_EVENTS,
+  ORTHO_ELASTICS,
+  ORTHO_RATING,
+  OrthoControl,
+  OrthoHistoryEntry,
+  emptyOrthoControl,
+  orthoControlNoteLines,
+  orthoControlProblems,
+  orthoTreatmentTimeline,
+} from './dentistry/ortho-controls';
 import { PatientConsentRecord } from './consent.models';
 import { DOCUMENT_TYPES } from './document-types';
 import { WEBSITE_URL } from '../api.config';
@@ -253,6 +267,7 @@ function emptyContent(): ClinicalContent {
     DecimalPipe,
     ConsentSigner,
     DentalOdontogram,
+    OrthoCephTracingComponent,
     OpenEncountersAlert,
     VoiceDictationBtn,
     ClinicalListenBtn,
@@ -512,6 +527,138 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   orthoWarnings() {
     return orthoConsistencyWarnings(this.dental().orthodontics);
+  }
+
+  // ── Trazado cefalométrico ──
+  readonly cephUploading = signal(false);
+
+  /** Radiografías de la historia con archivo; las cefálicas laterales primero. */
+  cephRadiographs(): CephRadiographOption[] {
+    const rows = this.dental().imaging.filter((r) => r.attachmentId);
+    const lateral = (t: string) => (t === 'Cefálica lateral' ? 0 : 1);
+    return [...rows]
+      .sort((a, b) => lateral(a.type) - lateral(b.type))
+      .map((r) => ({
+        attachmentId: r.attachmentId,
+        label: [r.type || 'Radiografía', r.date ? r.date.split('-').reverse().join('/') : '', r.fileName]
+          .filter(Boolean)
+          .join(' · '),
+      }));
+  }
+
+  cephPointCount() {
+    return Object.keys(this.dental().orthodontics.cephTracing.points).length;
+  }
+
+  cephImageUrl(): string | null {
+    const id = this.dental().orthodontics.cephTracing.attachmentId;
+    return id ? this.attachmentUrl(id) : null;
+  }
+
+  uploadCephRadiograph(file: File) {
+    const req = this.uploadDentalFile(file, `Cefálica lateral — ${file.name}`, 'IMAGE');
+    if (!req) return;
+    this.cephUploading.set(true);
+    req.subscribe({
+      next: (att) => {
+        this.cephUploading.set(false);
+        const d = this.dental();
+        d.imaging.push({
+          ...emptyImagingRow(),
+          type: 'Cefálica lateral',
+          date: new Date().toISOString().slice(0, 10),
+          attachmentId: att.id,
+          fileName: file.name,
+        });
+        d.orthodontics.cephTracing = { attachmentId: att.id, fileName: file.name, points: {}, tracedAt: '' };
+        this.dentalPhotoUrls.update((m) => ({ ...m, [att.id]: URL.createObjectURL(file) }));
+        this.attachments.set([att, ...this.attachments()]);
+        this.onClinicalFieldChange();
+      },
+      error: (err) => {
+        this.cephUploading.set(false);
+        this.error.set(err?.error?.message || 'No se pudo subir la radiografía.');
+      },
+    });
+  }
+
+  applyCephResult(res: CephResult) {
+    if (this.clinicalFormDisabled()) return;
+    const c = this.dental().orthodontics.cephalometry;
+    const fields: Array<keyof CephResult> = ['sna', 'snb', 'anb', 'fma', 'impa', 'upperIncisor'];
+    for (const f of fields) {
+      if (res[f] !== null) c[f] = cephValueText(res[f]);
+    }
+    this.onClinicalFieldChange();
+    this.message.set('Medidas del trazado copiadas al análisis cefalométrico.');
+  }
+
+  // ── Controles de ortodoncia por cita ──
+  orthoControl: OrthoControl = emptyOrthoControl();
+  readonly orthoControlEvents = ORTHO_CONTROL_EVENTS;
+  readonly orthoArchWires = ORTHO_ARCH_WIRES;
+  readonly orthoElastics = ORTHO_ELASTICS;
+  readonly orthoRating = ORTHO_RATING;
+
+  /** El control estructurado aplica a la historia odontológica con módulo de ortodoncia. */
+  orthoControlEnabled() {
+    return this.isDentistryClinic() && this.showOrthoModule();
+  }
+
+  orthoControlIssues(): string[] {
+    if (!this.orthoControlEnabled()) return [];
+    const attention = this.evolutionAttentionDate ? new Date(this.evolutionAttentionDate) : new Date();
+    if (Number.isNaN(attention.getTime())) return [];
+    return orthoControlProblems(this.orthoControl, attention, this.dentalEvolution.nextAppointment, this.evolutions());
+  }
+
+  orthoTimeline() {
+    return orthoTreatmentTimeline(this.evolutions());
+  }
+
+  /** Arcos y fase del último control, para no escribirlos de nuevo. */
+  copyLastOrthoControl() {
+    const last = [...this.evolutions()].reverse().find((ev) => ev.content.orthoControl);
+    const c = last?.content.orthoControl;
+    if (!c) return;
+    this.orthoControl = {
+      ...this.orthoControl,
+      phase: c.phase || this.orthoControl.phase,
+      upperArch: c.upperArch || '',
+      lowerArch: c.lowerArch || '',
+      elastics: c.elastics || '',
+    };
+  }
+
+  hasPreviousOrthoControl() {
+    return this.evolutions().some((ev) => !!ev.content.orthoControl);
+  }
+
+  // ── Historial de cambios del plan de ortodoncia ──
+  readonly orthoHistory = signal<OrthoHistoryEntry[] | null>(null);
+  readonly orthoHistoryLoading = signal(false);
+  readonly orthoHistoryOpen = signal(false);
+
+  toggleOrthoHistory() {
+    const open = !this.orthoHistoryOpen();
+    this.orthoHistoryOpen.set(open);
+    if (open) this.loadOrthoHistory();
+  }
+
+  loadOrthoHistory() {
+    const enc = this.encounter();
+    if (!enc) return;
+    this.orthoHistoryLoading.set(true);
+    this.api.orthoHistory(enc.id).subscribe({
+      next: (rows) => {
+        this.orthoHistory.set(rows);
+        this.orthoHistoryLoading.set(false);
+      },
+      error: () => {
+        this.orthoHistory.set([]);
+        this.orthoHistoryLoading.set(false);
+      },
+    });
   }
 
   /** Bloques del ortodoncista; en odontología solo aparecen si la historia ya los traía. */
@@ -783,11 +930,13 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   /** Miniatura de la foto del espacio; se descarga una sola vez por adjunto. */
   dentalPhotoUrl(slotKey: string): string | null {
     const photo = this.dental().photos[slotKey];
-    if (!photo?.attachmentId) return null;
-    const cached = this.dentalPhotoUrls()[photo.attachmentId];
+    return photo?.attachmentId ? this.attachmentUrl(photo.attachmentId) : null;
+  }
+
+  private attachmentUrl(id: string): string | null {
+    const cached = this.dentalPhotoUrls()[id];
     if (cached) return cached;
-    if (!this.dentalPhotoPending.has(photo.attachmentId)) {
-      const id = photo.attachmentId;
+    if (!this.dentalPhotoPending.has(id)) {
       this.dentalPhotoPending.add(id);
       this.api.downloadAttachment(id).subscribe({
         next: (blob) =>
@@ -3959,8 +4108,16 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       this.error.set('La fecha de atención clínica no puede ser futura.');
       return;
     }
+    const orthoIssues = this.orthoControlIssues();
+    if (orthoIssues.length) {
+      this.error.set(orthoIssues.join(' '));
+      return;
+    }
 
     const situation = this.evolutionCurrentSituation.trim();
+    const orthoControl = this.orthoControlEnabled()
+      ? { ...this.orthoControl, nextAppointment: this.dentalEvolution.nextAppointment || undefined }
+      : undefined;
     this.signing.set(true);
     this.error.set('');
     this.api
@@ -3970,6 +4127,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
         currentSituation: situation || undefined,
         clinicalAttentionDate: attention.toISOString(),
         signatureBase64: this.currentSignature(),
+        orthoControl,
       })
       .subscribe({
         next: (updated) => {
@@ -3982,6 +4140,8 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
           this.evolutionAttentionDate = this.nowLocal();
           this.evolutionMentalExam = '';
           this.dentalEvolution = emptyDentalEvolution();
+          this.orthoControl = emptyOrthoControl();
+          if (this.orthoHistoryOpen()) this.loadOrthoHistory();
           this.evolutionSoap = {
             subjective: '',
             objective: '',
@@ -4009,6 +4169,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       this.evolutionCurrentSituation = '';
       this.evolutionSituationInherited.set(null);
       this.evolutionAttentionDate = this.nowLocal();
+      this.orthoControl = emptyOrthoControl();
+      this.orthoHistory.set(null);
+      this.orthoHistoryOpen.set(false);
     }
     if (!this.evolutionAttentionDate) this.evolutionAttentionDate = this.nowLocal();
     if (!this.canWrite() || samePatient) return;
@@ -4073,6 +4236,10 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       ];
       const lines = fields.filter(([, v]) => (v || '').trim()).map(([k, v]) => `${k}: ${v.trim()}`);
       if (lines.length) parts.push(lines.join('\n'));
+      if (this.orthoControlEnabled()) {
+        const ortho = orthoControlNoteLines(this.orthoControl);
+        if (ortho.length) parts.push(ortho.join('\n'));
+      }
     }
     if (mental) {
       parts.push(

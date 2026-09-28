@@ -447,6 +447,86 @@
                     <input type="date" [(ngModel)]="dentalEvolution.nextAppointment" />
                   </label>
                 </div>
+                @if (orthoControlEnabled()) {
+                  <div class="ortho-control-form">
+                    <p class="ortho-control-title">
+                      Control de ortodoncia
+                      @if (hasPreviousOrthoControl()) {
+                        <button type="button" class="linkish" (click)="copyLastOrthoControl()">Traer arcos y fase del último control</button>
+                      }
+                    </p>
+                    <div class="grid-4">
+                      <label
+                        >Evento
+                        <select [(ngModel)]="orthoControl.event">
+                          @for (e of orthoControlEvents; track e.value) {
+                            <option [value]="e.value">{{ e.label }}</option>
+                          }
+                        </select>
+                      </label>
+                      <label
+                        >Fase
+                        <select [(ngModel)]="orthoControl.phase">
+                          <option value="">Sin cambio</option>
+                          @for (o of orthoPhases; track o) {
+                            <option [value]="o">{{ o }}</option>
+                          }
+                        </select>
+                      </label>
+                      <label
+                        >Arco superior
+                        <input [(ngModel)]="orthoControl.upperArch" list="ortho-wires" placeholder="NiTi 0.014" maxlength="120" />
+                      </label>
+                      <label
+                        >Arco inferior
+                        <input [(ngModel)]="orthoControl.lowerArch" list="ortho-wires" placeholder="NiTi 0.014" maxlength="120" />
+                      </label>
+                      <label
+                        >Elásticos
+                        <input [(ngModel)]="orthoControl.elastics" list="ortho-elastics" placeholder="Clase II, 3/16 medianos" maxlength="200" />
+                      </label>
+                      <label class="span-2"
+                        >Activaciones
+                        <input [(ngModel)]="orthoControl.activations" placeholder="Expansor 2 vueltas, ligadura de 13 a 23…" maxlength="300" />
+                      </label>
+                      <label
+                        >Reparaciones / recementados
+                        <input [(ngModel)]="orthoControl.repairs" placeholder="Recementado bracket 24" maxlength="300" />
+                      </label>
+                      <label
+                        >Higiene
+                        <select [(ngModel)]="orthoControl.hygiene">
+                          <option value="">Seleccione…</option>
+                          @for (o of orthoRating; track o) {
+                            <option [value]="o">{{ o }}</option>
+                          }
+                        </select>
+                      </label>
+                      <label
+                        >Colaboración del paciente
+                        <select [(ngModel)]="orthoControl.cooperation">
+                          <option value="">Seleccione…</option>
+                          @for (o of orthoRating; track o) {
+                            <option [value]="o">{{ o }}</option>
+                          }
+                        </select>
+                      </label>
+                    </div>
+                    <datalist id="ortho-wires">
+                      @for (w of orthoArchWires; track w) {
+                        <option [value]="w"></option>
+                      }
+                    </datalist>
+                    <datalist id="ortho-elastics">
+                      @for (w of orthoElastics; track w) {
+                        <option [value]="w"></option>
+                      }
+                    </datalist>
+                    @for (issue of orthoControlIssues(); track issue) {
+                      <p class="measure-hint invalid">{{ issue }}</p>
+                    }
+                  </div>
+                }
                 <label
                   >Respuesta del paciente (opcional)
                   <textarea
@@ -2261,6 +2341,27 @@
                   </p>
                   @if (showOrthoSpecialistFields()) {
                     <h4 class="odo-sub">Análisis cefalométrico</h4>
+                    <details class="ceph-details" [open]="!!dental().orthodontics.cephTracing.attachmentId">
+                      <summary>
+                        Trazado cefalométrico sobre la radiografía lateral
+                        @if (dental().orthodontics.cephTracing.tracedAt) {
+                          <span class="muted small">
+                            · {{ cephPointCount() }} de 12 puntos ·
+                            {{ dental().orthodontics.cephTracing.tracedAt | date: 'dd/MM/yyyy HH:mm' }}
+                          </span>
+                        }
+                      </summary>
+                      <app-ortho-ceph-tracing
+                        [tracing]="dental().orthodontics.cephTracing"
+                        [imageUrl]="cephImageUrl()"
+                        [radiographs]="cephRadiographs()"
+                        [disabled]="clinicalFormDisabled()"
+                        [uploading]="cephUploading()"
+                        (changed)="onClinicalFieldChange()"
+                        (upload)="uploadCephRadiograph($event)"
+                        (apply)="applyCephResult($event)"
+                      />
+                    </details>
                     <div class="grid-4">
                       @for (f of orthoCephFields; track f.key) {
                         <label
@@ -2406,6 +2507,95 @@
                         ></textarea>
                       </label>
                     </div>
+                  }
+                  @if (encounter()) {
+                    <h4 class="odo-sub">Seguimiento del tratamiento</h4>
+                    @let timeline = orthoTimeline();
+                    <div class="ortho-track">
+                      <div>
+                        <span class="muted small">Instalación</span>
+                        <strong>{{ timeline.installedAt ? (timeline.installedAt | date: 'dd/MM/yyyy') : 'Sin registrar' }}</strong>
+                      </div>
+                      <div>
+                        <span class="muted small">Retiro</span>
+                        <strong>{{ timeline.debondedAt ? (timeline.debondedAt | date: 'dd/MM/yyyy') : timeline.installedAt ? 'En tratamiento' : '—' }}</strong>
+                      </div>
+                      <div>
+                        <span class="muted small">Tiempo en tratamiento</span>
+                        <strong>{{ timeline.months !== null ? (timeline.months | number: '1.0-1') + ' meses' : '—' }}</strong>
+                      </div>
+                      <div>
+                        <span class="muted small">Duración estimada</span>
+                        <strong>{{ dental().orthodontics.estimatedDuration || '—' }}</strong>
+                      </div>
+                    </div>
+                    @if (timeline.rows.length) {
+                      <div class="ortho-controls-wrap">
+                        <table class="ortho-controls">
+                          <thead>
+                            <tr>
+                              <th>Fecha</th>
+                              <th>Evento</th>
+                              <th>Fase</th>
+                              <th>Arcos</th>
+                              <th>Elásticos</th>
+                              <th>Higiene</th>
+                              <th>Próxima cita</th>
+                              <th>Profesional</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (r of timeline.rows; track r.id) {
+                              <tr>
+                                <td>{{ r.date | date: 'dd/MM/yyyy' }}</td>
+                                <td>{{ r.event }}</td>
+                                <td>{{ r.phase || '—' }}</td>
+                                <td>{{ r.arches || '—' }}</td>
+                                <td>{{ r.elastics || '—' }}</td>
+                                <td>{{ r.hygiene || '—' }}</td>
+                                <td>{{ r.nextAppointment ? r.nextAppointment.split('-').reverse().join('/') : '—' }}</td>
+                                <td>{{ r.professional }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    } @else {
+                      <p class="muted small">
+                        Aún no hay controles firmados. Después de guardar la historia, cada cita se registra en
+                        «Notas de evolución / control» con arcos, elásticos, higiene y próxima cita.
+                      </p>
+                    }
+                    <button type="button" class="linkish ortho-history-toggle" (click)="toggleOrthoHistory()">
+                      {{ orthoHistoryOpen() ? 'Ocultar' : 'Ver' }} quién y cuándo cambió el diagnóstico, el plan y la fase
+                    </button>
+                    @if (orthoHistoryOpen()) {
+                      @if (orthoHistoryLoading() && !orthoHistory()) {
+                        <p class="muted small">Cargando historial…</p>
+                      } @else if (!orthoHistory()?.length) {
+                        <p class="muted small">Sin cambios registrados en el diagnóstico, el plan o la fase.</p>
+                      } @else {
+                        <ul class="ortho-history">
+                          @for (h of orthoHistory(); track $index) {
+                            <li>
+                              <p class="ortho-history-head">
+                                <strong>{{ h.at | date: 'dd/MM/yyyy HH:mm' }}</strong> · {{ h.userName }}
+                                <span class="pill">{{ h.source === 'CONTROL' ? 'Control firmado' : 'Historia clínica' }}</span>
+                              </p>
+                              @for (c of h.changes; track c.field) {
+                                <p class="ortho-history-change">
+                                  <span>{{ c.label }}:</span>
+                                  @if (c.from) {
+                                    <del>{{ c.from }}</del> →
+                                  }
+                                  <ins>{{ c.to || '(vacío)' }}</ins>
+                                </p>
+                              }
+                            </li>
+                          }
+                        </ul>
+                      }
+                    }
                   }
                 </section>
               }

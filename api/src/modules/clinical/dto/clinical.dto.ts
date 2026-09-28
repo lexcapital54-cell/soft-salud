@@ -3,10 +3,12 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsObject,
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   MaxLength,
   MinLength,
   ValidateIf,
@@ -132,10 +134,38 @@ export class SignClinicalRecordDto {
   signatureBase64?: string;
 }
 
+export const ORTHO_CONTROL_EVENTS = ['CONTROL', 'INSTALACION', 'RETIRO', 'RETENCION'] as const;
+export type OrthoControlEvent = (typeof ORTHO_CONTROL_EVENTS)[number];
+
+/** Datos estructurados del control de ortodoncia de la sesión. */
+export class OrthoControlDto {
+  @IsIn(ORTHO_CONTROL_EVENTS as unknown as string[])
+  event: OrthoControlEvent;
+
+  @IsOptional() @IsString() @MaxLength(120) phase?: string;
+  @IsOptional() @IsString() @MaxLength(120) upperArch?: string;
+  @IsOptional() @IsString() @MaxLength(120) lowerArch?: string;
+  @IsOptional() @IsString() @MaxLength(200) elastics?: string;
+  @IsOptional() @IsString() @MaxLength(300) activations?: string;
+  @IsOptional() @IsString() @MaxLength(300) repairs?: string;
+  @IsOptional() @IsString() @MaxLength(40) hygiene?: string;
+  @IsOptional() @IsString() @MaxLength(40) cooperation?: string;
+
+  /** YYYY-MM-DD */
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Próxima cita: fecha inválida.' })
+  nextAppointment?: string;
+}
+
 export class CreateEvolutionDto {
   @IsString()
   @MinLength(5)
   note: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OrthoControlDto)
+  orthoControl?: OrthoControlDto;
 
   @IsOptional()
   @IsString()

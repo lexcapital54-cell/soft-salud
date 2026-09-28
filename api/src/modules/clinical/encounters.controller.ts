@@ -98,6 +98,12 @@ export class EncountersController {
     return this.encountersService.getOne(req.user, id);
   }
 
+  @Get('encounters/:id/ortho-history')
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
+  orthoHistory(@Req() req: { user: User }, @Param('id') id: string) {
+    return this.encountersService.orthoHistory(req.user, id);
+  }
+
   @Post('encounters')
   @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
   create(@Req() req: { user: User }, @Body() dto: CreateEncounterDto) {

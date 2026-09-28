@@ -217,6 +217,10 @@ export interface ClinicalEvolution {
     professionalCard?: string;
     signatureBase64?: string | null;
     verificationCode?: string;
+    /** Control de ortodoncia estructurado de la sesión. */
+    orthoControl?: Partial<Record<'phase' | 'upperArch' | 'lowerArch' | 'elastics' | 'activations' | 'repairs' | 'hygiene' | 'cooperation' | 'nextAppointment', string>> & {
+      event?: 'CONTROL' | 'INSTALACION' | 'RETIRO' | 'RETENCION';
+    };
     _redacted?: boolean;
   };
   contentHash: string;
