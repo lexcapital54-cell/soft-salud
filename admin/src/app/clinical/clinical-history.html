@@ -335,7 +335,7 @@
                       @if (ev.content.orthoControl?.cups?.length) {
                         <p class="ev-cups">
                           @for (c of ev.content.orthoControl!.cups!; track c.code) {
-                            <span class="cups-chip" [title]="c.description">CUPS {{ c.code }}</span>
+                            <span class="cups-chip" [title]="c.description + (c.version ? ' · ' + c.version : '')">CUPS {{ c.code }}</span>
                           }
                         </p>
                       }
@@ -2952,6 +2952,9 @@
                                   <li>
                                     <button type="button" (mousedown)="pickDentalCups(i, item)">
                                       <strong>{{ item.code }}</strong> {{ item.description }}
+                                      @if (item.category) {
+                                        <small>{{ item.category }}</small>
+                                      }
                                     </button>
                                   </li>
                                 }

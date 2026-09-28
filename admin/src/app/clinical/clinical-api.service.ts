@@ -28,13 +28,16 @@ import { API } from '../api.config';
 export class ClinicalApiService {
   constructor(private readonly http: HttpClient) {}
 
-  searchCie(q: string) {
+  /** `scope: 'ORTHODONTICS'` antepone el catálogo de ortodoncia en consultorios odontológicos. */
+  searchCie(q: string, scope?: string) {
     let params = new HttpParams().set('q', q);
+    if (scope) params = params.set('scope', scope);
     return this.http.get<CatalogCode[]>(`${API}/catalogs/cie`, { params });
   }
 
-  searchCups(q: string) {
+  searchCups(q: string, scope?: string) {
     let params = new HttpParams().set('q', q);
+    if (scope) params = params.set('scope', scope);
     return this.http.get<CatalogCode[]>(`${API}/catalogs/cups`, { params });
   }
 

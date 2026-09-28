@@ -34,6 +34,7 @@ import {
   diffOrthoPlan,
 } from './ortho-plan-audit';
 import { OrthoControlCups, orthoControlCupsCodes } from './ortho-control-procedures';
+import { CUPS_CATALOG_VERSION } from './ortho-cups.catalog';
 import {
   EVOLUTION_AMEND_LABELS,
   EVOLUTION_CORRECTION_WINDOW_MS,
@@ -695,6 +696,7 @@ export class EncountersService {
       }
 
       if (dto.procedures) {
+        const versions = await this.procedureVersions(tx, encounterId);
         await tx.clinicalProcedure.deleteMany({ where: { encounterId } });
         if (dto.procedures.length) {
           await tx.clinicalProcedure.createMany({
@@ -702,6 +704,7 @@ export class EncountersService {
               encounterId,
               cupsCode: p.cupsCode,
               description: p.description,
+              cupsVersion: versions.get(p.cupsCode.trim()) ?? CUPS_CATALOG_VERSION,
             })),
           });
         }
@@ -864,6 +867,7 @@ export class EncountersService {
     }
 
     await this.prisma.$transaction(async (tx) => {
+      const versions = await this.procedureVersions(tx, encounterId);
       await tx.clinicalProcedure.deleteMany({ where: { encounterId } });
       if (dto.procedures.length) {
         await tx.clinicalProcedure.createMany({
@@ -871,6 +875,7 @@ export class EncountersService {
             encounterId,
             cupsCode: p.cupsCode.trim(),
             description: p.description.trim(),
+            cupsVersion: versions.get(p.cupsCode.trim()) ?? CUPS_CATALOG_VERSION,
           })),
         });
       }
@@ -1163,6 +1168,7 @@ export class EncountersService {
       code: g.code,
       description: names.get(g.code) ?? '',
       procedures: g.procedures,
+      version: CUPS_CATALOG_VERSION,
     }));
     return { ...clean, procedures, cups };
   }
@@ -1206,6 +1212,15 @@ export class EncountersService {
   }
 
   /** Adjuntos del mismo paciente y consultorio; falla si alguno no existe o es de otro paciente. */
+  /** Versión CUPS con la que ya se registró cada código de la atención (se conserva al volver a guardar). */
+  private async procedureVersions(tx: Prisma.TransactionClient, encounterId: string) {
+    const rows = await tx.clinicalProcedure.findMany({
+      where: { encounterId, cupsVersion: { not: null } },
+      select: { cupsCode: true, cupsVersion: true },
+    });
+    return new Map(rows.map((r) => [r.cupsCode, r.cupsVersion as string]));
+  }
+
   private async ownAttachments(clinicId: string, patientId: string, ids: string[]) {
     const unique = [...new Set(ids)];
     const rows = await this.prisma.clinicalAttachment.findMany({

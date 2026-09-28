@@ -56,7 +56,7 @@ import { ORTHO_ARCH_WIRES, ORTHO_CONTROL_EVENTS, ORTHO_ELASTICS, ORTHO_RATING, O
         <label class="oqc-field">IPR (zona y cantidad) <input [(ngModel)]="c.ipr" placeholder="33-43, 0,2 mm por contacto" maxlength="200" /></label>
       }
       @if (has('BRACKET_REBOND')) {
-        <label class="oqc-field">Recementado <input [(ngModel)]="c.repairs" placeholder="Bracket 24, tubo 36" maxlength="300" /></label>
+        <label class="oqc-field">Reparación / recementado <input [(ngModel)]="c.repairs" placeholder="Recementado bracket 24, tubo 36" maxlength="300" /></label>
       }
 
       <div class="oqc-grid">

@@ -771,6 +771,8 @@ model ClinicalProcedure {
   encounter   Encounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
   cupsCode    String    @map("cups_code") @db.VarChar(20)
   description String
+  /// Versión / año del catálogo CUPS vigente cuando se registró el procedimiento.
+  cupsVersion String?   @map("cups_version") @db.VarChar(20)
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([encounterId])

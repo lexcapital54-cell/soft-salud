@@ -8,7 +8,9 @@ export const ORTHO_CONTROL_PROCEDURES = [
   { key: 'ACTIVATION', label: 'Activación', cupsCode: '893106' },
   { key: 'IPR', label: 'IPR (desgaste interproximal)', cupsCode: '893106' },
   { key: 'ELASTIC_CHANGE', label: 'Cambio de elásticos', cupsCode: '893106' },
-  { key: 'BRACKET_REBOND', label: 'Recementado de bracket / tubo', cupsCode: '248401' },
+  { key: 'BRACKET_REBOND', label: 'Reparación / recementado de aparatología', cupsCode: '248401' },
+  { key: 'TAD_PLACEMENT', label: 'Anclaje temporal esquelético (TAD)', cupsCode: '247001' },
+  { key: 'RETAINER_PLACEMENT', label: 'Colocación de retenedores', cupsCode: '247301' },
 ] as const;
 
 export type OrthoControlProcedureKey = (typeof ORTHO_CONTROL_PROCEDURES)[number]['key'];
@@ -19,7 +21,7 @@ export const ORTHO_CONTROL_PROCEDURE_KEYS = ORTHO_CONTROL_PROCEDURES.map((p) => 
 export const ORTHO_EVENT_CUPS: Record<string, string> = {
   CONTROL: '893106',
   INSTALACION: '247101',
-  RETIRO: '893106',
+  RETIRO: '973401',
   RETENCION: '893106',
 };
 
@@ -27,6 +29,7 @@ export interface OrthoControlCups {
   code: string;
   description: string;
   procedures: string[];
+  version: string;
 }
 
 /** Agrupa el evento y los procedimientos marcados por código CUPS (sin repetir códigos). */

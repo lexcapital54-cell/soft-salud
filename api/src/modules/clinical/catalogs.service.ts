@@ -7,12 +7,24 @@ import { PHYSIOTHERAPY_CUPS_CATALOG } from './physiotherapy-cups.catalog';
 import { DENTISTRY_CIE_CATALOG } from './dentistry-cie.catalog';
 import { DENTISTRY_CUPS_CATALOG } from './dentistry-cups.catalog';
 import { ORTHO_CONTROL_PROCEDURES, ORTHO_EVENT_CUPS } from './ortho-control-procedures';
+import { ORTHO_CIE_CATALOG, orthoCieRows } from './ortho-cie.catalog';
+import { ORTHO_CUPS_CATALOG, orthoCupsRows } from './ortho-cups.catalog';
 
-/** Ortodoncia usa los mismos catálogos CIE-10 y CUPS odontológicos. */
+/** Ortodoncia usa los catálogos odontológicos, con su propio catálogo por delante. */
 function catalogSpecialty(specialty?: ClinicSpecialty | string | null): string {
   const spec = (specialty || '').toUpperCase();
   return spec === ClinicSpecialty.ORTHODONTICS ? ClinicSpecialty.DENTISTRY : spec;
 }
+
+/** Consultorio de ortodoncia, o historia de ortodoncia abierta en un consultorio odontológico. */
+function isOrthoScope(specialty?: ClinicSpecialty | string | null, scope?: string | null): boolean {
+  const spec = (specialty || '').toUpperCase();
+  if (spec === ClinicSpecialty.ORTHODONTICS) return true;
+  return spec === ClinicSpecialty.DENTISTRY && (scope || '').toUpperCase() === ClinicSpecialty.ORTHODONTICS;
+}
+
+const ORTHO_CIE_CODES = new Set(ORTHO_CIE_CATALOG.flatMap((g) => g.items.map((i) => i.code)));
+const ORTHO_CUPS_CODES = new Set(ORTHO_CUPS_CATALOG.flatMap((s) => s.items.map((i) => i.code)));
 
 @Injectable()
 export class CatalogsService {
@@ -30,7 +42,8 @@ export class CatalogsService {
     for (const r of rows) out.set(r.code, r.description);
     for (const code of unique) {
       if (out.has(code)) continue;
-      const fallback = DENTISTRY_CUPS_CATALOG.find((c) => c.code === code);
+      const fallback =
+        orthoCupsRows().find((c) => c.code === code) ?? DENTISTRY_CUPS_CATALOG.find((c) => c.code === code);
       out.set(code, fallback?.description ?? 'Procedimiento de ortodoncia');
     }
     return out;
@@ -57,9 +70,10 @@ export class CatalogsService {
    * Autocompletado CIE filtrado por especialidad del consultorio.
    * Fisioterapia: solo matriz FT. Psicología: DiagnosisCatalog + CIE psic.
    */
-  async searchCie(q?: string, take = 20, specialty?: ClinicSpecialty | string | null) {
+  async searchCie(q?: string, take = 20, specialty?: ClinicSpecialty | string | null, scope?: string | null) {
     const query = q?.trim();
     const spec = catalogSpecialty(specialty);
+    const ortho = isOrthoScope(specialty, scope);
 
     if (spec === ClinicSpecialty.PHYSIOTHERAPY || spec === 'PHYSIOTHERAPY') {
       return this.filterStatic(
@@ -77,18 +91,36 @@ export class CatalogsService {
     }
 
     if (spec === ClinicSpecialty.DENTISTRY) {
-      const fromStatic = this.filterStatic(
-        DENTISTRY_CIE_CATALOG.map((row) => ({
-          id: `cie-odo-${row.code}`,
-          code: row.code,
-          description: row.description,
-          cie11Code: '',
-          category: row.category || 'ODONTOLOGÍA',
-          source: 'CIE' as const,
-        })),
-        query,
-        take,
-      );
+      const orthoRows = ortho
+        ? this.filterStatic(
+            orthoCieRows().map((row) => ({
+              id: `cie-orto-${row.key}`,
+              code: row.code,
+              description: row.description,
+              cie11Code: '',
+              category: row.category,
+              source: 'CIE' as const,
+            })),
+            query,
+            take,
+            true,
+          )
+        : [];
+      const fromStatic = [
+        ...orthoRows,
+        ...this.filterStatic(
+          DENTISTRY_CIE_CATALOG.filter((row) => !ortho || !ORTHO_CIE_CODES.has(row.code)).map((row) => ({
+            id: `cie-odo-${row.code}`,
+            code: row.code,
+            description: row.description,
+            cie11Code: '',
+            category: row.category || 'ODONTOLOGÍA',
+            source: 'CIE' as const,
+          })),
+          query,
+          take,
+        ),
+      ].slice(0, take);
       if (fromStatic.length >= take || !query) return fromStatic;
       const used = new Set(fromStatic.map((m) => m.code.toUpperCase()));
       const fromCie = await this.prisma.cieCode.findMany({
@@ -195,9 +227,10 @@ export class CatalogsService {
     return mapped;
   }
 
-  async searchCups(q?: string, take = 20, specialty?: ClinicSpecialty | string | null) {
+  async searchCups(q?: string, take = 20, specialty?: ClinicSpecialty | string | null, scope?: string | null) {
     const query = q?.trim().toLowerCase();
     const spec = catalogSpecialty(specialty);
+    const ortho = isOrthoScope(specialty, scope);
 
     if (spec === ClinicSpecialty.PHYSIOTHERAPY || spec === 'PHYSIOTHERAPY') {
       return this.filterStatic(
@@ -218,12 +251,26 @@ export class CatalogsService {
           ? DENTISTRY_CUPS_CATALOG
           : [];
 
-    const fromStatic = this.filterStatic(staticSource, query, take)
-      .map((row) => ({
+    const orthoRows = ortho
+      ? this.filterStatic(orthoCupsRows(), query, take, true).map((row) => ({
+          id: `cups-orto-${row.code}`,
+          code: row.code,
+          description: row.description,
+          category: row.category,
+        }))
+      : [];
+    const fromStatic: Array<{ id: string; code: string; description: string; category?: string }> = [
+      ...orthoRows,
+      ...this.filterStatic(
+        staticSource.filter((row) => !ortho || !ORTHO_CUPS_CODES.has(row.code)),
+        query,
+        take,
+      ).map((row) => ({
         id: `cups-static-${row.code}`,
         code: row.code,
         description: row.description,
-      }));
+      })),
+    ].slice(0, take);
 
     if (fromStatic.length >= take) {
       return fromStatic;
@@ -292,16 +339,15 @@ export class CatalogsService {
     rows: T[],
     query: string | undefined,
     take: number,
+    keepOrder = false,
   ): T[] {
     const q = query ? this.fold(query) : '';
     const qCode = q.replace(/\./g, '');
-    return rows
-      .filter((row) => {
-        if (!q) return true;
-        return this.fold(row.code).includes(qCode) || this.fold(row.description).includes(q);
-      })
-      .sort((a, b) => a.code.localeCompare(b.code))
-      .slice(0, take);
+    const matches = rows.filter((row) => {
+      if (!q) return true;
+      return this.fold(row.code).includes(qCode) || this.fold(row.description).includes(q);
+    });
+    return (keepOrder ? matches : matches.sort((a, b) => a.code.localeCompare(b.code))).slice(0, take);
   }
 
   /** Minúsculas y sin tildes, para buscar «obturacion» igual que «obturación». */

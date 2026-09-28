@@ -19,12 +19,12 @@ export class CatalogsController {
   }
 
   @Get('cie')
-  searchCie(@Req() req: AuthedRequest, @Query('q') q?: string) {
+  searchCie(@Req() req: AuthedRequest, @Query('q') q?: string, @Query('scope') scope?: string) {
     const specialty =
       req.user?.clinic?.specialty ||
       (req.user as User & { specialty?: string })?.specialty ||
       null;
-    return this.catalogsService.searchCie(q, 300, specialty);
+    return this.catalogsService.searchCie(q, 300, specialty, scope);
   }
 
   @Get('ortho-control-procedures')
@@ -33,11 +33,11 @@ export class CatalogsController {
   }
 
   @Get('cups')
-  searchCups(@Req() req: AuthedRequest, @Query('q') q?: string) {
+  searchCups(@Req() req: AuthedRequest, @Query('q') q?: string, @Query('scope') scope?: string) {
     const specialty =
       req.user?.clinic?.specialty ||
       (req.user as User & { specialty?: string })?.specialty ||
       null;
-    return this.catalogsService.searchCups(q, 300, specialty);
+    return this.catalogsService.searchCups(q, 300, specialty, scope);
   }
 }

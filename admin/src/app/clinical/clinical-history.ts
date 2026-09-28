@@ -1488,6 +1488,10 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   readonly dentalCupsResults = signal<CatalogCode[]>([]);
   private dentalSearchTimer?: ReturnType<typeof setTimeout>;
 
+  private catalogScope() {
+    return this.isOrthoClinic() ? 'ORTHODONTICS' : undefined;
+  }
+
   onDentalCieInput(index: number, value: string) {
     this.onClinicalFieldChange();
     this.searchDentalCie(index, value, 200);
@@ -1503,7 +1507,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     clearTimeout(this.dentalSearchTimer);
     const q = (value || '').trim();
     this.dentalSearchTimer = setTimeout(() => {
-      this.api.searchCie(q).subscribe({
+      this.api.searchCie(q, this.catalogScope()).subscribe({
         next: (rows) => {
           this.dentalCieRow.set(index);
           this.dentalCieResults.set(rows);
@@ -1517,7 +1521,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     const row = this.dental().diagnoses[index];
     if (!row) return;
     row.cieCode = item.code;
-    if (!row.description.trim()) row.description = item.description;
+    row.description = item.description;
     this.dentalCieResults.set([]);
     this.dentalCieRow.set(null);
     this.onClinicalFieldChange();
@@ -1538,7 +1542,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     clearTimeout(this.dentalSearchTimer);
     const q = (value || '').trim();
     this.dentalSearchTimer = setTimeout(() => {
-      this.api.searchCups(q).subscribe({
+      this.api.searchCups(q, this.catalogScope()).subscribe({
         next: (rows) => {
           this.dentalCupsRow.set(index);
           this.dentalCupsResults.set(rows);

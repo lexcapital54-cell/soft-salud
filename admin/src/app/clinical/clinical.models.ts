@@ -241,7 +241,7 @@ export interface ClinicalEvolution {
       event?: 'CONTROL' | 'INSTALACION' | 'RETIRO' | 'RETENCION';
       procedures?: string[];
       /** CUPS asignados por el servidor al firmar. */
-      cups?: Array<{ code: string; description: string; procedures: string[] }>;
+      cups?: Array<{ code: string; description: string; procedures: string[]; version?: string }>;
     };
     /** Nota enlazada a una evolución anterior (el original no se modifica). */
     amends?: { evolutionId: string; kind: EvolutionAmendKind; signedAt: string; verificationCode: string };
