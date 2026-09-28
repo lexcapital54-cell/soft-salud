@@ -3528,7 +3528,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     this.attachments.set(enc.attachments || []);
     this.restorePatientSignaturePreview(enc);
     this.loadSealedConsents(enc.patient.id);
-    this.prepareNewEvolution(enc.patient.id);
+    this.prepareNewEvolution(enc.patient.id, this.pendingEvolutionDefaultDate(enc));
     const draftSignature = serverContent.signature?.signatureBase64;
     if (draftSignature) {
       this.professionalSignature.set(draftSignature);
@@ -4469,13 +4469,13 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
    * Nueva evolución: fecha de atención = ahora y «Situación actual» heredada de la
    * última evolución registrada del paciente. No pisa lo que ya se esté escribiendo.
    */
-  private prepareNewEvolution(patientId: string) {
+  private prepareNewEvolution(patientId: string, defaultAttentionDate = '') {
     const samePatient = this.evolutionSituationPatientId === patientId;
     if (!samePatient) {
       this.evolutionSituationPatientId = patientId;
       this.evolutionCurrentSituation = '';
       this.evolutionSituationInherited.set(null);
-      this.evolutionAttentionDate = this.nowLocal();
+      this.evolutionAttentionDate = defaultAttentionDate || this.nowLocal();
       this.orthoControl = emptyOrthoControl();
       this.orthoHistory.set(null);
       this.orthoHistoryOpen.set(false);
@@ -4483,7 +4483,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       this.compareAfterId.set(null);
       this.cancelAmend();
     }
-    if (!this.evolutionAttentionDate) this.evolutionAttentionDate = this.nowLocal();
+    if (!this.evolutionAttentionDate) this.evolutionAttentionDate = defaultAttentionDate || this.nowLocal();
     if (this.canWrite()) this.loadOrthoCatalog();
     if (!this.canWrite() || samePatient) return;
     this.api.lastCurrentSituation(patientId).subscribe({
@@ -4499,6 +4499,17 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       },
       error: () => undefined,
     });
+  }
+
+  /**
+   * Psicología: si la historia ya está firmada y aún no tiene notas de evolución,
+   * la primera nota se fecha por defecto el día en que se creó la atención.
+   */
+  private pendingEvolutionDefaultDate(enc: Encounter): string {
+    const record = enc.clinicalRecord;
+    if (!this.isPsychologyClinic() || !record || record.status === 'DRAFT') return '';
+    if ((record.evolutions ?? []).length) return '';
+    return enc.createdAt ? this.toLocalInputValue(new Date(enc.createdAt)) : '';
   }
 
   /** Fecha de atención de una evolución (legado: fecha de firma). */
