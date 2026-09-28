@@ -2,6 +2,7 @@ import { PartialType } from '@nestjs/mapped-types';
 import {
   IsDateString,
   IsEmail,
+  IsIn,
   IsOptional,
   IsString,
   MaxLength,
@@ -204,3 +205,24 @@ export class CreatePatientDto {
 }
 
 export class UpdatePatientDto extends PartialType(CreatePatientDto) {}
+
+/** Plan de tratamiento o indicaciones odontológicas enviadas al paciente. */
+export class DentalInstructionsDto {
+  @IsIn(['EMAIL', 'WHATSAPP'])
+  channel: 'EMAIL' | 'WHATSAPP';
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  title: string;
+
+  @IsString()
+  @MinLength(5)
+  @MaxLength(6000)
+  message: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  encounterId?: string;
+}

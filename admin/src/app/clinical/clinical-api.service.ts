@@ -242,6 +242,17 @@ export class ClinicalApiService {
     );
   }
 
+  /** Plan / indicaciones odontológicas: envía correo o deja constancia del envío por WhatsApp. */
+  sendDentalInstructions(
+    patientId: string,
+    body: { channel: 'EMAIL' | 'WHATSAPP'; title: string; message: string; encounterId?: string },
+  ) {
+    return this.http.post<{ sent: boolean; destination?: string; message?: string }>(
+      `${API}/patients/${patientId}/dental-instructions`,
+      body,
+    );
+  }
+
   listIncapacities(encounterId: string) {
     const params = new HttpParams().set('encounterId', encounterId);
     return this.http.get<Incapacity[]>(`${API}/incapacities`, { params });

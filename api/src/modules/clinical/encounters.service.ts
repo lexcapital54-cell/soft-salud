@@ -1114,7 +1114,8 @@ export class EncountersService {
         dental.treatmentPlan.some((r) =>
           text((r as Record<string, unknown>)?.description),
         )) ||
-      Object.keys((dental.odontogram ?? {}) as object).length > 0;
+      Object.keys((dental.odontogram ?? {}) as object).length > 0 ||
+      text(dental.currentIllness);
 
     if (
       !text(care.motive) &&

@@ -21,7 +21,7 @@ const navLinks = [
 ]
 
 const checks = [
-  'Alineación con Resolución 3100 de 2019 y 1732 de 2026',
+  'Alineación con la Resolución 1732 de 2026 (actualiza y deroga la Res. 3100 de 2019)',
   'Gestión documental y evidencias para habilitación / REPS',
   'HCE interoperable y acompañamiento RDA',
 ]

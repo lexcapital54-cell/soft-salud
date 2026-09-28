@@ -220,6 +220,22 @@ const PHYSIOTHERAPY_CONSENTS_V1: ConsentSeed[] = [
   },
 ];
 
+/** Cuerpo común de los consentimientos odontológicos por procedimiento. */
+function odoConsent(heading: string, items: string, closing: string) {
+  return `
+<section>
+  <h2>${heading}</h2>
+  <p><strong>Ciudad y Fecha:</strong> ___________________________</p>
+
+  <p>Yo, ________________________________________________, identificado(a) con documento No. _________________, obrando en nombre propio o como representante legal del paciente ________________________________________________, declaro que he sido informado(a) de manera clara por el/la odontólogo(a) _____________________________________, con Registro Profesional No. ______________, sobre:</p>
+${items}
+
+  <p>Puedo revocar este consentimiento antes del procedimiento, informando al profesional.</p>
+  <p>${closing}</p>
+</section>
+`.trim();
+}
+
 const DENTISTRY_CONSENTS_V1: ConsentSeed[] = [
   {
     code: 'HABEAS_DATA',
@@ -310,6 +326,129 @@ const DENTISTRY_CONSENTS_V1: ConsentSeed[] = [
   <p>Este consentimiento puede revocarse en cualquier momento sin afectar la atención ya prestada ni las obligaciones de conservación documental.</p>
 </section>
 `.trim(),
+  },
+  {
+    code: 'ODO_EXTRACTION',
+    title: 'Consentimiento informado para exodoncia (extracción dental)',
+    bodyHtml: odoConsent(
+      'CONSENTIMIENTO INFORMADO PARA EXODONCIA (EXTRACCIÓN DENTAL)',
+      `
+  <ol>
+    <li><strong>Procedimiento:</strong> extracción de la(s) pieza(s) dental(es) indicada(s) por el/la odontólogo(a), bajo anestesia local.</li>
+    <li><strong>Motivo:</strong> caries extensa, enfermedad periodontal, fractura, indicación ortodóncica u otra causa registrada en la historia clínica.</li>
+    <li><strong>Riesgos:</strong> dolor e inflamación, sangrado, alveolitis (alvéolo seco), infección, fractura radicular o de la tabla ósea, lesión de dientes vecinos, comunicación oroantral en piezas superiores y parestesia transitoria o, excepcionalmente, permanente del labio o la lengua en piezas inferiores.</li>
+    <li><strong>Alternativas:</strong> tratamiento de conducto, restauración u otras opciones cuando sean viables, o no realizar el procedimiento con sus consecuencias.</li>
+    <li><strong>Cuidados:</strong> seguir las indicaciones postoperatorias entregadas y asistir a control.</li>
+  </ol>`,
+      'Habiendo resuelto mis dudas, autorizo la extracción dental propuesta.',
+    ),
+  },
+  {
+    code: 'ODO_ORAL_SURGERY',
+    title: 'Consentimiento informado para cirugía oral',
+    bodyHtml: odoConsent(
+      'CONSENTIMIENTO INFORMADO PARA CIRUGÍA ORAL',
+      `
+  <ol>
+    <li><strong>Procedimiento:</strong> cirugía oral (terceros molares, dientes incluidos, frenectomía, biopsia, regularización ósea u otra registrada en la historia clínica), bajo anestesia local.</li>
+    <li><strong>Riesgos:</strong> dolor, inflamación y hematoma, limitación de la apertura bucal, sangrado, infección, alveolitis, lesión de dientes vecinos, comunicación oroantral, fractura mandibular (excepcional) y parestesia transitoria o permanente del nervio dentario inferior o lingual.</li>
+    <li><strong>Medicación:</strong> puede requerir analgésicos, antiinflamatorios y/o antibióticos según formulación.</li>
+    <li><strong>Alternativas:</strong> control y observación, remisión a cirugía maxilofacial o no realizar el procedimiento.</li>
+    <li><strong>Cuidados:</strong> reposo relativo, frío local, dieta blanda y asistencia al retiro de puntos y controles.</li>
+  </ol>`,
+      'Habiendo resuelto mis dudas, autorizo la cirugía oral propuesta.',
+    ),
+  },
+  {
+    code: 'ODO_ENDODONTICS',
+    title: 'Consentimiento informado para endodoncia (tratamiento de conductos)',
+    bodyHtml: odoConsent(
+      'CONSENTIMIENTO INFORMADO PARA ENDODONCIA',
+      `
+  <ol>
+    <li><strong>Procedimiento:</strong> remoción del tejido pulpar, limpieza, conformación y obturación de los conductos radiculares, con toma de radiografías.</li>
+    <li><strong>Pronóstico:</strong> la endodoncia tiene alta tasa de éxito, pero no es posible garantizarlo; puede requerir retratamiento, cirugía apical o extracción.</li>
+    <li><strong>Riesgos:</strong> dolor o sensibilidad postoperatoria, fractura de instrumentos dentro del conducto, perforación, sobreobturación, fractura del diente y reacciones a la anestesia.</li>
+    <li><strong>Restauración:</strong> el diente tratado debe restaurarse de forma definitiva (resina, incrustación o corona) para evitar su fractura.</li>
+    <li><strong>Alternativas:</strong> extracción de la pieza o no realizar tratamiento, con sus consecuencias.</li>
+  </ol>`,
+      'Habiendo resuelto mis dudas, autorizo el tratamiento de endodoncia propuesto.',
+    ),
+  },
+  {
+    code: 'ODO_PERIODONTICS',
+    title: 'Consentimiento informado para tratamiento periodontal',
+    bodyHtml: odoConsent(
+      'CONSENTIMIENTO INFORMADO PARA TRATAMIENTO PERIODONTAL',
+      `
+  <ol>
+    <li><strong>Procedimiento:</strong> profilaxis, detartraje, raspado y alisado radicular y, si se requiere, cirugía periodontal.</li>
+    <li><strong>Riesgos:</strong> sensibilidad dental, sangrado, inflamación, recesión gingival con espacios entre los dientes y movilidad transitoria.</li>
+    <li><strong>Compromisos:</strong> el éxito depende de la higiene oral diaria, el control de factores de riesgo (tabaquismo, diabetes) y la asistencia a mantenimientos periódicos.</li>
+    <li><strong>Alternativas:</strong> tratamiento no quirúrgico únicamente, remisión a periodoncista o no tratar, con progresión de la enfermedad y posible pérdida dental.</li>
+  </ol>`,
+      'Habiendo resuelto mis dudas, autorizo el tratamiento periodontal propuesto.',
+    ),
+  },
+  {
+    code: 'ODO_PHOTOS',
+    title: 'Autorización para toma de fotografías clínicas',
+    bodyHtml: odoConsent(
+      'AUTORIZACIÓN PARA TOMA DE FOTOGRAFÍAS CLÍNICAS',
+      `
+  <ol>
+    <li><strong>Alcance:</strong> fotografías extraorales e intraorales, antes, durante y después del tratamiento.</li>
+    <li><strong>Finalidad:</strong> diagnóstico, planificación, seguimiento y registro en la historia clínica odontológica.</li>
+    <li><strong>Custodia:</strong> las fotografías hacen parte de la historia clínica y se protegen conforme a la Ley 1581 de 2012 y la Resolución 1995 de 1999.</li>
+    <li><strong>Revocatoria:</strong> puedo retirar esta autorización para nuevas fotografías, sin afectar las ya incorporadas a la historia clínica.</li>
+  </ol>`,
+      'Autorizo la toma de fotografías clínicas con fines asistenciales.',
+    ),
+  },
+  {
+    code: 'ODO_IMAGE_USE',
+    title: 'Autorización de uso de imágenes clínicas con fines académicos o de divulgación',
+    bodyHtml: odoConsent(
+      'AUTORIZACIÓN DE USO DE IMÁGENES CLÍNICAS',
+      `
+  <ol>
+    <li><strong>Uso:</strong> publicación de fotografías o radiografías en actividades académicas, científicas o de divulgación del consultorio.</li>
+    <li><strong>Anonimización:</strong> se procurará que el paciente no sea identificable; si el rostro aparece, solo se usará con esta autorización expresa.</li>
+    <li><strong>Voluntariedad:</strong> esta autorización es opcional; negarla no afecta la atención.</li>
+    <li><strong>Revocatoria:</strong> puedo revocarla en cualquier momento para usos futuros.</li>
+  </ol>`,
+      'Autorizo el uso de mis imágenes clínicas en los términos descritos.',
+    ),
+  },
+  {
+    code: 'ODO_ANESTHESIA',
+    title: 'Consentimiento informado para anestesia local odontológica',
+    bodyHtml: odoConsent(
+      'CONSENTIMIENTO INFORMADO PARA ANESTESIA LOCAL',
+      `
+  <ol>
+    <li><strong>Procedimiento:</strong> aplicación de anestésico local (con o sin vasoconstrictor) por infiltración o bloqueo troncular.</li>
+    <li><strong>Riesgos:</strong> dolor en el sitio de punción, hematoma, trismus, reacción alérgica, taquicardia o mareo, mordedura accidental del labio o la lengua y parestesia transitoria.</li>
+    <li><strong>Declaración:</strong> he informado mis antecedentes médicos, alergias, medicamentos, embarazo y reacciones previas a la anestesia.</li>
+    <li><strong>Cuidados:</strong> no comer ni morder la zona anestesiada hasta recuperar la sensibilidad.</li>
+  </ol>`,
+      'Habiendo resuelto mis dudas, autorizo la aplicación de anestesia local.',
+    ),
+  },
+  {
+    code: 'ODO_AESTHETIC',
+    title: 'Consentimiento informado para procedimientos odontológicos estéticos',
+    bodyHtml: odoConsent(
+      'CONSENTIMIENTO INFORMADO PARA PROCEDIMIENTOS ESTÉTICOS',
+      `
+  <ol>
+    <li><strong>Procedimiento:</strong> blanqueamiento, carillas, diseño de sonrisa, contorneado o restauraciones estéticas según el plan.</li>
+    <li><strong>Resultados:</strong> dependen de las condiciones de cada paciente; el color y la forma finales pueden variar respecto a la simulación.</li>
+    <li><strong>Riesgos:</strong> sensibilidad dental, irritación gingival, desgaste de estructura dental, fractura o desprendimiento de restauraciones y necesidad de mantenimiento o reemplazo.</li>
+    <li><strong>Alternativas:</strong> no realizar el procedimiento u otras opciones restauradoras.</li>
+  </ol>`,
+      'Habiendo resuelto mis dudas, autorizo el procedimiento estético propuesto.',
+    ),
   },
 ];
 

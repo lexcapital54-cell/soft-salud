@@ -2,6 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.module';
 import { ClinicalStorageService } from './clinical-storage.service';
+import {
+  DENTAL_ORDER_TYPE_LABELS,
+  DENTAL_SERVICE_LABELS,
+  DENTAL_TREATMENT_STATUS_LABELS,
+} from './dentistry-labels';
 
 /**
  * RDA — Resumen Digital de Atención (Ley 2015 / Res. 866).
@@ -51,6 +56,40 @@ export class RdaExportService {
     const care = (content.careMinimum ?? {}) as Record<string, unknown>;
     const assessment = (content.assessment ?? {}) as Record<string, unknown>;
     const mental = (content.mentalExam ?? {}) as Record<string, unknown>;
+    const profile = String(content.profile || '').toUpperCase();
+    const specialtyTitle =
+      profile === 'DENTISTRY'
+        ? 'Odontología'
+        : profile === 'PHYSIOTHERAPY'
+          ? 'Fisioterapia'
+          : 'Psicología';
+    const list = (v: unknown) =>
+      Array.isArray(v) ? v.map((x) => String(x ?? '').trim()).filter(Boolean) : [];
+    const allergies = list(content.allergies);
+    const medications = list(content.medications);
+    const clinicalNote =
+      profile === 'DENTISTRY'
+        ? dentalNote(care, (content.dentistry ?? {}) as Record<string, unknown>)
+        : profile === 'PHYSIOTHERAPY'
+          ? physioNote(care, (content.physiotherapy ?? {}) as Record<string, unknown>)
+          : [
+              `Motivo: ${String(care.motive || '')}`,
+              `Enfermedad actual: ${String(care.presentIllness || '')}`,
+              `Historia psicosocial: ${String(care.systemsReview || '')}`,
+              `Antecedentes: ${String(care.antecedents || '')}`,
+              `Examen mental: ${String(
+                mental.narrative ||
+                  [mental.appearance, mental.behavior, mental.mood, mental.thought]
+                    .filter(Boolean)
+                    .join('; '),
+              )}`,
+              `Impresión: ${String(assessment.impressionNarrative || '')}`,
+              `Plan intervención: ${
+                Array.isArray(assessment.managementPlan)
+                  ? assessment.managementPlan.join('; ')
+                  : ''
+              }`,
+            ];
 
     const patientName = [
       encounter.patient.firstName,
@@ -83,7 +122,7 @@ export class RdaExportService {
                   display: 'Progress note',
                 },
               ],
-              text: 'Resumen Digital de Atención — Psicología',
+              text: `Resumen Digital de Atención — ${specialtyTitle}`,
             },
             subject: { reference: `Patient/${encounter.patientId}` },
             encounter: { reference: `Encounter/${encounter.id}` },
@@ -121,29 +160,21 @@ export class RdaExportService {
                 title: 'Nota clínica',
                 text: {
                   status: 'generated',
-                  div: `<div>${escapeHtml(
-                    [
-                      `Motivo: ${String(care.motive || '')}`,
-                      `Enfermedad actual: ${String(care.presentIllness || '')}`,
-                      `Historia psicosocial: ${String(care.systemsReview || '')}`,
-                      `Antecedentes: ${String(care.antecedents || '')}`,
-                      `Examen mental: ${String(
-                        mental.narrative ||
-                          [
-                            mental.appearance,
-                            mental.behavior,
-                            mental.mood,
-                            mental.thought,
-                          ]
-                            .filter(Boolean)
-                            .join('; '),
-                      )}`,
-                      `Impresión: ${String(assessment.impressionNarrative || '')}`,
-                      `Plan intervención: ${Array.isArray(assessment.managementPlan)
-                        ? assessment.managementPlan.join('; ')
-                        : ''}`,
-                    ].join('\n'),
-                  )}</div>`,
+                  div: `<div>${escapeHtml(clinicalNote.filter(Boolean).join('\n'))}</div>`,
+                },
+              },
+              {
+                title: 'Alergias',
+                text: {
+                  status: 'generated',
+                  div: `<div>${escapeHtml(allergies.join(' | ') || 'Sin registro')}</div>`,
+                },
+              },
+              {
+                title: 'Medicamentos',
+                text: {
+                  status: 'generated',
+                  div: `<div>${escapeHtml(medications.join(' | ') || 'Sin registro')}</div>`,
                 },
               },
               {
@@ -154,6 +185,17 @@ export class RdaExportService {
                     encounter.diagnoses
                       .map((d) => `${d.cieCode} ${d.description} (${d.type})`)
                       .join(' | ') || 'Sin CIE (consulta particular)',
+                  )}</div>`,
+                },
+              },
+              {
+                title: 'Procedimientos CUPS',
+                text: {
+                  status: 'generated',
+                  div: `<div>${escapeHtml(
+                    encounter.procedures
+                      .map((p) => `${p.cupsCode} ${p.description}`)
+                      .join(' | ') || 'Sin procedimientos',
                   )}</div>`,
                 },
               },
@@ -332,6 +374,60 @@ export class RdaExportService {
     this.logger.log(`RIPS generado encounter=${encounter.id}`);
     return written.storageKey;
   }
+}
+
+function text(v: unknown) {
+  return typeof v === 'string' ? v.trim() : '';
+}
+
+function rowsOf(v: unknown) {
+  return Array.isArray(v) ? (v as Array<Record<string, unknown>>) : [];
+}
+
+function physioNote(care: Record<string, unknown>, physio: Record<string, unknown>) {
+  return [
+    `Motivo: ${text(care.motive)}`,
+    `Enfermedad actual: ${text(care.presentIllness)}`,
+    `Hallazgos: ${text(physio.findings)}`,
+    `Diagnóstico fisioterapéutico: ${text(physio.physioDiagnosis)}`,
+    `Objetivos: ${text(physio.treatmentObjectives)}`,
+    `Plan de intervención: ${text(physio.interventionPlan)}`,
+  ];
+}
+
+function dentalNote(care: Record<string, unknown>, dental: Record<string, unknown>) {
+  const plan = rowsOf(dental.treatmentPlan)
+    .filter((r) => text(r.description) || text(r.code))
+    .map((r) =>
+      [
+        text(r.tooth) && `Pieza ${text(r.tooth)}`,
+        text(r.code),
+        text(r.description),
+        DENTAL_TREATMENT_STATUS_LABELS[text(r.status)] || '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+    );
+  const rx = rowsOf(dental.prescriptions)
+    .filter((r) => text(r.medication))
+    .map((r) =>
+      [r.medication, r.dose, r.route, r.frequency, r.duration].map(text).filter(Boolean).join(' '),
+    );
+  const orders = rowsOf(dental.orders)
+    .filter((r) => text(r.detail) || text(r.type))
+    .map((r) =>
+      [DENTAL_ORDER_TYPE_LABELS[text(r.type)] || text(r.type), text(r.code), text(r.detail)]
+        .filter(Boolean)
+        .join(' '),
+    );
+  return [
+    `Servicio: ${DENTAL_SERVICE_LABELS[text(dental.service)] || ''}`,
+    `Motivo: ${text(care.motive)}`,
+    `Enfermedad actual: ${text(dental.currentIllness)}`,
+    plan.length ? `Plan de tratamiento: ${plan.join('; ')}` : '',
+    rx.length ? `Prescripción: ${rx.join('; ')}` : '',
+    orders.length ? `Órdenes: ${orders.join('; ')}` : '',
+  ];
 }
 
 function escapeHtml(value: string) {

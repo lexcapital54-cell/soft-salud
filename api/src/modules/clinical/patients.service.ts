@@ -402,6 +402,78 @@ export class PatientsService {
   }
 
   /**
+   * Plan / indicaciones odontológicas. Por correo se envía aquí; por WhatsApp el
+   * mensaje sale desde el navegador y aquí solo queda la constancia.
+   */
+  async sendDentalInstructions(
+    user: User,
+    patientId: string,
+    dto: { channel: 'EMAIL' | 'WHATSAPP'; title: string; message: string; encounterId?: string },
+  ) {
+    const clinicId = this.requireClinicId(user);
+    const patient = await this.prisma.patient.findFirst({
+      where: { id: patientId, clinicId },
+      include: { clinic: true },
+    });
+    if (!patient) throw new NotFoundException('Paciente no encontrado');
+    const clinicName = patient.clinic?.name || 'el consultorio';
+    const destination =
+      dto.channel === 'EMAIL' ? patient.email?.trim() || null : patient.phone?.trim() || null;
+    if (!destination) {
+      return {
+        sent: false,
+        destination: null,
+        message:
+          dto.channel === 'EMAIL'
+            ? 'El paciente no tiene correo. Agréguelo en la ficha para enviar las indicaciones.'
+            : 'El paciente no tiene teléfono registrado.',
+      };
+    }
+
+    let simulated = false;
+    let providerMessageId: string | undefined;
+    if (dto.channel === 'EMAIL') {
+      const result = await this.email.send({
+        destination,
+        subject: `${dto.title} · ${clinicName}`,
+        body: `${dto.message.trim()}\n\n${clinicName}`,
+      });
+      simulated = result.simulated;
+      providerMessageId = result.providerMessageId;
+    }
+
+    await this.prisma.auditLog.create({
+      data: {
+        clinicId,
+        userId: user.id,
+        action: 'CREATE',
+        entityType: 'DentalInstructions',
+        entityId: patient.id,
+        metadata: {
+          channel: dto.channel,
+          title: dto.title,
+          encounterId: dto.encounterId || null,
+          destination,
+          simulated,
+          providerMessageId,
+        },
+      },
+    });
+
+    return {
+      sent: true,
+      destination,
+      simulated,
+      message:
+        dto.channel === 'WHATSAPP'
+          ? `Envío por WhatsApp registrado (${destination}).`
+          : simulated
+            ? `Indicaciones registradas para ${destination} (SMTP no configurado: modo simulado).`
+            : `Indicaciones enviadas a ${destination}.`,
+    };
+  }
+
+  /**
    * Foto de identificación del paciente: archivo en storage + clave en photoUrl.
    * Acepta cámara o galería (JPEG/PNG/WebP, máx. 8 MB).
    */

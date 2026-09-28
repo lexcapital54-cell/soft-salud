@@ -40,10 +40,32 @@ import { formatClinicalFreeText } from './clinical-text-format';
 import { ConsentSigner } from './consent-signer';
 import { DentalOdontogram } from './dentistry/dental-odontogram';
 import {
+  ALLERGY_ITEMS,
+  DENTAL_CONSENT_OPTIONS,
+  DENTAL_SERVICES,
+  DENTAL_SYMPTOMS,
   DENTAL_SYSTEMS,
+  DENTAL_TREATMENTS,
   DentistryContent,
+  HABIT_ITEMS,
+  IMAGING_TYPES,
+  MEDICAL_CONDITIONS,
+  MEDICATION_GROUPS,
+  ORDER_TYPES,
+  ORTHO_HABITS,
+  PHOTO_SLOTS,
+  TREATMENT_STATUSES,
+  TreatmentStatus,
+  dentalAllergyList,
+  dentalMedicationList,
+  dentalServiceLabel,
   emptyDentalDiagnosis,
+  emptyImagingRow,
+  emptyMedicationRow,
+  emptyOrderRow,
+  emptyPrescriptionRow,
   emptyTreatmentRow,
+  hasOrthodonticData,
   normalizeDentistry,
   validateDentistryForSeal,
 } from './dentistry/dentistry.models';
@@ -67,6 +89,25 @@ import {
   ProcedureRow,
   SoapContent,
 } from './clinical.models';
+
+type DentalField<T> = {
+  key: keyof T & string;
+  label: string;
+  options?: string[];
+  placeholder?: string;
+};
+
+function emptyDentalEvolution() {
+  return {
+    teeth: '',
+    findings: '',
+    anesthesia: '',
+    material: '',
+    complications: '',
+    instructions: '',
+    nextAppointment: '',
+  };
+}
 
 /** Residencia por defecto: el consultorio atiende en Manizales. */
 const DEFAULT_DEPARTMENT = 'Caldas';
@@ -278,32 +319,515 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   readonly dentalSystems = DENTAL_SYSTEMS;
 
-  readonly dentalAntecedentKeys: Array<{ key: keyof DentistryContent['antecedents']; label: string }> = [
-    { key: 'personal', label: 'Personales' },
-    { key: 'family', label: 'Familiares' },
-    { key: 'pathological', label: 'Patológicos' },
-    { key: 'obgyn', label: 'Gineco-obstétricos' },
-    { key: 'allergic', label: 'Alérgicos' },
-    { key: 'pharmacological', label: 'Farmacológicos' },
-    { key: 'surgical', label: 'Quirúrgicos' },
-    { key: 'oralHabits', label: 'Hábitos orales (bruxismo, onicofagia, respiración oral…)' },
+  readonly dentalServices = DENTAL_SERVICES;
+  readonly dentalServiceLabel = dentalServiceLabel;
+  readonly dentalMedicalConditions = MEDICAL_CONDITIONS;
+  readonly dentalAllergyItems = ALLERGY_ITEMS;
+  readonly dentalMedicationGroups = MEDICATION_GROUPS;
+  readonly dentalTreatmentItems = DENTAL_TREATMENTS;
+  readonly dentalSymptomItems = DENTAL_SYMPTOMS;
+  readonly dentalHabitItems = HABIT_ITEMS;
+  readonly orthoHabitItems = ORTHO_HABITS;
+  readonly dentalConsentOptions = DENTAL_CONSENT_OPTIONS;
+  readonly imagingTypes = IMAGING_TYPES;
+  readonly treatmentStatuses = TREATMENT_STATUSES;
+  readonly orderTypes = ORDER_TYPES;
+  readonly photoGroups = ['Extraoral', 'Intraoral'] as const;
+  readonly prescriptionRoutes = ['Oral', 'Tópica', 'Sublingual', 'Intramuscular', 'Intravenosa', 'Enjuague'];
+  readonly orthoAppliances = [
+    'Brackets metálicos',
+    'Brackets estéticos',
+    'Brackets de autoligado',
+    'Alineadores',
+    'Aparatología removible',
+    'Ortopedia funcional',
+    'Expansor palatino',
+    'Retenedores',
+    'Otro',
+  ];
+  readonly anesthesiaOptions = [
+    { key: 'NO', label: 'No' },
+    { key: 'SI', label: 'Sí' },
+    { key: 'NO_SABE', label: 'No sabe' },
+  ] as const;
+
+  private readonly normalAltered = ['Normal', 'Alterado'];
+
+  readonly dentalExtraoralFields: DentalField<DentistryContent['extraoral']>[] = [
+    { key: 'symmetry', label: 'Simetría facial', options: ['Simétrica', 'Asimetría leve', 'Asimetría marcada'] },
+    { key: 'profile', label: 'Perfil', options: ['Recto', 'Convexo', 'Cóncavo'] },
+    { key: 'facialThirds', label: 'Tercios faciales', options: ['Proporcionados', 'Tercio inferior aumentado', 'Tercio inferior disminuido'] },
+    { key: 'lymphNodes', label: 'Ganglios', options: ['No palpables', 'Palpables no dolorosos', 'Palpables dolorosos'] },
+    { key: 'lips', label: 'Labios', options: this.normalAltered },
+    { key: 'breathing', label: 'Respiración', options: ['Nasal', 'Oral', 'Mixta'] },
+    { key: 'skin', label: 'Piel', options: this.normalAltered },
   ];
 
-  readonly dentalExtraoralKeys: Array<{ key: keyof DentistryContent['extraoral']; label: string; placeholder: string }> = [
-    { key: 'symmetry', label: 'Simetría facial', placeholder: 'Simétrica / asimetría…' },
-    { key: 'tmj', label: 'ATM', placeholder: 'Sin ruidos, apertura normal / chasquido, desviación…' },
-    { key: 'lymphNodes', label: 'Ganglios', placeholder: 'No palpables / adenopatías…' },
-    { key: 'skin', label: 'Piel', placeholder: 'Normal / lesiones…' },
-    { key: 'lips', label: 'Labios', placeholder: 'Normales / queilitis, lesiones…' },
+  readonly dentalTmjFields: DentalField<DentistryContent['extraoral']>[] = [
+    { key: 'tmj', label: 'ATM', options: ['Sin alteración', 'Dolor', 'Ruidos', 'Limitación'] },
+    { key: 'mouthOpening', label: 'Apertura bucal (mm)', placeholder: '40' },
+    { key: 'muscularPain', label: 'Dolor muscular', options: ['No', 'Sí'] },
+    { key: 'clicking', label: 'Chasquidos', options: ['No', 'Derecho', 'Izquierdo', 'Bilateral'] },
+    { key: 'mandibularDeviation', label: 'Desviación mandibular', options: ['No', 'Derecha', 'Izquierda'] },
   ];
 
-  readonly dentalIntraoralKeys: Array<{ key: keyof DentistryContent['intraoral']; label: string; placeholder: string }> = [
-    { key: 'mucosa', label: 'Mucosa', placeholder: 'Rosada, húmeda / lesiones…' },
-    { key: 'tongue', label: 'Lengua', placeholder: 'Normal / saburral, fisurada…' },
-    { key: 'palate', label: 'Paladar', placeholder: 'Normal / torus, lesiones…' },
-    { key: 'floorOfMouth', label: 'Piso de boca', placeholder: 'Normal / lesiones…' },
-    { key: 'glands', label: 'Glándulas salivales', placeholder: 'Flujo normal / xerostomía…' },
+  readonly dentalIntraoralFields: DentalField<DentistryContent['intraoral']>[] = [
+    { key: 'hygiene', label: 'Higiene oral', options: ['Buena', 'Regular', 'Deficiente'] },
+    { key: 'lips', label: 'Labios', options: this.normalAltered },
+    { key: 'mucosa', label: 'Carrillos / mucosa', options: this.normalAltered },
+    { key: 'palate', label: 'Paladar', options: this.normalAltered },
+    { key: 'tongue', label: 'Lengua', options: this.normalAltered },
+    { key: 'floorOfMouth', label: 'Piso de boca', options: this.normalAltered },
+    { key: 'frenula', label: 'Frenillos', options: this.normalAltered },
+    { key: 'tonsils', label: 'Amígdalas / orofaringe', options: this.normalAltered },
+    { key: 'glands', label: 'Glándulas salivales', options: ['Flujo normal', 'Xerostomía', 'Sialorrea'] },
+    { key: 'dentition', label: 'Dentición', options: ['Permanente', 'Temporal', 'Mixta'] },
+    { key: 'occlusion', label: 'Oclusión', options: ['Normal', 'Maloclusión'] },
+    { key: 'otherLesions', label: 'Otras lesiones', placeholder: 'Úlceras, leucoplasias…' },
   ];
+
+  readonly dentalPeriodontalFields: DentalField<DentistryContent['periodontal']>[] = [
+    { key: 'gingiva', label: 'Encía', options: ['Sana', 'Inflamada', 'Hiperplásica'] },
+    { key: 'bleeding', label: 'Sangrado al sondaje', options: ['No', 'Localizado', 'Generalizado'] },
+    { key: 'recessions', label: 'Recesiones', placeholder: 'Piezas / mm' },
+    { key: 'mobility', label: 'Movilidad', placeholder: 'Piezas / grado' },
+    { key: 'probingDepth', label: 'Profundidad al sondaje', placeholder: 'Bolsas > 4 mm en…' },
+    { key: 'plaque', label: 'Placa bacteriana', options: ['Escasa', 'Moderada', 'Abundante'] },
+    { key: 'calculus', label: 'Cálculos', options: ['No', 'Supragingival', 'Subgingival'] },
+    { key: 'furcations', label: 'Furcaciones', placeholder: 'Piezas / grado' },
+    { key: 'indices', label: 'Índices periodontales', placeholder: 'O\'Leary 20%, IG…' },
+  ];
+
+  readonly orthoFacialFields: DentalField<DentistryContent['orthodontics']['facial']>[] = [
+    { key: 'facialType', label: 'Tipo facial', options: ['Mesofacial', 'Dolicofacial', 'Braquifacial'] },
+    { key: 'profile', label: 'Perfil', options: ['Recto', 'Convexo', 'Cóncavo'] },
+    { key: 'symmetry', label: 'Simetría', options: ['Simétrico', 'Asimétrico'] },
+    { key: 'midline', label: 'Línea media facial', options: ['Centrada', 'Desviada a la derecha', 'Desviada a la izquierda'] },
+    { key: 'lowerThird', label: 'Tercio inferior', options: ['Normal', 'Aumentado', 'Disminuido'] },
+    { key: 'lipCompetence', label: 'Competencia labial', options: ['Competente', 'Incompetente'] },
+    { key: 'smile', label: 'Sonrisa', options: ['Consonante', 'No consonante', 'Gingival'] },
+    { key: 'dentalExposure', label: 'Exposición dental', placeholder: 'mm en reposo / sonrisa' },
+    { key: 'buccalCorridor', label: 'Corredor bucal', options: ['Normal', 'Amplio', 'Reducido'] },
+  ];
+
+  readonly orthoIntraoralFields: DentalField<DentistryContent['orthodontics']['intraoral']>[] = [
+    { key: 'molarRight', label: 'Clase molar derecha', options: ['Clase I', 'Clase II', 'Clase III', 'No evaluable'] },
+    { key: 'molarLeft', label: 'Clase molar izquierda', options: ['Clase I', 'Clase II', 'Clase III', 'No evaluable'] },
+    { key: 'canineRight', label: 'Clase canina derecha', options: ['Clase I', 'Clase II', 'Clase III', 'No evaluable'] },
+    { key: 'canineLeft', label: 'Clase canina izquierda', options: ['Clase I', 'Clase II', 'Clase III', 'No evaluable'] },
+    { key: 'overjet', label: 'Overjet (mm)', placeholder: '2' },
+    { key: 'overbite', label: 'Overbite (mm / %)', placeholder: '2 mm / 20%' },
+    { key: 'openBite', label: 'Mordida abierta', options: ['No', 'Anterior', 'Posterior'] },
+    { key: 'crossBite', label: 'Mordida cruzada', options: ['No', 'Anterior', 'Posterior unilateral', 'Posterior bilateral'] },
+    { key: 'deepBite', label: 'Mordida profunda', options: ['No', 'Sí'] },
+    { key: 'crowding', label: 'Apiñamiento', options: ['No', 'Leve', 'Moderado', 'Severo'] },
+    { key: 'diastemas', label: 'Diastemas', placeholder: 'Ubicación' },
+    { key: 'dentalMidline', label: 'Línea media dental', placeholder: 'Coincide / desviada 2 mm a la derecha' },
+    { key: 'curveOfSpee', label: 'Curva de Spee', options: ['Plana', 'Normal', 'Profunda'] },
+  ];
+
+  /** Módulos de la historia odontológica (menú superior). */
+  odoModules() {
+    const ortho = this.showOrthoModule();
+    const list = [
+      { id: 'odo-identificacion', label: 'Identificación' },
+      { id: 'odo-motivo', label: 'Motivo' },
+      { id: 'hce-section-3', label: 'Antecedentes' },
+      { id: 'odo-examen', label: 'Examen clínico' },
+      { id: 'odontograma', label: 'Odontograma' },
+      ...(ortho ? [{ id: 'odo-ortodoncia', label: 'Ortodoncia' }] : []),
+      { id: 'odo-imagenes', label: 'Fotos y radiografías' },
+      { id: 'odo-diagnosticos', label: 'Diagnóstico' },
+      { id: 'odo-plan', label: 'Plan de tratamiento' },
+      { id: 'odo-evoluciones-en-formulario', label: 'Evolución' },
+      { id: 'consent-section', label: 'Consentimientos' },
+      { id: 'odo-prescripciones', label: 'Prescripciones y órdenes' },
+      { id: 'anexos-section', label: 'Anexos' },
+      { id: 'odo-cierre', label: 'Cierre' },
+    ];
+    return list.map((m, i) => ({ ...m, n: i + 1 }));
+  }
+
+  scrollToOdo(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /** Numeración de módulos: sin ortodoncia, los módulos 7+ se corren un lugar. */
+  odoNum(n: number): number {
+    return n >= 7 && !this.showOrthoModule() ? n - 1 : n;
+  }
+
+  showOrthoModule() {
+    const d = this.dental();
+    return d.service === 'ORTODONCIA' || hasOrthodonticData(d);
+  }
+
+  readonly dentalAdminOpen = signal(false);
+
+  toggleDentalFlag(flags: Record<string, boolean>, key: string, checked: boolean) {
+    if (checked) flags[key] = true;
+    else delete flags[key];
+    this.onClinicalFieldChange();
+  }
+
+  /** «Niega» y «No sabe» excluyen al resto de alergias. */
+  toggleDentalAllergy(key: string, checked: boolean) {
+    const flags = this.dental().allergies;
+    const exclusive = key === 'none' || key === 'unknown';
+    if (checked) {
+      if (exclusive) for (const k of Object.keys(flags)) delete flags[k];
+      else {
+        delete flags['none'];
+        delete flags['unknown'];
+      }
+      flags[key] = true;
+    } else delete flags[key];
+    this.onClinicalFieldChange();
+  }
+
+  setNoMedications(checked: boolean) {
+    const meds = this.dental().medications;
+    meds.none = checked;
+    if (checked) meds.rows = meds.rows.filter((r) => r.name.trim());
+    this.onClinicalFieldChange();
+  }
+
+  addMedicationRow() {
+    const meds = this.dental().medications;
+    meds.none = false;
+    meds.rows.push(emptyMedicationRow());
+    this.onClinicalFieldChange();
+  }
+
+  addPrescriptionRow() {
+    this.dental().prescriptions.push(emptyPrescriptionRow());
+    this.onClinicalFieldChange();
+  }
+
+  addOrderRow() {
+    this.dental().orders.push(emptyOrderRow());
+    this.onClinicalFieldChange();
+  }
+
+  addImagingRow() {
+    this.dental().imaging.push(emptyImagingRow());
+    this.onClinicalFieldChange();
+  }
+
+  removeDentalRow<T>(rows: T[], index: number) {
+    rows.splice(index, 1);
+    this.onClinicalFieldChange();
+  }
+
+  dentalRiskMedicationText() {
+    const groups = this.dental().medications.groups;
+    return MEDICATION_GROUPS.filter((g) => groups[g.key])
+      .map((g) => g.label)
+      .join(', ');
+  }
+
+  dentalDiagnosisOptions() {
+    return this.dental()
+      .diagnoses.filter((d) => d.cieCode.trim())
+      .map((d) => {
+        const value = `${d.cieCode.trim().toUpperCase()} ${d.description.trim()}`.trim();
+        return { value, label: value };
+      });
+  }
+
+  treatmentCount(status: TreatmentStatus) {
+    return this.dental().treatmentPlan.filter((r) => (r.status || 'PENDIENTE') === status).length;
+  }
+
+  treatmentTotal() {
+    return this.dental()
+      .treatmentPlan.filter((r) => r.status !== 'CANCELADO')
+      .reduce((sum, r) => sum + (Number(String(r.value || '').replace(/[^\d.]/g, '')) || 0), 0);
+  }
+
+  // ── Fotografías clínicas y radiografías ──
+  readonly dentalPhotoUploading = signal<string | null>(null);
+  readonly imagingUploading = signal<number | null>(null);
+  private readonly dentalPhotoUrls = signal<Record<string, string>>({});
+  private readonly dentalPhotoPending = new Set<string>();
+
+  photoSlotsOf(group: string) {
+    return PHOTO_SLOTS.filter((s) => s.group === group);
+  }
+
+  /** Miniatura de la foto del espacio; se descarga una sola vez por adjunto. */
+  dentalPhotoUrl(slotKey: string): string | null {
+    const photo = this.dental().photos[slotKey];
+    if (!photo?.attachmentId) return null;
+    const cached = this.dentalPhotoUrls()[photo.attachmentId];
+    if (cached) return cached;
+    if (!this.dentalPhotoPending.has(photo.attachmentId)) {
+      const id = photo.attachmentId;
+      this.dentalPhotoPending.add(id);
+      this.api.downloadAttachment(id).subscribe({
+        next: (blob) =>
+          this.dentalPhotoUrls.update((m) => ({ ...m, [id]: URL.createObjectURL(blob) })),
+        error: () => undefined,
+      });
+    }
+    return null;
+  }
+
+  private uploadDentalFile(file: File, label: string, category: 'PHOTO' | 'IMAGE') {
+    const enc = this.encounter();
+    if (!enc) {
+      this.error.set('Inicie la atención antes de subir archivos.');
+      return null;
+    }
+    const form = new FormData();
+    form.append('file', file);
+    form.append('encounterId', enc.id);
+    if (enc.clinicalRecord?.id) form.append('clinicalRecordId', enc.clinicalRecord.id);
+    form.append('label', label);
+    form.append('category', category);
+    return this.api.uploadAttachment(form);
+  }
+
+  uploadDentalPhoto(slotKey: string, label: string, group: string, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    const req = this.uploadDentalFile(file, `Foto ${group.toLowerCase()} — ${label}`, 'PHOTO');
+    if (!req) return;
+    this.dentalPhotoUploading.set(slotKey);
+    req.subscribe({
+      next: (att) => {
+        this.dentalPhotoUploading.set(null);
+        this.dental().photos[slotKey] = {
+          attachmentId: att.id,
+          fileName: file.name,
+          takenAt: new Date().toISOString(),
+        };
+        this.dentalPhotoUrls.update((m) => ({ ...m, [att.id]: URL.createObjectURL(file) }));
+        this.attachments.set([att, ...this.attachments()]);
+        this.onClinicalFieldChange();
+      },
+      error: (err) => {
+        this.dentalPhotoUploading.set(null);
+        this.error.set(err?.error?.message || 'No se pudo subir la fotografía.');
+      },
+    });
+  }
+
+  /** Quita la foto del espacio; el archivo sigue en Anexos. */
+  removeDentalPhoto(slotKey: string) {
+    delete this.dental().photos[slotKey];
+    this.onClinicalFieldChange();
+  }
+
+  uploadDentalImaging(index: number, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    const row = this.dental().imaging[index];
+    if (!file || !row) return;
+    const req = this.uploadDentalFile(file, `${row.type || 'Imagen diagnóstica'} — ${file.name}`, 'IMAGE');
+    if (!req) return;
+    this.imagingUploading.set(index);
+    req.subscribe({
+      next: (att) => {
+        this.imagingUploading.set(null);
+        row.attachmentId = att.id;
+        row.fileName = file.name;
+        if (!row.date) row.date = new Date().toISOString().slice(0, 10);
+        this.attachments.set([att, ...this.attachments()]);
+        this.onClinicalFieldChange();
+      },
+      error: (err) => {
+        this.imagingUploading.set(null);
+        this.error.set(err?.error?.message || 'No se pudo subir la imagen.');
+      },
+    });
+  }
+
+  // ── Consentimientos requeridos en la atención ──
+  dentalConsentRequired(code: string) {
+    return this.dental().requiredConsents.includes(code);
+  }
+
+  toggleDentalConsent(code: string, checked: boolean) {
+    const list = this.dental().requiredConsents;
+    const i = list.indexOf(code);
+    if (checked && i < 0) list.push(code);
+    if (!checked && i >= 0) list.splice(i, 1);
+    this.onClinicalFieldChange();
+  }
+
+  dentalConsentSignedAt(code: string): string | null {
+    const encId = this.encounter()?.id;
+    const rows = this.consentSigner?.signed() || [];
+    const match = rows.find(
+      (r) => r.template?.code === code && (!encId || !r.encounterId || r.encounterId === encId),
+    );
+    return match?.signedAt || null;
+  }
+
+  signDentalConsent(code: string) {
+    if (!this.consentPatientId()) {
+      this.error.set('Seleccione o cree un paciente e inicie la atención primero.');
+      return;
+    }
+    this.consentSigner?.selectTemplateByCode(code);
+    document.getElementById('consent-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── Plan e indicaciones al paciente ──
+  readonly dentalInstructionTemplates = [
+    { key: 'PLAN', label: 'Plan de tratamiento' },
+    { key: 'POST_EXTRACCION', label: 'Indicaciones post-extracción / cirugía' },
+    { key: 'POST_ENDODONCIA', label: 'Indicaciones post-endodoncia' },
+    { key: 'ORTODONCIA', label: 'Indicaciones de ortodoncia' },
+    { key: 'HIGIENE', label: 'Higiene oral' },
+  ];
+  readonly dentalInstructionsOpen = signal(false);
+  readonly dentalInstructionsKind = signal('PLAN');
+  readonly dentalInstructionsSending = signal(false);
+  dentalInstructionsText = '';
+
+  openDentalInstructions() {
+    if (!this.selectedPatientId && !this.encounter()?.patient?.id) {
+      this.error.set('Seleccione un paciente primero.');
+      return;
+    }
+    this.pickDentalInstructions(this.dental().treatmentPlan.some((r) => r.description.trim()) ? 'PLAN' : 'HIGIENE');
+    this.dentalInstructionsOpen.set(true);
+  }
+
+  pickDentalInstructions(kind: string) {
+    this.dentalInstructionsKind.set(kind);
+    this.dentalInstructionsText = this.buildDentalInstructions(kind);
+  }
+
+  private buildDentalInstructions(kind: string): string {
+    const name = `${this.patientForm.firstName || ''}`.trim();
+    const clinic = this.user()?.clinicName || 'el consultorio';
+    const hello = `Hola${name ? ' ' + name : ''}, le escribimos de ${clinic}.`;
+    const bye = 'Ante dolor intenso, sangrado que no cede, fiebre o inflamación que aumenta, comuníquese con nosotros.';
+    switch (kind) {
+      case 'PLAN': {
+        const rows = this.dental().treatmentPlan.filter((r) => r.description.trim() && r.status !== 'CANCELADO');
+        const lines = rows.map((r, i) => {
+          const tooth = r.tooth ? ` (pieza ${r.tooth})` : '';
+          const value = Number(String(r.value || '').replace(/[^\d.]/g, ''));
+          const price = value ? ` — $${value.toLocaleString('es-CO')}` : '';
+          return `${i + 1}. ${r.description.trim()}${tooth}${price}`;
+        });
+        const total = this.treatmentTotal();
+        return [
+          hello,
+          '',
+          'Este es su plan de tratamiento odontológico:',
+          ...(lines.length ? lines : ['(Sin procedimientos registrados)']),
+          ...(total ? ['', `Valor total estimado: $${total.toLocaleString('es-CO')}`] : []),
+          '',
+          'Si tiene preguntas sobre el plan, con gusto las resolvemos en su próxima cita.',
+        ].join('\n');
+      }
+      case 'POST_EXTRACCION':
+        return [
+          hello,
+          '',
+          'Indicaciones después de la extracción o cirugía:',
+          '• Muerda la gasa durante 30–45 minutos.',
+          '• Aplique frío por fuera, 10 minutos sí y 10 no, durante las primeras 24 horas.',
+          '• No escupa, no use pitillo, no fume ni tome alcohol por 72 horas.',
+          '• Dieta blanda y fría las primeras 24 horas; mastique por el lado contrario.',
+          '• No se enjuague el primer día; desde el segundo, enjuagues suaves con agua tibia y sal.',
+          '• Tome los medicamentos formulados en el horario indicado.',
+          '• Duerma con la cabeza elevada la primera noche.',
+          '',
+          bye,
+        ].join('\n');
+      case 'POST_ENDODONCIA':
+        return [
+          hello,
+          '',
+          'Indicaciones después de la endodoncia:',
+          '• Es normal una leve sensibilidad al morder durante algunos días.',
+          '• Evite masticar alimentos duros por el lado tratado hasta la restauración definitiva.',
+          '• Si tiene una obturación provisional, no la retire y evite chicles o alimentos pegajosos.',
+          '• Tome los medicamentos formulados en el horario indicado.',
+          '• Asista a la cita para la restauración definitiva (resina o corona).',
+          '',
+          bye,
+        ].join('\n');
+      case 'ORTODONCIA':
+        return [
+          hello,
+          '',
+          'Indicaciones para su tratamiento de ortodoncia:',
+          '• Cepíllese después de cada comida con cepillo de ortodoncia e interproximal.',
+          '• Use seda dental con enhebrador y enjuague con flúor según indicación.',
+          '• Evite alimentos duros o pegajosos (hielo, caramelos, maíz pira, chicle).',
+          '• Use la cera de ortodoncia si algún bracket o alambre le lastima.',
+          '• Si un bracket se despega o un alambre se suelta, avise antes de su control.',
+          '• Asista puntualmente a sus controles mensuales.',
+        ].join('\n');
+      default:
+        return [
+          hello,
+          '',
+          'Recomendaciones de higiene oral:',
+          '• Cepíllese 3 veces al día durante 2 minutos, con crema dental con flúor.',
+          '• Use seda dental al menos una vez al día, preferiblemente en la noche.',
+          '• Cambie el cepillo cada 3 meses.',
+          '• Reduzca el consumo de azúcares entre comidas.',
+          '• Visite al odontólogo cada 6 meses para control y limpieza.',
+        ].join('\n');
+    }
+  }
+
+  whatsappDentalInstructions() {
+    const digits = String(this.patientForm.phone || '').replace(/\D/g, '');
+    if (!digits) {
+      this.error.set('El paciente no tiene teléfono registrado.');
+      return;
+    }
+    const phone = digits.length === 10 ? `57${digits}` : digits;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(this.dentalInstructionsText)}`, '_blank');
+    this.logDentalInstructions('WHATSAPP');
+    this.dentalInstructionsOpen.set(false);
+  }
+
+  emailDentalInstructions() {
+    this.logDentalInstructions('EMAIL', true);
+  }
+
+  private logDentalInstructions(channel: 'EMAIL' | 'WHATSAPP', closeOnDone = false) {
+    const id = this.encounter()?.patient?.id || this.selectedPatientId;
+    if (!id) return;
+    const label = this.dentalInstructionTemplates.find((t) => t.key === this.dentalInstructionsKind())?.label || 'Indicaciones';
+    if (channel === 'EMAIL') this.dentalInstructionsSending.set(true);
+    this.api
+      .sendDentalInstructions(id, {
+        channel,
+        title: label,
+        message: this.dentalInstructionsText,
+        encounterId: this.encounter()?.id,
+      })
+      .subscribe({
+        next: (res) => {
+          this.dentalInstructionsSending.set(false);
+          if (channel === 'EMAIL') {
+            this.message.set(res.message || 'Indicaciones enviadas por correo.');
+            if (closeOnDone) this.dentalInstructionsOpen.set(false);
+          }
+        },
+        error: (err) => {
+          this.dentalInstructionsSending.set(false);
+          if (channel === 'EMAIL') this.error.set(err?.error?.message || 'No se pudo enviar el correo.');
+        },
+      });
+  }
+
+  // ── Evolución odontológica estructurada ──
+  dentalEvolution = emptyDentalEvolution();
 
   /** Autocompletado CIE-10 / CUPS por fila en diagnósticos y plan odontológico. */
   readonly dentalCieRow = signal<number | null>(null);
@@ -423,7 +947,14 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   /** Número visible de cada bloque compartido según la plantilla de la especialidad. */
   hceSectionNumber(key: 'cie' | 'cups' | 'rda' | 'consent' | 'audit' | 'annex'): string {
     const map = this.isDentistryClinic()
-      ? { cie: '9', cups: '10.1', rda: '', consent: '12', audit: '14', annex: '15' }
+      ? {
+          cie: `${this.odoNum(8)}`,
+          cups: `${this.odoNum(9)}.1`,
+          rda: '',
+          consent: `${this.odoNum(11)}`,
+          audit: '',
+          annex: `${this.odoNum(13)}`,
+        }
       : this.isPhysiotherapyClinic()
         ? { cie: '5', cups: '6', rda: '7', consent: '8', audit: '9', annex: '10' }
         : { cie: '4', cups: '5', rda: '6', consent: '7', audit: '8', annex: '9' };
@@ -3194,6 +3725,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
           this.evolutionSituationInherited.set(situation ? 'la evolución recién firmada' : null);
           this.evolutionAttentionDate = this.nowLocal();
           this.evolutionMentalExam = '';
+          this.dentalEvolution = emptyDentalEvolution();
           this.evolutionSoap = {
             subjective: '',
             objective: '',
@@ -3268,6 +3800,23 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     const dentalNote = this.isDentistryClinic();
     if (session) {
       parts.push(dentalNote ? `Procedimientos realizados:\n${session}` : `Evolución terapéutica:\n${session}`);
+    }
+    if (dentalNote) {
+      const e = this.dentalEvolution;
+      const next = e.nextAppointment
+        ? new Date(`${e.nextAppointment}T12:00:00`).toLocaleDateString('es-CO')
+        : '';
+      const fields: Array<[string, string]> = [
+        ['Piezas tratadas', e.teeth],
+        ['Hallazgos', e.findings],
+        ['Anestesia', e.anesthesia],
+        ['Material utilizado', e.material],
+        ['Complicaciones', e.complications],
+        ['Indicaciones', e.instructions],
+        ['Próxima cita', next],
+      ];
+      const lines = fields.filter(([, v]) => (v || '').trim()).map(([k, v]) => `${k}: ${v.trim()}`);
+      if (lines.length) parts.push(lines.join('\n'));
     }
     if (mental) {
       parts.push(
@@ -3373,6 +3922,8 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
           ? 'DENTISTRY'
           : 'FULL';
       if (this.isDentistryClinic()) {
+        this.allergiesText = dentalAllergyList(this.dental()).join(', ');
+        this.medicationsText = dentalMedicationList(this.dental()).join(', ');
         // Los diagnósticos odontológicos alimentan los diagnósticos CIE-10 de la atención (RIPS/RDA).
         this.diagnoses = this.dental()
           .diagnoses.filter((d) => d.cieCode.trim())

@@ -21,6 +21,7 @@ import { UserRole } from '../../common/enums';
 import { User } from '../../users/user.entity';
 import {
   CreatePatientDto,
+  DentalInstructionsDto,
   QuickPatientDto,
   UpdatePatientDto,
 } from './dto/patient.dto';
@@ -132,5 +133,15 @@ export class PatientsController {
   @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
   sendTherapeuticFrame(@Req() req: { user: User }, @Param('id') id: string) {
     return this.patientsService.sendTherapeuticFrame(req.user, id);
+  }
+
+  @Post(':id/dental-instructions')
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
+  sendDentalInstructions(
+    @Req() req: { user: User },
+    @Param('id') id: string,
+    @Body() dto: DentalInstructionsDto,
+  ) {
+    return this.patientsService.sendDentalInstructions(req.user, id, dto);
   }
 }

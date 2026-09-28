@@ -18,6 +18,20 @@ import {
   Patient,
   User,
 } from '@prisma/client';
+import {
+  DENTAL_ALLERGY_LABELS,
+  DENTAL_CONSENT_LABELS,
+  DENTAL_HABIT_LABELS,
+  DENTAL_MEDICAL_CONDITION_LABELS,
+  DENTAL_MEDICATION_GROUP_LABELS,
+  DENTAL_ORDER_TYPE_LABELS,
+  DENTAL_SERVICE_LABELS,
+  DENTAL_SYMPTOM_LABELS,
+  DENTAL_TOOTH_LABELS,
+  DENTAL_TREATMENT_LABELS,
+  DENTAL_TREATMENT_STATUS_LABELS,
+  ORTHO_HABIT_LABELS,
+} from './dentistry-labels';
 
 type EncounterPdfRow = Encounter & {
   patient: Patient;
@@ -95,15 +109,6 @@ const ODO_THEME = {
   gold: '#0B5563',
   muted: '#5B7178',
   body: '#1a1a1a',
-};
-
-const DENTAL_STATE_LABELS: Record<string, string> = {
-  SANO: 'Sano',
-  CARIADO: 'Cariado',
-  OBTURADO: 'Obturado',
-  AUSENTE: 'Ausente',
-  ENDODONCIA: 'Endodoncia',
-  CORONA: 'Corona',
 };
 
 const DENTAL_SURFACE_LABELS: Record<string, string> = {
@@ -275,12 +280,7 @@ export class HcePdfService {
     const isPhysio = specialty === ClinicSpecialty.PHYSIOTHERAPY;
     const isDental = specialty === ClinicSpecialty.DENTISTRY;
     const dental = (content.dentistry || {}) as Record<string, unknown>;
-    const dentalService =
-      dental.service === 'ORTODONCIA'
-        ? 'Ortodoncia'
-        : dental.service === 'ODONTOLOGIA'
-          ? 'Odontología general'
-          : '';
+    const dentalService = DENTAL_SERVICE_LABELS[String(dental.service || '')] || '';
 
     const body: Content[] = [
       {
@@ -786,7 +786,8 @@ export class HcePdfService {
     titleColor: string,
   ): Content[] {
     const band = { banded: true as const };
-    const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+    const str = (v: unknown) =>
+      typeof v === 'string' ? v.trim() : typeof v === 'number' ? String(v) : '';
     const obj = (v: unknown) =>
       v && typeof v === 'object' ? (v as Record<string, unknown>) : {};
     const rows = (v: unknown) =>
@@ -796,58 +797,127 @@ export class HcePdfService {
         .filter(([, v]) => str(v))
         .map(([label, v]) => `${label}: ${str(v)}`)
         .join('\n');
+    const flags = (v: unknown, labels: Record<string, string>) =>
+      Object.entries(obj(v))
+        .filter(([, on]) => on === true)
+        .map(([k]) => labels[k] || k)
+        .join(', ');
+    const joinDash = (...v: unknown[]) => v.map(str).filter(Boolean).join(' — ');
+    const table = (
+      title: string,
+      widths: string[],
+      header: string[],
+      data: string[][],
+    ): Content => ({
+      unbreakable: data.length <= 15,
+      stack: [
+        this.bandTitle(title, titleColor),
+        {
+          table: {
+            widths,
+            headerRows: 1,
+            body: [
+              header.map((h) => ({ text: h, bold: true, fontSize: 8.5 })),
+              ...data.map((r) => r.map((c) => ({ text: c || '—', fontSize: 8.5 }))),
+            ],
+          },
+          layout: 'lightHorizontalLines',
+          margin: [0, 0, 0, 6],
+        },
+      ],
+    });
+
     const care = obj(content.careMinimum);
     const ant = obj(dental.antecedents);
+    const meds = obj(dental.medications);
+    const history = obj(dental.dentalHistory);
     const vitals = obj(dental.vitals);
     const extra = obj(dental.extraoral);
     const intra = obj(dental.intraoral);
+    const perio = obj(dental.periodontal);
+    const ortho = obj(dental.orthodontics);
     const closure = obj(dental.closure);
-    const systems = obj(dental.systemsReview);
     const sections: Content[] = [];
 
     sections.push(
-      this.section('Motivo de consulta', str(care.motive), titleColor, band),
+      this.section(
+        'Motivo de consulta',
+        [
+          str(care.motive),
+          str(dental.currentIllness) ? `Enfermedad actual: ${str(dental.currentIllness)}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        titleColor,
+        band,
+      ),
     );
+
+    const anesthesia: Record<string, string> = { SI: 'Sí', NO: 'No', NO_SABE: 'No sabe' };
+    const medRows = rows(meds.rows)
+      .filter((r) => str(r.name))
+      .map((r) => [r.name, r.dose, r.frequency, r.reason].map(str).filter(Boolean).join(' '));
     sections.push(
       this.section(
-        'Antecedentes',
+        'Antecedentes médicos',
         lines([
+          ['Condiciones', flags(dental.medicalConditions, DENTAL_MEDICAL_CONDITION_LABELS)],
+          ['Alergias', joinDash(flags(dental.allergies, DENTAL_ALLERGY_LABELS), ant.allergic)],
+          [
+            'Medicamentos actuales',
+            meds.none === true ? 'No consume medicamentos' : medRows.join('; '),
+          ],
+          ['Grupos de riesgo', flags(meds.groups, DENTAL_MEDICATION_GROUP_LABELS)],
           ['Personales', ant.personal],
           ['Familiares', ant.family],
           ['Patológicos', ant.pathological],
-          ['Gineco-obstétricos', ant.obgyn],
-          ['Alérgicos', ant.allergic],
-          ['Farmacológicos', ant.pharmacological],
           ['Quirúrgicos', ant.surgical],
-          [
-            'Tabaquismo',
-            [ant.smoking, ant.smokingDetail]
-              .map(str)
-              .filter(Boolean)
-              .join(' — '),
-          ],
-          [
-            'Alcohol',
-            [ant.alcohol, ant.alcoholDetail]
-              .map(str)
-              .filter(Boolean)
-              .join(' — '),
-          ],
-          ['Hábitos orales', ant.oralHabits],
+          ['Gineco-obstétricos', ant.obgyn],
+          ['Farmacológicos', ant.pharmacological],
+          ['Tabaquismo', joinDash(ant.smoking, ant.smokingDetail)],
+          ['Alcohol', joinDash(ant.alcohol, ant.alcoholDetail)],
         ]),
         titleColor,
         band,
       ),
     );
-    const altered = Object.entries(systems)
+    sections.push(
+      this.section(
+        'Antecedentes odontológicos y hábitos',
+        lines([
+          ['Última consulta', history.lastVisit],
+          ['Frecuencia de visitas', history.visitFrequency],
+          ['Última limpieza', history.lastCleaning],
+          ['Últimas radiografías', history.lastXray],
+          ['Tratamientos previos', flags(history.treatments, DENTAL_TREATMENT_LABELS)],
+          ['Síntomas', flags(history.symptoms, DENTAL_SYMPTOM_LABELS)],
+          [
+            '¿Reacción a la anestesia?',
+            joinDash(anesthesia[str(history.anesthesiaReaction)], history.anesthesiaReactionDetail),
+          ],
+          ['Observaciones', history.notes],
+          ['Hábitos', joinDash(flags(dental.habits, DENTAL_HABIT_LABELS), ant.oralHabits)],
+        ]),
+        titleColor,
+        band,
+      ),
+    );
+    const altered = Object.entries(obj(dental.systemsReview))
       .filter(([, v]) => v === true)
       .map(([k]) => DENTAL_SYSTEM_LABELS[k] || k);
     sections.push(
       this.section(
-        'Revisión por sistemas',
+        'Revisión por sistemas y signos vitales',
         [
           altered.length ? `Con hallazgos: ${altered.join(', ')}` : '',
           str(dental.systemsReviewNotes),
+          lines([
+            ['PA', vitals.bloodPressure],
+            ['FC (lpm)', vitals.heartRate],
+            ['FR (rpm)', vitals.respiratoryRate],
+            ['Temperatura (°C)', vitals.temperature],
+            ['SatO2 (%)', vitals.spo2],
+          ]).replace(/\n/g, ' · '),
         ]
           .filter(Boolean)
           .join('\n'),
@@ -857,27 +927,21 @@ export class HcePdfService {
     );
     sections.push(
       this.section(
-        'Signos vitales',
-        lines([
-          ['PA', vitals.bloodPressure],
-          ['FC (lpm)', vitals.heartRate],
-          ['FR (rpm)', vitals.respiratoryRate],
-          ['Temperatura (°C)', vitals.temperature],
-          ['SatO2 (%)', vitals.spo2],
-        ]),
-        titleColor,
-        band,
-      ),
-    );
-    sections.push(
-      this.section(
-        'Examen extraoral',
+        'Examen extraoral y ATM',
         lines([
           ['Simetría facial', extra.symmetry],
-          ['ATM', extra.tmj],
+          ['Perfil', extra.profile],
+          ['Tercios faciales', extra.facialThirds],
           ['Ganglios', extra.lymphNodes],
-          ['Piel', extra.skin],
           ['Labios', extra.lips],
+          ['Respiración', extra.breathing],
+          ['Piel', extra.skin],
+          ['ATM', extra.tmj],
+          ['Apertura bucal (mm)', extra.mouthOpening],
+          ['Dolor muscular', extra.muscularPain],
+          ['Chasquidos', extra.clicking],
+          ['Desviación mandibular', extra.mandibularDeviation],
+          ['Observaciones', extra.notes],
         ]),
         titleColor,
         band,
@@ -888,19 +952,36 @@ export class HcePdfService {
         'Examen intraoral',
         lines([
           ['Higiene oral', intra.hygiene],
-          ['Mucosa', intra.mucosa],
-          ['Lengua', intra.tongue],
+          ['Labios', intra.lips],
+          ['Carrillos / mucosa', intra.mucosa],
           ['Paladar', intra.palate],
+          ['Lengua', intra.tongue],
           ['Piso de boca', intra.floorOfMouth],
+          ['Frenillos', intra.frenula],
+          ['Amígdalas / orofaringe', intra.tonsils],
           ['Glándulas salivales', intra.glands],
+          ['Otras lesiones', intra.otherLesions],
           ['Dentición', intra.dentition],
-          [
-            'Oclusión',
-            [intra.occlusion, intra.occlusionNotes]
-              .map(str)
-              .filter(Boolean)
-              .join(' — '),
-          ],
+          ['Oclusión', joinDash(intra.occlusion, intra.occlusionNotes)],
+        ]),
+        titleColor,
+        band,
+      ),
+    );
+    sections.push(
+      this.section(
+        'Periodonto',
+        lines([
+          ['Encía', perio.gingiva],
+          ['Sangrado al sondaje', perio.bleeding],
+          ['Recesiones', perio.recessions],
+          ['Movilidad', perio.mobility],
+          ['Profundidad al sondaje', perio.probingDepth],
+          ['Placa bacteriana', perio.plaque],
+          ['Cálculos', perio.calculus],
+          ['Furcaciones', perio.furcations],
+          ['Índices', perio.indices],
+          ['Observaciones', perio.notes],
         ]),
         titleColor,
         band,
@@ -908,142 +989,220 @@ export class HcePdfService {
     );
 
     const odontogram = obj(dental.odontogram);
-    const teeth = Object.keys(odontogram).sort((a, b) => Number(a) - Number(b));
-    const toothRows = teeth
+    const label = (k: unknown) => DENTAL_TOOTH_LABELS[str(k)] || str(k);
+    const toothRows = Object.keys(odontogram)
+      .sort((a, b) => Number(a) - Number(b))
       .map((tooth) => {
         const t = obj(odontogram[tooth]);
-        const whole = DENTAL_STATE_LABELS[str(t.status)] || '';
+        const conditions = [
+          ...(Array.isArray(t.conditions) ? t.conditions : []),
+          ...(str(t.status) && str(t.status) !== 'SANO' ? [t.status] : []),
+        ]
+          .map(label)
+          .filter(Boolean);
         const surfaces = Object.entries(obj(t.surfaces))
           .filter(([, v]) => str(v) && v !== 'SANO')
-          .map(
-            ([k, v]) =>
-              `${DENTAL_SURFACE_LABELS[k] || k}: ${DENTAL_STATE_LABELS[str(v)] || str(v)}`,
-          )
-          .join(', ');
+          .map(([k, v]) => `${DENTAL_SURFACE_LABELS[k] || k}: ${label(v)}`);
+        const marks = (Array.isArray(t.marks) ? t.marks : []).map(label).filter(Boolean);
         return [
           tooth,
-          whole || (surfaces ? '—' : 'Sano'),
-          surfaces || '—',
-          str(t.note),
+          conditions.join(', '),
+          surfaces.join(', '),
+          [marks.join(', '), str(t.note)].filter(Boolean).join(' — '),
         ];
       })
-      .filter(
-        ([, whole, surfaces, note]) =>
-          whole !== 'Sano' || surfaces !== '—' || note,
+      .filter(([, c, s, n]) => c || s || n);
+    if (toothRows.length) {
+      sections.push(
+        table('Odontograma', ['9%', '24%', '*', '28%'], ['Diente', 'Condición', 'Superficies', 'Marcas / nota'], toothRows),
       );
-    if (toothRows.length || str(dental.odontogramNotes)) {
-      if (toothRows.length) {
-        sections.push({
-          unbreakable: toothRows.length <= 20,
-          stack: [
-            this.bandTitle('Odontograma', titleColor),
-            {
-              table: {
-                widths: ['10%', '18%', '*', '24%'],
-                body: [
-                  ['Diente', 'Estado', 'Superficies', 'Nota'],
-                  ...toothRows.map((r) =>
-                    r.map((c) => ({ text: c || '—', fontSize: 9 })),
-                  ),
-                ],
-              },
-              layout: 'lightHorizontalLines',
-              margin: [0, 0, 0, 6],
-            },
-          ],
-        });
-      } else {
-        sections.push(this.bandTitle('Odontograma', titleColor));
-      }
-      if (str(dental.odontogramNotes)) {
-        sections.push({
-          text: str(dental.odontogramNotes),
-          style: 'body',
-          margin: [0, 0, 0, 6],
-        });
-      }
+    }
+    const arches = obj(dental.orthoArches);
+    const archText = [arches.upper === true ? 'superior' : '', arches.lower === true ? 'inferior' : '']
+      .filter(Boolean)
+      .join(' e ');
+    if (str(dental.odontogramNotes) || archText) {
+      sections.push(
+        this.section(
+          toothRows.length ? 'Observaciones del odontograma' : 'Odontograma',
+          [archText ? `Aparatología de ortodoncia en arco ${archText}.` : '', str(dental.odontogramNotes)]
+            .filter(Boolean)
+            .join('\n'),
+          titleColor,
+          band,
+        ),
+      );
     }
 
-    const dx = rows(dental.diagnoses).filter(
-      (d) => str(d.cieCode) || str(d.description),
-    );
+    const facial = obj(ortho.facial);
+    const oIntra = obj(ortho.intraoral);
+    const orthoText = [
+      lines([
+        ['Tipo facial', facial.facialType],
+        ['Perfil', facial.profile],
+        ['Simetría', facial.symmetry],
+        ['Línea media facial', facial.midline],
+        ['Tercio inferior', facial.lowerThird],
+        ['Competencia labial', facial.lipCompetence],
+        ['Sonrisa', facial.smile],
+        ['Exposición dental', facial.dentalExposure],
+        ['Corredor bucal', facial.buccalCorridor],
+      ]),
+      lines([
+        ['Clase molar', joinDash(oIntra.molarRight && `D: ${str(oIntra.molarRight)}`, oIntra.molarLeft && `I: ${str(oIntra.molarLeft)}`)],
+        ['Clase canina', joinDash(oIntra.canineRight && `D: ${str(oIntra.canineRight)}`, oIntra.canineLeft && `I: ${str(oIntra.canineLeft)}`)],
+        ['Overjet', oIntra.overjet],
+        ['Overbite', oIntra.overbite],
+        ['Mordida abierta', oIntra.openBite],
+        ['Mordida cruzada', oIntra.crossBite],
+        ['Mordida profunda', oIntra.deepBite],
+        ['Apiñamiento', oIntra.crowding],
+        ['Diastemas', oIntra.diastemas],
+        ['Línea media dental', oIntra.dentalMidline],
+        ['Curva de Spee', oIntra.curveOfSpee],
+      ]),
+      lines([
+        ['Hábitos', flags(ortho.habits, ORTHO_HABIT_LABELS)],
+        ['Análisis / mediciones', ortho.measurements],
+        ['Diagnóstico ortodóncico', ortho.diagnosis],
+        ['Aparatología', ortho.appliance],
+        ['Duración estimada', ortho.estimatedDuration],
+        ['Observaciones', ortho.notes],
+      ]),
+    ]
+      .filter(Boolean)
+      .join('\n');
+    if (orthoText) {
+      sections.push(this.section('Ortodoncia', orthoText, titleColor, band));
+    }
+
+    const photos = Object.values(obj(dental.photos)).length;
+    const imaging = rows(dental.imaging).filter((r) => str(r.type) || str(r.attachmentId) || str(r.findings));
+    if (imaging.length) {
+      sections.push(
+        table(
+          'Radiografías e imágenes diagnósticas',
+          ['18%', '12%', '20%', '*'],
+          ['Tipo', 'Fecha', 'Diagnóstico asociado', 'Hallazgos / archivo'],
+          imaging.map((r) => [
+            str(r.type),
+            str(r.date),
+            str(r.diagnosis),
+            joinDash(r.findings, r.fileName && `Archivo: ${str(r.fileName)}`),
+          ]),
+        ),
+      );
+    }
+    if (photos) {
+      sections.push(
+        this.section(
+          'Fotografías clínicas',
+          `${photos} fotografía(s) clínica(s) registrada(s); se custodian como anexos de la historia clínica.`,
+          titleColor,
+          band,
+        ),
+      );
+    }
+
+    const dx = rows(dental.diagnoses).filter((d) => str(d.cieCode) || str(d.description));
     if (dx.length) {
-      sections.push({
-        unbreakable: dx.length <= 15,
-        stack: [
-          this.bandTitle(
-            'Diagnósticos (CIE-10 / RDA odontológico)',
-            titleColor,
-          ),
-          {
-            table: {
-              widths: ['14%', '16%', '*', '12%'],
-              body: [
-                ['CIE-10', 'Código RDA', 'Descripción', 'Diente'],
-                ...dx.map((d) => [
-                  str(d.cieCode) || '—',
-                  str(d.rdaCode) || '—',
-                  {
-                    text: str(d.description) || '—',
-                    alignment: 'justify' as const,
-                  },
-                  str(d.tooth) || '—',
-                ]),
-              ],
-            },
-            layout: 'lightHorizontalLines',
-            margin: [0, 0, 0, 6],
-          },
-        ],
-      });
+      sections.push(
+        table(
+          'Diagnósticos (CIE-10)',
+          ['14%', '12%', '*', '12%'],
+          ['Tipo', 'CIE-10', 'Descripción', 'Diente'],
+          dx.map((d, i) => [
+            i === 0 ? 'Principal' : 'Secundario',
+            str(d.cieCode),
+            str(d.description),
+            str(d.tooth),
+          ]),
+        ),
+      );
     }
 
-    const plan = rows(dental.treatmentPlan).filter(
-      (r) => str(r.description) || str(r.code),
-    );
+    const plan = rows(dental.treatmentPlan).filter((r) => str(r.description) || str(r.code));
     if (plan.length) {
-      const priority: Record<string, string> = {
-        ALTA: 'Alta',
-        MEDIA: 'Media',
-        BAJA: 'Baja',
+      const money = (v: unknown) => {
+        const n = Number(str(v).replace(/[^\d.]/g, ''));
+        return n ? `$${n.toLocaleString('es-CO')}` : '';
       };
-      sections.push({
-        unbreakable: plan.length <= 15,
-        stack: [
-          this.bandTitle('Plan de tratamiento', titleColor),
-          {
-            table: {
-              widths: ['14%', '*', '14%', '12%', '10%'],
-              body: [
-                [
-                  'Código',
-                  'Descripción',
-                  'Diente/sector',
-                  'Prioridad',
-                  'Sesiones',
-                ],
-                ...plan.map((r) => [
-                  str(r.code) || '—',
-                  {
-                    text: str(r.description) || '—',
-                    alignment: 'justify' as const,
-                  },
-                  str(r.tooth) || '—',
-                  priority[str(r.priority)] || '—',
-                  String(r.sessions ?? '') || '—',
-                ]),
-              ],
-            },
-            layout: 'lightHorizontalLines',
-            margin: [0, 0, 0, 6],
-          },
-        ],
-      });
+      const total = plan
+        .filter((r) => r.status !== 'CANCELADO')
+        .reduce((sum, r) => sum + (Number(str(r.value).replace(/[^\d.]/g, '')) || 0), 0);
+      sections.push(
+        table(
+          'Plan de tratamiento',
+          ['8%', '16%', '*', '11%', '15%', '11%', '11%'],
+          ['Pieza', 'Diagnóstico', 'Procedimiento', 'CUPS', 'Profesional', 'Valor', 'Estado'],
+          [
+            ...plan.map((r) => [
+              str(r.tooth),
+              str(r.diagnosis),
+              str(r.description),
+              str(r.code),
+              str(r.professional),
+              money(r.value),
+              DENTAL_TREATMENT_STATUS_LABELS[str(r.status)] || 'Pendiente',
+            ]),
+            ...(total ? [['', '', 'Total (sin cancelados)', '', '', money(total), '']] : []),
+          ],
+        ),
+      );
+    }
+
+    const consents = Array.isArray(dental.requiredConsents)
+      ? (dental.requiredConsents as unknown[]).map((c) => DENTAL_CONSENT_LABELS[str(c)] || str(c))
+      : [];
+    if (consents.length) {
+      sections.push(
+        this.section(
+          'Consentimientos requeridos en la atención',
+          consents.join(', '),
+          titleColor,
+          band,
+        ),
+      );
+    }
+
+    const rx = rows(dental.prescriptions).filter((r) => str(r.medication));
+    if (rx.length) {
+      sections.push(
+        table(
+          'Prescripción de medicamentos',
+          ['*', '12%', '11%', '13%', '11%', '22%'],
+          ['Medicamento', 'Dosis', 'Vía', 'Frecuencia', 'Duración', 'Indicaciones'],
+          rx.map((r) => [
+            str(r.medication),
+            str(r.dose),
+            str(r.route),
+            str(r.frequency),
+            str(r.duration),
+            str(r.instructions),
+          ]),
+        ),
+      );
+    }
+    const orders = rows(dental.orders).filter((r) => str(r.type) || str(r.detail));
+    if (orders.length) {
+      sections.push(
+        table(
+          'Órdenes',
+          ['20%', '*', '12%', '25%'],
+          ['Tipo', 'Detalle', 'CUPS', 'Observaciones'],
+          orders.map((r) => [
+            DENTAL_ORDER_TYPE_LABELS[str(r.type)] || str(r.type),
+            str(r.detail),
+            str(r.code),
+            str(r.notes),
+          ]),
+        ),
+      );
     }
 
     sections.push(
       this.section(
-        'Cierre de historia',
+        'Cierre',
         lines([
           ['Fecha de cierre', closure.closedAt],
           ['Estado del caso', closure.caseStatus],
