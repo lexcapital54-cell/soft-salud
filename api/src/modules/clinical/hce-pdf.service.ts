@@ -33,6 +33,7 @@ import {
   ORTHO_APPLIANCE_LABELS,
   ORTHO_BRACKET_LABELS,
   ORTHO_HABIT_LABELS,
+  ORTHO_ELASTIC_LABELS,
   ORTHO_PLAN_PHASE_LABELS,
 } from './dentistry-labels';
 
@@ -1040,9 +1041,19 @@ export class HcePdfService {
     const bracketText = ORTHO_BRACKET_LABELS[str(chart.bracketType)] || '';
     const applianceText = list(chart.appliances, ORTHO_APPLIANCE_LABELS).join(', ');
     const phaseText = list(chart.planPhases, ORTHO_PLAN_PHASE_LABELS).join('; ');
+    const segmentText = (Array.isArray(chart.archSegments) ? chart.archSegments : [])
+      .map((s) => obj(s))
+      .map((s) => `${str(s.arch) === 'upper' ? 'superior' : 'inferior'} ${str(s.from)}–${str(s.to)}`)
+      .join('; ');
+    const elasticText = (Array.isArray(chart.elastics) ? chart.elastics : [])
+      .map((e) => obj(e))
+      .map((e) => `${ORTHO_ELASTIC_LABELS[str(e.type)] || str(e.type)} ${str(e.from)}–${str(e.to)}`)
+      .join('; ');
     const chartLines = [
       bracketText || applianceText ? `Tipo de aparato: ${[bracketText, applianceText].filter(Boolean).join(', ')}.` : '',
       phaseText ? `Fases del plan cumplidas: ${phaseText}.` : '',
+      segmentText ? `Arco seccionado: ${segmentText}.` : '',
+      elasticText ? `Elásticos: ${elasticText}.` : '',
     ];
     if (str(dental.odontogramNotes) || archText || chartLines.some(Boolean)) {
       sections.push(

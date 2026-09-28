@@ -126,6 +126,16 @@ export const ORTHO_APPLIANCE_LABELS: Record<string, string> = {
   RETENEDOR: 'Retenedor',
 };
 
+export const ORTHO_ELASTIC_LABELS: Record<string, string> = {
+  CLASE_II: 'Clase II',
+  CLASE_III: 'Clase III',
+  CRUZADO: 'Cruzado',
+  BOX: 'Box',
+  TRIANGULAR: 'Triangular',
+  VERTICAL: 'Vertical',
+  OTRO: 'Otro',
+};
+
 export const ORTHO_PLAN_PHASE_LABELS: Record<string, string> = {
   F1: 'Fase 1: alineación y nivelación',
   F2: 'Fase 2: corrección de discrepancias',

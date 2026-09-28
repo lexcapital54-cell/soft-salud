@@ -170,6 +170,38 @@ export const IMAGING_TYPES = [
   'Otros',
 ];
 
+/** Tramo de arco entre dos dientes de la misma arcada (arco seccionado). */
+export interface OrthoArchSegment {
+  arch: 'upper' | 'lower';
+  from: number;
+  to: number;
+}
+
+/** Elástico entre dos dientes (intermaxilar o intraarcada). */
+export interface OrthoElastic {
+  from: number;
+  to: number;
+  type: string;
+}
+
+export interface OrthoChart {
+  bracketType: string;
+  appliances: string[];
+  planPhases: string[];
+  archSegments: OrthoArchSegment[];
+  elastics: OrthoElastic[];
+}
+
+export const ORTHO_ELASTIC_TYPES: Array<{ key: string; label: string; color: string }> = [
+  { key: 'CLASE_II', label: 'Clase II', color: '#dc2626' },
+  { key: 'CLASE_III', label: 'Clase III', color: '#2563eb' },
+  { key: 'CRUZADO', label: 'Cruzado', color: '#9333ea' },
+  { key: 'BOX', label: 'Box', color: '#ea580c' },
+  { key: 'TRIANGULAR', label: 'Triangular', color: '#0d9488' },
+  { key: 'VERTICAL', label: 'Vertical', color: '#ca8a04' },
+  { key: 'OTRO', label: 'Otro', color: '#475569' },
+];
+
 export interface CephPoint {
   x: number;
   y: number;
@@ -296,8 +328,8 @@ export interface DentistryContent {
   };
   odontogram: Record<string, ToothRecord>;
   orthoArches: { upper: boolean; lower: boolean };
-  /** Odontograma de ortodoncia: tipo de brackets, aparatos del caso y fases del plan cumplidas. */
-  orthoChart: { bracketType: string; appliances: string[]; planPhases: string[] };
+  /** Odontograma de ortodoncia: tipo de brackets, aparatos, fases cumplidas, arcos seccionados y elásticos. */
+  orthoChart: OrthoChart;
   odontogramNotes: string;
   orthodontics: {
     facial: {
@@ -589,7 +621,7 @@ export function emptyDentistry(): DentistryContent {
     },
     odontogram: {},
     orthoArches: { upper: false, lower: false },
-    orthoChart: { bracketType: '', appliances: [], planPhases: [] },
+    orthoChart: { bracketType: '', appliances: [], planPhases: [], archSegments: [], elastics: [] },
     odontogramNotes: '',
     orthodontics: {
       facial: {
@@ -742,6 +774,8 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
       bracketType: raw.orthoChart?.bracketType || '',
       appliances: [...(raw.orthoChart?.appliances || [])],
       planPhases: [...(raw.orthoChart?.planPhases || [])],
+      archSegments: (raw.orthoChart?.archSegments || []).map((s) => ({ ...s })),
+      elastics: (raw.orthoChart?.elastics || []).map((e) => ({ ...e })),
     },
     orthodontics: {
       ...base.orthodontics,

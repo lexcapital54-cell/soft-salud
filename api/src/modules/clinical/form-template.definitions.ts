@@ -253,7 +253,7 @@ export const DENTISTRY_CONTENT_DEFAULTS = {
   },
   odontogram: {},
   orthoArches: { upper: false, lower: false },
-  orthoChart: { bracketType: '', appliances: [], planPhases: [] },
+  orthoChart: { bracketType: '', appliances: [], planPhases: [], archSegments: [], elastics: [] },
   odontogramNotes: '',
   orthodontics: {
     facial: {

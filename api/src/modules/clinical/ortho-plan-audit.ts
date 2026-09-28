@@ -1,6 +1,7 @@
 import {
   ORTHO_APPLIANCE_LABELS,
   ORTHO_BRACKET_LABELS,
+  ORTHO_ELASTIC_LABELS,
   ORTHO_PLAN_PHASE_LABELS,
 } from './dentistry-labels';
 
@@ -47,6 +48,26 @@ const TRACKED: Array<{ field: string; label: string; read: (d: Json) => string }
     field: 'appliances',
     label: 'Aparatos del caso',
     read: (d) => list(chart(d).appliances, ORTHO_APPLIANCE_LABELS),
+  },
+  {
+    field: 'archSegments',
+    label: 'Arco seccionado',
+    read: (d) =>
+      (Array.isArray(chart(d).archSegments) ? (chart(d).archSegments as unknown[]) : [])
+        .map((s) => obj(s))
+        .map((s) => `${s.arch === 'upper' ? 'Sup.' : 'Inf.'} ${String(s.from ?? '')}–${String(s.to ?? '')}`)
+        .sort()
+        .join(', '),
+  },
+  {
+    field: 'elastics',
+    label: 'Elásticos',
+    read: (d) =>
+      (Array.isArray(chart(d).elastics) ? (chart(d).elastics as unknown[]) : [])
+        .map((e) => obj(e))
+        .map((e) => `${ORTHO_ELASTIC_LABELS[text(e.type)] || text(e.type)} ${String(e.from ?? '')}–${String(e.to ?? '')}`)
+        .sort()
+        .join(', '),
   },
   {
     field: 'planPhases',

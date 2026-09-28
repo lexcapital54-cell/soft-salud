@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnDestroy, ViewChild, computed, inject, input, output, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, ViewChild, computed, effect, inject, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -8,7 +8,10 @@ import {
   ORTHO_APPLIANCES,
   ORTHO_CONDITION_TOOLS,
   ORTHO_DEVICE_TOOLS,
+  ORTHO_ELASTIC_TYPES,
   ORTHO_MOVEMENT_TOOLS,
+  OrthoArchSegment,
+  OrthoElastic,
   ORTHO_OCCLUSION_TOOLS,
   ORTHO_PLAN_PHASES,
   ORTHO_TOOLS,
@@ -125,6 +128,7 @@ const VIEWS: Array<{ key: ViewKind; label: string; icon: string }> = [
 
 type LegendIcon =
   | 'dot'
+  | 'elastic'
   | 'x'
   | 'triangle'
   | 'bracket'
@@ -230,6 +234,7 @@ const ORTHO_LEGEND: Array<{ title: string; items: LegendItem[] }> = [
     items: [
       { key: 'BRACKET', label: 'Bracket', color: '#1d4ed8', icon: 'bracket' },
       { key: 'ARCO', label: 'Arco ortodóntico', color: '#10306b', icon: 'wire' },
+      { key: 'ELASTICO', label: 'Elástico intermaxilar', color: '#dc2626', icon: 'elastic' },
       { key: 'LIGADURA_ELASTICA', label: 'Ligadura elástica', color: '#ec4899', icon: 'lig-e' },
       { key: 'LIGADURA_METALICA', label: 'Ligadura metálica', color: '#6b7280', icon: 'lig-m' },
       { key: 'GANCHO', label: 'Gancho', color: '#0f172a', icon: 'hook' },
@@ -464,7 +469,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
       <div class="odg-body" [class.ortho]="orthoMode()">
         <div class="odg-left">
           <div class="odg-main" #mainArea>
-            <div class="odg-chart">
+            <div class="odg-chart" #chartEl>
               @if (view() !== 'OCLUSAL') {
                 @for (row of rows(); track $index) {
                   <div class="odg-row" [class.upper]="row.upper" [class.small]="row.small">
@@ -477,11 +482,14 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                     @for (tooth of row.teeth; track tooth; let i = $index) {
                       <div
                         class="odg-tooth"
+                        [attr.data-tooth]="tooth"
                         [class.midline]="i === row.teeth.length / 2 - 1"
                         [class.selected]="selected() === tooth"
+                        [class.linking]="linkFirst() === tooth"
+                        [class.link-target]="!!linkMode()"
                       >
                         @if (row.upper) {
-                          <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" (click)="onToothClick(tooth, $event)">{{ tooth }}</button>
+                          <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" (click)="onToothClick(tooth, $event)" (contextmenu)="onToothContext(tooth, $event)">{{ tooth }}</button>
                           @if (showSurfaces()) {
                             <ng-container *ngTemplateOutlet="squareTpl; context: { $implicit: tooth, small: row.small }" />
                           }
@@ -495,6 +503,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                           [style.width.px]="shape(tooth).width * (row.small ? 0.8 : 1.18)"
                           [style.height.px]="row.small ? 80 : 118"
                           (click)="onToothClick(tooth, $event)"
+                          (contextmenu)="onToothContext(tooth, $event)"
                           [attr.aria-label]="'Diente ' + tooth"
                         >
                           <title>{{ tooth }} · {{ toothName(tooth) }}{{ summary(tooth) ? ' — ' + summary(tooth) : '' }}</title>
@@ -539,7 +548,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                               @if (hasAppliance('ALINEADOR') && !has(tooth, 'AUSENTE')) {
                                 <path [attr.d]="shape(tooth).crown" fill="rgba(56,189,248,0.18)" stroke="#0ea5e9" stroke-width="1.6" transform="translate(25 77) scale(1.1) translate(-25 -77)" />
                               }
-                              @if (archActive(row.upper) && !has(tooth, 'AUSENTE')) {
+                              @if (archOn(tooth, row.upper) && !has(tooth, 'AUSENTE')) {
                                 <line [attr.x1]="shape(tooth).crownLeft - 8" y1="74" [attr.x2]="shape(tooth).crownRight + 8" y2="74" stroke="#10306b" stroke-width="2" />
                                 <circle cx="25" cy="74" r="3" fill="#10306b" />
                               }
@@ -663,7 +672,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                           @if (showSurfaces()) {
                             <ng-container *ngTemplateOutlet="squareTpl; context: { $implicit: tooth, small: row.small }" />
                           }
-                          <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" (click)="onToothClick(tooth, $event)">{{ tooth }}</button>
+                          <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" (click)="onToothClick(tooth, $event)" (contextmenu)="onToothContext(tooth, $event)">{{ tooth }}</button>
                         }
                       </div>
                     }
@@ -675,6 +684,18 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
               }
               @if (view() === 'OCLUSAL') {
                 <ng-container *ngTemplateOutlet="occlusal" />
+              }
+              @if (view() !== 'OCLUSAL' && elasticLines().length) {
+                <svg class="odg-elastics" aria-hidden="true">
+                  @for (l of elasticLines(); track l.id) {
+                    <g>
+                      <line [attr.x1]="l.x1" [attr.y1]="l.y1" [attr.x2]="l.x2" [attr.y2]="l.y2" [attr.stroke]="l.color" stroke-width="3" stroke-linecap="round" opacity="0.85" />
+                      <circle [attr.cx]="l.x1" [attr.cy]="l.y1" r="4.5" fill="#fff" [attr.stroke]="l.color" stroke-width="2.4" />
+                      <circle [attr.cx]="l.x2" [attr.cy]="l.y2" r="4.5" fill="#fff" [attr.stroke]="l.color" stroke-width="2.4" />
+                      <text [attr.x]="(l.x1 + l.x2) / 2 + 6" [attr.y]="(l.y1 + l.y2) / 2" [attr.fill]="l.color">{{ l.label }}</text>
+                    </g>
+                  }
+                </svg>
               }
             </div>
 
@@ -911,6 +932,70 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
 
           <div class="odg-cards" [class.ortho]="orthoMode()">
             @if (orthoMode()) {
+              <section class="odg-card odg-card-wide odg-wires" [class.odg-empty]="!hasWireWork()">
+                <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 14 Q12 4 22 14 M5 11 V16 M12 7 V12 M19 11 V16" /></svg>Arcos y elásticos</h4>
+                <div class="odg-wire-grid">
+                  @for (a of archKinds; track a.key) {
+                    <div class="odg-wire-row">
+                      <span class="odg-wire-label">Arco {{ a.label }}</span>
+                      <div class="odg-seg">
+                        <button type="button" [class.on]="archKind(a.key) === 'NONE'" [disabled]="disabled()" (click)="setArchKind(a.key, 'NONE')">Sin arco</button>
+                        <button type="button" [class.on]="archKind(a.key) === 'FULL'" [disabled]="disabled()" (click)="setArchKind(a.key, 'FULL')">Continuo</button>
+                        <button type="button" [class.on]="archKind(a.key) === 'SECTIONAL'" [disabled]="disabled()" (click)="setArchKind(a.key, 'SECTIONAL')">Seccionado</button>
+                      </div>
+                      <div class="odg-wire-chips">
+                        @for (s of segmentsOf(a.key); track $index) {
+                          <span class="odg-wire-chip">
+                            {{ s.from }}–{{ s.to }}
+                            @if (!disabled()) {
+                              <button type="button" (click)="removeSegment(s)" [attr.aria-label]="'Quitar tramo ' + s.from + '–' + s.to">×</button>
+                            }
+                          </span>
+                        }
+                        @if (archKind(a.key) === 'SECTIONAL' && !disabled()) {
+                          <button type="button" class="odg-wire-add" [class.on]="linkMode() === 'SEGMENT' && linkArch() === a.key" (click)="startLink('SEGMENT', a.key)">+ Tramo</button>
+                        }
+                      </div>
+                    </div>
+                  }
+                  <div class="odg-wire-row">
+                    <span class="odg-wire-label">Elásticos</span>
+                    @if (!disabled()) {
+                      <select class="odg-wire-select" [ngModel]="elasticType()" (ngModelChange)="elasticType.set($event)" aria-label="Tipo de elástico">
+                        @for (t of elasticTypes; track t.key) {
+                          <option [value]="t.key">{{ t.label }}</option>
+                        }
+                      </select>
+                      <button type="button" class="odg-wire-add" [class.on]="linkMode() === 'ELASTIC'" (click)="startLink('ELASTIC')">+ Elástico</button>
+                    }
+                    <div class="odg-wire-chips">
+                      @for (e of data().orthoChart.elastics; track $index) {
+                        <span class="odg-wire-chip" [style.border-color]="elasticColor(e.type)">
+                          <i [style.background]="elasticColor(e.type)"></i>{{ elasticLabel(e.type) }} {{ e.from }}–{{ e.to }}
+                          @if (!disabled()) {
+                            <button type="button" (click)="removeElastic(e)" [attr.aria-label]="'Quitar elástico ' + e.from + '–' + e.to">×</button>
+                          }
+                        </span>
+                      } @empty {
+                        <span class="odg-hint">Sin elásticos.</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+                @if (linkMode(); as lm) {
+                  <p class="odg-link-hint">
+                    @if (lm === 'SEGMENT') {
+                      {{ linkFirst() === null ? 'Haga clic en el diente donde empieza el tramo de arco ' + (linkArch() === 'upper' ? 'superior' : 'inferior') + '.' : 'Ahora el diente donde termina el tramo (empieza en ' + linkFirst() + ').' }}
+                    } @else {
+                      {{ linkFirst() === null ? 'Haga clic en el diente donde se engancha el elástico (por ejemplo, el canino superior).' : 'Ahora el diente del otro extremo (desde ' + linkFirst() + '), por ejemplo el molar inferior.' }}
+                    }
+                    @if (linkError()) {
+                      <strong>{{ linkError() }}</strong>
+                    }
+                    <button type="button" (click)="cancelLink()">Terminar</button>
+                  </p>
+                }
+              </section>
               <section class="odg-card" [class.odg-empty]="!data().orthoChart.planPhases.length">
                 <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 H16 V6 H8 Z M6 5 H4 V21 H20 V5 H18 M8 11 L10 13 L14 9 M8 17 H16" /></svg>Plan de tratamiento</h4>
                 <div class="odg-checks">
@@ -1005,6 +1090,9 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                       }
                       @case ('wire') {
                         <svg viewBox="0 0 20 20"><path d="M1 10 H19" [attr.stroke]="item.color" stroke-width="2" /><circle cx="5" cy="10" r="2" [attr.fill]="item.color" /><circle cx="15" cy="10" r="2" [attr.fill]="item.color" /></svg>
+                      }
+                      @case ('elastic') {
+                        <svg viewBox="0 0 20 20"><path d="M4 4 L16 16" [attr.stroke]="item.color" stroke-width="2.2" stroke-linecap="round" /><circle cx="4" cy="4" r="2.6" fill="#fff" [attr.stroke]="item.color" stroke-width="1.8" /><circle cx="16" cy="16" r="2.6" fill="#fff" [attr.stroke]="item.color" stroke-width="1.8" /></svg>
                       }
                       @case ('ring') {
                         <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5" fill="none" [attr.stroke]="item.color" stroke-width="2.2" /></svg>
@@ -1330,6 +1418,27 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     .odg-btn { border: none; background: var(--ink); color: #fff; border-radius: 8px; padding: 9px 22px; font-size: 14px; cursor: pointer; font-weight: 600; }
 
     .odg-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .odg-card-wide { grid-column: 1 / -1; }
+    .odg-wire-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 8px 18px; }
+    .odg-wire-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+    .odg-wire-label { font-size: 12px; font-weight: 700; color: var(--ink); min-width: 92px; }
+    .odg-wire-row .odg-seg { flex: 0 0 auto; }
+    .odg-wire-row .odg-seg button { padding: 5px 10px; }
+    .odg-wire-chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    .odg-wire-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 4px 2px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 11.5px; background: #fff; color: #1e293b; }
+    .odg-wire-chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .odg-wire-chip button { border: none; background: none; cursor: pointer; font-size: 14px; line-height: 1; color: #64748b; padding: 0 3px; }
+    .odg-wire-add { border: 1px dashed #93c5fd; background: #f8fbff; color: #1d4ed8; border-radius: 999px; padding: 3px 10px; font-size: 11.5px; font-weight: 600; cursor: pointer; }
+    .odg-wire-add.on { background: #1d4ed8; color: #fff; border-style: solid; }
+    .odg-wire-select { font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+    .odg-link-hint { margin: 4px 0 0; padding: 7px 10px; border-radius: 8px; background: #eff6ff; border: 1px solid #bfdbfe; font-size: 12px; color: #1e3a8a; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+    .odg-link-hint strong { color: #b42318; }
+    .odg-link-hint button { margin-left: auto; border: 1px solid #93c5fd; background: #fff; border-radius: 6px; padding: 3px 10px; font-size: 12px; cursor: pointer; color: #1d4ed8; }
+    .odg-tooth.link-target { cursor: crosshair; }
+    .odg-tooth.link-target .odg-svg { cursor: crosshair; }
+    .odg-tooth.linking { background: rgba(29, 78, 216, 0.14); box-shadow: 0 0 0 2px #1d4ed8; }
+    .odg-elastics { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2; }
+    .odg-elastics text { font-size: 10.5px; font-weight: 700; paint-order: stroke; stroke: #fff; stroke-width: 3px; }
     .odg-card { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: rgba(255, 255, 255, 0.85); border: 1px solid var(--line); border-radius: 12px; }
     .odg-card h4, .odg-side h4 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 12.5px; font-weight: 800; color: var(--ink); text-transform: uppercase; letter-spacing: 0.04em; }
     .odg-card h4 svg { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
@@ -1725,6 +1834,200 @@ export class DentalOdontogram implements OnDestroy {
     return upper ? !!arches?.upper : !!arches?.lower;
   }
 
+  // ── Arco continuo / seccionado y elásticos ──
+  readonly archKinds = [
+    { key: 'upper', label: 'superior' },
+    { key: 'lower', label: 'inferior' },
+  ] as const;
+  readonly elasticTypes = ORTHO_ELASTIC_TYPES;
+  readonly linkMode = signal<'SEGMENT' | 'ELASTIC' | null>(null);
+  readonly linkArch = signal<'upper' | 'lower'>('upper');
+  readonly linkFirst = signal<number | null>(null);
+  readonly linkError = signal('');
+  readonly elasticType = signal('CLASE_II');
+  @ViewChild('chartEl') private chartEl?: ElementRef<HTMLElement>;
+  private readonly toothPos = signal<Record<number, { x: number; y: number }>>({});
+  private resizeObs?: ResizeObserver;
+
+  /** Fila de dibujo que contiene el diente (define el orden para los tramos de arco). */
+  private toothRow(tooth: number): number[] | null {
+    return [PERMANENT_UPPER, DECIDUOUS_UPPER, PERMANENT_LOWER, DECIDUOUS_LOWER].find((r) => r.includes(tooth)) ?? null;
+  }
+
+  /** El arco pasa por el diente: arco continuo de la arcada o dentro de un tramo seccionado. */
+  archOn(tooth: number, upper: boolean) {
+    if (this.archActive(upper)) return true;
+    this.version();
+    const row = this.toothRow(tooth);
+    if (!row) return false;
+    const i = row.indexOf(tooth);
+    return this.data().orthoChart.archSegments.some((s) => {
+      if (s.arch !== (upper ? 'upper' : 'lower') || !row.includes(s.from) || !row.includes(s.to)) return false;
+      const a = row.indexOf(s.from);
+      const b = row.indexOf(s.to);
+      return i >= Math.min(a, b) && i <= Math.max(a, b);
+    });
+  }
+
+  archKind(arch: 'upper' | 'lower'): 'NONE' | 'FULL' | 'SECTIONAL' {
+    this.version();
+    if (this.data().orthoArches[arch]) return 'FULL';
+    if (this.segmentsOf(arch).length || (this.linkMode() === 'SEGMENT' && this.linkArch() === arch)) return 'SECTIONAL';
+    return 'NONE';
+  }
+
+  segmentsOf(arch: 'upper' | 'lower') {
+    this.version();
+    return this.data().orthoChart.archSegments.filter((s) => s.arch === arch);
+  }
+
+  setArchKind(arch: 'upper' | 'lower', kind: 'NONE' | 'FULL' | 'SECTIONAL') {
+    if (this.disabled()) return;
+    const chart = this.data().orthoChart;
+    if (kind !== 'SECTIONAL' && this.segmentsOf(arch).length) {
+      if (!confirm(`Se quitarán los tramos del arco ${arch === 'upper' ? 'superior' : 'inferior'}. ¿Continuar?`)) return;
+      chart.archSegments = chart.archSegments.filter((s) => s.arch !== arch);
+    }
+    this.data().orthoArches[arch] = kind === 'FULL';
+    if (kind === 'SECTIONAL') this.startLink('SEGMENT', arch);
+    else if (this.linkMode() === 'SEGMENT' && this.linkArch() === arch) this.cancelLink();
+    this.bump();
+  }
+
+  hasWireWork() {
+    this.version();
+    const c = this.data().orthoChart;
+    return this.data().orthoArches.upper || this.data().orthoArches.lower || c.archSegments.length > 0 || c.elastics.length > 0;
+  }
+
+  startLink(mode: 'SEGMENT' | 'ELASTIC', arch: 'upper' | 'lower' = 'upper') {
+    if (this.disabled()) return;
+    this.closePopover();
+    this.linkMode.set(mode);
+    this.linkArch.set(arch);
+    this.linkFirst.set(null);
+    this.linkError.set('');
+  }
+
+  cancelLink() {
+    this.linkMode.set(null);
+    this.linkFirst.set(null);
+    this.linkError.set('');
+  }
+
+  private onLinkClick(tooth: number) {
+    const mode = this.linkMode();
+    const first = this.linkFirst();
+    this.linkError.set('');
+    if (mode === 'SEGMENT') {
+      const upper = this.linkArch() === 'upper';
+      if (this.isUpperTooth(tooth) !== upper) {
+        this.linkError.set(`Elija un diente de la arcada ${upper ? 'superior' : 'inferior'}.`);
+        return;
+      }
+      if (first === null) {
+        this.linkFirst.set(tooth);
+        return;
+      }
+      if (first === tooth || this.toothRow(first) !== this.toothRow(tooth)) {
+        this.linkError.set('El tramo necesita dos dientes distintos de la misma fila.');
+        return;
+      }
+      this.data().orthoChart.archSegments.push({ arch: this.linkArch(), from: first, to: tooth });
+      this.linkFirst.set(null);
+      this.bump();
+      return;
+    }
+    if (first === null) {
+      this.linkFirst.set(tooth);
+      return;
+    }
+    if (first === tooth) {
+      this.linkError.set('Elija otro diente para el otro extremo del elástico.');
+      return;
+    }
+    const exists = this.data().orthoChart.elastics.some(
+      (e) => (e.from === first && e.to === tooth) || (e.from === tooth && e.to === first),
+    );
+    if (exists) {
+      this.linkError.set(`Ya hay un elástico entre ${first} y ${tooth}.`);
+      this.linkFirst.set(null);
+      return;
+    }
+    this.data().orthoChart.elastics.push({ from: first, to: tooth, type: this.elasticType() });
+    this.linkFirst.set(null);
+    this.bump();
+  }
+
+  removeSegment(seg: OrthoArchSegment) {
+    if (this.disabled()) return;
+    const chart = this.data().orthoChart;
+    chart.archSegments = chart.archSegments.filter((s) => s !== seg);
+    this.bump();
+  }
+
+  removeElastic(el: OrthoElastic) {
+    if (this.disabled()) return;
+    const chart = this.data().orthoChart;
+    chart.elastics = chart.elastics.filter((e) => e !== el);
+    this.bump();
+  }
+
+  elasticColor(type: string) {
+    return ORTHO_ELASTIC_TYPES.find((t) => t.key === type)?.color || '#475569';
+  }
+
+  elasticLabel(type: string) {
+    return ORTHO_ELASTIC_TYPES.find((t) => t.key === type)?.label || type;
+  }
+
+  /** Elásticos dibujados de bracket a bracket sobre el odontograma. */
+  readonly elasticLines = computed(() => {
+    this.version();
+    const pos = this.toothPos();
+    return this.data().orthoChart.elastics.flatMap((e, i) => {
+      const a = pos[e.from];
+      const b = pos[e.to];
+      if (!a || !b) return [];
+      return [{ id: `${i}-${e.from}-${e.to}`, x1: a.x, y1: a.y, x2: b.x, y2: b.y, color: this.elasticColor(e.type), label: this.elasticLabel(e.type) }];
+    });
+  });
+
+  /** Posición del bracket de cada diente dentro del odontograma (para los elásticos). */
+  private measureTeeth() {
+    const chart = this.chartEl?.nativeElement;
+    if (!chart) return;
+    const base = chart.getBoundingClientRect();
+    const out: Record<number, { x: number; y: number }> = {};
+    chart.querySelectorAll<HTMLElement>('.odg-tooth[data-tooth]').forEach((el) => {
+      const svg = el.querySelector('svg.odg-svg');
+      if (!svg) return;
+      const r = svg.getBoundingClientRect();
+      const tooth = Number(el.dataset['tooth']);
+      out[tooth] = {
+        x: Math.round(r.left - base.left + r.width / 2),
+        y: Math.round(r.top - base.top + r.height * (this.isUpperTooth(tooth) ? 0.74 : 0.26)),
+      };
+    });
+    this.toothPos.set(out);
+  }
+
+  private readonly remeasure = effect(() => {
+    this.version();
+    this.view();
+    this.dentition();
+    this.showSurfaces();
+    if (!this.data().orthoChart.elastics.length) return;
+    requestAnimationFrame(() => {
+      this.measureTeeth();
+      const chart = this.chartEl?.nativeElement;
+      if (chart && !this.resizeObs && typeof ResizeObserver !== 'undefined') {
+        this.resizeObs = new ResizeObserver(() => this.measureTeeth());
+        this.resizeObs.observe(chart);
+      }
+    });
+  });
+
   record(tooth: number): ToothRecord | undefined {
     this.version();
     return this.data().odontogram[String(tooth)];
@@ -1971,6 +2274,10 @@ export class DentalOdontogram implements OnDestroy {
 
   onToothClick(tooth: number, event: Event) {
     event.stopPropagation();
+    if (this.linkMode() && !this.disabled()) {
+      this.onLinkClick(tooth);
+      return;
+    }
     this.selected.set(tooth);
     const mode = this.disabled() ? 'SELECT' : this.mode();
     if (mode === 'ERASE') {
@@ -1986,8 +2293,21 @@ export class DentalOdontogram implements OnDestroy {
     this.openPopover(event);
   }
 
+  /** Clic derecho: abre el menú del diente sin importar la herramienta activa. */
+  onToothContext(tooth: number, event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.cancelLink();
+    this.selected.set(tooth);
+    this.openPopover(event);
+  }
+
   onSurfaceClick(tooth: number, pos: Position, event: Event) {
     event.stopPropagation();
+    if (this.linkMode() && !this.disabled()) {
+      this.onLinkClick(tooth);
+      return;
+    }
     this.selected.set(tooth);
     const mode = this.disabled() ? 'SELECT' : this.mode();
     if (mode === 'PAINT') {
@@ -2043,6 +2363,7 @@ export class DentalOdontogram implements OnDestroy {
   @HostListener('document:keydown.escape')
   onEscape() {
     if (this.popoverOpen()) this.closePopover();
+    if (this.linkMode()) this.cancelLink();
   }
 
   closePopover() {
@@ -2053,6 +2374,7 @@ export class DentalOdontogram implements OnDestroy {
 
   ngOnDestroy() {
     document.removeEventListener('scroll', this.onViewportChange, true);
+    this.resizeObs?.disconnect();
   }
 
   private applyTool(tooth: number, tool: DentalTool) {
