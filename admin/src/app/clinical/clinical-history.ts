@@ -74,6 +74,17 @@ import {
   normalizeDentistry,
   validateDentistryForSeal,
 } from './dentistry/dentistry.models';
+import {
+  OrthoMeasureGroup,
+  OrthoMeasureStatus,
+  anbFrom,
+  checkMeasure,
+  growthPatternFromFma,
+  measureKey,
+  orthoConsistencyWarnings,
+  orthoMeasureErrors,
+  skeletalClassFromAnb,
+} from './dentistry/ortho-measures';
 import { PatientConsentRecord } from './consent.models';
 import { DOCUMENT_TYPES } from './document-types';
 import { WEBSITE_URL } from '../api.config';
@@ -432,7 +443,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     { key: 'canineRight', label: 'Clase canina derecha', options: ['Clase I', 'Clase II', 'Clase III', 'No evaluable'] },
     { key: 'canineLeft', label: 'Clase canina izquierda', options: ['Clase I', 'Clase II', 'Clase III', 'No evaluable'] },
     { key: 'overjet', label: 'Overjet (mm)', placeholder: '2' },
-    { key: 'overbite', label: 'Overbite (mm / %)', placeholder: '2 mm / 20%' },
+    { key: 'overbite', label: 'Overbite (mm)', placeholder: '2' },
     { key: 'openBite', label: 'Mordida abierta', options: ['No', 'Anterior', 'Posterior'] },
     { key: 'crossBite', label: 'Mordida cruzada', options: ['No', 'Anterior', 'Posterior unilateral', 'Posterior bilateral'] },
     { key: 'deepBite', label: 'Mordida profunda', options: ['No', 'Sí'] },
@@ -462,6 +473,46 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   ];
 
   readonly orthoPhases = ['Interceptiva / ortopedia', 'Correctiva', 'Preparación quirúrgica (ortognática)', 'Retención'];
+
+  /** Estado de una medida numérica de ortodoncia (interpretación, norma o error); `null` si el campo no es numérico. */
+  orthoMeasure(group: OrthoMeasureGroup, field: string): OrthoMeasureStatus | null {
+    const key = measureKey(group, field);
+    if (!key) return null;
+    const values = this.dental().orthodontics[group] as Record<string, string>;
+    return checkMeasure(key, values[field]);
+  }
+
+  /** El ANB se deduce de SNA y SNB cuando ambos son válidos. */
+  anbComputed() {
+    return anbFrom(this.dental().orthodontics) !== null;
+  }
+
+  onOrthoMeasureChange(group: OrthoMeasureGroup, field: string) {
+    if (group === 'cephalometry' && (field === 'sna' || field === 'snb')) {
+      const anb = anbFrom(this.dental().orthodontics);
+      if (anb !== null) this.dental().orthodontics.cephalometry.anb = anb;
+    }
+    this.onClinicalFieldChange();
+  }
+
+  /** Clase esquelética sugerida por el ANB y patrón de crecimiento sugerido por el FMA. */
+  orthoSuggestion(field: string): string | null {
+    const o = this.dental().orthodontics;
+    const suggested = field === 'skeletalClass' ? skeletalClassFromAnb(o) : field === 'growthPattern' ? growthPatternFromFma(o) : null;
+    if (!suggested) return null;
+    return (o.cephalometry as Record<string, string>)[field] === suggested ? null : suggested;
+  }
+
+  applyOrthoSuggestion(field: 'skeletalClass' | 'growthPattern') {
+    const suggested = this.orthoSuggestion(field);
+    if (!suggested || this.clinicalFormDisabled()) return;
+    this.dental().orthodontics.cephalometry[field] = suggested;
+    this.onClinicalFieldChange();
+  }
+
+  orthoWarnings() {
+    return orthoConsistencyWarnings(this.dental().orthodontics);
+  }
 
   /** Bloques del ortodoncista; en odontología solo aparecen si la historia ya los traía. */
   showOrthoSpecialistFields() {
@@ -1277,6 +1328,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     patient: boolean;
     professional: boolean;
     identification: string[];
+    measures?: string[];
   } | null>(null);
   /** Trazo vigente de la profesional, venga del panel Ley 527 o del consentimiento. */
   readonly professionalSignature = signal<string | null>(null);
@@ -4304,8 +4356,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   private saveBlockers() {
     const signatures = this.pendingSignatures();
     const identification = this.pendingIdentification();
-    if (!signatures.professional && !signatures.patient && !identification.length) return null;
-    return { ...signatures, identification };
+    const measures = this.isDentistryClinic() && this.showOrthoModule() ? orthoMeasureErrors(this.dental().orthodontics) : [];
+    if (!signatures.professional && !signatures.patient && !identification.length && !measures.length) return null;
+    return { ...signatures, identification, measures };
   }
 
   /**

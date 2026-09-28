@@ -2225,11 +2225,31 @@
                             }
                           </select>
                         } @else {
-                          <input [(ngModel)]="dental().orthodontics.intraoral[f.key]" [readonly]="clinicalFormDisabled()" [placeholder]="f.placeholder || ''" />
+                          <input
+                            [(ngModel)]="dental().orthodontics.intraoral[f.key]"
+                            (ngModelChange)="onOrthoMeasureChange('intraoral', f.key)"
+                            [readonly]="clinicalFormDisabled()"
+                            [placeholder]="f.placeholder || ''"
+                            [class.measure-invalid]="orthoMeasure('intraoral', f.key)?.state === 'invalid'"
+                            [attr.inputmode]="orthoMeasure('intraoral', f.key) ? 'decimal' : null"
+                          />
+                          @if (orthoMeasure('intraoral', f.key); as m) {
+                            <small [class]="'measure-hint ' + m.state">{{ m.message }}</small>
+                          }
                         }
                       </label>
                     }
                   </div>
+                  @if (orthoWarnings().length) {
+                    <div class="banner warn odo-mt measure-warnings">
+                      <strong>Revise la coherencia de las medidas:</strong>
+                      <ul>
+                        @for (w of orthoWarnings(); track w) {
+                          <li>{{ w }}</li>
+                        }
+                      </ul>
+                    </div>
+                  }
                   <h4 class="odo-sub">Hábitos</h4>
                   <p class="muted small">
                     @if (orthoHabitSummary().length) {
@@ -2252,8 +2272,27 @@
                                 <option [value]="o">{{ o }}</option>
                               }
                             </select>
+                            @if (orthoSuggestion(f.key); as s) {
+                              <small class="measure-hint out">
+                                Según {{ f.key === 'skeletalClass' ? 'el ANB' : 'el FMA' }}: <strong>{{ s }}</strong>
+                                @if (!clinicalFormDisabled()) {
+                                  <button type="button" class="linkish" (click)="applyOrthoSuggestion($any(f.key))">Usar</button>
+                                }
+                              </small>
+                            }
                           } @else {
-                            <input [(ngModel)]="dental().orthodontics.cephalometry[f.key]" [readonly]="clinicalFormDisabled()" [placeholder]="f.placeholder || ''" />
+                            <input
+                              [(ngModel)]="dental().orthodontics.cephalometry[f.key]"
+                              (ngModelChange)="onOrthoMeasureChange('cephalometry', f.key)"
+                              [readonly]="clinicalFormDisabled() || (f.key === 'anb' && anbComputed())"
+                              [title]="f.key === 'anb' && anbComputed() ? 'Calculado: SNA − SNB' : ''"
+                              [placeholder]="f.placeholder || ''"
+                              [class.measure-invalid]="orthoMeasure('cephalometry', f.key)?.state === 'invalid'"
+                              inputmode="decimal"
+                            />
+                            @if (orthoMeasure('cephalometry', f.key); as m) {
+                              <small [class]="'measure-hint ' + m.state">{{ f.key === 'anb' && anbComputed() ? 'Calculado (SNA − SNB) · ' : '' }}{{ m.message }}</small>
+                            }
                           }
                         </label>
                       }
@@ -2271,7 +2310,17 @@
                               }
                             </select>
                           } @else {
-                            <input [(ngModel)]="dental().orthodontics.models[f.key]" [readonly]="clinicalFormDisabled()" [placeholder]="f.placeholder || ''" />
+                            <input
+                              [(ngModel)]="dental().orthodontics.models[f.key]"
+                              (ngModelChange)="onOrthoMeasureChange('models', f.key)"
+                              [readonly]="clinicalFormDisabled()"
+                              [placeholder]="f.placeholder || ''"
+                              [class.measure-invalid]="orthoMeasure('models', f.key)?.state === 'invalid'"
+                              [attr.inputmode]="orthoMeasure('models', f.key) ? 'decimal' : null"
+                            />
+                            @if (orthoMeasure('models', f.key); as m) {
+                              <small [class]="'measure-hint ' + m.state">{{ m.message }}</small>
+                            }
                           }
                         </label>
                       }
@@ -4136,6 +4185,9 @@
             <li>
               Falta <strong>{{ field }}</strong> en los datos de identificación.
             </li>
+          }
+          @for (m of missing.measures || []; track m) {
+            <li>Corrija la medida <strong>{{ m }}</strong> en la evaluación ortodóntica.</li>
           }
         </ul>
         <p class="muted small">
