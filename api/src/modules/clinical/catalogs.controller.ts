@@ -27,6 +27,11 @@ export class CatalogsController {
     return this.catalogsService.searchCie(q, 300, specialty);
   }
 
+  @Get('ortho-control-procedures')
+  orthoControlProcedures() {
+    return this.catalogsService.orthoControlProcedures();
+  }
+
   @Get('cups')
   searchCups(@Req() req: AuthedRequest, @Query('q') q?: string) {
     const specialty =

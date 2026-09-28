@@ -97,8 +97,17 @@ import {
   emptyOrthoControl,
   orthoControlNoteLines,
   orthoControlProblems,
+  orthoEventLabel,
   orthoTreatmentTimeline,
 } from './dentistry/ortho-controls';
+import { OrthoQuickControlComponent } from './dentistry/ortho-quick-control';
+import { OrthoCompareSliderComponent } from './dentistry/ortho-compare-slider';
+import {
+  EVOLUTION_AMEND_OPTIONS,
+  amendKindLabel,
+  evolutionLockState,
+  groupEvolutions,
+} from './clinical-validation';
 import { PatientConsentRecord } from './consent.models';
 import { DOCUMENT_TYPES } from './document-types';
 import { WEBSITE_URL } from '../api.config';
@@ -113,7 +122,9 @@ import {
   DivipolaDepartment,
   Encounter,
   EncounterListItem,
+  EvolutionAmendKind,
   Incapacity,
+  OrthoControlCatalog,
   Patient,
   PhysiotherapyContent,
   ProcedureRow,
@@ -268,6 +279,8 @@ function emptyContent(): ClinicalContent {
     ConsentSigner,
     DentalOdontogram,
     OrthoCephTracingComponent,
+    OrthoQuickControlComponent,
+    OrthoCompareSliderComponent,
     OpenEncountersAlert,
     VoiceDictationBtn,
     ClinicalListenBtn,
@@ -640,6 +653,263 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   hasPreviousOrthoControl() {
     return this.evolutions().some((ev) => !!ev.content.orthoControl);
+  }
+
+  // ── Control rápido: procedimientos con CUPS del servidor y foto del control ──
+  readonly orthoCatalog = signal<OrthoControlCatalog | null>(null);
+  readonly orthoPhotoUploading = signal(false);
+
+  private loadOrthoCatalog() {
+    if (this.orthoCatalog()) return;
+    this.api.orthoControlCatalog().subscribe({
+      next: (cat) => this.orthoCatalog.set(cat),
+      error: () => undefined,
+    });
+  }
+
+  private orthoProcedureLabels(): Record<string, string> {
+    return Object.fromEntries((this.orthoCatalog()?.procedures ?? []).map((p) => [p.key, p.label]));
+  }
+
+  orthoControlPhotoUrl(): string | null {
+    const id = this.orthoControl.photoAttachmentId;
+    return id ? this.attachmentUrl(id) : null;
+  }
+
+  uploadOrthoControlPhoto(file: File) {
+    if (!file.type.startsWith('image/')) {
+      this.error.set('Suba la foto como imagen (JPG o PNG).');
+      return;
+    }
+    const day = new Date().toLocaleDateString('es-CO');
+    const req = this.uploadDentalFile(file, `Foto intraoral frontal — control ${day}`, 'PHOTO');
+    if (!req) return;
+    this.orthoPhotoUploading.set(true);
+    req.subscribe({
+      next: (att) => {
+        this.orthoPhotoUploading.set(false);
+        this.orthoControl.photoAttachmentId = att.id;
+        this.dentalPhotoUrls.update((m) => ({ ...m, [att.id]: URL.createObjectURL(file) }));
+        this.attachments.set([att, ...this.attachments()]);
+        this.compareAfterId.set(att.id);
+      },
+      error: (err) => {
+        this.orthoPhotoUploading.set(false);
+        this.error.set(err?.error?.message || 'No se pudo subir la foto del control.');
+      },
+    });
+  }
+
+  removeOrthoControlPhoto() {
+    if (this.compareAfterId() === this.orthoControl.photoAttachmentId) this.compareAfterId.set(null);
+    this.orthoControl.photoAttachmentId = undefined;
+  }
+
+  // ── Comparación antes / después (foto intraoral frontal) ──
+  readonly compareBeforeId = signal<string | null>(null);
+  readonly compareAfterId = signal<string | null>(null);
+
+  /** Día 0 (foto frontal de la historia), fotos de controles firmados y la del control actual. */
+  comparePhotoOptions(): Array<{ id: string; label: string }> {
+    const out: Array<{ id: string; label: string }> = [];
+    const day0 = this.dental().photos['intraFrontal'];
+    if (day0?.attachmentId) {
+      const taken = day0.takenAt ? ` (${new Date(day0.takenAt).toLocaleDateString('es-CO')})` : '';
+      out.push({ id: day0.attachmentId, label: `Día 0 · inicio${taken}` });
+    }
+    for (const ev of this.evolutions()) {
+      const id = ev.content.orthoControl?.photoAttachmentId;
+      if (id && !out.some((o) => o.id === id)) {
+        out.push({ id, label: `Control ${new Date(this.evolutionAttentionDateOf(ev)).toLocaleDateString('es-CO')}` });
+      }
+    }
+    const current = this.orthoControl.photoAttachmentId;
+    if (current && !out.some((o) => o.id === current)) out.push({ id: current, label: 'Control actual (sin firmar)' });
+    return out;
+  }
+
+  compareBefore(): string | null {
+    const options = this.comparePhotoOptions();
+    const chosen = this.compareBeforeId();
+    return chosen && options.some((o) => o.id === chosen) ? chosen : (options[0]?.id ?? null);
+  }
+
+  compareAfter(): string | null {
+    const options = this.comparePhotoOptions();
+    const chosen = this.compareAfterId();
+    if (chosen && options.some((o) => o.id === chosen)) return chosen;
+    return options.length > 1 ? options[options.length - 1].id : null;
+  }
+
+  compareLabel(id: string | null) {
+    return this.comparePhotoOptions().find((o) => o.id === id)?.label ?? '';
+  }
+
+  compareUrl(id: string | null) {
+    return id ? this.attachmentUrl(id) : null;
+  }
+
+  // ── Registros cerrados: correcciones, notas aclaratorias y anexos ──
+  readonly amendOptions = EVOLUTION_AMEND_OPTIONS;
+  readonly amendTarget = signal<ClinicalEvolution | null>(null);
+  readonly amendKind = signal<EvolutionAmendKind>('ACLARATORIA');
+  readonly amendAttachments = signal<Array<{ id: string; label: string }>>([]);
+  readonly amendUploading = signal(false);
+  amendNote = '';
+
+  groupedEvolutions() {
+    return groupEvolutions(this.evolutions());
+  }
+
+  orthoEventText(event: string) {
+    return orthoEventLabel(event);
+  }
+
+  lockOf(ev: ClinicalEvolution) {
+    return evolutionLockState(ev, this.user()?.id, this.systemClock().getTime());
+  }
+
+  amendLabel(kind: EvolutionAmendKind | undefined) {
+    return amendKindLabel(kind);
+  }
+
+  startAmend(ev: ClinicalEvolution, kind: EvolutionAmendKind) {
+    this.amendTarget.set(ev);
+    this.amendKind.set(kind);
+    this.amendNote = '';
+    this.amendAttachments.set([]);
+    setTimeout(() => document.getElementById('amend-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  }
+
+  cancelAmend() {
+    this.amendTarget.set(null);
+    this.amendNote = '';
+    this.amendAttachments.set([]);
+  }
+
+  uploadAmendFile(event: Event) {
+    const inputEl = event.target as HTMLInputElement;
+    const files = [...(inputEl.files ?? [])];
+    inputEl.value = '';
+    const enc = this.encounter();
+    if (!files.length || !enc) return;
+    this.amendUploading.set(true);
+    let pending = files.length;
+    for (const file of files) {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('encounterId', enc.id);
+      if (enc.clinicalRecord?.id) form.append('clinicalRecordId', enc.clinicalRecord.id);
+      form.append('label', `Anexo — ${file.name}`);
+      form.append('category', file.type.startsWith('image/') ? 'PHOTO' : 'OTHER');
+      this.api.uploadAttachment(form).subscribe({
+        next: (att) => {
+          this.amendAttachments.update((list) => [...list, { id: att.id, label: att.label }]);
+          this.attachments.set([att, ...this.attachments()]);
+          if (--pending === 0) this.amendUploading.set(false);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.message || `No se pudo subir ${file.name}.`);
+          if (--pending === 0) this.amendUploading.set(false);
+        },
+      });
+    }
+  }
+
+  removeAmendAttachment(id: string) {
+    this.amendAttachments.update((list) => list.filter((a) => a.id !== id));
+  }
+
+  submitAmend() {
+    const enc = this.encounter();
+    const target = this.amendTarget();
+    if (!enc || !target || !this.canWrite() || !this.assertSignatureReady()) return;
+    const kind = this.amendKind();
+    if (kind === 'CORRECCION' && !this.lockOf(target).canCorrect) {
+      this.error.set('Registro cerrado por normativa: la corrección ya no está disponible. Use una nota aclaratoria o un anexo.');
+      return;
+    }
+    const files = this.amendAttachments();
+    if (kind === 'ANEXO' && !files.length) {
+      this.error.set('Adjunte al menos un archivo para registrar el anexo.');
+      return;
+    }
+    const text = this.amendNote.trim();
+    const note = text || (kind === 'ANEXO' ? `Se anexan: ${files.map((f) => f.label).join('; ')}` : '');
+    if (note.length < 5) {
+      this.error.set('Escriba el contenido de la nota (mínimo 5 caracteres).');
+      return;
+    }
+    this.signing.set(true);
+    this.error.set('');
+    this.api
+      .addEvolution(enc.id, {
+        note,
+        amendsEvolutionId: target.id,
+        amendKind: kind,
+        attachmentIds: files.length ? files.map((f) => f.id) : undefined,
+        signatureBase64: this.currentSignature(),
+      })
+      .subscribe({
+        next: (updated) => {
+          this.applyEncounter(updated);
+          this.signing.set(false);
+          this.cancelAmend();
+          this.message.set(`${amendKindLabel(kind)} firmada y enlazada al registro original.`);
+        },
+        error: (err) => {
+          this.signing.set(false);
+          this.error.set(err?.error?.message || 'No se pudo registrar la nota.');
+        },
+      });
+  }
+
+  // ── Cierre de tratamiento ──
+  orthoClosure() {
+    const timeline = this.orthoTimeline();
+    const diagnoses = [...(this.encounter()?.diagnoses ?? [])].sort(
+      (a, b) => Number(b.type === 'PRINCIPAL') - Number(a.type === 'PRINCIPAL'),
+    );
+    const retention = this.evolutions().filter((ev) => ev.content.orthoControl?.event === 'RETENCION');
+    const last = retention[retention.length - 1];
+    const status = !timeline.installedAt
+      ? { tone: 'muted', text: 'Sin instalación registrada' }
+      : !timeline.debondedAt
+        ? { tone: 'active', text: 'Tratamiento activo' }
+        : retention.length
+          ? { tone: 'ok', text: `En retención · ${retention.length} control(es)` }
+          : { tone: 'warn', text: 'Retirada: sin controles de retención' };
+    return {
+      diagnoses,
+      installedAt: timeline.installedAt,
+      debondedAt: timeline.debondedAt,
+      months: timeline.months,
+      controls: timeline.rows.length,
+      retention: { ...status, lastAt: last ? this.evolutionAttentionDateOf(last) : null, plan: this.dental().orthodontics.retention },
+    };
+  }
+
+  readonly epicrisisDownloading = signal(false);
+
+  downloadEpicrisis() {
+    const enc = this.encounter();
+    if (!enc) return;
+    this.epicrisisDownloading.set(true);
+    this.api.downloadOrthoEpicrisis(enc.id).subscribe({
+      next: (blob) => {
+        this.epicrisisDownloading.set(false);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Epicrisis_ortodoncia_${enc.patient?.documentNumber || enc.id.slice(0, 8)}.pdf`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: () => {
+        this.epicrisisDownloading.set(false);
+        this.error.set('No se pudo generar la epicrisis.');
+      },
+    });
   }
 
   // ── Historial de cambios del plan de ortodoncia ──
@@ -4180,8 +4450,12 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       this.orthoControl = emptyOrthoControl();
       this.orthoHistory.set(null);
       this.orthoHistoryOpen.set(false);
+      this.compareBeforeId.set(null);
+      this.compareAfterId.set(null);
+      this.cancelAmend();
     }
     if (!this.evolutionAttentionDate) this.evolutionAttentionDate = this.nowLocal();
+    if (this.canWrite()) this.loadOrthoCatalog();
     if (!this.canWrite() || samePatient) return;
     this.api.lastCurrentSituation(patientId).subscribe({
       next: (res) => {
@@ -4245,7 +4519,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       const lines = fields.filter(([, v]) => (v || '').trim()).map(([k, v]) => `${k}: ${v.trim()}`);
       if (lines.length) parts.push(lines.join('\n'));
       if (this.orthoControlEnabled()) {
-        const ortho = orthoControlNoteLines(this.orthoControl);
+        const ortho = orthoControlNoteLines(this.orthoControl, this.orthoProcedureLabels());
         if (ortho.length) parts.push(ortho.join('\n'));
       }
     }

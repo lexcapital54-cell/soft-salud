@@ -13,6 +13,7 @@ import { EncountersService } from './encounters.service';
 import { HceExportController } from './hce-export.controller';
 import { HceExportService } from './hce-export.service';
 import { HcePdfService } from './hce-pdf.service';
+import { OrthoEpicrisisPdfService } from './ortho-epicrisis-pdf.service';
 import { FormTemplatesService } from './form-templates.service';
 import { IncapacitiesController } from './incapacities.controller';
 import { IncapacitiesService } from './incapacities.service';
@@ -52,6 +53,7 @@ import { RemoteConsentService } from './remote-consent.service';
     AttachmentsService,
     SivigilaService,
     HcePdfService,
+    OrthoEpicrisisPdfService,
     HceExportService,
     RemoteConsentService,
   ],

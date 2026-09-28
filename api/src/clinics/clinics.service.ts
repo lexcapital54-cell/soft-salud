@@ -163,6 +163,9 @@ export class ClinicsService {
       specialty: dto.specialty ?? clinic.specialty,
       address: dto.address ?? clinic.address,
       phone: dto.phone ?? clinic.phone,
+      nit: dto.nit !== undefined ? dto.nit.trim() || null : clinic.nit,
+      habilitationCode:
+        dto.habilitationCode !== undefined ? dto.habilitationCode.trim() || null : clinic.habilitationCode,
       isActive: dto.isActive ?? clinic.isActive,
     });
     await this.clinicsRepository.save(clinic);
@@ -293,6 +296,8 @@ export class ClinicsService {
       dashboardType: clinic.dashboardType,
       address: clinic.address,
       phone: clinic.phone,
+      nit: clinic.nit,
+      habilitationCode: clinic.habilitationCode,
       isActive: clinic.isActive,
       createdAt: clinic.createdAt,
       updatedAt: clinic.updatedAt,

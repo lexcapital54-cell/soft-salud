@@ -306,17 +306,20 @@
               </div>
             </div>
 
+            <div class="control-split" [class.split]="orthoControlEnabled()">
             <div class="control-past">
               <h4>
-                Controles firmados
+                {{ orthoControlEnabled() ? 'Línea de tiempo de citas' : 'Controles firmados' }}
                 @if (evolutions().length) {
-                  <span class="muted">({{ evolutions().length }})</span>
+                  <span class="muted">({{ groupedEvolutions().length }})</span>
                 }
               </h4>
               @if (evolutions().length) {
-                <ul class="evolutions">
-                  @for (ev of evolutions(); track ev.id) {
-                    <li>
+                <ul class="evolutions" [class.timeline]="orthoControlEnabled()">
+                  @for (g of groupedEvolutions().slice().reverse(); track g.ev.id) {
+                    @let ev = g.ev;
+                    @let lock = lockOf(ev);
+                    <li [class.is-closed]="lock.closed">
                       <p class="ev-head">
                         Atención: {{ evolutionAttentionDateOf(ev) | date: 'dd/MM/yyyy HH:mm' }}
                         <span class="muted"
@@ -325,17 +328,72 @@
                         @if (evolutionIsBackdated(ev)) {
                           <span class="pill">Registro posterior</span>
                         }
+                        @if (ev.content.orthoControl?.event; as evt) {
+                          <span class="pill ortho-evt">{{ orthoEventText(evt) }}</span>
+                        }
                       </p>
+                      @if (ev.content.orthoControl?.cups?.length) {
+                        <p class="ev-cups">
+                          @for (c of ev.content.orthoControl!.cups!; track c.code) {
+                            <span class="cups-chip" [title]="c.description">CUPS {{ c.code }}</span>
+                          }
+                        </p>
+                      }
                       @if (evolutionSituationOf(ev); as situation) {
                         <p class="ev-note"><strong>Situación actual:</strong> {{ situation }}</p>
                       }
                       <p class="ev-note">{{ ev.content.note }}</p>
+                      @if (ev.content.attachments?.length) {
+                        <p class="muted small">
+                          Anexos:
+                          @for (a of ev.content.attachments!; track a.id) {
+                            <button type="button" class="linkish" (click)="openAttachment(a.id)">{{ a.label }}</button>
+                          }
+                        </p>
+                      }
                       <p class="muted small">
                         {{ ev.content.professionalName || ev.author?.fullName }}
                         @if (ev.content.verificationCode) {
                           · {{ ev.content.verificationCode }}
                         }
                       </p>
+                      <div class="ev-lock" [class.closed]="lock.closed">
+                        @if (lock.closed) {
+                          <span class="lock-badge closed">
+                            <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M8 1a3.5 3.5 0 0 0-3.5 3.5V6H4a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-.5V4.5A3.5 3.5 0 0 0 8 1Zm-2 5V4.5a2 2 0 1 1 4 0V6H6Z"/></svg>
+                            Registro Cerrado por Normativa
+                          </span>
+                        } @else {
+                          <span class="lock-badge open" title="El registro original no se edita; el autor puede agregar una nota de corrección.">
+                            Firmado · corrección disponible {{ lock.hoursLeft }} h más
+                          </span>
+                        }
+                        @if (canWrite()) {
+                          @for (k of lock.kinds; track k) {
+                            <button type="button" class="linkish" (click)="startAmend(ev, k)">+ {{ amendLabel(k) }}</button>
+                          }
+                        }
+                      </div>
+                      @for (n of g.notes; track n.id) {
+                        <div class="ev-amend">
+                          <p class="ev-amend-head">
+                            <strong>{{ amendLabel(n.content.amends?.kind) }}</strong>
+                            · {{ n.signedAt | date: 'dd/MM/yyyy HH:mm' }} · {{ n.content.professionalName || n.author?.fullName }}
+                          </p>
+                          <p class="ev-note">{{ n.content.note }}</p>
+                          @if (n.content.attachments?.length) {
+                            <p class="muted small">
+                              Anexos:
+                              @for (a of n.content.attachments!; track a.id) {
+                                <button type="button" class="linkish" (click)="openAttachment(a.id)">{{ a.label }}</button>
+                              }
+                            </p>
+                          }
+                          @if (n.content.verificationCode) {
+                            <p class="muted small">{{ n.content.verificationCode }}</p>
+                          }
+                        </div>
+                      }
                     </li>
                   }
                 </ul>
@@ -348,7 +406,53 @@
             </div>
 
             @if (canWrite()) {
-              <h4 class="control-new-title">Registrar control de esta sesión</h4>
+              <div class="control-form-col" id="amend-form">
+              @if (amendTarget(); as target) {
+                @let targetLock = lockOf(target);
+                <div class="amend-box">
+                  <p class="amend-title">
+                    {{ amendLabel(amendKind()) }} sobre la evolución del
+                    {{ evolutionAttentionDateOf(target) | date: 'dd/MM/yyyy HH:mm' }}
+                  </p>
+                  <p class="muted small">
+                    El registro original no se modifica: esta nota queda firmada, con fecha y hora del sistema, y enlazada a
+                    él{{ target.content.verificationCode ? ' (' + target.content.verificationCode + ')' : '' }}.
+                  </p>
+                  <div class="amend-kinds" role="radiogroup" aria-label="Tipo de nota">
+                    @for (o of amendOptions; track o.kind) {
+                      @if (targetLock.kinds.includes(o.kind)) {
+                        <button type="button" role="radio" [attr.aria-checked]="amendKind() === o.kind" [class.on]="amendKind() === o.kind" (click)="amendKind.set(o.kind)" [title]="o.hint">
+                          {{ o.label }}
+                        </button>
+                      }
+                    }
+                  </div>
+                  @if (targetLock.closed) {
+                    <p class="muted small">Pasaron más de 24 horas desde la firma: solo se admiten notas aclaratorias y anexos.</p>
+                  }
+                  <label
+                    >Contenido de la nota
+                    <textarea
+                      rows="5"
+                      [(ngModel)]="amendNote"
+                      [placeholder]="amendKind() === 'ANEXO' ? 'Descripción de lo que se anexa (opcional)…' : amendKind() === 'CORRECCION' ? 'Qué se corrige y cuál es el dato correcto…' : 'Aclaración o complemento del registro…'"
+                    ></textarea>
+                  </label>
+                  <div class="amend-files">
+                    <label class="ghost amend-upload" [class.busy]="amendUploading()">
+                      {{ amendUploading() ? 'Subiendo…' : amendKind() === 'ANEXO' ? 'Adjuntar archivos (obligatorio)' : 'Adjuntar archivos (opcional)' }}
+                      <input type="file" multiple hidden [disabled]="amendUploading()" (change)="uploadAmendFile($event)" />
+                    </label>
+                    @for (a of amendAttachments(); track a.id) {
+                      <span class="cups-chip">
+                        {{ a.label }}
+                        <button type="button" class="chip-x" (click)="removeAmendAttachment(a.id)" aria-label="Quitar archivo">×</button>
+                      </span>
+                    }
+                  </div>
+                </div>
+              } @else {
+              <h4 class="control-new-title">{{ orthoControlEnabled() ? 'Control actual' : 'Registrar control de esta sesión' }}</h4>
               <label class="evolution-date"
                 >Fecha de atención clínica
                 <input
@@ -362,6 +466,55 @@
                   modificar.
                 </span>
               </label>
+              @if (orthoControlEnabled()) {
+                <app-ortho-quick-control
+                  [control]="orthoControl"
+                  [catalog]="orthoCatalog()"
+                  [phases]="orthoPhases"
+                  [canCopyLast]="hasPreviousOrthoControl()"
+                  [photoUrl]="orthoControlPhotoUrl()"
+                  [photoUploading]="orthoPhotoUploading()"
+                  [issues]="orthoControlIssues()"
+                  (copyLast)="copyLastOrthoControl()"
+                  (uploadPhoto)="uploadOrthoControlPhoto($event)"
+                  (removePhoto)="removeOrthoControlPhoto()"
+                />
+                @let photos = comparePhotoOptions();
+                <details class="compare-box" [open]="photos.length > 1">
+                  <summary>Comparar progreso (antes / después)</summary>
+                  @if (photos.length) {
+                    <div class="compare-selects">
+                      <label
+                        >Antes
+                        <select [ngModel]="compareBefore()" (ngModelChange)="compareBeforeId.set($event)">
+                          @for (p of photos; track p.id) {
+                            <option [value]="p.id">{{ p.label }}</option>
+                          }
+                        </select>
+                      </label>
+                      <label
+                        >Después
+                        <select [ngModel]="compareAfter()" (ngModelChange)="compareAfterId.set($event)">
+                          @for (p of photos; track p.id) {
+                            <option [value]="p.id">{{ p.label }}</option>
+                          }
+                        </select>
+                      </label>
+                    </div>
+                  }
+                  <app-ortho-compare-slider
+                    [beforeUrl]="compareUrl(compareBefore())"
+                    [afterUrl]="compareUrl(compareAfter())"
+                    [beforeLabel]="compareLabel(compareBefore())"
+                    [afterLabel]="compareLabel(compareAfter())"
+                    [emptyText]="
+                      photos.length
+                        ? 'Suba la foto intraoral frontal del control actual para compararla con la del inicio.'
+                        : 'Cargue la foto intraoral frontal en Imágenes de la historia (Día 0) y la del control actual.'
+                    "
+                  />
+                </details>
+              }
               <label
                 >Situación actual
                 <textarea
@@ -447,86 +600,6 @@
                     <input type="date" [(ngModel)]="dentalEvolution.nextAppointment" />
                   </label>
                 </div>
-                @if (orthoControlEnabled()) {
-                  <div class="ortho-control-form">
-                    <p class="ortho-control-title">
-                      Control de ortodoncia
-                      @if (hasPreviousOrthoControl()) {
-                        <button type="button" class="linkish" (click)="copyLastOrthoControl()">Traer arcos y fase del último control</button>
-                      }
-                    </p>
-                    <div class="grid-4">
-                      <label
-                        >Evento
-                        <select [(ngModel)]="orthoControl.event">
-                          @for (e of orthoControlEvents; track e.value) {
-                            <option [value]="e.value">{{ e.label }}</option>
-                          }
-                        </select>
-                      </label>
-                      <label
-                        >Fase
-                        <select [(ngModel)]="orthoControl.phase">
-                          <option value="">Sin cambio</option>
-                          @for (o of orthoPhases; track o) {
-                            <option [value]="o">{{ o }}</option>
-                          }
-                        </select>
-                      </label>
-                      <label
-                        >Arco superior
-                        <input [(ngModel)]="orthoControl.upperArch" list="ortho-wires" placeholder="NiTi 0.014" maxlength="120" />
-                      </label>
-                      <label
-                        >Arco inferior
-                        <input [(ngModel)]="orthoControl.lowerArch" list="ortho-wires" placeholder="NiTi 0.014" maxlength="120" />
-                      </label>
-                      <label
-                        >Elásticos
-                        <input [(ngModel)]="orthoControl.elastics" list="ortho-elastics" placeholder="Clase II, 3/16 medianos" maxlength="200" />
-                      </label>
-                      <label class="span-2"
-                        >Activaciones
-                        <input [(ngModel)]="orthoControl.activations" placeholder="Expansor 2 vueltas, ligadura de 13 a 23…" maxlength="300" />
-                      </label>
-                      <label
-                        >Reparaciones / recementados
-                        <input [(ngModel)]="orthoControl.repairs" placeholder="Recementado bracket 24" maxlength="300" />
-                      </label>
-                      <label
-                        >Higiene
-                        <select [(ngModel)]="orthoControl.hygiene">
-                          <option value="">Seleccione…</option>
-                          @for (o of orthoRating; track o) {
-                            <option [value]="o">{{ o }}</option>
-                          }
-                        </select>
-                      </label>
-                      <label
-                        >Colaboración del paciente
-                        <select [(ngModel)]="orthoControl.cooperation">
-                          <option value="">Seleccione…</option>
-                          @for (o of orthoRating; track o) {
-                            <option [value]="o">{{ o }}</option>
-                          }
-                        </select>
-                      </label>
-                    </div>
-                    <datalist id="ortho-wires">
-                      @for (w of orthoArchWires; track w) {
-                        <option [value]="w"></option>
-                      }
-                    </datalist>
-                    <datalist id="ortho-elastics">
-                      @for (w of orthoElastics; track w) {
-                        <option [value]="w"></option>
-                      }
-                    </datalist>
-                    @for (issue of orthoControlIssues(); track issue) {
-                      <p class="measure-hint invalid">{{ issue }}</p>
-                    }
-                  </div>
-                }
                 <label
                   >Respuesta del paciente (opcional)
                   <textarea
@@ -573,6 +646,7 @@
                   <textarea rows="2" [(ngModel)]="evolutionSoap.plan"></textarea>
                 </label>
               </details>
+              }
 
               @if (
                 !storedSignature() &&
@@ -609,20 +683,76 @@
               }
 
               <div class="control-actions">
-                <button
-                  type="button"
-                  class="primary"
-                  (click)="addEvolution()"
-                  [disabled]="signing()"
-                >
-                  {{ signing() ? 'Firmando…' : 'Firmar nota de control' }}
-                </button>
-                <a
-                  href="#historia-guardada"
-                  class="ghost"
-                  (click)="scrollToSealedOrEvolutions(); $event.preventDefault()"
-                  >Ver historia inicial guardada ↓</a
-                >
+                @if (amendTarget()) {
+                  <button type="button" class="primary" (click)="submitAmend()" [disabled]="signing() || amendUploading()">
+                    {{ signing() ? 'Firmando…' : 'Firmar ' + amendLabel(amendKind()).toLowerCase() }}
+                  </button>
+                  <button type="button" class="ghost" (click)="cancelAmend()">Cancelar</button>
+                } @else {
+                  <button
+                    type="button"
+                    class="primary"
+                    (click)="addEvolution()"
+                    [disabled]="signing()"
+                  >
+                    {{ signing() ? 'Firmando…' : 'Firmar nota de control' }}
+                  </button>
+                  <a
+                    href="#historia-guardada"
+                    class="ghost"
+                    (click)="scrollToSealedOrEvolutions(); $event.preventDefault()"
+                    >Ver historia inicial guardada ↓</a
+                  >
+                }
+              </div>
+              </div>
+            }
+            </div>
+
+            @if (orthoControlEnabled()) {
+              @let cl = orthoClosure();
+              <div class="closure-dash">
+                <div class="closure-head">
+                  <h4>Cierre de tratamiento</h4>
+                  <button type="button" class="primary" (click)="downloadEpicrisis()" [disabled]="epicrisisDownloading()">
+                    {{ epicrisisDownloading() ? 'Generando…' : 'Exportar epicrisis (PDF)' }}
+                  </button>
+                </div>
+                <div class="closure-cards">
+                  <article class="closure-card wide">
+                    <span class="lbl">Diagnóstico inicial (CIE-10)</span>
+                    @if (cl.diagnoses.length) {
+                      @for (d of cl.diagnoses; track d.cieCode) {
+                        <p><strong>{{ d.cieCode }}</strong> {{ d.description }}</p>
+                      }
+                    } @else {
+                      <p class="muted small">Sin diagnósticos CIE-10 registrados.</p>
+                    }
+                  </article>
+                  <article class="closure-card">
+                    <span class="lbl">Fecha de inicio</span>
+                    <strong>{{ cl.installedAt ? (cl.installedAt | date: 'dd/MM/yyyy') : '—' }}</strong>
+                    <span class="muted small">Instalación de aparatología</span>
+                  </article>
+                  <article class="closure-card">
+                    <span class="lbl">Fecha final</span>
+                    <strong>{{ cl.debondedAt ? (cl.debondedAt | date: 'dd/MM/yyyy') : cl.installedAt ? 'En curso' : '—' }}</strong>
+                    <span class="muted small">
+                      {{ cl.months !== null ? (cl.months | number: '1.0-1') + ' meses · ' : '' }}{{ cl.controls }} control(es)
+                    </span>
+                  </article>
+                  <article class="closure-card" [attr.data-tone]="cl.retention.tone">
+                    <span class="lbl">Retenedores</span>
+                    <strong>{{ cl.retention.text }}</strong>
+                    <span class="muted small">
+                      {{ cl.retention.lastAt ? 'Último control ' + (cl.retention.lastAt | date: 'dd/MM/yyyy') : cl.retention.plan || 'Sin plan de retención registrado' }}
+                    </span>
+                  </article>
+                </div>
+                <p class="muted small">
+                  La epicrisis toma estos datos de la historia sellada y de los controles firmados, con el encabezado del
+                  consultorio (NIT y código de habilitación) y espacios de firma del profesional y del paciente.
+                </p>
               </div>
             }
           </section>

@@ -499,6 +499,17 @@ export class HcePdfService {
       for (const ev of record.evolutions) {
         const evContent = (ev.content || {}) as Record<string, unknown>;
         const situation = String(evContent.currentSituation || '').trim();
+        const amends = evContent.amends as { signedAt?: string; verificationCode?: string } | undefined;
+        const control = evContent.orthoControl as { cups?: Array<{ code: string; description: string }> } | undefined;
+        const annexes = (evContent.attachments as Array<{ label: string }> | undefined) ?? [];
+        const extra = [
+          amends
+            ? `Se refiere a la evolución del ${fmt(amends.signedAt)}${amends.verificationCode ? ` (${amends.verificationCode})` : ''}; el registro original no se modifica.`
+            : '',
+          control?.cups?.length ? `CUPS: ${control.cups.map((c) => `${c.code} ${c.description}`).join('; ')}` : '',
+          annexes.length ? `Anexos: ${annexes.map((a) => a.label).join('; ')}` : '',
+          evContent.verificationCode ? `Código de verificación: ${String(evContent.verificationCode)}` : '',
+        ].filter(Boolean);
         body.push({
           stack: [
             {
@@ -523,8 +534,13 @@ export class HcePdfService {
               text: String(evContent.note || ''),
               style: 'body',
               alignment: 'justify',
-              margin: [0, 2, 0, 8],
+              margin: [0, 2, 0, extra.length ? 2 : 8],
             },
+            ...extra.map((line, i) => ({
+              text: line,
+              style: 'muted',
+              margin: [0, 0, 0, i === extra.length - 1 ? 6 : 0] as [number, number, number, number],
+            })),
             {
               text: `${ev.author.fullName}${ev.author.professionalCard ? ` · TP ${ev.author.professionalCard}` : ''}`,
               style: 'muted',

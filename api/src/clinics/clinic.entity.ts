@@ -35,6 +35,12 @@ export class Clinic {
   @Column({ type: 'varchar', length: 40, nullable: true })
   phone: string | null;
 
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  nit: string | null;
+
+  @Column({ name: 'habilitation_code', type: 'varchar', length: 20, nullable: true })
+  habilitationCode: string | null;
+
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 

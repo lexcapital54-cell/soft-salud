@@ -347,3 +347,24 @@ th {
     padding: 24px;
   }
 }
+
+.provider-edit td {
+  background: #f8fafc;
+}
+
+.provider-edit-title {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.provider-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.provider-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}

@@ -321,6 +321,9 @@ model Clinic {
   billingMode   BillingMode     @default(RECEIPT_ONLY) @map("billing_mode")
   address       String?         @db.VarChar(255)
   phone         String?         @db.VarChar(40)
+  nit           String?         @db.VarChar(20)
+  /// Código de habilitación del prestador en el REPS.
+  habilitationCode String?      @map("habilitation_code") @db.VarChar(20)
   isActive      Boolean         @default(true) @map("is_active")
   /// Periodo de arrendamiento pendiente (YYYY-MM-01). Null si está al día.
   hostingPeriodDue    DateTime? @map("hosting_period_due") @db.Date

@@ -1,4 +1,4 @@
-import { IsBoolean, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { ClinicSpecialty } from '../../common/enums';
 
 export class UpdateClinicDto {
@@ -18,6 +18,16 @@ export class UpdateClinicDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  nit?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  habilitationCode?: string;
 
   @IsOptional()
   @IsBoolean()

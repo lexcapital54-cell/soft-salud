@@ -1,4 +1,5 @@
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsDateString,
@@ -20,6 +21,7 @@ import {
   ClinicalNoteFormat,
   DiagnosisType,
 } from '@prisma/client';
+import { ORTHO_CONTROL_PROCEDURE_KEYS } from '../ortho-control-procedures';
 
 /** Filtros del calendario de historias por fecha. */
 export class ListEncountersQueryDto {
@@ -150,12 +152,28 @@ export class OrthoControlDto {
   @IsOptional() @IsString() @MaxLength(300) repairs?: string;
   @IsOptional() @IsString() @MaxLength(40) hygiene?: string;
   @IsOptional() @IsString() @MaxLength(40) cooperation?: string;
+  @IsOptional() @IsString() @MaxLength(200) ipr?: string;
+
+  /** Procedimientos rápidos marcados; el CUPS se asigna en el servidor. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsIn(ORTHO_CONTROL_PROCEDURE_KEYS, { each: true })
+  procedures?: string[];
+
+  /** Foto intraoral frontal del control (adjunto de la historia). */
+  @IsOptional()
+  @IsUUID()
+  photoAttachmentId?: string;
 
   /** YYYY-MM-DD */
   @IsOptional()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Próxima cita: fecha inválida.' })
   nextAppointment?: string;
 }
+
+export const EVOLUTION_AMEND_KINDS = ['CORRECCION', 'ACLARATORIA', 'ANEXO'] as const;
+export type EvolutionAmendKind = (typeof EVOLUTION_AMEND_KINDS)[number];
 
 export class CreateEvolutionDto {
   @IsString()
@@ -166,6 +184,22 @@ export class CreateEvolutionDto {
   @ValidateNested()
   @Type(() => OrthoControlDto)
   orthoControl?: OrthoControlDto;
+
+  /** Evolución original a la que se refiere esta nota (corrección, aclaratoria o anexo). */
+  @IsOptional()
+  @IsUUID()
+  amendsEvolutionId?: string;
+
+  @ValidateIf((o: CreateEvolutionDto) => !!o.amendsEvolutionId)
+  @IsIn(EVOLUTION_AMEND_KINDS as unknown as string[])
+  amendKind?: EvolutionAmendKind;
+
+  /** Adjuntos que se anexan a la nota. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsUUID('all', { each: true })
+  attachmentIds?: string[];
 
   @IsOptional()
   @IsString()

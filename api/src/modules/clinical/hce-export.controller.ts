@@ -69,4 +69,18 @@ export class HceExportController {
     );
     return new StreamableFile(buffer);
   }
+
+  /** Epicrisis de cierre del tratamiento de ortodoncia. */
+  @Get(':encounterId/ortho-epicrisis')
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
+  async downloadOrthoEpicrisis(
+    @Req() req: { user: User },
+    @Param('encounterId') encounterId: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { buffer, fileName } = await this.exports.orthoEpicrisisBuffer(req.user, encounterId);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName.replace(/"/g, '')}"`);
+    return new StreamableFile(buffer);
+  }
 }

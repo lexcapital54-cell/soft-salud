@@ -60,6 +60,10 @@ export class AdminApiService {
     }>(`${API}/clinics/${clinicId}/delete`, { confirmName, confirmPin });
   }
 
+  updateClinic(clinicId: string, payload: { address?: string; phone?: string; nit?: string; habilitationCode?: string }) {
+    return this.http.post<Clinic>(`${API}/clinics/${clinicId}/update`, payload);
+  }
+
   setClinicActive(clinicId: string, isActive: boolean) {
     return this.http.post<Clinic>(`${API}/clinics/${clinicId}/update`, { isActive });
   }

@@ -207,6 +207,20 @@ export interface ClinicalContent {
   _redacted?: boolean;
 }
 
+export type EvolutionAmendKind = 'CORRECCION' | 'ACLARATORIA' | 'ANEXO';
+
+export interface OrthoControlProcedureOption {
+  key: string;
+  label: string;
+  cupsCode: string;
+  cupsDescription: string;
+}
+
+export interface OrthoControlCatalog {
+  procedures: OrthoControlProcedureOption[];
+  eventCups: Record<string, { code: string; description: string }>;
+}
+
 export interface ClinicalEvolution {
   id: string;
   content: {
@@ -218,9 +232,20 @@ export interface ClinicalEvolution {
     signatureBase64?: string | null;
     verificationCode?: string;
     /** Control de ortodoncia estructurado de la sesión. */
-    orthoControl?: Partial<Record<'phase' | 'upperArch' | 'lowerArch' | 'elastics' | 'activations' | 'repairs' | 'hygiene' | 'cooperation' | 'nextAppointment', string>> & {
+    orthoControl?: Partial<
+      Record<
+        'phase' | 'upperArch' | 'lowerArch' | 'elastics' | 'activations' | 'repairs' | 'hygiene' | 'cooperation' | 'nextAppointment' | 'ipr' | 'photoAttachmentId',
+        string
+      >
+    > & {
       event?: 'CONTROL' | 'INSTALACION' | 'RETIRO' | 'RETENCION';
+      procedures?: string[];
+      /** CUPS asignados por el servidor al firmar. */
+      cups?: Array<{ code: string; description: string; procedures: string[] }>;
     };
+    /** Nota enlazada a una evolución anterior (el original no se modifica). */
+    amends?: { evolutionId: string; kind: EvolutionAmendKind; signedAt: string; verificationCode: string };
+    attachments?: Array<{ id: string; label: string; mimeType: string }>;
     _redacted?: boolean;
   };
   contentHash: string;

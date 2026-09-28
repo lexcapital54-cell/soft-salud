@@ -33,6 +33,13 @@ import {
   coalesceOrthoHistory,
   diffOrthoPlan,
 } from './ortho-plan-audit';
+import { OrthoControlCups, orthoControlCupsCodes } from './ortho-control-procedures';
+import {
+  EVOLUTION_AMEND_LABELS,
+  EVOLUTION_CORRECTION_WINDOW_MS,
+  EvolutionAmendment,
+} from './evolution-amendments';
+import { CatalogsService } from './catalogs.service';
 import {
   CreateEncounterDto,
   CreateEvolutionDto,
@@ -85,6 +92,7 @@ export class EncountersService {
     private readonly formTemplates: FormTemplatesService,
     private readonly signatures: ProfessionalSignatureService,
     private readonly rdaExport: RdaExportService,
+    private readonly catalogs: CatalogsService,
   ) {}
 
   private requireClinicId(user: User) {
@@ -1027,8 +1035,19 @@ export class EncountersService {
     );
     const signedAt = new Date();
     const note = dto.note.trim();
-    const reason = dto.reason?.trim() || 'Nota de evolución';
-    const currentSituation = dto.currentSituation?.trim() || '';
+    const amends = dto.amendsEvolutionId
+      ? await this.checkAmendment(user, record.id, dto, signedAt)
+      : null;
+    const reason = amends
+      ? EVOLUTION_AMEND_LABELS[amends.kind]
+      : dto.reason?.trim() || 'Nota de evolución';
+    const currentSituation = amends ? '' : dto.currentSituation?.trim() || '';
+    const attachments = dto.attachmentIds?.length
+      ? await this.ownAttachments(clinicId, encounter.patientId, dto.attachmentIds)
+      : [];
+    if (amends?.kind === 'ANEXO' && !attachments.length) {
+      throw new BadRequestException('Adjunte al menos un archivo para registrar el anexo.');
+    }
 
     let clinicalAttentionDate = signedAt;
     if (dto.clinicalAttentionDate) {
@@ -1042,8 +1061,17 @@ export class EncountersService {
       clinicalAttentionDate = parsed;
     }
 
+    if (amends && dto.orthoControl) {
+      throw new BadRequestException(
+        'Las correcciones, notas aclaratorias y anexos no llevan control de ortodoncia: registre un control nuevo.',
+      );
+    }
     const orthoControl = dto.orthoControl
-      ? await this.checkOrthoControl(record.id, dto.orthoControl, clinicalAttentionDate)
+      ? await this.checkOrthoControl(
+          { clinicId, patientId: encounter.patientId, clinicalRecordId: record.id },
+          dto.orthoControl,
+          clinicalAttentionDate,
+        )
       : null;
 
     const contentHash = this.signatures.hash([
@@ -1056,6 +1084,8 @@ export class EncountersService {
       user.id,
       signedAt.toISOString(),
       ...(orthoControl ? [JSON.stringify(orthoControl)] : []),
+      ...(amends ? [JSON.stringify(amends)] : []),
+      ...(attachments.length ? [attachments.map((a) => a.id).join(',')] : []),
     ]);
 
     await this.prisma.$transaction(async (tx) => {
@@ -1068,7 +1098,9 @@ export class EncountersService {
             note,
             reason,
             currentSituation,
-            ...(orthoControl ? { orthoControl } : {}),
+            ...(orthoControl ? { orthoControl: orthoControl as Prisma.InputJsonObject } : {}),
+            ...(amends ? { amends: { ...amends } as Prisma.InputJsonObject } : {}),
+            ...(attachments.length ? { attachments } : {}),
             professionalName: user.fullName,
             professionalCard: user.professionalCard || '',
             signatureBase64,
@@ -1095,6 +1127,7 @@ export class EncountersService {
             reason,
             clinicalAttentionDate: clinicalAttentionDate.toISOString(),
             systemDate: signedAt.toISOString(),
+            ...(amends ? { amendsEvolutionId: amends.evolutionId, amendKind: amends.kind } : {}),
           },
         },
       });
@@ -1108,14 +1141,90 @@ export class EncountersService {
    * (instalación → retiro → retención) y la próxima cita.
    */
   private async checkOrthoControl(
-    clinicalRecordId: string,
+    ctx: { clinicId: string; patientId: string; clinicalRecordId: string },
     dto: OrthoControlDto,
     attention: Date,
-  ): Promise<Record<string, string>> {
+  ): Promise<Record<string, unknown>> {
     const clean: Record<string, string> = { event: dto.event };
     for (const [k, v] of Object.entries(dto)) {
       if (k !== 'event' && typeof v === 'string' && v.trim()) clean[k] = v.trim();
     }
+    const procedures = [...new Set(dto.procedures ?? [])];
+    if (clean.photoAttachmentId) {
+      const [photo] = await this.ownAttachments(ctx.clinicId, ctx.patientId, [clean.photoAttachmentId]);
+      if (!photo.mimeType.startsWith('image/')) {
+        throw new BadRequestException('La foto del control debe ser una imagen.');
+      }
+    }
+    await this.checkOrthoControlDates(ctx.clinicalRecordId, dto, clean, attention);
+    const groups = orthoControlCupsCodes(dto.event, procedures);
+    const names = await this.catalogs.resolveCups(groups.map((g) => g.code));
+    const cups: OrthoControlCups[] = groups.map((g) => ({
+      code: g.code,
+      description: names.get(g.code) ?? '',
+      procedures: g.procedures,
+    }));
+    return { ...clean, procedures, cups };
+  }
+
+  /**
+   * Nota enlazada a una evolución: la corrección solo la registra el autor dentro de las
+   * 24 horas siguientes a la firma; la aclaratoria y el anexo se admiten siempre.
+   */
+  private async checkAmendment(
+    user: User,
+    clinicalRecordId: string,
+    dto: CreateEvolutionDto,
+    now: Date,
+  ): Promise<EvolutionAmendment> {
+    const target = await this.prisma.clinicalEvolution.findFirst({
+      where: { id: dto.amendsEvolutionId, clinicalRecordId },
+      select: { id: true, authorId: true, signedAt: true, content: true },
+    });
+    if (!target) throw new NotFoundException('La evolución a la que se refiere la nota no existe en esta historia.');
+    const content = (target.content ?? {}) as Record<string, unknown>;
+    if (content.amends) {
+      throw new BadRequestException('Refiérase a la evolución original, no a otra nota aclaratoria.');
+    }
+    const kind = dto.amendKind!;
+    if (kind === 'CORRECCION') {
+      if (target.authorId !== user.id) {
+        throw new ForbiddenException('Solo el autor puede registrar una corrección; use una nota aclaratoria.');
+      }
+      if (now.getTime() - target.signedAt.getTime() > EVOLUTION_CORRECTION_WINDOW_MS) {
+        throw new BadRequestException(
+          'Registro cerrado por normativa: pasaron más de 24 horas desde la firma. Use una nota aclaratoria o un anexo.',
+        );
+      }
+    }
+    return {
+      evolutionId: target.id,
+      kind,
+      signedAt: target.signedAt.toISOString(),
+      verificationCode: typeof content.verificationCode === 'string' ? content.verificationCode : '',
+    };
+  }
+
+  /** Adjuntos del mismo paciente y consultorio; falla si alguno no existe o es de otro paciente. */
+  private async ownAttachments(clinicId: string, patientId: string, ids: string[]) {
+    const unique = [...new Set(ids)];
+    const rows = await this.prisma.clinicalAttachment.findMany({
+      where: { id: { in: unique }, encounter: { clinicId, patientId } },
+      select: { id: true, label: true, mimeType: true },
+    });
+    if (rows.length !== unique.length) {
+      throw new BadRequestException('Uno de los archivos adjuntos no pertenece a este paciente.');
+    }
+    return unique.map((id) => rows.find((r) => r.id === id)!);
+  }
+
+  /** Próxima cita y orden de eventos (instalación → retiro → retención). */
+  private async checkOrthoControlDates(
+    clinicalRecordId: string,
+    dto: OrthoControlDto,
+    clean: Record<string, string>,
+    attention: Date,
+  ): Promise<void> {
     const day = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
     const attentionDay = day(attention);
 
@@ -1132,7 +1241,7 @@ export class EncountersService {
       }
     }
 
-    if (dto.event === 'CONTROL') return clean;
+    if (dto.event === 'CONTROL') return;
     const previous = await this.prisma.clinicalEvolution.findMany({
       where: { clinicalRecordId },
       select: { content: true, clinicalAttentionDate: true, signedAt: true },
@@ -1179,7 +1288,6 @@ export class EncountersService {
         'La retención empieza después del retiro de la aparatología: registre primero el retiro.',
       );
     }
-    return clean;
   }
 
   /** Quién y cuándo cambió el diagnóstico, el plan y la fase de ortodoncia del paciente. */

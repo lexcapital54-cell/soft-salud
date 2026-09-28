@@ -9,6 +9,8 @@ import {
   DivipolaDepartment,
   Encounter,
   EncounterListItem,
+  EvolutionAmendKind,
+  OrthoControlCatalog,
   HceExportItem,
   OpenEncounterItem,
   Incapacity,
@@ -176,12 +178,23 @@ export class ClinicalApiService {
       clinicalAttentionDate?: string;
       signatureBase64?: string;
       orthoControl?: OrthoControl;
+      amendsEvolutionId?: string;
+      amendKind?: EvolutionAmendKind;
+      attachmentIds?: string[];
     },
   ) {
     return this.http.post<Encounter>(`${API}/clinical-records/${encounterId}/evolutions`, body);
   }
 
   /** Quién y cuándo cambió el diagnóstico, el plan y la fase de ortodoncia. */
+  orthoControlCatalog() {
+    return this.http.get<OrthoControlCatalog>(`${API}/catalogs/ortho-control-procedures`);
+  }
+
+  downloadOrthoEpicrisis(encounterId: string) {
+    return this.http.get(`${API}/clinical-exports/${encounterId}/ortho-epicrisis`, { responseType: 'blob' });
+  }
+
   orthoHistory(encounterId: string) {
     return this.http.get<OrthoHistoryEntry[]>(`${API}/encounters/${encounterId}/ortho-history`);
   }

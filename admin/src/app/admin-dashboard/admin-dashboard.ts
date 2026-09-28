@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AdminApiService } from '../admin-api.service';
 import { AuthService } from '../auth.service';
@@ -9,7 +9,7 @@ import { WEBSITE_URL } from '../api.config';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
@@ -121,6 +121,45 @@ export class AdminDashboard {
         );
       },
     });
+  }
+
+  readonly providerEdit = signal<{ id: string; address: string; phone: string; nit: string; habilitationCode: string } | null>(null);
+
+  startEditProvider(clinic: Clinic) {
+    this.providerEdit.set({
+      id: clinic.id,
+      address: clinic.address || '',
+      phone: clinic.phone || '',
+      nit: clinic.nit || '',
+      habilitationCode: clinic.habilitationCode || '',
+    });
+  }
+
+  saveProvider() {
+    const p = this.providerEdit();
+    if (!p) return;
+    this.busyClinicId.set(p.id);
+    this.api
+      .updateClinic(p.id, {
+        address: p.address.trim(),
+        phone: p.phone.trim(),
+        nit: p.nit.trim(),
+        habilitationCode: p.habilitationCode.trim(),
+      })
+      .subscribe({
+        next: (updated) => {
+          this.busyClinicId.set(null);
+          this.providerEdit.set(null);
+          this.error.set('');
+          this.message.set(`Datos del prestador actualizados para «${updated.name}».`);
+          this.refresh();
+        },
+        error: (err) => {
+          this.busyClinicId.set(null);
+          this.message.set('');
+          this.error.set(this.readError(err, 'No se pudieron guardar los datos del prestador.'));
+        },
+      });
   }
 
   toggleClinicActive(clinic: Clinic) {

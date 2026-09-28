@@ -6,6 +6,7 @@ import { PHYSIOTHERAPY_CIE_CATALOG } from './physiotherapy-cie.catalog';
 import { PHYSIOTHERAPY_CUPS_CATALOG } from './physiotherapy-cups.catalog';
 import { DENTISTRY_CIE_CATALOG } from './dentistry-cie.catalog';
 import { DENTISTRY_CUPS_CATALOG } from './dentistry-cups.catalog';
+import { ORTHO_CONTROL_PROCEDURES, ORTHO_EVENT_CUPS } from './ortho-control-procedures';
 
 /** Ortodoncia usa los mismos catálogos CIE-10 y CUPS odontológicos. */
 function catalogSpecialty(specialty?: ClinicSpecialty | string | null): string {
@@ -16,6 +17,41 @@ function catalogSpecialty(specialty?: ClinicSpecialty | string | null): string {
 @Injectable()
 export class CatalogsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** Descripción vigente de cada CUPS: primero la tabla CUPS activa, luego el catálogo odontológico. */
+  async resolveCups(codes: string[]): Promise<Map<string, string>> {
+    const unique = [...new Set(codes)];
+    const out = new Map<string, string>();
+    if (!unique.length) return out;
+    const rows = await this.prisma.cupsCode.findMany({
+      where: { code: { in: unique }, isActive: true },
+      select: { code: true, description: true },
+    });
+    for (const r of rows) out.set(r.code, r.description);
+    for (const code of unique) {
+      if (out.has(code)) continue;
+      const fallback = DENTISTRY_CUPS_CATALOG.find((c) => c.code === code);
+      out.set(code, fallback?.description ?? 'Procedimiento de ortodoncia');
+    }
+    return out;
+  }
+
+  /** Botones de procedimiento del control de ortodoncia con su CUPS (para no quemarlos en el cliente). */
+  async orthoControlProcedures() {
+    const codes = [...ORTHO_CONTROL_PROCEDURES.map((p) => p.cupsCode), ...Object.values(ORTHO_EVENT_CUPS)];
+    const names = await this.resolveCups(codes);
+    return {
+      procedures: ORTHO_CONTROL_PROCEDURES.map((p) => ({
+        key: p.key,
+        label: p.label,
+        cupsCode: p.cupsCode,
+        cupsDescription: names.get(p.cupsCode) ?? '',
+      })),
+      eventCups: Object.fromEntries(
+        Object.entries(ORTHO_EVENT_CUPS).map(([event, code]) => [event, { code, description: names.get(code) ?? '' }]),
+      ),
+    };
+  }
 
   /**
    * Autocompletado CIE filtrado por especialidad del consultorio.

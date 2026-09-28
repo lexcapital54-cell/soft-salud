@@ -69,6 +69,8 @@ export interface Clinic {
   dashboardType: DashboardType | null;
   address: string | null;
   phone: string | null;
+  nit?: string | null;
+  habilitationCode?: string | null;
   isActive: boolean;
   admins?: ClinicAdmin[];
   /** Tiene pacientes, historias u otros registros: solo se puede desactivar. */

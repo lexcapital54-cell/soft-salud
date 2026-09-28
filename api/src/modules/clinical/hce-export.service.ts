@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -8,6 +9,8 @@ import { User } from '../../users/user.entity';
 import { PrismaService } from '../../prisma/prisma.module';
 import { SearchHceExportQueryDto } from './dto/hce-export.dto';
 import { HcePdfService, PatientSignatureInfo } from './hce-pdf.service';
+import { buildOrthoEpicrisis } from './ortho-epicrisis';
+import { OrthoEpicrisisPdfService } from './ortho-epicrisis-pdf.service';
 import { PassThrough } from 'stream';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const createArchive = require('archiver') as (
@@ -49,6 +52,7 @@ export class HceExportService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pdf: HcePdfService,
+    private readonly epicrisisPdf: OrthoEpicrisisPdfService,
   ) {}
 
   private requireClinicId(user: User) {
@@ -150,6 +154,59 @@ export class HceExportService {
       buffer,
       fileName: this.pdf.suggestedFileName(encounter as never),
     };
+  }
+
+  /** Epicrisis de cierre del tratamiento de ortodoncia (resumen automático + firmas). */
+  async orthoEpicrisisBuffer(user: User, encounterId: string) {
+    const encounter = await this.loadEncounter(user, encounterId);
+    const record = encounter.clinicalRecord;
+    if (!record || record.status === 'DRAFT') {
+      throw new BadRequestException('Guarde y selle la historia clínica antes de generar la epicrisis.');
+    }
+    const [clinic, professional] = await Promise.all([
+      this.prisma.clinic.findUnique({
+        where: { id: encounter.clinicId },
+        select: { name: true, address: true, phone: true, nit: true, habilitationCode: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: encounter.professionalId },
+        select: { id: true, fullName: true, professionalCard: true, professionalSignatureBase64: true },
+      }),
+    ]);
+    const summary = buildOrthoEpicrisis(
+      record.content,
+      encounter.diagnoses.map((d) => ({ cieCode: d.cieCode, description: d.description, isPrimary: d.type === 'PRINCIPAL' })),
+      record.evolutions,
+    );
+    const signedByRequester = professional?.id === user.id;
+    const buffer = await this.epicrisisPdf.build({
+      provider: {
+        name: clinic?.name ?? 'Consultorio',
+        address: clinic?.address,
+        phone: clinic?.phone,
+        nit: clinic?.nit,
+        habilitationCode: clinic?.habilitationCode,
+      },
+      patient: encounter.patient,
+      professional: {
+        fullName: professional?.fullName ?? encounter.professional.fullName,
+        professionalCard: professional?.professionalCard,
+        signatureBase64: signedByRequester ? professional?.professionalSignatureBase64 : null,
+      },
+      summary,
+      recordCode: record.verificationCode || encounter.externalCode || '',
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        clinicId: encounter.clinicId,
+        userId: user.id,
+        action: 'EXPORT',
+        entityType: 'OrthoEpicrisis',
+        entityId: record.id,
+        metadata: { encounterId },
+      },
+    });
+    return { buffer, fileName: this.epicrisisPdf.fileName(encounter.patient) };
   }
 
   async bulkZipStream(user: User, query: SearchHceExportQueryDto = {}) {

@@ -20,6 +20,10 @@ export interface OrthoControl {
   repairs: string;
   hygiene: string;
   cooperation: string;
+  /** Procedimientos rápidos marcados; el servidor les asigna el CUPS. */
+  procedures: string[];
+  ipr: string;
+  photoAttachmentId?: string;
   nextAppointment?: string;
 }
 
@@ -34,6 +38,8 @@ export function emptyOrthoControl(): OrthoControl {
     repairs: '',
     hygiene: '',
     cooperation: '',
+    procedures: [],
+    ipr: '',
   };
 }
 
@@ -80,14 +86,17 @@ export function orthoEventLabel(event: string) {
 }
 
 /** Líneas legibles del control para la nota de evolución firmada. */
-export function orthoControlNoteLines(c: OrthoControl): string[] {
+export function orthoControlNoteLines(c: OrthoControl, procedureLabels: Record<string, string> = {}): string[] {
+  const procedures = (c.procedures || []).map((k) => procedureLabels[k] || k).join(', ');
   const fields: Array<[string, string]> = [
     ['Evento de ortodoncia', orthoEventLabel(c.event)],
+    ['Procedimientos', procedures],
     ['Fase', c.phase],
     ['Arco superior', c.upperArch],
     ['Arco inferior', c.lowerArch],
     ['Elásticos', c.elastics],
     ['Activaciones', c.activations],
+    ['IPR', c.ipr],
     ['Reparaciones / recementados', c.repairs],
     ['Higiene', c.hygiene],
     ['Colaboración', c.cooperation],
@@ -167,6 +176,7 @@ export interface OrthoControlRow {
   hygiene: string;
   nextAppointment: string;
   professional: string;
+  cups: string;
 }
 
 export interface OrthoTimeline {
@@ -203,6 +213,7 @@ export function orthoTreatmentTimeline(evolutions: ClinicalEvolution[], now = ne
       hygiene: c.hygiene || '',
       nextAppointment: c.nextAppointment || '',
       professional: ev.content.professionalName || ev.author?.fullName || '',
+      cups: (c.cups || []).map((x) => x.code).join(', '),
     });
   }
   let months: number | null = null;
