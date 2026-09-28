@@ -2383,8 +2383,8 @@
                   [professionalCard]="encounter()?.professional?.professionalCard || ''"
                   [dentitionLabel]="dental().intraoral.dentition"
                   [orthoMarks]="showOrthoModule()"
-                  [specialtyLabel]="isOrthoClinic() ? 'Ortodoncia' : 'Odontología General'"
-                  [orthoMode]="isOrthoClinic()"
+                  [specialtyLabel]="showOrthoModule() ? 'Ortodoncia' : 'Odontología General'"
+                  [orthoMode]="showOrthoModule()"
                   (changed)="onClinicalFieldChange()"
                   (save)="saveDraftOnly()"
                 />

@@ -469,7 +469,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
       <div class="odg-body" [class.ortho]="orthoMode()">
         <div class="odg-left">
           <div class="odg-main" #mainArea>
-            <div class="odg-chart" #chartEl>
+            <div class="odg-chart" #chartEl [class.linking]="!!linkMode()" (mousemove)="trackCursor($event)" (mouseleave)="cursor.set(null)">
               @if (view() !== 'OCLUSAL') {
                 @for (row of rows(); track $index) {
                   <div class="odg-row" [class.upper]="row.upper" [class.small]="row.small">
@@ -685,17 +685,45 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
               @if (view() === 'OCLUSAL') {
                 <ng-container *ngTemplateOutlet="occlusal" />
               }
-              @if (view() !== 'OCLUSAL' && elasticLines().length) {
+              @if (view() !== 'OCLUSAL' && (elasticLines().length || linkPreview())) {
                 <svg class="odg-elastics" aria-hidden="true">
                   @for (l of elasticLines(); track l.id) {
-                    <g>
-                      <line [attr.x1]="l.x1" [attr.y1]="l.y1" [attr.x2]="l.x2" [attr.y2]="l.y2" [attr.stroke]="l.color" stroke-width="3" stroke-linecap="round" opacity="0.85" />
-                      <circle [attr.cx]="l.x1" [attr.cy]="l.y1" r="4.5" fill="#fff" [attr.stroke]="l.color" stroke-width="2.4" />
-                      <circle [attr.cx]="l.x2" [attr.cy]="l.y2" r="4.5" fill="#fff" [attr.stroke]="l.color" stroke-width="2.4" />
-                      <text [attr.x]="(l.x1 + l.x2) / 2 + 6" [attr.y]="(l.y1 + l.y2) / 2" [attr.fill]="l.color">{{ l.label }}</text>
+                    <g class="odg-el" [class.hot]="hotElastic() === l.index" [class.dim]="hotElastic() !== null && hotElastic() !== l.index">
+                      <path class="odg-el-glow" [attr.d]="l.d" [attr.stroke]="l.color" />
+                      <path class="odg-el-band" [attr.d]="l.d" [attr.stroke]="l.color" pathLength="1" />
+                      <circle class="odg-el-hook" [attr.cx]="l.x1" [attr.cy]="l.y1" r="5" [attr.stroke]="l.color" />
+                      <circle class="odg-el-hook" [attr.cx]="l.x2" [attr.cy]="l.y2" r="5" [attr.stroke]="l.color" />
+                      <g class="odg-el-tag" [attr.transform]="'translate(' + l.lx + ' ' + l.ly + ')'">
+                        <rect [attr.x]="-l.lw / 2" y="-10" [attr.width]="l.lw" height="20" rx="10" [attr.fill]="l.color" />
+                        <text text-anchor="middle" y="4">{{ l.label }}</text>
+                      </g>
+                    </g>
+                  }
+                  @if (linkPreview(); as p) {
+                    <g class="odg-el-preview" [class.wire]="linkMode() === 'SEGMENT'" [style.--el]="elasticColor(elasticType())">
+                      <line [attr.x1]="p.x1" [attr.y1]="p.y1" [attr.x2]="p.x2" [attr.y2]="p.y2" />
+                      <circle [attr.cx]="p.x1" [attr.cy]="p.y1" r="6" />
+                      <circle class="end" [attr.cx]="p.x2" [attr.cy]="p.y2" r="4" />
                     </g>
                   }
                 </svg>
+              }
+              @if (linkMode(); as lm) {
+                <div class="odg-link-float" role="status">
+                  <span class="odg-link-step">{{ linkFirst() === null ? '1' : '2' }}<small>/2</small></span>
+                  <span class="odg-link-text">
+                    @if (lm === 'SEGMENT') {
+                      {{ linkFirst() === null ? 'Toque el diente donde empieza el tramo de arco ' + (linkArch() === 'upper' ? 'superior' : 'inferior') : 'Ahora el diente donde termina el tramo (desde ' + linkFirst() + ')' }}
+                    } @else {
+                      <i [style.background]="elasticColor(elasticType())"></i>
+                      {{ linkFirst() === null ? 'Elástico ' + elasticLabel(elasticType()) + ': toque el primer diente de anclaje' : 'Ahora el diente del otro extremo (desde ' + linkFirst() + ')' }}
+                    }
+                    @if (linkError()) {
+                      <strong>{{ linkError() }}</strong>
+                    }
+                  </span>
+                  <button type="button" (click)="cancelLink()">Listo</button>
+                </div>
               }
             </div>
 
@@ -933,7 +961,20 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
           <div class="odg-cards" [class.ortho]="orthoMode()">
             @if (orthoMode()) {
               <section class="odg-card odg-card-wide odg-wires" [class.odg-empty]="!hasWireWork()">
-                <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 14 Q12 4 22 14 M5 11 V16 M12 7 V12 M19 11 V16" /></svg>Arcos y elásticos</h4>
+                <div class="odg-wire-head">
+                  <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 14 Q12 4 22 14 M5 11 V16 M12 7 V12 M19 11 V16" /></svg>Arcos y elásticos</h4>
+                  <div class="odg-kpis">
+                    @for (a of archKinds; track a.key) {
+                      <span class="odg-kpi" [attr.data-kind]="archKind(a.key)">
+                        <b>{{ a.key === 'upper' ? 'Sup.' : 'Inf.' }}</b>
+                        {{ archKind(a.key) === 'FULL' ? 'Continuo' : archKind(a.key) === 'SECTIONAL' ? segmentsOf(a.key).length + ' tramo(s)' : 'Sin arco' }}
+                      </span>
+                    }
+                    <span class="odg-kpi" [attr.data-kind]="data().orthoChart.elastics.length ? 'EL' : 'NONE'">
+                      <b>{{ data().orthoChart.elastics.length }}</b> elástico(s)
+                    </span>
+                  </div>
+                </div>
                 <div class="odg-wire-grid">
                   @for (a of archKinds; track a.key) {
                     <div class="odg-wire-row">
@@ -969,8 +1010,14 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                       <button type="button" class="odg-wire-add" [class.on]="linkMode() === 'ELASTIC'" (click)="startLink('ELASTIC')">+ Elástico</button>
                     }
                     <div class="odg-wire-chips">
-                      @for (e of data().orthoChart.elastics; track $index) {
-                        <span class="odg-wire-chip" [style.border-color]="elasticColor(e.type)">
+                      @for (e of data().orthoChart.elastics; track $index; let ei = $index) {
+                        <span
+                          class="odg-wire-chip"
+                          [class.hot]="hotElastic() === ei"
+                          [style.border-color]="elasticColor(e.type)"
+                          (mouseenter)="hotElastic.set(ei)"
+                          (mouseleave)="hotElastic.set(null)"
+                        >
                           <i [style.background]="elasticColor(e.type)"></i>{{ elasticLabel(e.type) }} {{ e.from }}–{{ e.to }}
                           @if (!disabled()) {
                             <button type="button" (click)="removeElastic(e)" [attr.aria-label]="'Quitar elástico ' + e.from + '–' + e.to">×</button>
@@ -982,19 +1029,6 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                     </div>
                   </div>
                 </div>
-                @if (linkMode(); as lm) {
-                  <p class="odg-link-hint">
-                    @if (lm === 'SEGMENT') {
-                      {{ linkFirst() === null ? 'Haga clic en el diente donde empieza el tramo de arco ' + (linkArch() === 'upper' ? 'superior' : 'inferior') + '.' : 'Ahora el diente donde termina el tramo (empieza en ' + linkFirst() + ').' }}
-                    } @else {
-                      {{ linkFirst() === null ? 'Haga clic en el diente donde se engancha el elástico (por ejemplo, el canino superior).' : 'Ahora el diente del otro extremo (desde ' + linkFirst() + '), por ejemplo el molar inferior.' }}
-                    }
-                    @if (linkError()) {
-                      <strong>{{ linkError() }}</strong>
-                    }
-                    <button type="button" (click)="cancelLink()">Terminar</button>
-                  </p>
-                }
               </section>
               <section class="odg-card" [class.odg-empty]="!data().orthoChart.planPhases.length">
                 <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 H16 V6 H8 Z M6 5 H4 V21 H20 V5 H18 M8 11 L10 13 L14 9 M8 17 H16" /></svg>Plan de tratamiento</h4>
@@ -1362,11 +1396,16 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     .odg-tooth.midline { margin-right: 26px; }
     .odg-tooth.selected::before { content: ''; position: absolute; left: 50%; top: 50%; width: 92px; height: 92px; transform: translate(-50%, -42%); border-radius: 50%; background: radial-gradient(circle, rgba(74, 222, 128, 0.45) 0%, rgba(74, 222, 128, 0.22) 50%, rgba(74, 222, 128, 0) 72%); box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25); pointer-events: none; }
     .odg-row:not(.upper) .odg-tooth.selected::before { transform: translate(-50%, -58%); }
-    .odg-svg { position: relative; cursor: pointer; display: block; transition: transform 0.15s ease; }
-    .odg-tooth:hover .odg-svg { transform: scale(1.04); }
+    .odg-svg { position: relative; cursor: pointer; display: block; transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2), filter 0.18s ease; }
+    .odg-row.upper .odg-tooth:hover .odg-svg { transform: translateY(-3px) scale(1.05); filter: drop-shadow(0 6px 6px rgba(11, 58, 110, 0.18)); }
+    .odg-row:not(.upper) .odg-tooth:hover .odg-svg { transform: translateY(3px) scale(1.05); filter: drop-shadow(0 -6px 6px rgba(11, 58, 110, 0.18)); }
+    .odg-tooth.selected .odg-svg { filter: drop-shadow(0 0 6px rgba(34, 197, 94, 0.45)); }
+    .odg-tooth.selected::before { animation: odgGlow 2.2s ease-in-out infinite; }
+    @keyframes odgGlow { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
     .odg-crown { filter: drop-shadow(0 1.5px 1.5px rgba(60, 45, 20, 0.22)); }
     .odg-shine { stroke: rgba(255, 255, 255, 0.95); stroke-width: 1.8; stroke-dasharray: 16 400; stroke-dashoffset: -8; stroke-linecap: round; }
-    .odg-num { position: relative; width: 30px; height: 30px; border: none; border-radius: 50%; background: none; font-size: 14px; font-weight: 600; color: #334155; cursor: pointer; padding: 0; }
+    .odg-num { position: relative; width: 30px; height: 30px; border: none; border-radius: 50%; background: none; font-size: 14px; font-weight: 600; color: #334155; cursor: pointer; padding: 0; transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.18s; }
+    .odg-num:hover:not(.on) { background: #eaf2fb; color: var(--ink); transform: scale(1.08); }
     .odg-num.marked { color: var(--ink); font-weight: 800; }
     .odg-num.on { background: #4ade80; color: #fff; font-weight: 800; box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.3); }
     .odg-square { width: 24px; height: 24px; cursor: pointer; }
@@ -1431,14 +1470,66 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     .odg-wire-add { border: 1px dashed #93c5fd; background: #f8fbff; color: #1d4ed8; border-radius: 999px; padding: 3px 10px; font-size: 11.5px; font-weight: 600; cursor: pointer; }
     .odg-wire-add.on { background: #1d4ed8; color: #fff; border-style: solid; }
     .odg-wire-select { font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
-    .odg-link-hint { margin: 4px 0 0; padding: 7px 10px; border-radius: 8px; background: #eff6ff; border: 1px solid #bfdbfe; font-size: 12px; color: #1e3a8a; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
-    .odg-link-hint strong { color: #b42318; }
-    .odg-link-hint button { margin-left: auto; border: 1px solid #93c5fd; background: #fff; border-radius: 6px; padding: 3px 10px; font-size: 12px; cursor: pointer; color: #1d4ed8; }
+    .odg-wire-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+    .odg-kpis { display: flex; flex-wrap: wrap; gap: 6px; }
+    .odg-kpi { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; color: #475569; background: #f1f5f9; border: 1px solid #e2e8f0; transition: background 0.25s, color 0.25s, border-color 0.25s; }
+    .odg-kpi b { color: var(--ink); }
+    .odg-kpi[data-kind='FULL'], .odg-kpi[data-kind='SECTIONAL'] { background: #eaf2fb; border-color: #bcd4ee; color: var(--ink2); }
+    .odg-kpi[data-kind='EL'] { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+    .odg-wire-chip { transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s; cursor: default; }
+    .odg-wire-chip.hot { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12); background: #fffdfa; }
+    .odg-wire-add, .odg-seg button, .odg-chip { transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.12s; }
+    .odg-wire-add:hover:not(.on) { background: #eaf2fb; transform: translateY(-1px); }
+    .odg-seg button:active, .odg-chip:active, .odg-wire-add:active { transform: scale(0.97); }
+
+    .odg-link-float { position: absolute; top: 6px; left: 50%; z-index: 5; display: flex; align-items: center; gap: 10px; max-width: min(620px, 92%); padding: 7px 8px 7px 8px; border-radius: 999px; background: rgba(11, 58, 110, 0.94); color: #fff; font-size: 12.5px; box-shadow: 0 10px 28px rgba(11, 58, 110, 0.35); backdrop-filter: blur(6px); transform: translateX(-50%); animation: odgFloatIn 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+    .odg-link-step { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #4a9fd8; font-weight: 800; font-size: 14px; }
+    .odg-link-step small { font-size: 9px; opacity: 0.8; margin-top: -4px; }
+    .odg-link-text { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; line-height: 1.3; }
+    .odg-link-text i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7); }
+    .odg-link-text strong { color: #fecaca; font-weight: 700; }
+    .odg-link-float button { flex: none; margin-left: auto; border: none; background: #fff; color: var(--ink); border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .odg-link-float button:hover { background: #eaf2fb; }
+    @keyframes odgFloatIn { from { opacity: 0; transform: translate(-50%, -10px) scale(0.96); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+
+    .odg-chart.linking { padding-top: 48px; transition: padding-top 0.2s ease; }
     .odg-tooth.link-target { cursor: crosshair; }
     .odg-tooth.link-target .odg-svg { cursor: crosshair; }
-    .odg-tooth.linking { background: rgba(29, 78, 216, 0.14); box-shadow: 0 0 0 2px #1d4ed8; }
+    .odg-tooth.link-target:hover { background: radial-gradient(circle, rgba(74, 159, 216, 0.22) 0%, rgba(74, 159, 216, 0) 70%); }
+    .odg-tooth.linking { background: radial-gradient(circle, rgba(29, 78, 216, 0.22) 0%, rgba(29, 78, 216, 0) 72%); box-shadow: 0 0 0 2px #1d4ed8; animation: odgPulse 1.4s ease-in-out infinite; }
+    @keyframes odgPulse { 0%, 100% { box-shadow: 0 0 0 2px #1d4ed8, 0 0 0 0 rgba(29, 78, 216, 0.35); } 50% { box-shadow: 0 0 0 2px #1d4ed8, 0 0 0 9px rgba(29, 78, 216, 0); } }
+
     .odg-elastics { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2; }
-    .odg-elastics text { font-size: 10.5px; font-weight: 700; paint-order: stroke; stroke: #fff; stroke-width: 3px; }
+    .odg-el { transition: opacity 0.2s ease; }
+    .odg-el.dim { opacity: 0.22; }
+    .odg-el-glow { fill: none; stroke-width: 8; stroke-linecap: round; opacity: 0.16; }
+    .odg-el-band { fill: none; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; animation: odgDraw 0.7s cubic-bezier(0.4, 0, 0.2, 1) both; }
+    .odg-el.hot .odg-el-band { stroke-width: 4.2; }
+    .odg-el.hot .odg-el-glow { opacity: 0.3; stroke-width: 12; }
+    .odg-el-hook { fill: #fff; stroke-width: 2.6; animation: odgPop 0.35s 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4) both; transform-box: fill-box; transform-origin: center; }
+    .odg-el-tag { animation: odgFade 0.3s 0.55s ease both; }
+    .odg-el-tag text { font-size: 10.5px; font-weight: 800; fill: #fff; letter-spacing: 0.02em; }
+    .odg-el-tag rect { filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.25)); }
+    .odg-el-preview line { stroke: var(--el, #dc2626); stroke-width: 2.4; stroke-dasharray: 6 5; animation: odgMarch 0.6s linear infinite; }
+    .odg-el-preview circle { fill: #fff; stroke: var(--el, #dc2626); stroke-width: 2.4; }
+    .odg-el-preview circle.end { fill: var(--el, #dc2626); }
+    .odg-el-preview.wire line { stroke: var(--ink2); }
+    .odg-el-preview.wire circle { stroke: var(--ink2); }
+    .odg-el-preview.wire circle.end { fill: var(--ink2); }
+    @keyframes odgDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+    @keyframes odgPop { from { transform: scale(0); } to { transform: scale(1); } }
+    @keyframes odgFade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes odgMarch { to { stroke-dashoffset: -11; } }
+
+    .odg-card { animation: odgRise 0.4s ease both; transition: box-shadow 0.2s ease, border-color 0.2s ease; }
+    .odg-card:hover { box-shadow: 0 8px 22px rgba(11, 58, 110, 0.08); border-color: #c3d6ea; }
+    .odg-cards > .odg-card:nth-child(2) { animation-delay: 0.05s; }
+    .odg-cards > .odg-card:nth-child(3) { animation-delay: 0.1s; }
+    .odg-cards > .odg-card:nth-child(4) { animation-delay: 0.15s; }
+    @keyframes odgRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      .odg-card, .odg-el-band, .odg-el-hook, .odg-el-tag, .odg-link-float, .odg-tooth.linking, .odg-el-preview line { animation: none !important; }
+    }
     .odg-card { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: rgba(255, 255, 255, 0.85); border: 1px solid var(--line); border-radius: 12px; }
     .odg-card h4, .odg-side h4 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 12.5px; font-weight: 800; color: var(--ink); text-transform: uppercase; letter-spacing: 0.04em; }
     .odg-card h4 svg { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
@@ -1500,7 +1591,9 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
       .odg-square.big { align-self: center; }
     }
     @media print {
-      .odg-pop, .odg-pop-backdrop, .odg-side > section:not(.odg-side-legend), .odg-card.odg-empty { display: none !important; }
+      .odg-pop, .odg-pop-backdrop, .odg-side > section:not(.odg-side-legend), .odg-card.odg-empty, .odg-link-float, .odg-el-preview { display: none !important; }
+      .odg-card, .odg-el-band, .odg-el-hook, .odg-el-tag { animation: none !important; }
+      .odg-chart.linking { padding-top: 0; }
       .odg-head { grid-template-columns: auto 1fr auto; }
       .odg-brand { border-right: 1px solid var(--line); }
       .odg-print-meta { display: flex; }
@@ -1913,6 +2006,7 @@ export class DentalOdontogram implements OnDestroy {
     this.linkMode.set(null);
     this.linkFirst.set(null);
     this.linkError.set('');
+    this.cursor.set(null);
   }
 
   private onLinkClick(tooth: number) {
@@ -1970,6 +2064,7 @@ export class DentalOdontogram implements OnDestroy {
     if (this.disabled()) return;
     const chart = this.data().orthoChart;
     chart.elastics = chart.elastics.filter((e) => e !== el);
+    this.hotElastic.set(null);
     this.bump();
   }
 
@@ -1981,17 +2076,70 @@ export class DentalOdontogram implements OnDestroy {
     return ORTHO_ELASTIC_TYPES.find((t) => t.key === type)?.label || type;
   }
 
-  /** Elásticos dibujados de bracket a bracket sobre el odontograma. */
+  readonly hotElastic = signal<number | null>(null);
+  readonly cursor = signal<{ x: number; y: number } | null>(null);
+
+  /**
+   * Elásticos dibujados de bracket a bracket como una banda curva: se arquean hacia
+   * el lado del que vienen para no tapar los dientes intermedios.
+   */
   readonly elasticLines = computed(() => {
     this.version();
     const pos = this.toothPos();
+    const chart = this.chartEl?.nativeElement;
+    const center = chart ? chart.clientWidth / 2 : 0;
     return this.data().orthoChart.elastics.flatMap((e, i) => {
       const a = pos[e.from];
       const b = pos[e.to];
       if (!a || !b) return [];
-      return [{ id: `${i}-${e.from}-${e.to}`, x1: a.x, y1: a.y, x2: b.x, y2: b.y, color: this.elasticColor(e.type), label: this.elasticLabel(e.type) }];
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
+      const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      let nx = -(b.y - a.y) / len;
+      let ny = (b.x - a.x) / len;
+      if ((mx - center) * nx < 0) {
+        nx = -nx;
+        ny = -ny;
+      }
+      const bend = Math.min(46, len * 0.16);
+      const cx = mx + nx * bend;
+      const cy = my + ny * bend;
+      const label = this.elasticLabel(e.type);
+      return [
+        {
+          id: `${i}-${e.from}-${e.to}`,
+          index: i,
+          x1: a.x,
+          y1: a.y,
+          x2: b.x,
+          y2: b.y,
+          d: `M${a.x} ${a.y} Q${cx} ${cy} ${b.x} ${b.y}`,
+          lx: Math.round(0.25 * a.x + 0.5 * cx + 0.25 * b.x),
+          ly: Math.round(0.25 * a.y + 0.5 * cy + 0.25 * b.y),
+          lw: label.length * 6.4 + 16,
+          color: this.elasticColor(e.type),
+          label,
+        },
+      ];
     });
   });
+
+  /** Línea guía desde el primer diente elegido hasta el cursor mientras se traza un tramo o elástico. */
+  readonly linkPreview = computed(() => {
+    const first = this.linkFirst();
+    const c = this.cursor();
+    if (!this.linkMode() || first === null || !c) return null;
+    const a = this.toothPos()[first];
+    return a ? { x1: a.x, y1: a.y, x2: c.x, y2: c.y } : null;
+  });
+
+  trackCursor(event: MouseEvent) {
+    if (!this.linkMode() || this.linkFirst() === null) return;
+    const chart = this.chartEl?.nativeElement;
+    if (!chart) return;
+    const base = chart.getBoundingClientRect();
+    this.cursor.set({ x: Math.round(event.clientX - base.left), y: Math.round(event.clientY - base.top) });
+  }
 
   /** Posición del bracket de cada diente dentro del odontograma (para los elásticos). */
   private measureTeeth() {
@@ -2017,7 +2165,7 @@ export class DentalOdontogram implements OnDestroy {
     this.view();
     this.dentition();
     this.showSurfaces();
-    if (!this.data().orthoChart.elastics.length) return;
+    if (!this.data().orthoChart.elastics.length && !this.linkMode()) return;
     requestAnimationFrame(() => {
       this.measureTeeth();
       const chart = this.chartEl?.nativeElement;
