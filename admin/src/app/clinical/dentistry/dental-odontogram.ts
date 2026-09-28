@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, computed, input, output, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, ViewChild, computed, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -168,12 +168,38 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
   imports: [FormsModule, NgTemplateOutlet],
   template: `
     <div class="odg">
+      <svg class="odg-defs" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="odg-enamel" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" />
+            <stop offset="0.55" stop-color="#f8f4ea" />
+            <stop offset="1" stop-color="#e9dfc9" />
+          </linearGradient>
+          <linearGradient id="odg-root" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#e8d6b0" />
+            <stop offset="0.5" stop-color="#f6ead0" />
+            <stop offset="1" stop-color="#dcc79c" />
+          </linearGradient>
+          <linearGradient id="odg-gum" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f7b8c0" />
+            <stop offset="1" stop-color="#ec8f9c" />
+          </linearGradient>
+          <linearGradient id="odg-crown-purple" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#faf1ff" />
+            <stop offset="1" stop-color="#e3c8f3" />
+          </linearGradient>
+          <linearGradient id="odg-crown-green" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#f0fdf4" />
+            <stop offset="1" stop-color="#bbf7d0" />
+          </linearGradient>
+        </defs>
+      </svg>
       <header class="odg-head">
         <div class="odg-brand">
           <svg viewBox="0 0 40 44" aria-hidden="true">
             <path
               d="M20 7 C14 2 4 2 3 12 C2 20 6 26 8 34 C9 40 13 42 14 36 C15 30 17 27 20 27 C23 27 25 30 26 36 C27 42 31 40 32 34 C34 26 38 20 37 12 C36 2 26 2 20 7 Z"
-              fill="#0b3a6e"
+              fill="#fff"
             />
           </svg>
           <div>
@@ -204,15 +230,16 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                     [class.selected]="selected() === tooth"
                   >
                     @if (row.upper) {
-                      <button type="button" class="odg-num" (click)="onToothClick(tooth, $event)">{{ tooth }}</button>
+                      <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" (click)="onToothClick(tooth, $event)">{{ tooth }}</button>
                     } @else {
-                      <svg class="odg-square" viewBox="-2 -2 40 40" [attr.aria-label]="'Superficies ' + tooth">
+                      <svg class="odg-square" viewBox="-2 -2 40 40" [class.small]="row.small" [attr.aria-label]="'Superficies ' + tooth">
                         @for (pos of positions; track pos) {
                           <polygon
                             [attr.points]="square(pos)"
                             [attr.fill]="surfaceFill(tooth, pos)"
-                            stroke="#94a3b8"
-                            stroke-width="1"
+                            stroke="#9fb3c8"
+                            stroke-width="1.1"
+                            stroke-linejoin="round"
                             (click)="onSurfaceClick(tooth, pos, $event)"
                           >
                             <title>{{ tooth }} · {{ surfaceTitle(tooth, pos) }}</title>
@@ -223,8 +250,8 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                     <svg
                       class="odg-svg"
                       [attr.viewBox]="shape(tooth).viewBox"
-                      [style.width.px]="shape(tooth).width * (row.small ? 0.7 : 1)"
-                      [style.height.px]="row.small ? 70 : 100"
+                      [style.width.px]="shape(tooth).width * (row.small ? 0.8 : 1.14)"
+                      [style.height.px]="row.small ? 80 : 114"
                       (click)="onToothClick(tooth, $event)"
                       [attr.aria-label]="'Diente ' + tooth"
                     >
@@ -233,7 +260,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                         @if (selected() === tooth) {
                           <ellipse cx="25" cy="60" rx="24" ry="44" class="odg-glow" />
                         }
-                        <g [attr.opacity]="has(tooth, 'AUSENTE') ? 0.28 : 1">
+                        <g [attr.opacity]="has(tooth, 'AUSENTE') ? 0.25 : 1">
                           @if (has(tooth, 'IMPLANTE')) {
                             <rect x="20" y="10" width="10" height="46" rx="3" fill="#94a3b8" stroke="#475569" />
                             @for (y of screwLines; track y) {
@@ -241,17 +268,22 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                             }
                           } @else {
                             @for (r of shape(tooth).roots; track $index) {
-                              <path [attr.d]="r" fill="#efe3c8" stroke="#b59b6a" stroke-width="1" />
+                              <path [attr.d]="r" fill="url(#odg-root)" stroke="#b89a64" stroke-width="0.9" />
                             }
                           }
-                          <path
+                        </g>
+                        <path class="odg-gum" [attr.d]="gumPath" fill="url(#odg-gum)" />
+                        <path class="odg-gum-line" [attr.d]="gumEdge" fill="none" />
+                        <g [attr.opacity]="has(tooth, 'AUSENTE') ? 0.25 : 1">
+                          <path class="odg-crown"
                             [attr.d]="shape(tooth).crown"
                             [attr.fill]="crownFill(tooth)"
                             [attr.stroke]="crownStroke(tooth)"
                             [attr.stroke-width]="crownStroke(tooth) === '#b59b6a' ? 1 : 2.4"
                           />
+                          <path [attr.d]="shape(tooth).crown" fill="none" class="odg-shine" />
                           @if (shape(tooth).detail) {
-                            <path [attr.d]="shape(tooth).detail" fill="none" stroke="#c9b48c" stroke-width="0.9" />
+                            <path [attr.d]="shape(tooth).detail" fill="none" stroke="#cdb88f" stroke-width="0.9" />
                           }
                           @if (has(tooth, 'ENDODONCIA')) {
                             @for (c of shape(tooth).canals; track $index) {
@@ -330,13 +362,14 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                       </g>
                     </svg>
                     @if (row.upper) {
-                      <svg class="odg-square" viewBox="-2 -2 40 40" [attr.aria-label]="'Superficies ' + tooth">
+                      <svg class="odg-square" viewBox="-2 -2 40 40" [class.small]="row.small" [attr.aria-label]="'Superficies ' + tooth">
                         @for (pos of positions; track pos) {
                           <polygon
                             [attr.points]="square(pos)"
                             [attr.fill]="surfaceFill(tooth, pos)"
-                            stroke="#94a3b8"
-                            stroke-width="1"
+                            stroke="#9fb3c8"
+                            stroke-width="1.1"
+                            stroke-linejoin="round"
                             (click)="onSurfaceClick(tooth, pos, $event)"
                           >
                             <title>{{ tooth }} · {{ surfaceTitle(tooth, pos) }}</title>
@@ -344,7 +377,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                         }
                       </svg>
                     } @else {
-                      <button type="button" class="odg-num" (click)="onToothClick(tooth, $event)">{{ tooth }}</button>
+                      <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" (click)="onToothClick(tooth, $event)">{{ tooth }}</button>
                     }
                   </div>
                 }
@@ -401,7 +434,8 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
 
           @if (selected(); as tooth) {
             @if (popoverOpen()) {
-              <div class="odg-pop" [style.left.px]="popLeft()" [style.top.px]="popTop()" role="dialog">
+              <div class="odg-pop-backdrop" (click)="closePopover()"></div>
+              <div class="odg-pop" [style.left.px]="popLeft()" [style.top.px]="popTop()" role="dialog" aria-modal="true">
                 <div class="odg-pop-head">
                   <strong>Diente {{ tooth }}</strong>
                   <span>{{ toothName(tooth) }}</span>
@@ -420,7 +454,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                       </button>
                     }
                   </div>
-                  <p class="odg-pop-title">Superficies (elija el hallazgo y toque la superficie)</p>
+                  <p class="odg-pop-title">Superficies <span>elija el hallazgo y toque la superficie</span></p>
                   <div class="odg-pop-surfaces">
                     <div class="odg-chips">
                       @for (t of surfaceTools; track t.key) {
@@ -566,90 +600,118 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     </div>
   `,
   styles: `
-    :host { display: block; }
-    .odg { border: 1px solid #d6e4f0; border-radius: 14px; background: linear-gradient(180deg, #f7fbff, #fff 120px); overflow: hidden; }
-    .odg-head { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #e2ecf5; }
-    .odg-brand { display: flex; gap: 10px; align-items: center; }
-    .odg-brand svg { width: 34px; height: 38px; }
-    .odg-brand strong { display: block; font-size: 22px; letter-spacing: 0.04em; color: #0b3a6e; line-height: 1; }
-    .odg-brand span { font-size: 12px; color: #0b5563; }
-    .odg-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0; }
-    .odg-meta dt { font-size: 11px; font-weight: 700; color: #0b3a6e; }
-    .odg-meta dd { margin: 2px 0 0; font-size: 12.5px; padding: 4px 10px; border: 1px solid #d6e4f0; border-radius: 8px; background: #fff; min-width: 90px; }
-    .odg-body { display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 12px; padding: 12px; }
-    .odg-main { position: relative; overflow-x: auto; padding: 6px 4px 10px; background: #fff; border: 1px solid #e2ecf5; border-radius: 12px; }
-    .odg-jaw { display: inline-block; margin: 2px 0 4px 6px; padding: 4px 10px; border-radius: 8px; background: #e7f1fb; color: #0b3a6e; font-size: 11px; font-weight: 700; line-height: 1.2; }
-    .odg-jaw.bottom { margin-top: 4px; }
-    .odg-row { display: flex; justify-content: center; align-items: flex-end; gap: 1px; min-width: max-content; margin: 0 auto; }
+    :host { display: block; --odg-ink: #0b5563; --odg-accent: #0d9488; --odg-soft: #e6f5f3; --odg-line: #cfe6e3; }
+    .odg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+    .odg { border: 1px solid var(--odg-line); border-radius: 18px; background: #fff; overflow: hidden; box-shadow: 0 10px 30px rgba(11, 85, 99, 0.08); }
+    .odg-head { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; padding: 14px 18px; background: linear-gradient(120deg, #0b5563 0%, #0d9488 100%); color: #fff; }
+    .odg-brand { display: flex; gap: 12px; align-items: center; }
+    .odg-brand svg { width: 38px; height: 42px; padding: 6px; border-radius: 12px; background: rgba(255, 255, 255, 0.16); box-sizing: content-box; }
+    .odg-brand strong { display: block; font-size: 21px; letter-spacing: 0.08em; line-height: 1; }
+    .odg-brand span { font-size: 12px; opacity: 0.85; }
+    .odg-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 0; }
+    .odg-meta dt { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8; }
+    .odg-meta dd { margin: 3px 0 0; font-size: 12.5px; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); min-width: 80px; }
+    .odg-body { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 14px; padding: 14px; background: #f6fbfa; }
+    .odg-main { position: relative; overflow-x: auto; padding: 10px 8px 14px; background: radial-gradient(ellipse at 50% 50%, #ffffff 0%, #f9fcfc 70%); border: 1px solid var(--odg-line); border-radius: 14px; }
+    .odg-jaw { display: inline-flex; margin: 2px 0 6px 6px; padding: 4px 12px; border-radius: 999px; background: var(--odg-soft); color: var(--odg-ink); font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; line-height: 1.25; }
+    .odg-jaw br { display: none; }
+    .odg-jaw.bottom { margin-top: 6px; }
+    .odg-row { display: flex; justify-content: center; align-items: flex-end; gap: 0; min-width: max-content; margin: 0 auto; }
     .odg-row:not(.upper) { align-items: flex-start; }
-    .odg-row.small { margin: 4px auto; }
-    .odg-tooth { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0 1px; border-radius: 8px; }
-    .odg-tooth.midline { margin-right: 10px; padding-right: 9px; border-right: 1.5px dashed #93c5fd; }
-    .odg-tooth.selected { background: rgba(20, 184, 166, 0.08); }
-    .odg-svg { cursor: pointer; display: block; }
-    .odg-svg:hover path { filter: brightness(0.97); }
-    .odg-glow { fill: rgba(45, 212, 191, 0.22); stroke: rgba(13, 148, 136, 0.5); stroke-width: 1; }
-    .odg-num { border: none; background: none; font-size: 12px; font-weight: 700; color: #0b3a6e; cursor: pointer; padding: 0; }
-    .odg-square { width: 22px; height: 22px; cursor: pointer; }
-    .odg-square.big { width: 110px; height: 110px; }
-    .odg-square polygon:hover { opacity: 0.75; }
-    .sq-l { font-size: 4.5px; font-weight: 700; fill: #334155; text-anchor: middle; pointer-events: none; }
-    .odg-occlusal { display: flex; justify-content: space-between; gap: 12px; margin: 6px 0; min-width: max-content; }
-    .odg-occlusal.large { justify-content: center; gap: 30px; }
+    .odg-row.small { margin: 6px auto; }
+    .odg-tooth { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 2px 0; border-radius: 12px; transition: background 0.15s; }
+    .odg-tooth:hover { background: rgba(13, 148, 136, 0.06); }
+    .odg-tooth.midline { margin-right: 12px; padding-right: 10px; border-right: 2px dashed #99d5cd; border-radius: 12px 0 0 12px; }
+    .odg-tooth.selected { background: rgba(13, 148, 136, 0.12); }
+    .odg-svg { cursor: pointer; display: block; transition: transform 0.15s ease; }
+    .odg-crown { filter: drop-shadow(0 1.2px 1.2px rgba(71, 52, 20, 0.22)); }
+    .odg-tooth:hover .odg-svg { transform: translateY(-1px) scale(1.03); }
+    .odg-gum { opacity: 0.95; }
+    .odg-gum-line { stroke: #d9707f; stroke-width: 0.8; }
+    .odg-shine { stroke: rgba(255, 255, 255, 0.85); stroke-width: 1.6; stroke-dasharray: 18 400; stroke-dashoffset: -6; stroke-linecap: round; }
+    .odg-glow { fill: rgba(45, 212, 191, 0.18); stroke: rgba(13, 148, 136, 0.55); stroke-width: 1; stroke-dasharray: 3 2; }
+    .odg-num { border: 1px solid transparent; background: none; font-size: 11.5px; font-weight: 700; color: #475569; cursor: pointer; padding: 1px 6px; border-radius: 999px; line-height: 1.4; }
+    .odg-num.marked { color: var(--odg-ink); background: var(--odg-soft); }
+    .odg-num.on { background: var(--odg-accent); color: #fff; }
+    .odg-square { width: 26px; height: 26px; cursor: pointer; filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.08)); }
+    .odg-square.small { width: 20px; height: 20px; }
+    .odg-square.big { width: 150px; height: 150px; filter: none; }
+    .odg-square polygon { transition: opacity 0.12s; }
+    .odg-square polygon:hover { opacity: 0.7; }
+    .sq-l { font-size: 4.2px; font-weight: 700; fill: #334155; text-anchor: middle; pointer-events: none; }
+    .odg-occlusal { display: flex; justify-content: space-between; gap: 12px; margin: 10px 0; padding: 6px 0; min-width: max-content; border-top: 1px dashed var(--odg-line); border-bottom: 1px dashed var(--odg-line); }
+    .odg-occlusal.large { justify-content: center; gap: 30px; border: none; }
     .odg-arch { display: flex; flex-direction: column; align-items: center; }
-    .odg-arch svg { width: 200px; height: 125px; }
-    .odg-occlusal.large .odg-arch svg { width: 340px; height: 212px; }
-    .odg-arch-label { font-size: 11px; font-weight: 700; color: #0b3a6e; background: #e7f1fb; border-radius: 8px; padding: 3px 10px; }
+    .odg-arch svg { width: 210px; height: 131px; }
+    .odg-occlusal.large .odg-arch svg { width: 360px; height: 225px; }
+    .odg-arch-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; color: var(--odg-ink); background: var(--odg-soft); border-radius: 999px; padding: 3px 12px; }
     .odg-occ-tooth { cursor: pointer; }
-    .odg-occ-num { font-size: 7px; fill: #0b3a6e; font-weight: 700; pointer-events: none; }
-    .odg-pop { position: absolute; z-index: 30; width: 340px; max-width: calc(100% - 16px); background: #fff; border: 1px solid #cfe0ee; border-radius: 12px; box-shadow: 0 14px 32px rgba(11, 58, 110, 0.18); padding: 10px 12px; }
-    .odg-pop-head { display: flex; align-items: baseline; gap: 8px; }
-    .odg-pop-head strong { color: #0b3a6e; }
-    .odg-pop-head span { font-size: 12px; color: #475569; flex: 1; }
-    .odg-x { border: none; background: none; font-size: 20px; line-height: 1; cursor: pointer; color: #64748b; }
-    .odg-pop-sum { margin: 4px 0 6px; font-size: 12px; color: #0f766e; }
-    .odg-pop-title { margin: 8px 0 4px; font-size: 11px; font-weight: 700; color: #0b3a6e; text-transform: uppercase; letter-spacing: 0.03em; }
-    .odg-pop-surfaces { display: flex; gap: 10px; align-items: center; }
-    .odg-pop-surfaces .odg-chips { flex-direction: column; align-items: stretch; }
-    .odg-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-    .odg-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #d6e4f0; background: #fff; border-radius: 999px; padding: 3px 9px; font-size: 11.5px; cursor: pointer; }
-    .odg-chip.on { border-color: #0b3a6e; background: #e7f1fb; font-weight: 600; }
-    .dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; border: 1px solid rgba(15, 23, 42, 0.25); flex: none; }
+    .odg-occ-num { font-size: 7px; fill: var(--odg-ink); font-weight: 700; pointer-events: none; }
+
+    .odg-pop-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(15, 42, 48, 0.12); }
+    .odg-pop { position: fixed; z-index: 1001; width: 480px; max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow-y: auto; box-sizing: border-box; background: #fff; border: 1px solid var(--odg-line); border-radius: 16px; box-shadow: 0 24px 60px rgba(11, 85, 99, 0.28); padding: 0 18px 16px; animation: odg-pop-in 0.14s ease-out; }
+    @keyframes odg-pop-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
+    .odg-pop-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 10px; margin: 0 -18px 10px; padding: 14px 18px; background: linear-gradient(120deg, #0b5563, #0d9488); color: #fff; border-radius: 15px 15px 0 0; }
+    .odg-pop-head strong { font-size: 18px; }
+    .odg-pop-head span { font-size: 13px; opacity: 0.9; flex: 1; }
+    .odg-x { border: none; background: rgba(255, 255, 255, 0.18); color: #fff; width: 32px; height: 32px; border-radius: 50%; font-size: 22px; line-height: 1; cursor: pointer; }
+    .odg-x:hover { background: rgba(255, 255, 255, 0.3); }
+    .odg-pop-sum { margin: 0 0 10px; padding: 8px 12px; font-size: 13px; color: var(--odg-ink); background: var(--odg-soft); border-radius: 10px; }
+    .odg-pop-title { margin: 14px 0 8px; font-size: 12px; font-weight: 700; color: var(--odg-ink); text-transform: uppercase; letter-spacing: 0.05em; }
+    .odg-pop-title span { margin-left: 6px; font-weight: 500; text-transform: none; letter-spacing: 0; color: #64748b; }
+    .odg-pop-surfaces { display: flex; gap: 16px; align-items: center; }
+    .odg-pop-surfaces .odg-chips { flex: 1; grid-template-columns: 1fr; }
+    .odg-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 6px; }
+    .odg-chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #d5e5e3; background: #fff; border-radius: 10px; padding: 8px 12px; font-size: 13px; text-align: left; cursor: pointer; color: #1e293b; transition: border-color 0.12s, background 0.12s; }
+    .odg-chip:hover { border-color: #8fcfc6; background: #f5fbfa; }
+    .odg-chip.on { border-color: var(--odg-accent); background: var(--odg-soft); font-weight: 600; box-shadow: inset 0 0 0 1px var(--odg-accent); }
+    .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(15, 23, 42, 0.2); flex: none; }
+    .odg-chip .dot { width: 14px; height: 14px; }
     .dot.wire { border-radius: 2px; height: 3px; border: none; background: #1e3a8a; }
-    .odg-note { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: 12px; }
-    .odg-note input { font: inherit; border: 1px solid #d6e4f0; border-radius: 8px; padding: 6px 8px; }
-    .odg-pop-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
-    .odg-link { border: none; background: none; cursor: pointer; font-size: 12px; text-decoration: underline; color: #0b3a6e; padding: 0; }
+    .odg-note { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; font-size: 12px; font-weight: 700; color: var(--odg-ink); text-transform: uppercase; letter-spacing: 0.05em; }
+    .odg-note input { font: inherit; font-size: 14px; font-weight: 400; text-transform: none; letter-spacing: 0; border: 1px solid #d5e5e3; border-radius: 10px; padding: 10px 12px; }
+    .odg-note input:focus { outline: none; border-color: var(--odg-accent); box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15); }
+    .odg-pop-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
+    .odg-link { border: none; background: none; cursor: pointer; font-size: 13px; text-decoration: underline; color: var(--odg-ink); padding: 0; }
     .odg-link.danger { color: #b91c1c; }
-    .odg-btn { border: none; background: #0b3a6e; color: #fff; border-radius: 8px; padding: 6px 14px; cursor: pointer; font-weight: 600; }
-    .odg-side { display: flex; flex-direction: column; gap: 10px; }
-    .odg-side section { border: 1px solid #e2ecf5; border-radius: 12px; padding: 10px; background: #fff; }
-    .odg-side h4 { margin: 0 0 8px; font-size: 12px; color: #0b3a6e; text-transform: uppercase; letter-spacing: 0.04em; }
-    .odg-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 8px; font-size: 11.5px; color: #1e293b; }
+    .odg-btn { border: none; background: var(--odg-accent); color: #fff; border-radius: 10px; padding: 9px 22px; font-size: 14px; cursor: pointer; font-weight: 600; }
+    .odg-btn:hover { background: #0b7d73; }
+
+    .odg-side { display: flex; flex-direction: column; gap: 12px; }
+    .odg-side section { border: 1px solid var(--odg-line); border-radius: 14px; padding: 12px; background: #fff; }
+    .odg-side h4 { margin: 0 0 10px; font-size: 11.5px; color: var(--odg-ink); text-transform: uppercase; letter-spacing: 0.06em; }
+    .odg-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; font-size: 11.5px; color: #1e293b; }
     .odg-legend li { display: flex; align-items: center; gap: 6px; }
     .odg-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .odg-tool { display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 1px solid #cfe0ee; background: #fff; border-radius: 8px; padding: 6px 4px; font-size: 11.5px; cursor: pointer; color: #0b3a6e; }
+    .odg-tool { display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--odg-line); background: #fff; border-radius: 10px; padding: 7px 4px; font-size: 11.5px; cursor: pointer; color: var(--odg-ink); transition: background 0.12s; }
+    .odg-tool:hover { background: #f2faf9; }
     .odg-tool svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
-    .odg-tool.on { background: #0b3a6e; color: #fff; border-color: #0b3a6e; }
+    .odg-tool.on { background: var(--odg-accent); color: #fff; border-color: var(--odg-accent); }
     .odg-hint { margin: 8px 0 4px; font-size: 11.5px; color: #64748b; }
-    .odg-hint.strong { color: #0b3a6e; font-weight: 700; margin-top: 4px; }
-    .odg-palette { display: flex; flex-wrap: wrap; gap: 5px; }
-    .odg-swatch { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #cbd5e1; cursor: pointer; }
-    .odg-swatch.on { box-shadow: 0 0 0 2px #0b3a6e; }
-    .odg-seg { display: flex; margin-top: 8px; border: 1px solid #cfe0ee; border-radius: 8px; overflow: hidden; }
-    .odg-seg button { flex: 1; border: none; background: #fff; padding: 5px 2px; font-size: 11px; cursor: pointer; color: #0b3a6e; }
-    .odg-seg button.on { background: #e7f1fb; font-weight: 700; }
+    .odg-hint.strong { color: var(--odg-ink); font-weight: 700; margin-top: 6px; }
+    .odg-palette { display: flex; flex-wrap: wrap; gap: 6px; }
+    .odg-swatch { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #cbd5e1; cursor: pointer; transition: transform 0.12s; }
+    .odg-swatch:hover { transform: scale(1.12); }
+    .odg-swatch.on { box-shadow: 0 0 0 2px var(--odg-accent); transform: scale(1.12); }
+    .odg-seg { display: flex; margin-top: 8px; border: 1px solid var(--odg-line); border-radius: 10px; overflow: hidden; }
+    .odg-seg button { flex: 1; border: none; background: #fff; padding: 6px 2px; font-size: 11px; cursor: pointer; color: var(--odg-ink); }
+    .odg-seg button.on { background: var(--odg-soft); font-weight: 700; }
     .odg-check { display: flex; align-items: center; gap: 6px; font-size: 12px; margin: 3px 0; }
-    .odg-summary { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 16px; border-top: 1px solid #e2ecf5; background: #f7fbff; font-size: 12px; color: #1e293b; }
-    .odg-cop strong { color: #0b3a6e; margin-right: 4px; }
-    .odg-count { display: inline-flex; align-items: center; gap: 5px; }
+    .odg-summary { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--odg-line); background: #fff; font-size: 12px; color: #1e293b; }
+    .odg-cop, .odg-count { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #f3f8f8; border: 1px solid #e1eeec; }
+    .odg-cop { background: var(--odg-soft); border-color: #bfe3dd; }
+    .odg-cop strong { color: var(--odg-ink); margin-right: 2px; }
     @media (max-width: 1100px) {
       .odg-body { grid-template-columns: 1fr; }
       .odg-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
     }
+    @media (max-width: 560px) {
+      .odg-pop-surfaces { flex-direction: column; align-items: stretch; }
+      .odg-square.big { align-self: center; }
+    }
   `,
 })
-export class DentalOdontogram {
+export class DentalOdontogram implements OnDestroy {
   readonly data = input.required<DentistryContent>();
   readonly disabled = input(false);
   readonly patientName = input('');
@@ -670,6 +732,10 @@ export class DentalOdontogram {
   readonly allTools = ALL_TOOLS;
   readonly legend: DentalToolDef[] = ALL_TOOLS;
   readonly screwLines = [16, 24, 32, 40, 48];
+  /** Encía (mismo trazo para todas las piezas; la mandíbula se refleja). */
+  readonly gumPath = 'M-20 41 H70 V65 C46 65 38 55 25 55 C12 55 4 65 -20 65 Z';
+  readonly gumEdge = 'M-20 65 C4 65 12 55 25 55 C38 55 46 65 70 65';
+  private popAnchor: Element | null = null;
 
   readonly mode = signal<Mode>('SELECT');
   readonly paintTool = signal<DentalTool>('CARIES');
@@ -897,9 +963,9 @@ export class DentalOdontogram {
   }
 
   crownFill(tooth: number) {
-    if (this.has(tooth, 'PROTESIS')) return '#dcfce7';
-    if (this.has(tooth, 'CORONA')) return '#f1e4fa';
-    return '#fdfaf3';
+    if (this.has(tooth, 'PROTESIS')) return 'url(#odg-crown-green)';
+    if (this.has(tooth, 'CORONA')) return 'url(#odg-crown-purple)';
+    return 'url(#odg-enamel)';
   }
 
   crownStroke(tooth: number) {
@@ -997,25 +1063,55 @@ export class DentalOdontogram {
   }
 
   private openPopover(event: Event) {
-    const host = this.mainArea?.nativeElement;
-    const target = event.currentTarget as Element | null;
-    if (host && target) {
-      const box = host.getBoundingClientRect();
-      const rect = target.getBoundingClientRect();
-      const width = Math.min(340, box.width - 16);
-      let left = rect.left - box.left + host.scrollLeft + rect.width / 2 - width / 2;
-      left = Math.max(host.scrollLeft + 8, Math.min(left, host.scrollLeft + box.width - width - 8));
-      this.popLeft.set(left);
-      this.popTop.set(rect.bottom - box.top + host.scrollTop + 6);
-    }
+    this.popAnchor = event.currentTarget as Element | null;
+    this.positionPopover();
     this.popoverOpen.set(true);
+    document.addEventListener('scroll', this.onViewportChange, true);
+    setTimeout(() => this.positionPopover());
     if (this.mode() === 'NOTE') {
-      setTimeout(() => host?.querySelector<HTMLInputElement>('.odg-note input')?.focus(), 30);
+      setTimeout(() => this.mainArea?.nativeElement.querySelector<HTMLInputElement>('.odg-note input')?.focus(), 30);
     }
+  }
+
+  /** Ubica el menú junto al diente, dentro de la ventana (arriba si no cabe abajo). */
+  private positionPopover() {
+    const target = this.popAnchor;
+    if (!target) return;
+    const rect = target.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const width = Math.min(480, vw - 24);
+    const pop = this.mainArea?.nativeElement.querySelector<HTMLElement>('.odg-pop');
+    const height = Math.min(pop?.offsetHeight || 520, vh - 24);
+    const left = Math.max(12, Math.min(rect.left + rect.width / 2 - width / 2, vw - width - 12));
+    let top = rect.bottom + 8;
+    if (top + height > vh - 12) top = Math.max(12, Math.min(rect.top - height - 8, vh - height - 12));
+    this.popLeft.set(left);
+    this.popTop.set(top);
+  }
+
+  @HostListener('window:resize')
+  onResize() {
+    this.onViewportChange();
+  }
+
+  private readonly onViewportChange = () => {
+    if (this.popoverOpen()) this.positionPopover();
+  };
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.popoverOpen()) this.closePopover();
   }
 
   closePopover() {
     this.popoverOpen.set(false);
+    this.popAnchor = null;
+    document.removeEventListener('scroll', this.onViewportChange, true);
+  }
+
+  ngOnDestroy() {
+    document.removeEventListener('scroll', this.onViewportChange, true);
   }
 
   private applyTool(tooth: number, tool: DentalTool) {
