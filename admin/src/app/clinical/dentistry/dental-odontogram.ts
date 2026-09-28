@@ -115,7 +115,7 @@ const VIEWS: Array<{ key: ViewKind; label: string; icon: string }> = [
   { key: 'OCLUSAL', label: 'Vista oclusal', icon: 'M5 19 C5 9 8 5 12 5 C16 5 19 9 19 19 M9 17 A1.5 1.5 0 1 0 9 16.9 M15 17 A1.5 1.5 0 1 0 15 16.9 M12 9 A1.5 1.5 0 1 0 12 8.9' },
 ];
 
-type LegendIcon = 'dot' | 'x' | 'triangle' | 'bracket' | 'band' | 'wire' | 'ring' | 'wave' | 'bolt' | 'star';
+type LegendIcon = 'dot' | 'x' | 'triangle' | 'bracket' | 'band' | 'wire' | 'ring' | 'pocket' | 'arrows' | 'fistula' | 'bolt' | 'star';
 
 const LEGEND: Array<{ label: string; color: string; icon: LegendIcon }> = [
   { label: 'Caries', color: '#e53935', icon: 'dot' },
@@ -127,11 +127,11 @@ const LEGEND: Array<{ label: string; color: string; icon: LegendIcon }> = [
   { label: 'Corona', color: '#8e24aa', icon: 'dot' },
   { label: 'Separador', color: '#7c3aed', icon: 'ring' },
   { label: 'Prótesis', color: '#16a34a', icon: 'dot' },
-  { label: 'Lesión periodontal', color: '#e11d48', icon: 'wave' },
+  { label: 'Lesión periodontal', color: '#e11d48', icon: 'pocket' },
   { label: 'Implante', color: '#64748b', icon: 'dot' },
-  { label: 'Movilidad', color: '#0b3a6e', icon: 'wave' },
+  { label: 'Movilidad', color: '#0b3a6e', icon: 'arrows' },
   { label: 'Sellante', color: '#14b8a6', icon: 'dot' },
-  { label: 'Fístula', color: '#db2777', icon: 'dot' },
+  { label: 'Fístula', color: '#db2777', icon: 'fistula' },
   { label: 'Fractura', color: '#f97316', icon: 'dot' },
   { label: 'Trauma', color: '#1e3a8a', icon: 'bolt' },
   { label: 'Diente ausente', color: '#6b7280', icon: 'x' },
@@ -343,20 +343,22 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                               @if (hasMark(tooth, 'SEPARADOR')) {
                                 <circle [attr.cx]="mesialX(tooth)" cy="64" r="4.5" fill="none" stroke="#7c3aed" stroke-width="2" />
                               }
-                              @if (hasMark(tooth, 'MOVILIDAD')) {
-                                <path d="M11 60 q3.5 -4 7 0 t7 0 t7 0 t7 0" fill="none" stroke="#0b3a6e" stroke-width="1.8" />
-                              }
                               @if (hasMark(tooth, 'LESION')) {
-                                <path d="M13 42 q3 -4 6 0 t6 0 t6 0 t6 0" fill="none" stroke="#e11d48" stroke-width="2" />
+                                <path d="M14 58 Q14 35 25 31 Q36 35 36 58" fill="rgba(225,29,72,0.2)" stroke="#e11d48" stroke-width="2.4" stroke-linejoin="round" />
                               }
                               @if (hasMark(tooth, 'FISTULA')) {
-                                <circle cx="35" cy="30" r="3.6" fill="#fbcfe8" stroke="#db2777" stroke-width="1.6" />
+                                <path d="M30 24 L38 18" stroke="#db2777" stroke-width="2.2" stroke-linecap="round" />
+                                <circle cx="25" cy="26" r="5.5" fill="#fbcfe8" stroke="#db2777" stroke-width="2.2" />
+                                <circle cx="25" cy="26" r="1.8" fill="#db2777" />
+                              }
+                              @if (hasMark(tooth, 'MOVILIDAD')) {
+                                <path d="M14 63 H36 M14 63 l4.5 -3.5 M14 63 l4.5 3.5 M36 63 l-4.5 -3.5 M36 63 l-4.5 3.5" fill="none" stroke="#0b3a6e" stroke-width="2.6" stroke-linecap="round" />
                               }
                               @if (hasMark(tooth, 'TRAUMA')) {
-                                <path d="M38 58 L32 70 L37 70 L31 84" fill="none" stroke="#1e3a8a" stroke-width="2" />
+                                <path d="M28 64 L19 79 H25 L22 93 L32 75 H26 Z" fill="#1e3a8a" stroke="#fff" stroke-width="1" stroke-linejoin="round" />
                               }
                               @if (hasMark(tooth, 'OTRO')) {
-                                <path d="M40 50 l1.8 3.8 4.2 .6 -3 2.9 .7 4.1 -3.7 -2 -3.7 2 .7 -4.1 -3 -2.9 4.2 -.6 Z" fill="#0f172a" />
+                                <path d="M25 3 L27.3 8.2 L33 8.8 L28.7 12.6 L30 18.2 L25 15.3 L20 18.2 L21.3 12.6 L17 8.8 L22.7 8.2 Z" fill="#0f172a" stroke="#fff" stroke-width="0.8" />
                               }
                             </g>
                             @if (has(tooth, 'INCLUIDO')) {
@@ -608,8 +610,14 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                       @case ('ring') {
                         <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5" fill="none" [attr.stroke]="item.color" stroke-width="2.2" /></svg>
                       }
-                      @case ('wave') {
-                        <svg viewBox="0 0 20 20"><path d="M1 10 q2.25 -5 4.5 0 t4.5 0 t4.5 0 t4.5 0" fill="none" [attr.stroke]="item.color" stroke-width="2" /></svg>
+                      @case ('pocket') {
+                        <svg viewBox="0 0 20 20"><path d="M3 18 Q3 5 10 3 Q17 5 17 18" [attr.fill]="item.color + '33'" [attr.stroke]="item.color" stroke-width="2" stroke-linejoin="round" /></svg>
+                      }
+                      @case ('arrows') {
+                        <svg viewBox="0 0 20 20"><path d="M2 10 H18 M2 10 l4 -3.5 M2 10 l4 3.5 M18 10 l-4 -3.5 M18 10 l-4 3.5" fill="none" [attr.stroke]="item.color" stroke-width="2.2" stroke-linecap="round" /></svg>
+                      }
+                      @case ('fistula') {
+                        <svg viewBox="0 0 20 20"><path d="M13 8 L18 4" [attr.stroke]="item.color" stroke-width="2" stroke-linecap="round" /><circle cx="9" cy="11" r="5.5" fill="#fbcfe8" [attr.stroke]="item.color" stroke-width="2" /><circle cx="9" cy="11" r="1.8" [attr.fill]="item.color" /></svg>
                       }
                       @case ('bolt') {
                         <svg viewBox="0 0 20 20"><path d="M11.5 1.5 L4.5 11 H9.5 L8 18.5 L15.5 8.5 H10.5 Z" [attr.fill]="item.color" /></svg>
