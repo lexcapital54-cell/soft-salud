@@ -531,6 +531,17 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                           <span class="dot" [style.background]="t.color"></span>{{ t.label }}
                         </button>
                       }
+                      @if (showOrthoMarks()) {
+                        <button
+                          type="button"
+                          class="odg-chip"
+                          [class.on]="archActive(isUpperTooth(tooth))"
+                          [title]="'Aplica a toda la arcada ' + (isUpperTooth(tooth) ? 'superior' : 'inferior')"
+                          (click)="toggleArch(isUpperTooth(tooth) ? 'upper' : 'lower', !archActive(isUpperTooth(tooth)))"
+                        >
+                          <span class="dot" style="background:#10306b"></span>Arco ortodóntico ({{ isUpperTooth(tooth) ? 'sup.' : 'inf.' }})
+                        </button>
+                      }
                     </div>
                   }
                   <label class="odg-note">
@@ -1059,6 +1070,10 @@ export class DentalOdontogram implements OnDestroy {
 
   showOcclusalBetween() {
     return this.view() === 'COMPLETA';
+  }
+
+  isUpperTooth(tooth: number) {
+    return [1, 2, 5, 6].includes(Math.floor(tooth / 10));
   }
 
   archActive(upper: boolean) {

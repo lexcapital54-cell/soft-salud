@@ -750,7 +750,7 @@ export interface DentalToolDef {
 
 export const SURFACE_TOOLS: DentalToolDef[] = [
   { key: 'CARIES', label: 'Caries', color: '#e53935', scope: 'surface' },
-  { key: 'RESTAURACION', label: 'Restauración', color: '#1e63d6', scope: 'surface' },
+  { key: 'RESTAURACION', label: 'Obturación', color: '#1e63d6', scope: 'surface' },
   { key: 'SELLANTE', label: 'Sellante', color: '#14b8a6', scope: 'surface' },
   { key: 'FRACTURA', label: 'Fractura', color: '#f97316', scope: 'surface' },
 ];
@@ -760,7 +760,7 @@ export const CONDITION_TOOLS: DentalToolDef[] = [
   { key: 'CORONA', label: 'Corona', color: '#8e24aa', scope: 'condition' },
   { key: 'PROTESIS', label: 'Prótesis', color: '#16a34a', scope: 'condition' },
   { key: 'IMPLANTE', label: 'Implante', color: '#475569', scope: 'condition' },
-  { key: 'AUSENTE', label: 'Ausente', color: '#1f2937', scope: 'condition' },
+  { key: 'AUSENTE', label: 'Diente ausente', color: '#1f2937', scope: 'condition' },
   { key: 'EXTRACCION_INDICADA', label: 'Extracción indicada', color: '#dc2626', scope: 'condition' },
   { key: 'INCLUIDO', label: 'Diente incluido', color: '#64748b', scope: 'condition' },
 ];
@@ -770,8 +770,8 @@ export const MARK_TOOLS: DentalToolDef[] = [
   { key: 'FISTULA', label: 'Fístula', color: '#db2777', scope: 'mark' },
   { key: 'LESION', label: 'Lesión periodontal', color: '#e11d48', scope: 'mark' },
   { key: 'TRAUMA', label: 'Trauma', color: '#1e3a8a', scope: 'mark' },
-  { key: 'BRACKET', label: 'Bracket', color: '#1d4ed8', scope: 'mark' },
-  { key: 'BANDA', label: 'Banda', color: '#1d4ed8', scope: 'mark' },
+  { key: 'BRACKET', label: 'Brackets', color: '#1d4ed8', scope: 'mark' },
+  { key: 'BANDA', label: 'Bandas', color: '#1d4ed8', scope: 'mark' },
   { key: 'SEPARADOR', label: 'Separador', color: '#7c3aed', scope: 'mark' },
   { key: 'OTRO', label: 'Otra observación', color: '#0f172a', scope: 'mark' },
 ];

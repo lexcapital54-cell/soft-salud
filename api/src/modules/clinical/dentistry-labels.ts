@@ -116,7 +116,7 @@ export const DENTAL_ORDER_TYPE_LABELS: Record<string, string> = {
 /** Hallazgos del odontograma (incluye los valores del formato v1). */
 export const DENTAL_TOOTH_LABELS: Record<string, string> = {
   CARIES: 'Caries',
-  RESTAURACION: 'Restauración',
+  RESTAURACION: 'Obturación',
   SELLANTE: 'Sellante',
   FRACTURA: 'Fractura',
   ENDODONCIA: 'Endodoncia',
@@ -136,5 +136,5 @@ export const DENTAL_TOOTH_LABELS: Record<string, string> = {
   OTRO: 'Otra observación',
   SANO: 'Sano',
   CARIADO: 'Caries',
-  OBTURADO: 'Restauración',
+  OBTURADO: 'Obturación',
 };
