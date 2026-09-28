@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnDestroy, ViewChild, computed, input, output, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, ViewChild, computed, inject, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -241,12 +241,12 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
             <span>Odontología General <i>|</i> Ortodoncia</span>
           </div>
         </div>
-        <dl class="odg-meta">
-          <div class="wide"><dt>Paciente:</dt><dd>{{ patientName() || '—' }}</dd></div>
-          <div><dt>Edad:</dt><dd>{{ patientAge() || '—' }}</dd></div>
-          <div><dt>Historia clínica:</dt><dd>{{ recordCode() || '—' }}</dd></div>
-          <div><dt>Fecha:</dt><dd>{{ recordDate() || '—' }}</dd></div>
-        </dl>
+        <p class="odg-print-meta">
+          <span><b>Paciente:</b> {{ patientName() || '—' }}</span>
+          <span><b>Edad:</b> {{ patientAge() || '—' }}</span>
+          <span><b>Historia clínica:</b> {{ recordCode() || '—' }}</span>
+          <span><b>Fecha:</b> {{ recordDate() || '—' }}</span>
+        </p>
         <p class="odg-tagline">Sonrisas saludables,<br />vidas mejores</p>
       </header>
 
@@ -544,19 +544,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
           </div>
 
           <div class="odg-cards">
-            <section class="odg-card">
-              <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 H16 V6 H8 Z M6 5 H4 V21 H20 V5 H18 M8 11 H16 M8 15 H16 M8 19 H13" /></svg>Diagnóstico / plan de tratamiento</h4>
-              <div class="odg-card-body">
-                @if (planSummary().length) {
-                  @for (line of planSummary(); track $index) {
-                    <p>{{ line }}</p>
-                  }
-                } @else {
-                  <p class="muted">Registre el diagnóstico y el plan en los módulos de Diagnóstico y Plan de tratamiento.</p>
-                }
-              </div>
-            </section>
-            <section class="odg-card">
+            <section class="odg-card" [class.odg-empty]="!data().odontogramNotes?.trim()">
               <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3 H15 L19 7 V21 H5 Z M8 10 H16 M8 14 H16 M8 18 H13" /></svg>Notas</h4>
               <textarea
                 class="odg-card-body"
@@ -567,20 +555,11 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                 placeholder="Observaciones generales del odontograma…"
               ></textarea>
             </section>
-            <section class="odg-card">
-              <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18 H15 M10 21 H14 M12 3 C8 3 6 6 6 9 C6 12 9 13 9 16 H15 C15 13 18 12 18 9 C18 6 16 3 12 3 Z" /></svg>Leyenda adicional</h4>
-              <ul class="odg-extra">
-                <li><span class="chk ok">✓</span><b>CIE-10:</b> diagnóstico principal y secundarios</li>
-                <li><span class="chk ok">✓</span><b>CUPS:</b> procedimientos del plan de tratamiento</li>
-                <li><span class="chk warn">●</span>Observaciones de ortodoncia (movimientos, controles)</li>
-                <li><span class="chk info">●</span>Seguimiento y evolución</li>
-              </ul>
-            </section>
           </div>
         </div>
 
         <aside class="odg-side">
-          <section>
+          <section class="odg-side-legend">
             <h4>Convenciones</h4>
             <ul class="odg-legend">
               @for (item of legend; track item.label) {
@@ -725,18 +704,15 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     :host { display: block; container-type: inline-size; --ink: #0b3a6e; --ink2: #10306b; --soft: #eaf2fb; --line: #d5e2f0; --bg: #f1f6fb; }
     .odg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
     .odg { position: relative; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: linear-gradient(160deg, #f7fafd 0%, #eaf1f8 100%); box-shadow: 0 12px 34px rgba(11, 58, 110, 0.1); color: #1e293b; }
-    .odg-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px 28px; padding: 16px 22px; background: rgba(255, 255, 255, 0.75); border-bottom: 1px solid var(--line); }
+    .odg-head { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px 28px; padding: 16px 22px; background: rgba(255, 255, 255, 0.75); border-bottom: 1px solid var(--line); }
     .odg-brand { display: flex; gap: 12px; align-items: center; padding-right: 26px; border-right: 1px solid var(--line); }
     .odg-brand svg { width: 42px; height: 46px; }
     .odg-brand strong { display: block; font-size: 30px; font-weight: 800; letter-spacing: 0.02em; color: var(--ink); line-height: 1; }
     .odg-brand span { display: block; margin-top: 4px; font-size: 14px; color: var(--ink); }
     .odg-brand i, .odg-foot i { font-style: normal; opacity: 0.5; margin: 0 6px; }
-    .odg-meta { display: flex; flex-wrap: wrap; gap: 10px 14px; margin: 0; }
-    .odg-meta div { min-width: 110px; }
-    .odg-meta div.wide { min-width: 180px; }
-    .odg-meta dt { font-size: 12px; font-weight: 700; color: var(--ink); }
-    .odg-meta dd { margin: 4px 0 0; font-size: 13px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; background: #fff; box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04); }
-    .odg-tagline { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 17px; line-height: 1.2; color: var(--ink); text-align: right; }
+    .odg-print-meta { display: none; margin: 0; gap: 6px 22px; flex-wrap: wrap; font-size: 13px; color: #1e293b; }
+    .odg-print-meta b { color: var(--ink); }
+    .odg-tagline { justify-self: end; margin: 0; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 17px; line-height: 1.2; color: var(--ink); text-align: right; }
     .odg-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; padding: 14px; }
     .odg-left { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     .odg-main { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; overflow-x: auto; padding: 14px 10px; background: rgba(255, 255, 255, 0.82); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 4px 16px rgba(11, 58, 110, 0.05); }
@@ -805,20 +781,13 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     .odg-link.danger { color: #b91c1c; }
     .odg-btn { border: none; background: var(--ink); color: #fff; border-radius: 8px; padding: 9px 22px; font-size: 14px; cursor: pointer; font-weight: 600; }
 
-    .odg-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .odg-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
     .odg-card { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: rgba(255, 255, 255, 0.85); border: 1px solid var(--line); border-radius: 12px; }
     .odg-card h4, .odg-side h4 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 12.5px; font-weight: 800; color: var(--ink); text-transform: uppercase; letter-spacing: 0.04em; }
     .odg-card h4 svg { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
     .odg-card-body { flex: 1; min-height: 70px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font: inherit; font-size: 13px; color: #1e293b; resize: vertical; box-sizing: border-box; }
     .odg-card-body p { margin: 0 0 4px; }
     .odg-card-body .muted { color: #64748b; font-size: 12.5px; }
-    .odg-extra { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; }
-    .odg-extra li { display: flex; align-items: center; gap: 8px; }
-    .chk { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; color: #fff; flex: none; }
-    .chk.ok { background: #0e9f6e; }
-    .chk.warn { background: #f5b301; }
-    .chk.info { background: #3b82f6; }
-
     .odg-side { display: flex; flex-direction: column; gap: 12px; }
     .odg-side section { display: flex; flex-direction: column; gap: 10px; padding: 12px; background: rgba(255, 255, 255, 0.85); border: 1px solid var(--line); border-radius: 12px; }
     .odg-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 11px 10px; font-size: 13.5px; font-weight: 500; color: #1e293b; }
@@ -864,15 +833,21 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     @container (max-width: 980px) {
       .odg-body { grid-template-columns: 1fr; }
       .odg-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-      .odg-cards { grid-template-columns: 1fr; }
     }
     @container (max-width: 560px) {
       .odg-pop-surfaces { flex-direction: column; align-items: stretch; }
       .odg-square.big { align-self: center; }
     }
     @media print {
-      .odg-side, .odg-pop, .odg-pop-backdrop { display: none !important; }
-      .odg-body { grid-template-columns: 1fr; }
+      .odg-pop, .odg-pop-backdrop, .odg-side > section:not(.odg-side-legend), .odg-card.odg-empty { display: none !important; }
+      .odg-head { grid-template-columns: auto 1fr auto; }
+      .odg-brand { border-right: 1px solid var(--line); }
+      .odg-print-meta { display: flex; }
+      .odg-tagline { display: block; }
+      .odg-body { grid-template-columns: minmax(0, 1fr) 260px; }
+      .odg-side { display: flex; }
+      .odg-card textarea { border: none; resize: none; padding: 0; min-height: 0; }
+      .odg { box-shadow: none; break-inside: avoid; }
     }
   `,
 })
@@ -888,6 +863,7 @@ export class DentalOdontogram implements OnDestroy {
   readonly save = output<void>();
 
   @ViewChild('mainArea') private mainArea?: ElementRef<HTMLElement>;
+  private readonly hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly positions = POSITIONS;
   readonly modes = MODES;
@@ -1168,19 +1144,6 @@ export class DentalOdontogram implements OnDestroy {
     }
   }
 
-  /** Diagnóstico principal y procedimientos del plan, para la tarjeta inferior. */
-  planSummary(): string[] {
-    this.version();
-    const d = this.data();
-    const lines: string[] = [];
-    const dx = d.diagnoses.filter((r) => r.cieCode.trim() || r.description.trim());
-    if (dx.length) lines.push(`Dx: ${[dx[0].cieCode, dx[0].description].filter((v) => v.trim()).join(' ')}`);
-    const plan = d.treatmentPlan.filter((r) => r.description.trim() && r.status !== 'CANCELADO');
-    for (const r of plan.slice(0, 4)) lines.push(`• ${r.description.trim()}${r.tooth ? ` (pza ${r.tooth})` : ''}`);
-    if (plan.length > 4) lines.push(`… y ${plan.length - 4} procedimiento(s) más`);
-    return lines;
-  }
-
   setOdontogramNotes(value: string) {
     if (this.disabled()) return;
     this.data().odontogramNotes = value;
@@ -1206,21 +1169,33 @@ export class DentalOdontogram implements OnDestroy {
 
   /** Imprime solo el odontograma en una ventana aparte. */
   print() {
-    const el = this.mainArea?.nativeElement.closest('.odg');
-    if (!el) return;
-    const win = window.open('', '_blank', 'width=1200,height=900');
+    this.closePopover();
+    const host = this.hostRef.nativeElement;
+    const clone = host.cloneNode(true) as HTMLElement;
+    // El valor escrito en un textarea no viaja en el HTML clonado.
+    const sources = host.querySelectorAll('textarea');
+    clone.querySelectorAll('textarea').forEach((t, i) => (t.textContent = sources[i]?.value ?? ''));
+    const win = window.open('', '_blank', 'width=1300,height=900');
     if (!win) return;
     const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
       .map((n) => n.outerHTML)
       .join('');
     win.document.write(
       `<!doctype html><html><head><meta charset="utf-8"><title>Odontograma</title>${styles}` +
-        `<style>body{margin:16px;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}` +
-        `.odg-side,.odg-pop,.odg-pop-backdrop{display:none!important}.odg-body{grid-template-columns:1fr!important}</style>` +
-        `</head><body>${el.outerHTML}</body></html>`,
+        `<style>@page{size:A4 landscape;margin:8mm}` +
+        `html,body{margin:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}` +
+        `app-dental-odontogram{display:block;width:1280px}</style>` +
+        `</head><body>${clone.outerHTML}</body></html>`,
     );
     win.document.close();
     win.onload = () => {
+      // Área imprimible de A4 horizontal con márgenes de 8 mm, en píxeles CSS.
+      const page = { width: 1060, height: 730 };
+      const el = win.document.querySelector('app-dental-odontogram') as HTMLElement | null;
+      if (el) {
+        const zoom = Math.min(1, page.width / el.scrollWidth, page.height / el.scrollHeight);
+        win.document.documentElement.style.zoom = String(zoom);
+      }
       win.focus();
       win.print();
     };
