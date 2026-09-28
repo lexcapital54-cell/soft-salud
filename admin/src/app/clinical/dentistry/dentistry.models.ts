@@ -346,7 +346,6 @@ export const DENTAL_TREATMENTS: CheckItem[] = [
 ];
 
 export const DENTAL_SYMPTOMS: CheckItem[] = [
-  { key: 'bruxism', label: 'Bruxismo' },
   { key: 'sensitivity', label: 'Sensibilidad dental' },
   { key: 'bleeding', label: 'Sangrado gingival' },
   { key: 'pain', label: 'Dolor dental' },
@@ -360,6 +359,7 @@ export const HABIT_ITEMS: CheckItem[] = [
   { key: 'thumbSucking', label: 'Succión digital' },
   { key: 'pacifier', label: 'Uso prolongado de chupete' },
   { key: 'tongueThrust', label: 'Interposición lingual' },
+  { key: 'atypicalSwallowing', label: 'Deglución atípica' },
   { key: 'lipBiting', label: 'Mordisqueo de labios' },
   { key: 'objectBiting', label: 'Mordisqueo de objetos' },
   { key: 'other', label: 'Otros' },
@@ -598,6 +598,11 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
     if (Object.keys(normalized).length) odontogram[tooth] = normalized;
   }
   const ortho = (raw.orthodontics || {}) as Partial<DentistryContent['orthodontics']>;
+  // Los hábitos se registran una sola vez en Antecedentes: se traen los marcados en Ortodoncia y el bruxismo de Síntomas.
+  const habits: Record<string, boolean> = { ...(raw.habits || {}), ...(ortho.habits || {}) };
+  const symptoms = { ...(raw.dentalHistory?.symptoms || {}) };
+  if (symptoms['bruxism']) habits['bruxism'] = true;
+  delete symptoms['bruxism'];
   return {
     ...base,
     ...raw,
@@ -614,9 +619,9 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
       ...base.dentalHistory,
       ...(raw.dentalHistory || {}),
       treatments: { ...(raw.dentalHistory?.treatments || {}) },
-      symptoms: { ...(raw.dentalHistory?.symptoms || {}) },
+      symptoms,
     },
-    habits: { ...(raw.habits || {}) },
+    habits,
     systemsReview: { ...(raw.systemsReview || {}) },
     vitals: { ...base.vitals, ...(raw.vitals || {}) },
     extraoral: { ...base.extraoral, ...(raw.extraoral || {}) },
@@ -629,7 +634,7 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
       ...ortho,
       facial: { ...base.orthodontics.facial, ...(ortho.facial || {}) },
       intraoral: { ...base.orthodontics.intraoral, ...(ortho.intraoral || {}) },
-      habits: { ...(ortho.habits || {}) },
+      habits: {},
     },
     photos: { ...(raw.photos || {}) },
     imaging: (raw.imaging || []).map((r) => ({ ...emptyImagingRow(), ...r })),

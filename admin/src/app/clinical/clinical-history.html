@@ -347,7 +347,11 @@
                 <textarea
                   rows="3"
                   [(ngModel)]="evolutionCurrentSituation"
-                  placeholder="Situación actual del paciente (se conserva para la próxima evolución)…"
+                  [placeholder]="
+                    isDentistryClinic()
+                      ? 'Situación actual y hallazgos clínicos de la sesión (se conserva para la próxima evolución)…'
+                      : 'Situación actual del paciente (se conserva para la próxima evolución)…'
+                  "
                   (focusout)="onClinicalTextBlur($event)"
                 ></textarea>
                 @if (evolutionSituationInherited(); as origin) {
@@ -380,6 +384,11 @@
                     ></textarea>
                 </label>
               } @else if (isDentistryClinic()) {
+                @if (hasActivePlanRows() || dental().prescriptions.length) {
+                  <button type="button" class="ghost odo-pull" (click)="fillEvolutionFromPlan()">
+                    Traer piezas y procedimientos del plan (y las prescripciones)
+                  </button>
+                }
                 <div class="grid-3 odo-evo">
                   <label
                     >Piezas tratadas
@@ -392,10 +401,6 @@
                   <label
                     >Material utilizado
                     <input [(ngModel)]="dentalEvolution.material" placeholder="Resina A2, ionómero, lima…" />
-                  </label>
-                  <label class="span-2"
-                    >Hallazgos
-                    <input [(ngModel)]="dentalEvolution.findings" />
                   </label>
                   <label
                     >Complicaciones
@@ -1895,6 +1900,7 @@
                           name="odoAnesthesia"
                           [value]="opt.key"
                           [(ngModel)]="dental().dentalHistory.anesthesiaReaction"
+                          (ngModelChange)="onAnesthesiaReactionChange($event)"
                           [disabled]="clinicalFormDisabled()"
                         />
                         {{ opt.label }}
@@ -1998,7 +2004,11 @@
                     <label
                       >{{ f.label }}
                       @if (f.options) {
-                        <select [(ngModel)]="dental().extraoral[f.key]" [disabled]="clinicalFormDisabled()">
+                        <select
+                          [(ngModel)]="dental().extraoral[f.key]"
+                          (ngModelChange)="onExtraoralChange(f.key, $event)"
+                          [disabled]="clinicalFormDisabled()"
+                        >
                           <option value="">Seleccione…</option>
                           @for (o of f.options; track o) {
                             <option [value]="o">{{ o }}</option>
@@ -2051,14 +2061,18 @@
                     </label>
                   }
                 </div>
-                <label class="odo-mt"
-                  >Observaciones de oclusión
-                  <input
-                    [(ngModel)]="dental().intraoral.occlusionNotes"
-                    [readonly]="clinicalFormDisabled()"
-                    placeholder="Mordida cruzada, apiñamiento, línea media…"
-                  />
-                </label>
+                @if (!showOrthoModule() || dental().intraoral.occlusionNotes) {
+                  <label class="odo-mt"
+                    >Observaciones de oclusión
+                    <input
+                      [(ngModel)]="dental().intraoral.occlusionNotes"
+                      [readonly]="clinicalFormDisabled()"
+                      placeholder="Mordida cruzada, apiñamiento, línea media…"
+                    />
+                  </label>
+                } @else {
+                  <p class="muted small odo-mt">El detalle de la oclusión se registra en el módulo de Ortodoncia.</p>
+                }
 
                 <h4 class="odo-sub">Periodonto</h4>
                 <div class="grid-4">
@@ -2078,6 +2092,12 @@
                     </label>
                   }
                 </div>
+                @if (odontogramMobilityTeeth().length) {
+                  <p class="muted small odo-mt">
+                    Movilidad marcada en el odontograma: <strong>{{ odontogramMobilityTeeth().join(', ') }}</strong>.
+                    En «Movilidad» anote solo el grado de cada pieza.
+                  </p>
+                }
                 <label class="odo-mt"
                   >Observaciones periodontales
                   <input [(ngModel)]="dental().periodontal.notes" [readonly]="clinicalFormDisabled()" />
@@ -2098,6 +2118,7 @@
                   [patientAge]="ageFrom(patientForm.birthDate) ? ageFrom(patientForm.birthDate) + ' años' : ''"
                   [recordCode]="encounter()?.externalCode || ''"
                   [recordDate]="(clinicalDocumentDate() | date: 'dd/MM/yyyy') || ''"
+                  [dentitionLabel]="dental().intraoral.dentition"
                   (changed)="onClinicalFieldChange()"
                   (save)="saveDraftOnly()"
                 />
@@ -2108,8 +2129,16 @@
                   <h3>6. Ortodoncia</h3>
                   <p class="muted small">Evaluación ortodóntica: análisis facial, intraoral, oclusión, medidas y diagnóstico.</p>
                   <h4 class="odo-sub">Análisis facial</h4>
+                  <p class="muted small">
+                    Del examen extraoral:
+                    @if (extraoralSummaryForOrtho(); as summary) {
+                      <strong>{{ summary }}</strong>
+                    } @else {
+                      sin datos aún (perfil, simetría y tercios se registran en el Examen clínico).
+                    }
+                  </p>
                   <div class="grid-3">
-                    @for (f of orthoFacialFields; track f.key) {
+                    @for (f of visibleOrthoFacialFields(); track f.key) {
                       <label
                         >{{ f.label }}
                         @if (f.options) {
@@ -2144,19 +2173,14 @@
                     }
                   </div>
                   <h4 class="odo-sub">Hábitos</h4>
-                  <div class="odo-check-grid">
-                    @for (item of orthoHabitItems; track item.key) {
-                      <label class="checkbox-inline">
-                        <input
-                          type="checkbox"
-                          [checked]="!!dental().orthodontics.habits[item.key]"
-                          [disabled]="clinicalFormDisabled()"
-                          (change)="toggleDentalFlag(dental().orthodontics.habits, item.key, $any($event.target).checked)"
-                        />
-                        {{ item.label }}
-                      </label>
+                  <p class="muted small">
+                    @if (orthoHabitSummary().length) {
+                      Registrados en Antecedentes: <strong>{{ orthoHabitSummary().join(', ') }}</strong>.
+                    } @else {
+                      Sin hábitos relevantes para ortodoncia registrados en Antecedentes.
                     }
-                  </div>
+                    <button type="button" class="linkish" (click)="scrollToOdo('hce-section-3')">Editar hábitos</button>
+                  </p>
                   <div class="ft-grid-2 odo-mt">
                     <label
                       >Medidas (cefalometría y modelos)
@@ -2800,6 +2824,11 @@
                 Catálogo psicología/psiquiatría: consultas, pruebas, psicoterapias, interconsultas y
                 remisiones. Escriba el código o pase el mouse sobre el campo.
               </p>
+            }
+            @if (isDentistryClinic() && hasActivePlanRows() && !cupsFieldsDisabled()) {
+              <button type="button" class="ghost odo-pull" (click)="pullCupsFromPlan()">
+                Traer del plan de tratamiento (en tratamiento / terminados)
+              </button>
             }
             <div
               class="search-row"

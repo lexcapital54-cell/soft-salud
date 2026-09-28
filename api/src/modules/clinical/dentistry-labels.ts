@@ -69,6 +69,7 @@ export const DENTAL_HABIT_LABELS: Record<string, string> = {
   thumbSucking: 'Succión digital',
   pacifier: 'Uso prolongado de chupete',
   tongueThrust: 'Interposición lingual',
+  atypicalSwallowing: 'Deglución atípica',
   lipBiting: 'Mordisqueo de labios',
   objectBiting: 'Mordisqueo de objetos',
   other: 'Otros',

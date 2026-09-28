@@ -664,7 +664,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
             </div>
             <div class="odg-seg">
               @for (d of dentitions; track d.key) {
-                <button type="button" [class.on]="dentition() === d.key" (click)="dentition.set(d.key)">{{ d.label }}</button>
+                <button type="button" [class.on]="dentition() === d.key" (click)="setDentition(d.label)">{{ d.label }}</button>
               }
             </div>
             <label class="odg-check">
@@ -907,7 +907,16 @@ export class DentalOdontogram implements OnDestroy {
   readonly paintTool = signal<DentalTool>('CARIES');
   readonly popSurfaceTool = signal<SurfaceState>('CARIES');
   readonly view = signal<ViewKind>('COMPLETA');
-  readonly dentition = signal<Dentition>('PERMANENTE');
+  /** Dentición registrada en el examen intraoral («Permanente», «Temporal» o «Mixta»). */
+  readonly dentitionLabel = input('');
+  /** En solo lectura se puede cambiar la vista sin tocar la historia. */
+  private readonly viewDentition = signal<Dentition | null>(null);
+  readonly dentition = computed<Dentition>(
+    () =>
+      this.viewDentition() ??
+      DENTITIONS.find((d) => d.label === this.dentitionLabel())?.key ??
+      'PERMANENTE',
+  );
   readonly selected = signal<number | null>(null);
   readonly popoverOpen = signal(false);
   readonly popLeft = signal(0);
@@ -1173,6 +1182,17 @@ export class DentalOdontogram implements OnDestroy {
   setOdontogramNotes(value: string) {
     if (this.disabled()) return;
     this.data().odontogramNotes = value;
+    this.changed.emit();
+  }
+
+  setDentition(label: string) {
+    if (this.disabled()) {
+      this.viewDentition.set(DENTITIONS.find((d) => d.label === label)?.key ?? null);
+      return;
+    }
+    this.viewDentition.set(null);
+    if (this.data().intraoral.dentition === label) return;
+    this.data().intraoral.dentition = label;
     this.changed.emit();
   }
 

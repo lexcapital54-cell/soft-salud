@@ -482,7 +482,106 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       }
       flags[key] = true;
     } else delete flags[key];
+    if (key === 'anesthetics' && checked && !this.dental().dentalHistory.anesthesiaReaction) {
+      this.dental().dentalHistory.anesthesiaReaction = 'SI';
+    }
     this.onClinicalFieldChange();
+  }
+
+  /** Una reacción a la anestesia queda también como alergia a anestésicos (mismo aviso de precaución). */
+  onAnesthesiaReactionChange(value: string) {
+    if (value === 'SI' && !this.dental().allergies['anesthetics']) {
+      this.toggleDentalAllergy('anesthetics', true);
+    } else {
+      this.onClinicalFieldChange();
+    }
+  }
+
+  /** La respiración oral o mixta del examen extraoral marca el hábito en Antecedentes. */
+  onExtraoralChange(key: string, value: string) {
+    if (key === 'breathing' && (value === 'Oral' || value === 'Mixta')) {
+      this.dental().habits['mouthBreathing'] = true;
+    }
+    this.onClinicalFieldChange();
+  }
+
+  /** Perfil, simetría y tercio inferior se registran en el examen extraoral; en Ortodoncia solo se ven si ya tenían dato. */
+  private readonly orthoFacialShared = new Set(['profile', 'symmetry', 'lowerThird']);
+
+  visibleOrthoFacialFields() {
+    const facial = this.dental().orthodontics.facial;
+    return this.orthoFacialFields.filter((f) => !this.orthoFacialShared.has(f.key) || !!facial[f.key]?.trim());
+  }
+
+  extraoralSummaryForOrtho() {
+    const e = this.dental().extraoral;
+    return [
+      ['Perfil', e.profile],
+      ['Simetría', e.symmetry],
+      ['Tercios faciales', e.facialThirds],
+      ['Labios', e.lips],
+      ['Respiración', e.breathing],
+    ]
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(' · ');
+  }
+
+  orthoHabitSummary() {
+    const habits = this.dental().habits;
+    return this.orthoHabitItems.filter((h) => habits[h.key]).map((h) => h.label);
+  }
+
+  /** Piezas con la marca «Movilidad» en el odontograma. */
+  odontogramMobilityTeeth() {
+    return Object.entries(this.dental().odontogram)
+      .filter(([, rec]) => rec.marks?.includes('MOVILIDAD'))
+      .map(([tooth]) => tooth)
+      .sort((a, b) => Number(a) - Number(b));
+  }
+
+  private activePlanRows() {
+    return this.dental().treatmentPlan.filter(
+      (r) => (r.status === 'EN_TRATAMIENTO' || r.status === 'TERMINADO') && (r.code.trim() || r.description.trim()),
+    );
+  }
+
+  hasActivePlanRows() {
+    return this.activePlanRows().length > 0;
+  }
+
+  /** Agrega a los CUPS de la sesión los procedimientos del plan en tratamiento o terminados (sin repetir). */
+  pullCupsFromPlan() {
+    const existing = new Set(this.procedures.map((p) => p.cupsCode.trim()));
+    const added = this.activePlanRows()
+      .filter((r) => r.code.trim() && !existing.has(r.code.trim()))
+      .map((r) => ({ cupsCode: r.code.trim(), description: r.description.trim() }));
+    if (!added.length) {
+      this.message.set('Los procedimientos del plan ya están en la lista de CUPS.');
+      return;
+    }
+    this.procedures = [...this.procedures, ...added];
+    this.notifyProcedureChange();
+  }
+
+  /** Precarga la evolución con las piezas y procedimientos del plan y las prescripciones. */
+  fillEvolutionFromPlan() {
+    const rows = this.activePlanRows();
+    const e = this.dentalEvolution;
+    if (!e.teeth.trim()) {
+      e.teeth = [...new Set(rows.map((r) => r.tooth.trim()).filter(Boolean))].join(', ');
+    }
+    if (!this.evolutionNote.trim()) {
+      this.evolutionNote = rows
+        .map((r) => [r.tooth.trim() && `Pieza ${r.tooth.trim()}`, r.description.trim() || r.code.trim()].filter(Boolean).join(': '))
+        .join('\n');
+    }
+    if (!e.instructions.trim()) {
+      e.instructions = this.dental()
+        .prescriptions.filter((p) => p.medication.trim())
+        .map((p) => [p.medication, p.dose, p.frequency, p.duration].map((v) => v.trim()).filter(Boolean).join(' '))
+        .join('; ');
+    }
   }
 
   setNoMedications(checked: boolean) {
