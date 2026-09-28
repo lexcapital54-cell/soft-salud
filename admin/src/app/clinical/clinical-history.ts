@@ -314,21 +314,27 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   onDentalCieInput(index: number, value: string) {
     this.onClinicalFieldChange();
+    this.searchDentalCie(index, value, 200);
+  }
+
+  openDentalCie(index: number) {
+    if (this.clinicalFormDisabled()) return;
+    this.dentalCupsResults.set([]);
+    this.searchDentalCie(index, this.dental().diagnoses[index]?.cieCode || '', 0);
+  }
+
+  private searchDentalCie(index: number, value: string, delay: number) {
     clearTimeout(this.dentalSearchTimer);
     const q = (value || '').trim();
-    if (q.length < 2) {
-      this.dentalCieResults.set([]);
-      return;
-    }
     this.dentalSearchTimer = setTimeout(() => {
       this.api.searchCie(q).subscribe({
         next: (rows) => {
           this.dentalCieRow.set(index);
-          this.dentalCieResults.set(rows.slice(0, 8));
+          this.dentalCieResults.set(rows);
         },
         error: () => this.dentalCieResults.set([]),
       });
-    }, 200);
+    }, delay);
   }
 
   pickDentalCie(index: number, item: CatalogCode) {
@@ -343,21 +349,27 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   onDentalCupsInput(index: number, value: string) {
     this.onClinicalFieldChange();
+    this.searchDentalCups(index, value, 200);
+  }
+
+  openDentalCups(index: number) {
+    if (this.clinicalFormDisabled()) return;
+    this.dentalCieResults.set([]);
+    this.searchDentalCups(index, this.dental().treatmentPlan[index]?.code || '', 0);
+  }
+
+  private searchDentalCups(index: number, value: string, delay: number) {
     clearTimeout(this.dentalSearchTimer);
     const q = (value || '').trim();
-    if (q.length < 2) {
-      this.dentalCupsResults.set([]);
-      return;
-    }
     this.dentalSearchTimer = setTimeout(() => {
       this.api.searchCups(q).subscribe({
         next: (rows) => {
           this.dentalCupsRow.set(index);
-          this.dentalCupsResults.set(rows.slice(0, 8));
+          this.dentalCupsResults.set(rows);
         },
         error: () => this.dentalCupsResults.set([]),
       });
-    }, 200);
+    }, delay);
   }
 
   pickDentalCups(index: number, item: CatalogCode) {

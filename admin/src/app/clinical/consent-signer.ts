@@ -347,7 +347,9 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
     const code = this.isMinor() ? 'PSI_NNA' : 'PSI_ADULT';
     const match = templates.find((t) => t.code === code);
     if (match) return match.id;
-    const informed = templates.find((t) => t.code.startsWith('PSI_'));
+    const informed =
+      templates.find((t) => t.code.startsWith('PSI_')) ??
+      templates.find((t) => t.code.endsWith('_INFORMED'));
     return informed?.id ?? templates[0].id;
   }
 
@@ -652,15 +654,15 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
       `$1<strong class="filled">${this.escapeHtml(city)}</strong>$2`,
     );
     out = out.replace(
-      /(menor\/paciente|menor|representado\(a\))\s*_{10,}/gi,
+      /(menor\/paciente|menor|representado\(a\)|legal del paciente)\s*_{10,}/gi,
       `$1 <strong class="filled">${this.escapeHtml(patient || '[Paciente / menor]')}</strong>`,
     );
     out = out.replace(
-      /(psicólogo\(a\)\s*)_{5,}/gi,
+      /((?:psicólogo\(a\)|odontólogo\(a\)|fisioterapeuta)\s*)_{5,}/gi,
       `$1<strong class="filled">${this.escapeHtml(professional || '[Profesional]')}</strong>`,
     );
     out = out.replace(
-      /(Tarjeta Profesional No\.\s*)_{5,}/gi,
+      /((?:Tarjeta|Registro) Profesional No\.\s*)_{5,}/gi,
       `$1<strong class="filled">${this.escapeHtml(card)}</strong>`,
     );
 

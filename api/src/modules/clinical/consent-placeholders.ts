@@ -61,15 +61,15 @@ export function fillConsentPlaceholders(
     `$1<strong>${escapeHtml(city)}</strong>$2`,
   );
   out = out.replace(
-    /(menor\/paciente|menor|representado\(a\))\s*_{10,}/gi,
+    /(menor\/paciente|menor|representado\(a\)|legal del paciente)\s*_{10,}/gi,
     `$1 <strong>${escapeHtml(patient || '[Paciente / menor]')}</strong>`,
   );
   out = out.replace(
-    /(psicólogo\(a\)\s*)_{5,}/gi,
+    /((?:psicólogo\(a\)|odontólogo\(a\)|fisioterapeuta)\s*)_{5,}/gi,
     `$1<strong>${escapeHtml(professional || '[Profesional]')}</strong>`,
   );
   out = out.replace(
-    /(Tarjeta Profesional No\.\s*)_{5,}/gi,
+    /((?:Tarjeta|Registro) Profesional No\.\s*)_{5,}/gi,
     `$1<strong>${escapeHtml(card)}</strong>`,
   );
 

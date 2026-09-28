@@ -1841,8 +1841,9 @@
               <section class="block odo-hce" id="odo-diagnosticos">
                 <h3>9. Diagnósticos</h3>
                 <p class="muted small">
-                  El primer diagnóstico con código CIE-10 queda como principal en RIPS / RDA. Escriba
-                  al menos 2 caracteres para buscar en el catálogo odontológico.
+                  El primer diagnóstico con código CIE-10 queda como principal en RIPS / RDA. Haga clic
+                  en el código para ver el catálogo odontológico o escriba código / descripción para
+                  filtrar.
                 </p>
                 <div class="odo-table-wrap">
                   <table class="odo-table">
@@ -1862,9 +1863,11 @@
                             <input
                               [(ngModel)]="dx.cieCode"
                               (ngModelChange)="onDentalCieInput(i, $event)"
+                              (focus)="openDentalCie(i)"
+                              (click)="openDentalCie(i)"
                               (blur)="closeDentalSuggestions()"
                               [readonly]="clinicalFormDisabled()"
-                              placeholder="K021"
+                              placeholder="Buscar CIE-10 ▾"
                               autocomplete="off"
                             />
                             @if (dentalCieRow() === i && dentalCieResults().length) {
@@ -1873,6 +1876,9 @@
                                   <li>
                                     <button type="button" (mousedown)="pickDentalCie(i, item)">
                                       <strong>{{ item.code }}</strong> {{ item.description }}
+                                      @if (item.category) {
+                                        <small>{{ item.category }}</small>
+                                      }
                                     </button>
                                   </li>
                                 }
@@ -1942,8 +1948,11 @@
                             <input
                               [(ngModel)]="row.code"
                               (ngModelChange)="onDentalCupsInput(i, $event)"
+                              (focus)="openDentalCups(i)"
+                              (click)="openDentalCups(i)"
                               (blur)="closeDentalSuggestions()"
                               [readonly]="clinicalFormDisabled()"
+                              placeholder="Buscar CUPS ▾"
                               autocomplete="off"
                             />
                             @if (dentalCupsRow() === i && dentalCupsResults().length) {
@@ -1952,6 +1961,9 @@
                                   <li>
                                     <button type="button" (mousedown)="pickDentalCups(i, item)">
                                       <strong>{{ item.code }}</strong> {{ item.description }}
+                                      @if (item.category) {
+                                        <small>{{ item.category }}</small>
+                                      }
                                     </button>
                                   </li>
                                 }
@@ -2639,8 +2651,16 @@
               <ol>
                 <li>Abra una atención con el paciente (arriba).</li>
                 <li>
-                  Elija la plantilla (Habeas Data, Adultos, NNA, Telepsicología o
-                  <strong>Disentimiento de hospitalización</strong>).
+                  @if (isDentistryClinic()) {
+                    Elija la plantilla (Habeas Data, <strong>Tratamiento odontológico</strong>,
+                    <strong>Ortodoncia</strong> o Atención virtual).
+                  } @else if (isPhysiotherapyClinic()) {
+                    Elija la plantilla (Habeas Data, <strong>Evaluación y tratamiento
+                    fisioterapéutico</strong> o Atención virtual).
+                  } @else {
+                    Elija la plantilla (Habeas Data, Adultos, NNA, Telepsicología o
+                    <strong>Disentimiento de hospitalización</strong>).
+                  }
                 </li>
                 <li>
                   Verifique que el texto muestre el nombre y documento del paciente en negrita.

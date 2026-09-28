@@ -176,16 +176,7 @@ export class CatalogsService {
           ? DENTISTRY_CUPS_CATALOG
           : [];
 
-    const fromStatic = staticSource
-      .filter((row) => {
-        if (!query) return true;
-        return (
-          row.code.toLowerCase().includes(query) ||
-          row.description.toLowerCase().includes(query)
-        );
-      })
-      .sort((a, b) => a.code.localeCompare(b.code))
-      .slice(0, take)
+    const fromStatic = this.filterStatic(staticSource, query, take)
       .map((row) => ({
         id: `cups-static-${row.code}`,
         code: row.code,
@@ -260,16 +251,19 @@ export class CatalogsService {
     query: string | undefined,
     take: number,
   ): T[] {
-    const q = query?.toLowerCase();
+    const q = query ? this.fold(query) : '';
+    const qCode = q.replace(/\./g, '');
     return rows
       .filter((row) => {
         if (!q) return true;
-        return (
-          row.code.toLowerCase().includes(q) ||
-          row.description.toLowerCase().includes(q)
-        );
+        return this.fold(row.code).includes(qCode) || this.fold(row.description).includes(q);
       })
       .sort((a, b) => a.code.localeCompare(b.code))
       .slice(0, take);
+  }
+
+  /** Minúsculas y sin tildes, para buscar «obturacion» igual que «obturación». */
+  private fold(value: string) {
+    return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
 }

@@ -477,6 +477,49 @@ button.linkish {
   }
 }
 
+/* Paleta HC-ODO verde azulado cuando la HC es de odontología */
+:host-context(.specialty-dentistry) {
+  .signer-head h3,
+  .pads-title {
+    color: #0b5563;
+  }
+
+  .eyebrow,
+  button.linkish {
+    color: #00897b;
+  }
+
+  .remote-invite {
+    border-color: #4db6ac;
+    background: #e0f2f1;
+  }
+
+  .remote-invite .primary,
+  button.primary {
+    background: #0b5563;
+    border-color: #0b5563;
+    color: #ffffff;
+  }
+
+  .remote-invite .secondary,
+  button.ghost {
+    background: #ffffff;
+    border-color: #4db6ac;
+    color: #0b5563;
+  }
+
+  .pads-highlight {
+    border-color: #4db6ac;
+    background: #f0f9f8;
+  }
+
+  .lead,
+  .muted,
+  .pad-label {
+    color: #4f6f73;
+  }
+}
+
 @media (max-width: 900px) {
   .signer-meta {
     grid-template-columns: 1fr;

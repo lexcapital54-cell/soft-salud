@@ -2013,8 +2013,15 @@ label.photo-btn {
 }
 
 .odo-table-wrap {
-  overflow-x: auto;
   margin-bottom: 10px;
+}
+
+@media (max-width: 900px) {
+  .odo-table-wrap {
+    overflow-x: auto;
+    padding-bottom: 280px;
+    margin-bottom: -270px;
+  }
 }
 
 .odo-table {
@@ -2060,11 +2067,11 @@ label.photo-btn {
 
 .odo-suggest {
   position: absolute;
-  z-index: 20;
+  z-index: 40;
   top: 100%;
   left: 0;
-  width: min(420px, 80vw);
-  max-height: 260px;
+  width: min(520px, 85vw);
+  max-height: 320px;
   overflow-y: auto;
   margin: 2px 0 0;
   padding: 4px 0;
@@ -2088,6 +2095,12 @@ label.photo-btn {
 
 .odo-suggest button:hover {
   background: #e0f2f1;
+}
+
+.odo-suggest small {
+  display: block;
+  color: #5f7d80;
+  font-size: 11px;
 }
 
 @media (max-width: 900px) {

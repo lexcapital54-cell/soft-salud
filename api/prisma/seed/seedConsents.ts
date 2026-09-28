@@ -295,6 +295,22 @@ const DENTISTRY_CONSENTS_V1: ConsentSeed[] = [
 </section>
 `.trim(),
   },
+  {
+    code: 'ODO_TELEHEALTH',
+    title: 'Consentimiento para atención virtual (teleorientación) en odontología',
+    bodyHtml: `
+<section>
+  <h2>Consentimiento informado — odontología en modalidad virtual</h2>
+  <p>El/la paciente (o representante legal) autoriza la teleorientación y el seguimiento odontológico u ortodóncico mediante medios tecnológicos, complementarios a la atención presencial, con registro en historia clínica y protección de datos (Ley 1581 de 2012).</p>
+  <ul>
+    <li>La atención virtual no reemplaza el examen clínico intraoral, las radiografías ni los procedimientos, que requieren cita presencial.</li>
+    <li>Puede ser necesario enviar fotografías de la boca o de la aparatología; se custodian como parte de la historia clínica.</li>
+    <li>En dolor intenso, inflamación facial, sangrado persistente, trauma dental o fractura de la aparatología, priorizar atención presencial/urgencia.</li>
+  </ul>
+  <p>Este consentimiento puede revocarse en cualquier momento sin afectar la atención ya prestada ni las obligaciones de conservación documental.</p>
+</section>
+`.trim(),
+  },
 ];
 
 const CONSENTS_BY_SPECIALTY: Array<[ClinicSpecialty, ConsentSeed[]]> = [
