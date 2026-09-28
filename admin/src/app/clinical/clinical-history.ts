@@ -466,6 +466,17 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     return d.service === 'ORTODONCIA' || hasOrthodonticData(d);
   }
 
+  /** Fuera de Periodoncia solo se piden los hallazgos básicos; el resto aparece si ya tiene dato. */
+  private readonly basicPeriodontalKeys = new Set(['gingiva', 'bleeding', 'plaque', 'calculus']);
+
+  visiblePeriodontalFields() {
+    const d = this.dental();
+    if (d.service === 'PERIODONCIA') return this.dentalPeriodontalFields;
+    return this.dentalPeriodontalFields.filter(
+      (f) => this.basicPeriodontalKeys.has(f.key) || !!String(d.periodontal[f.key] ?? '').trim(),
+    );
+  }
+
   readonly dentalAdminOpen = signal(false);
 
   toggleDentalFlag(flags: Record<string, boolean>, key: string, checked: boolean) {

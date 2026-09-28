@@ -775,7 +775,7 @@ export const dentistrySealSchema = z.object({
     .check(z.refine((v) => v.trim().length >= 3, 'Motivo de consulta: registre el motivo de consulta.')),
   dentistry: z.object({
     service: z.enum(['GENERAL', 'REHABILITACION', 'ENDODONCIA', 'PERIODONCIA', 'CIRUGIA_ORAL', 'ORTODONCIA'], {
-      error: 'Motivo de consulta: seleccione el servicio odontológico.',
+      error: 'Datos de la atención: seleccione el tipo de consulta odontológica.',
     }),
     allergies: z.record(z.string(), z.boolean()).check(
       z.refine(

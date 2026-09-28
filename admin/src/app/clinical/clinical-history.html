@@ -1094,6 +1094,22 @@
               >Servicio
               <input [ngModel]="defaultServiceType()" readonly title="Consulta externa (fijo)"
             /></label>
+            @if (isDentistryClinic()) {
+              <label
+                >Tipo de consulta odontológica
+                <select
+                  [(ngModel)]="dental().service"
+                  [disabled]="clinicalFormDisabled()"
+                  (ngModelChange)="onClinicalFieldChange()"
+                  title="Define los módulos y campos que se muestran en la historia"
+                >
+                  <option value="">Seleccione…</option>
+                  @for (s of dentalServices; track s.key) {
+                    <option [value]="s.key">{{ s.label }}</option>
+                  }
+                </select>
+              </label>
+            }
             <label
               >Modalidad
               <select
@@ -1688,26 +1704,17 @@
                   <div>
                     <h3>2. Motivo de consulta</h3>
                     <p class="muted small">
-                      Historia clínica odontológica (HC-ODO-001). El servicio define los módulos: con
-                      <strong>Ortodoncia</strong> se activa el módulo 6.
+                      Historia clínica odontológica (HC-ODO-001).
+                      @if (dental().service) {
+                        Consulta de <strong>{{ dentalServiceLabel(dental().service) }}</strong>: la historia muestra los campos de ese servicio.
+                      } @else {
+                        Elija el <strong>tipo de consulta odontológica</strong> en Datos de la atención para adaptar los campos.
+                      }
                     </p>
                   </div>
                 </div>
                 <div class="grid-3">
-                  <label
-                    >Servicio odontológico
-                    <select
-                      [(ngModel)]="dental().service"
-                      [disabled]="clinicalFormDisabled()"
-                      (ngModelChange)="onClinicalFieldChange()"
-                    >
-                      <option value="">Seleccione…</option>
-                      @for (s of dentalServices; track s.key) {
-                        <option [value]="s.key">{{ s.label }}</option>
-                      }
-                    </select>
-                  </label>
-                  <label class="span-2"
+                  <label class="span-3"
                     >Motivo de consulta
                     <textarea
                       rows="2"
@@ -2114,7 +2121,7 @@
 
                 <h4 class="odo-sub">Periodonto</h4>
                 <div class="grid-4">
-                  @for (f of dentalPeriodontalFields; track f.key) {
+                  @for (f of visiblePeriodontalFields(); track f.key) {
                     <label
                       >{{ f.label }}
                       @if (f.options) {
@@ -2156,7 +2163,10 @@
                   [patientAge]="ageFrom(patientForm.birthDate) ? ageFrom(patientForm.birthDate) + ' años' : ''"
                   [recordCode]="encounter()?.externalCode || ''"
                   [recordDate]="(clinicalDocumentDate() | date: 'dd/MM/yyyy') || ''"
+                  [professionalName]="encounter()?.professional?.fullName || user()?.fullName || ''"
+                  [professionalCard]="encounter()?.professional?.professionalCard || ''"
                   [dentitionLabel]="dental().intraoral.dentition"
+                  [orthoMarks]="showOrthoModule()"
                   (changed)="onClinicalFieldChange()"
                   (save)="saveDraftOnly()"
                 />

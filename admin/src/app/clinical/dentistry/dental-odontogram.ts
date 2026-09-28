@@ -149,6 +149,9 @@ const QUICK_ACTIONS: Array<{ key: QuickKey; label: string; icon: string }> = [
   { key: 'NOTE', label: 'Agregar nota', icon: 'M5 4 H14 L19 9 V20 H5 Z M14 4 V9 H19 M8 13 H16 M8 16 H13' },
 ];
 
+const ORTHO_MARKS = new Set<string>(['BRACKET', 'BANDA', 'SEPARADOR']);
+const ORTHO_LEGEND_ICONS = new Set<LegendIcon>(['bracket', 'band', 'wire', 'ring']);
+
 /** Silueta del logo (muela). */
 const LOGO_PATH =
   'M20 7 C14 2 4 2 3 12 C2 20 6 26 8 34 C9 40 13 42 14 36 C15 30 17 27 20 27 C23 27 25 30 26 36 C27 42 31 40 32 34 C34 26 38 20 37 12 C36 2 26 2 20 7 Z';
@@ -247,7 +250,14 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
           <span><b>Historia clínica:</b> {{ recordCode() || '—' }}</span>
           <span><b>Fecha:</b> {{ recordDate() || '—' }}</span>
         </p>
-        <p class="odg-tagline">Sonrisas saludables,<br />vidas mejores</p>
+        @if (professionalName()) {
+          <p class="odg-tagline">
+            {{ professionalName() }}
+            @if (professionalCard()) {
+              <small>T.P. {{ professionalCard() }}</small>
+            }
+          </p>
+        }
       </header>
 
       <div class="odg-body">
@@ -468,7 +478,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                   <p class="odg-pop-sum">{{ summary(tooth) || 'Sano, sin hallazgos' }}</p>
                   @if (!disabled()) {
                     <div class="odg-quick">
-                      @for (q of quickActions; track q.key) {
+                      @for (q of quickActions(); track q.key) {
                         <button type="button" class="odg-quick-btn" [class.on]="quickActive(tooth, q.key)" (click)="quick(tooth, q.key)">
                           <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="q.icon" /></svg>
                           {{ q.label }}
@@ -516,7 +526,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                     </div>
                     <p class="odg-pop-title">Marcas y aparatología</p>
                     <div class="odg-chips">
-                      @for (t of markTools; track t.key) {
+                      @for (t of markTools(); track t.key) {
                         <button type="button" class="odg-chip" [class.on]="hasMark(tooth, $any(t.key))" (click)="toggleMark(tooth, $any(t.key))">
                           <span class="dot" [style.background]="t.color"></span>{{ t.label }}
                         </button>
@@ -562,7 +572,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
           <section class="odg-side-legend">
             <h4>Convenciones</h4>
             <ul class="odg-legend">
-              @for (item of legend; track item.label) {
+              @for (item of legend(); track item.label) {
                 <li>
                   <span class="odg-ico">
                     @switch (item.icon) {
@@ -615,7 +625,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
               </div>
               @if (mode() === 'PAINT') {
                 <div class="odg-palette">
-                  @for (t of allTools; track t.key) {
+                  @for (t of allTools(); track t.key) {
                     <button
                       type="button"
                       class="odg-swatch"
@@ -712,7 +722,8 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     .odg-brand i, .odg-foot i { font-style: normal; opacity: 0.5; margin: 0 6px; }
     .odg-print-meta { display: none; margin: 0; gap: 6px 22px; flex-wrap: wrap; font-size: 13px; color: #1e293b; }
     .odg-print-meta b { color: var(--ink); }
-    .odg-tagline { justify-self: end; margin: 0; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 17px; line-height: 1.2; color: var(--ink); text-align: right; }
+    .odg-tagline { justify-self: end; margin: 0; font-size: 16px; font-weight: 700; line-height: 1.25; color: var(--ink); text-align: right; }
+    .odg-tagline small { display: block; font-size: 12.5px; font-weight: 500; color: #475569; }
     .odg-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; padding: 14px; }
     .odg-left { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     .odg-main { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; overflow-x: auto; padding: 14px 10px; background: rgba(255, 255, 255, 0.82); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 4px 16px rgba(11, 58, 110, 0.05); }
@@ -858,6 +869,9 @@ export class DentalOdontogram implements OnDestroy {
   readonly patientAge = input('');
   readonly recordCode = input('');
   readonly recordDate = input('');
+  readonly professionalName = input('');
+  readonly professionalCard = input('');
+  readonly orthoMarks = input(true);
   readonly changed = output<void>();
   /** Pide a la historia guardar el borrador. */
   readonly save = output<void>();
@@ -871,10 +885,16 @@ export class DentalOdontogram implements OnDestroy {
   readonly dentitions = DENTITIONS;
   readonly surfaceTools = SURFACE_TOOLS;
   readonly conditionTools = CONDITION_TOOLS;
-  readonly markTools = MARK_TOOLS;
-  readonly allTools = ALL_TOOLS;
-  readonly legend = LEGEND;
-  readonly quickActions = QUICK_ACTIONS;
+  /** Con la consulta de ortodoncia (o si el odontograma ya tiene aparatología) se ofrecen brackets, bandas y separadores. */
+  private readonly showOrthoMarks = computed(() => {
+    this.version();
+    if (this.orthoMarks()) return true;
+    return Object.values(this.data().odontogram).some((r) => r?.marks?.some((m) => ORTHO_MARKS.has(m)));
+  });
+  readonly markTools = computed(() => (this.showOrthoMarks() ? MARK_TOOLS : MARK_TOOLS.filter((t) => !ORTHO_MARKS.has(t.key))));
+  readonly allTools = computed(() => (this.showOrthoMarks() ? ALL_TOOLS : ALL_TOOLS.filter((t) => !ORTHO_MARKS.has(t.key))));
+  readonly legend = computed(() => (this.showOrthoMarks() ? LEGEND : LEGEND.filter((l) => !ORTHO_LEGEND_ICONS.has(l.icon))));
+  readonly quickActions = computed(() => (this.showOrthoMarks() ? QUICK_ACTIONS : QUICK_ACTIONS.filter((q) => q.key !== 'BRACKET')));
   readonly logoPath = LOGO_PATH;
   readonly showSurfaces = signal(false);
   readonly savedFlash = signal(false);
