@@ -1587,6 +1587,17 @@ button.full {
   gap: 8px;
 }
 
+.dictation-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dictation-row > textarea,
+.dictation-row > input {
+  flex: 1 1 100%;
+}
+
 .dictation-row textarea,
 .motive-row textarea {
   width: 100%;

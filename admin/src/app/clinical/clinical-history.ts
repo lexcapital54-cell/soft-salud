@@ -37,6 +37,7 @@ import { AUTOSAVE_TIMEOUT_MS, ClinicalAutosaveService } from './clinical-autosav
 import { HceLocalDraftService, HceLocalDraft } from './hce-local-draft.service';
 import { OpenEncountersAlert } from './open-encounters-alert';
 import { VoiceDictationBtn } from './voice-dictation-btn';
+import { ClinicalListenBtn } from './clinical-listen-btn';
 import { formatClinicalFreeText } from './clinical-text-format';
 import { ConsentSigner } from './consent-signer';
 import { DentalOdontogram } from './dentistry/dental-odontogram';
@@ -240,6 +241,7 @@ function emptyContent(): ClinicalContent {
     DentalOdontogram,
     OpenEncountersAlert,
     VoiceDictationBtn,
+    ClinicalListenBtn,
   ],
   providers: [ClinicalAutosaveService],
   templateUrl: './clinical-history.html',
@@ -1525,6 +1527,29 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   onDictationError(message: string) {
     this.error.set(message);
+  }
+
+  /** Texto de la sección 3 (psicología o SOAP) para leerlo en voz alta completo. */
+  section3ListenText(): string {
+    const c = this.content;
+    const parts: Array<[string, string | undefined]> = this.isSoap()
+      ? [
+          ['Subjetivo', c.soap?.subjective],
+          ['Objetivo', c.soap?.objective],
+          ['Análisis', c.soap?.assessment],
+          ['Plan', c.soap?.plan],
+        ]
+      : [
+          ['Motivo de consulta', c.careMinimum?.motive],
+          ['Enfermedad actual', c.careMinimum?.presentIllness],
+          ['Historia psicosocial', c.careMinimum?.systemsReview],
+          ['Examen mental', c.mentalExam?.narrative],
+          ['Impresión diagnóstica', c.assessment?.impressionNarrative],
+        ];
+    return parts
+      .filter(([, v]) => (v || '').trim())
+      .map(([label, v]) => `${label}. ${(v || '').trim()}`)
+      .join('\n\n');
   }
 
   private draftScopeId(): string {

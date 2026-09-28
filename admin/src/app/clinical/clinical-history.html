@@ -2523,6 +2523,12 @@
                       Atención de seguimiento · Subjetivo, Objetivo, Análisis y Plan.
                     </p>
                   </div>
+                  <app-clinical-listen-btn
+                    listenId="listen-section3"
+                    [text]="section3ListenText()"
+                    [disabled]="!section3ListenText()"
+                    (listenError)="onDictationError($event)"
+                  />
                 </div>
                 <label>
                   S — Subjetivo
@@ -2540,6 +2546,13 @@
                         (dictationError)="onDictationError($event)"
                       />
                     }
+                    <app-clinical-listen-btn
+                      [compact]="true"
+                      listenId="listen-soap-subjective"
+                      [text]="content.soap!.subjective || ''"
+                      [disabled]="!(content.soap!.subjective || '').trim()"
+                      (listenError)="onDictationError($event)"
+                    />
                   </div>
                 </label>
                 <label>
@@ -2558,6 +2571,13 @@
                         (dictationError)="onDictationError($event)"
                       />
                     }
+                    <app-clinical-listen-btn
+                      [compact]="true"
+                      listenId="listen-soap-objective"
+                      [text]="content.soap!.objective || ''"
+                      [disabled]="!(content.soap!.objective || '').trim()"
+                      (listenError)="onDictationError($event)"
+                    />
                   </div>
                 </label>
                 <label>
@@ -2576,6 +2596,13 @@
                         (dictationError)="onDictationError($event)"
                       />
                     }
+                    <app-clinical-listen-btn
+                      [compact]="true"
+                      listenId="listen-soap-assessment"
+                      [text]="content.soap!.assessment || ''"
+                      [disabled]="!(content.soap!.assessment || '').trim()"
+                      (listenError)="onDictationError($event)"
+                    />
                   </div>
                 </label>
                 <label>
@@ -2594,6 +2621,13 @@
                         (dictationError)="onDictationError($event)"
                       />
                     }
+                    <app-clinical-listen-btn
+                      [compact]="true"
+                      listenId="listen-soap-plan"
+                      [text]="content.soap!.plan || ''"
+                      [disabled]="!(content.soap!.plan || '').trim()"
+                      (listenError)="onDictationError($event)"
+                    />
                   </div>
                 </label>
               </section>
@@ -2606,6 +2640,12 @@
                       <p class="muted small">Historia guardada (solo lectura).</p>
                     }
                   </div>
+                  <app-clinical-listen-btn
+                    listenId="listen-section3"
+                    [text]="section3ListenText()"
+                    [disabled]="!section3ListenText()"
+                    (listenError)="onDictationError($event)"
+                  />
                 </div>
                 <label>
                   Motivo de consulta
@@ -2623,6 +2663,13 @@
                         (dictationError)="onDictationError($event)"
                       />
                     }
+                    <app-clinical-listen-btn
+                      [compact]="true"
+                      listenId="listen-motive"
+                      [text]="content.careMinimum.motive || ''"
+                      [disabled]="!(content.careMinimum.motive || '').trim()"
+                      (listenError)="onDictationError($event)"
+                    />
                   </div>
                 </label>
                 <label>
@@ -2641,6 +2688,13 @@
                         (dictationError)="onDictationError($event)"
                       />
                     }
+                    <app-clinical-listen-btn
+                      [compact]="true"
+                      listenId="listen-presentIllness"
+                      [text]="content.careMinimum.presentIllness || ''"
+                      [disabled]="!(content.careMinimum.presentIllness || '').trim()"
+                      (listenError)="onDictationError($event)"
+                    />
                   </div>
                 </label>
 
@@ -2697,6 +2751,13 @@
                         (dictationError)="onDictationError($event)"
                       />
                     }
+                    <app-clinical-listen-btn
+                      [compact]="true"
+                      listenId="listen-systemsReview"
+                      [text]="content.careMinimum.systemsReview || ''"
+                      [disabled]="!(content.careMinimum.systemsReview || '').trim()"
+                      (listenError)="onDictationError($event)"
+                    />
                   </div>
                 </label>
 
@@ -2722,6 +2783,13 @@
                         (dictationError)="onDictationError($event)"
                       />
                     }
+                    <app-clinical-listen-btn
+                      [compact]="true"
+                      listenId="listen-mentalExam"
+                      [text]="content.mentalExam.narrative || ''"
+                      [disabled]="!(content.mentalExam.narrative || '').trim()"
+                      (listenError)="onDictationError($event)"
+                    />
                   </div>
                 </label>
 
@@ -2741,6 +2809,13 @@
                         (dictationError)="onDictationError($event)"
                       />
                     }
+                    <app-clinical-listen-btn
+                      [compact]="true"
+                      listenId="listen-impression"
+                      [text]="content.assessment.impressionNarrative || ''"
+                      [disabled]="!(content.assessment.impressionNarrative || '').trim()"
+                      (listenError)="onDictationError($event)"
+                    />
                   </div>
                 </label>
 
