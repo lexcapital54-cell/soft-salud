@@ -36,6 +36,7 @@ import { ClinicalApiService } from './clinical-api.service';
 import { AUTOSAVE_TIMEOUT_MS, ClinicalAutosaveService } from './clinical-autosave.service';
 import { HceLocalDraftService, HceLocalDraft } from './hce-local-draft.service';
 import { OpenEncountersAlert } from './open-encounters-alert';
+import { VoiceDictationBtn } from './voice-dictation-btn';
 import { formatClinicalFreeText } from './clinical-text-format';
 import { ConsentSigner } from './consent-signer';
 import { DentalOdontogram } from './dentistry/dental-odontogram';
@@ -238,6 +239,7 @@ function emptyContent(): ClinicalContent {
     ConsentSigner,
     DentalOdontogram,
     OpenEncountersAlert,
+    VoiceDictationBtn,
   ],
   providers: [ClinicalAutosaveService],
   templateUrl: './clinical-history.html',
@@ -1519,6 +1521,10 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   /** Cuerpo clínico editable aunque el servidor tarde en abrir la atención. */
   clinicalFormDisabled(): boolean {
     return !this.canWrite() || this.isLocked();
+  }
+
+  onDictationError(message: string) {
+    this.error.set(message);
   }
 
   private draftScopeId(): string {

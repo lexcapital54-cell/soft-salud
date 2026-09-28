@@ -103,6 +103,14 @@
         @if (patientSignaturePreview(); as sig) {
           <img class="sign-preview" [src]="sig" alt="Vista previa firma paciente" />
         }
+        <button
+          type="button"
+          class="ghost pad-clear"
+          (click)="clearPatientSignature()"
+          [disabled]="submitting() || !hasPatientSignature()"
+        >
+          Limpiar firma {{ isMinor() ? 'del acudiente' : 'del paciente' }}
+        </button>
         @if (remoteInviteWaiting()) {
           <p class="muted small remote-waiting">
             Esperando firma virtual del paciente…
@@ -178,6 +186,14 @@
             (pointerdown)="ensurePads()"
           ></canvas>
         </div>
+        <button
+          type="button"
+          class="ghost pad-clear"
+          (click)="clearProfessionalSignature()"
+          [disabled]="submitting() || !hasProfessionalSignature()"
+        >
+          Limpiar firma de la Dra
+        </button>
       </div>
     </div>
     <p class="muted small">

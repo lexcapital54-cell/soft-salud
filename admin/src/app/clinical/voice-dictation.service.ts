@@ -15,7 +15,7 @@ type SpeechRecognitionInstance = {
   continuous: boolean;
   interimResults: boolean;
   onresult: ((event: SpeechResultEvent) => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((event?: { error?: string }) => void) | null;
   onend: (() => void) | null;
 };
 
@@ -101,7 +101,15 @@ export class VoiceDictationService {
       this.setText?.(display);
     };
 
-    recognition.onerror = () => this.stop();
+    recognition.onerror = (event) => {
+      const code = event?.error;
+      if (code === 'not-allowed' || code === 'service-not-allowed') {
+        onError?.('El navegador bloqueó el micrófono. Permita el acceso al micrófono para este sitio y vuelva a intentar.');
+      } else if (code === 'audio-capture') {
+        onError?.('No se detectó un micrófono conectado.');
+      }
+      this.stop();
+    };
     recognition.onend = () => this.stop();
 
     this.activeFieldId.set(fieldId);

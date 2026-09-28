@@ -354,6 +354,12 @@
                   "
                   (focusout)="onClinicalTextBlur($event)"
                 ></textarea>
+                <app-voice-dictation-btn
+                  fieldId="evolutionSituation"
+                  [value]="evolutionCurrentSituation"
+                  (valueChange)="evolutionCurrentSituation = $event"
+                  (dictationError)="onDictationError($event)"
+                />
                 @if (evolutionSituationInherited(); as origin) {
                   <span class="muted small">Pre-llenado desde {{ origin }}. Actualícelo si cambió.</span>
                 }
@@ -372,6 +378,12 @@
                     "
                     (focusout)="onClinicalTextBlur($event)"
                   ></textarea>
+                <app-voice-dictation-btn
+                  fieldId="evolutionNote"
+                  [value]="evolutionNote"
+                  (valueChange)="evolutionNote = $event"
+                  (dictationError)="onDictationError($event)"
+                />
               </label>
               @if (isPhysiotherapyClinic()) {
                 <label
@@ -433,6 +445,12 @@
                       placeholder="Apariencia, conducta, lenguaje, ánimo, pensamiento, percepción, juicio, insight y riesgo (si aplica)…"
                       (focusout)="onClinicalTextBlur($event)"
                     ></textarea>
+                  <app-voice-dictation-btn
+                    fieldId="evolutionMental"
+                    [value]="evolutionMentalExam"
+                    (valueChange)="evolutionMentalExam = $event"
+                    (dictationError)="onDictationError($event)"
+                  />
                 </label>
               }
 
@@ -2508,35 +2526,75 @@
                 </div>
                 <label>
                   S — Subjetivo
-                  <textarea
-                    rows="3"
-                    [(ngModel)]="content.soap!.subjective"
-                    [readonly]="clinicalFormDisabled()"
-                  ></textarea>
+                  <div class="dictation-row">
+                    <textarea
+                      rows="3"
+                      [(ngModel)]="content.soap!.subjective"
+                      [readonly]="clinicalFormDisabled()"
+                    ></textarea>
+                    @if (!clinicalFormDisabled()) {
+                      <app-voice-dictation-btn
+                        fieldId="soap-subjective"
+                        [value]="content.soap!.subjective"
+                        (valueChange)="content.soap!.subjective = $event; onClinicalFieldChange()"
+                        (dictationError)="onDictationError($event)"
+                      />
+                    }
+                  </div>
                 </label>
                 <label>
                   O — Objetivo
-                  <textarea
-                    rows="3"
-                    [(ngModel)]="content.soap!.objective"
-                    [readonly]="clinicalFormDisabled()"
-                  ></textarea>
+                  <div class="dictation-row">
+                    <textarea
+                      rows="3"
+                      [(ngModel)]="content.soap!.objective"
+                      [readonly]="clinicalFormDisabled()"
+                    ></textarea>
+                    @if (!clinicalFormDisabled()) {
+                      <app-voice-dictation-btn
+                        fieldId="soap-objective"
+                        [value]="content.soap!.objective"
+                        (valueChange)="content.soap!.objective = $event; onClinicalFieldChange()"
+                        (dictationError)="onDictationError($event)"
+                      />
+                    }
+                  </div>
                 </label>
                 <label>
                   A — Análisis / evaluación
-                  <textarea
-                    rows="3"
-                    [(ngModel)]="content.soap!.assessment"
-                    [readonly]="clinicalFormDisabled()"
-                  ></textarea>
+                  <div class="dictation-row">
+                    <textarea
+                      rows="3"
+                      [(ngModel)]="content.soap!.assessment"
+                      [readonly]="clinicalFormDisabled()"
+                    ></textarea>
+                    @if (!clinicalFormDisabled()) {
+                      <app-voice-dictation-btn
+                        fieldId="soap-assessment"
+                        [value]="content.soap!.assessment"
+                        (valueChange)="content.soap!.assessment = $event; onClinicalFieldChange()"
+                        (dictationError)="onDictationError($event)"
+                      />
+                    }
+                  </div>
                 </label>
                 <label>
                   P — Plan
-                  <textarea
-                    rows="3"
-                    [(ngModel)]="content.soap!.plan"
-                    [readonly]="clinicalFormDisabled()"
-                  ></textarea>
+                  <div class="dictation-row">
+                    <textarea
+                      rows="3"
+                      [(ngModel)]="content.soap!.plan"
+                      [readonly]="clinicalFormDisabled()"
+                    ></textarea>
+                    @if (!clinicalFormDisabled()) {
+                      <app-voice-dictation-btn
+                        fieldId="soap-plan"
+                        [value]="content.soap!.plan"
+                        (valueChange)="content.soap!.plan = $event; onClinicalFieldChange()"
+                        (dictationError)="onDictationError($event)"
+                      />
+                    }
+                  </div>
                 </label>
               </section>
             } @else {
@@ -2551,19 +2609,39 @@
                 </div>
                 <label>
                   Motivo de consulta
-                  <textarea
+                  <div class="dictation-row">
+                    <textarea
                       rows="2"
                       [(ngModel)]="content.careMinimum.motive"
                       [readonly]="clinicalFormDisabled()"
                     ></textarea>
+                    @if (!clinicalFormDisabled()) {
+                      <app-voice-dictation-btn
+                        fieldId="motive"
+                        [value]="content.careMinimum.motive"
+                        (valueChange)="content.careMinimum.motive = $event; onClinicalFieldChange()"
+                        (dictationError)="onDictationError($event)"
+                      />
+                    }
+                  </div>
                 </label>
                 <label>
                   Enfermedad actual
-                  <textarea
+                  <div class="dictation-row">
+                    <textarea
                       rows="3"
                       [(ngModel)]="content.careMinimum.presentIllness"
                       [readonly]="clinicalFormDisabled()"
                     ></textarea>
+                    @if (!clinicalFormDisabled()) {
+                      <app-voice-dictation-btn
+                        fieldId="presentIllness"
+                        [value]="content.careMinimum.presentIllness"
+                        (valueChange)="content.careMinimum.presentIllness = $event; onClinicalFieldChange()"
+                        (dictationError)="onDictationError($event)"
+                      />
+                    }
+                  </div>
                 </label>
 
                 <h4>Antecedentes</h4>
@@ -2605,11 +2683,21 @@
 
                 <label>
                   Historia psicosocial
-                  <textarea
+                  <div class="dictation-row">
+                    <textarea
                       rows="4"
                       [(ngModel)]="content.careMinimum.systemsReview"
                       [readonly]="clinicalFormDisabled()"
                     ></textarea>
+                    @if (!clinicalFormDisabled()) {
+                      <app-voice-dictation-btn
+                        fieldId="systemsReview"
+                        [value]="content.careMinimum.systemsReview"
+                        (valueChange)="content.careMinimum.systemsReview = $event; onClinicalFieldChange()"
+                        (dictationError)="onDictationError($event)"
+                      />
+                    }
+                  </div>
                 </label>
 
                 <h4>Examen mental</h4>
@@ -2619,21 +2707,41 @@
                 </p>
                 <label>
                   Descripción libre
-                  <textarea
+                  <div class="dictation-row">
+                    <textarea
                       rows="6"
                       [(ngModel)]="content.mentalExam.narrative"
                       placeholder="Apariencia, conducta, lenguaje, ánimo, pensamiento, percepción, juicio, insight y riesgo (si aplica)…"
                       [readonly]="clinicalFormDisabled()"
                     ></textarea>
+                    @if (!clinicalFormDisabled()) {
+                      <app-voice-dictation-btn
+                        fieldId="mentalExam"
+                        [value]="content.mentalExam.narrative || ''"
+                        (valueChange)="content.mentalExam.narrative = $event; onClinicalFieldChange()"
+                        (dictationError)="onDictationError($event)"
+                      />
+                    }
+                  </div>
                 </label>
 
                 <label>
                   Impresión diagnóstica (narrativa)
-                  <textarea
+                  <div class="dictation-row">
+                    <textarea
                       rows="3"
                       [(ngModel)]="content.assessment.impressionNarrative"
                       [readonly]="clinicalFormDisabled()"
                     ></textarea>
+                    @if (!clinicalFormDisabled()) {
+                      <app-voice-dictation-btn
+                        fieldId="impression"
+                        [value]="content.assessment.impressionNarrative"
+                        (valueChange)="content.assessment.impressionNarrative = $event; onClinicalFieldChange()"
+                        (dictationError)="onDictationError($event)"
+                      />
+                    }
+                  </div>
                 </label>
 
                 <!-- Riesgo suicida integrado en examen mental (ya no bloque aparte). -->
@@ -3226,6 +3334,7 @@
                 [initialPatientSignature]="consentDraftPatientSignature()"
                 [careModality]="modality"
                 (professionalSigned)="onProfessionalSigned($event)"
+                (professionalCleared)="clearSignature()"
                 (patientSignatureChanged)="onPatientSignatureChanged($event)"
                 (sealed)="onConsentSealed()"
                 (flagsChanged)="onConsentFlagsChanged()"

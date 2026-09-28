@@ -69,6 +69,8 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
   readonly flagsChanged = output<void>();
   /** Avisa a la HC del trazo de la Dra para reflejarlo en el otro panel. */
   readonly professionalSigned = output<string>();
+  /** Avisa a la HC que la Dra borró su firma en este lienzo. */
+  readonly professionalCleared = output<void>();
   /** Avisa a la HC cuando el paciente/acudiente firma (sidebar y cierre). */
   readonly patientSignatureChanged = output<string | null>();
 
@@ -101,6 +103,8 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
   private ready = false;
   /** Evita reaplicar en bucle la firma que llega desde la HC. */
   private appliedProfessionalSignature: string | null = null;
+  /** Tras «Limpiar firma», no se vuelve a pintar la firma compartida hasta que la Dra firme de nuevo. */
+  private readonly professionalCleared$ = signal(false);
   private remotePollTimer: ReturnType<typeof setInterval> | null = null;
   private remotePollStartedAt = 0;
 
@@ -141,7 +145,11 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
   }
 
   hasProfessionalSignature() {
-    return this.hasProfessionalStroke() || !!this.professionalSignature();
+    return this.hasProfessionalStroke() || !!this.sharedProfessionalSignature();
+  }
+
+  private sharedProfessionalSignature(): string | null {
+    return this.professionalCleared$() ? null : this.professionalSignature();
   }
 
   /** Vista previa diligenciada (se recalcula en cada CD al editar firmante). */
@@ -183,7 +191,7 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
     });
 
     effect(() => {
-      const incoming = this.professionalSignature();
+      const incoming = this.sharedProfessionalSignature();
       if (!incoming || incoming === this.appliedProfessionalSignature) return;
       this.appliedProfessionalSignature = incoming;
       this.drawProfessionalSignature(incoming);
@@ -356,10 +364,8 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
   onSelectTemplate(id: string) {
     this.selectedId.set(id);
     this.message.set('');
-    this.clearSignatures();
     // La firma de la Dra es una sola para toda la atención: se conserva.
-    const shared = this.professionalSignature();
-    if (shared) this.drawProfessionalSignature(shared);
+    this.clearPatientSignature();
   }
 
   /** Selecciona plantilla por código (p. ej. desde el botón de disentimiento). */
@@ -377,19 +383,24 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
   }
 
   clearSignatures() {
+    this.clearPatientSignature();
+    this.clearProfessionalSignature();
+  }
+
+  clearPatientSignature() {
     this.patientPad?.clear();
     this.hasPatientStroke.set(false);
     this.patientSignaturePreview.set(null);
     this.clearStoredPatientSignature();
     this.patientSignatureChanged.emit(null);
-    const shared = this.professionalSignature();
-    if (shared) {
-      this.drawProfessionalSignature(shared);
-    } else {
-      this.professionalPad?.clear();
-      this.hasProfessionalStroke.set(false);
-      this.appliedProfessionalSignature = null;
-    }
+  }
+
+  clearProfessionalSignature() {
+    this.professionalPad?.clear();
+    this.hasProfessionalStroke.set(false);
+    this.appliedProfessionalSignature = null;
+    this.professionalCleared$.set(true);
+    this.professionalCleared.emit();
   }
 
   /** Genera enlace de firma virtual y abre WhatsApp con el teléfono del paciente. */
@@ -555,7 +566,7 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
     const professionalSignature =
       this.professionalPad && !this.professionalPad.isEmpty()
         ? this.professionalPad.toDataURL('image/png')
-        : this.professionalSignature();
+        : this.sharedProfessionalSignature();
     if (!professionalSignature) {
       this.error.set('Falta la firma de la Dra / profesional.');
       return false;
@@ -724,9 +735,10 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
       if (!has || !pad || pad.isEmpty()) return;
       const dataUrl = pad.toDataURL('image/png');
       this.appliedProfessionalSignature = dataUrl;
+      this.professionalCleared$.set(false);
       this.professionalSigned.emit(dataUrl);
     });
-    const incoming = this.professionalSignature();
+    const incoming = this.sharedProfessionalSignature();
     if (incoming) this.drawProfessionalSignature(incoming);
     this.restoreStoredPatientSignature();
     const draft = this.initialPatientSignature();
@@ -771,7 +783,7 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
       this.hasPatientStroke.set(false);
       if (patientSnapshot) this.drawPatientSignature(patientSnapshot);
     }
-    const shared = this.professionalSignature();
+    const shared = this.sharedProfessionalSignature();
     if (this.professionalPadCanvas?.nativeElement) {
       this.fitCanvas(this.professionalPadCanvas.nativeElement);
       if (shared) {
