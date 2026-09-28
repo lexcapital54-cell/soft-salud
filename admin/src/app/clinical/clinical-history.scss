@@ -561,6 +561,17 @@ button:disabled {
   font-weight: 600;
 }
 
+label.check-inline {
+  flex-direction: row;
+  align-items: center;
+  align-self: end;
+  gap: 8px;
+  font-weight: 600;
+  color: #00576a;
+  cursor: pointer;
+}
+label.check-inline input { width: auto; margin: 0; }
+
 .control-split.split {
   display: grid;
   grid-template-columns: minmax(280px, 5fr) 7fr;

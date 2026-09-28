@@ -941,7 +941,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   /** Bloques del ortodoncista; en odontología solo aparecen si la historia ya los traía. */
   showOrthoSpecialistFields() {
-    return this.isOrthoClinic() || hasOrthoSpecialistData(this.dental());
+    return this.isOrthoClinic() || this.dental().includeOrtho || hasOrthoSpecialistData(this.dental());
   }
 
   /** Módulos de la historia odontológica (menú superior). */
@@ -1489,7 +1489,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   private dentalSearchTimer?: ReturnType<typeof setTimeout>;
 
   private catalogScope() {
-    return this.isOrthoClinic() ? 'ORTHODONTICS' : undefined;
+    return this.showOrthoModule() ? 'ORTHODONTICS' : undefined;
   }
 
   onDentalCieInput(index: number, value: string) {

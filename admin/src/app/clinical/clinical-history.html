@@ -1321,6 +1321,17 @@
                   }
                 </select>
               </label>
+              @if (dental().service !== 'ORTODONCIA') {
+                <label class="check-inline" title="Activa la evaluación ortodóntica, cefalometría, odontograma de ortodoncia y controles para este paciente">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="dental().includeOrtho"
+                    [disabled]="clinicalFormDisabled()"
+                    (ngModelChange)="onClinicalFieldChange()"
+                  />
+                  Incluir ortodoncia
+                </label>
+              }
             }
             <label
               >Modalidad
@@ -2478,7 +2489,7 @@
                   </p>
                   @if (showOrthoSpecialistFields()) {
                     <h4 class="odo-sub">Análisis cefalométrico</h4>
-                    <details class="ceph-details" [open]="isOrthoClinic() || !!dental().orthodontics.cephTracing.attachmentId">
+                    <details class="ceph-details" [open]="isOrthoClinic() || dental().includeOrtho || !!dental().orthodontics.cephTracing.attachmentId">
                       <summary>
                         Trazado cefalométrico sobre la radiografía lateral
                         @if (dental().orthodontics.cephTracing.tracedAt) {
