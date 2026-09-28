@@ -854,7 +854,7 @@
                 · Contacto emergencia: {{ patientForm.emergencyContactName || '—' }}
               </span>
               <button type="button" class="ghost" (click)="dentalAdminOpen.set(!dentalAdminOpen())">
-                {{ dentalAdminOpen() ? 'Ocultar datos de contacto, EPS y foto ▴' : 'Ver y editar contacto, EPS, responsable y foto ▾' }}
+                {{ dentalAdminOpen() ? 'Ocultar datos de contacto y EPS ▴' : 'Ver y editar contacto, EPS y responsable ▾' }}
               </button>
             </div>
           }
@@ -943,6 +943,7 @@
             <label>Tel. emergencia <input [(ngModel)]="patientForm.emergencyContactPhone" /></label>
             <label>Parentesco <input [(ngModel)]="patientForm.emergencyRelationship" /></label>
           </div>
+          }
 
           <div class="patient-photo-box">
             <div class="patient-photo-frame">
@@ -1026,8 +1027,6 @@
                 </div>
               </div>
             </div>
-          }
-
           }
 
           <div class="row-actions">
