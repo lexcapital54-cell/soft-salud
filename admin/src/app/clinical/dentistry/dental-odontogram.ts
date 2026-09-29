@@ -400,6 +400,51 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
   'SELLANTE',
 ];
 
+interface BondingAlert {
+  tooth: number;
+  level: 'stop' | 'warn' | 'info';
+  title: string;
+  text: string;
+}
+
+const ATTACHMENT_MARKS: ToothMark[] = ['BRACKET', 'BANDA', 'TUBO', 'BOTON'];
+
+function surfacesWith(rec: ToothRecord, state: SurfaceState) {
+  return (Object.entries(rec.surfaces || {}) as Array<[ToothSurface, SurfaceState]>)
+    .filter(([, s]) => s === state)
+    .map(([k]) => SURFACE_LABELS[k].toLowerCase());
+}
+
+function bondingAlertsFor(tooth: number, rec: ToothRecord): BondingAlert[] {
+  const cond = new Set(rec.conditions || []);
+  const marks = new Set(rec.marks || []);
+  const out: BondingAlert[] = [];
+  const add = (level: BondingAlert['level'], title: string, text: string) => out.push({ tooth, level, title, text });
+
+  if (cond.has('AUSENTE')) {
+    if (ATTACHMENT_MARKS.some((m) => marks.has(m))) add('stop', 'Diente ausente con aditamento', 'revisar el odontograma: hay un bracket, banda, tubo o botón registrado en un diente ausente.');
+    return out;
+  }
+  if (cond.has('EXTRACCION_INDICADA')) add('stop', 'Extracción indicada', 'no cementar aditamentos hasta definir la exodoncia dentro del plan.');
+  const caries = surfacesWith(rec, 'CARIES');
+  if (caries.length) add('stop', 'Caries activa', `superficie ${caries.join(', ')}. Tratar antes de cementar; el grabado ácido sobre caries acelera la desmineralización.`);
+  if (cond.has('CORONA') || cond.has('PROTESIS')) {
+    add('warn', cond.has('CORONA') ? 'Corona' : 'Prótesis fija', 'si es cerámica: ácido fluorhídrico 9,6 % y silano; si es metálica o de zirconio: arenado con óxido de aluminio y primer metálico / MDP. Advertir riesgo de fractura al descementar.');
+  }
+  if (cond.has('IMPLANTE')) add('warn', 'Implante', 'no se desplaza con ortodoncia; úselo solo como anclaje. Preparar la corona según su material (arenado y primer).');
+  const restored = surfacesWith(rec, 'RESTAURACION');
+  if (restored.includes(SURFACE_LABELS.V.toLowerCase())) add('warn', 'Restauración vestibular', 'asperizar la resina con fresa o arenado y aplicar adhesivo; si es amalgama, arenado y primer metálico.');
+  const fractures = surfacesWith(rec, 'FRACTURA');
+  if (fractures.length) add('warn', 'Fractura', `superficie ${fractures.join(', ')}. Valorar restauración antes de cementar.`);
+  if (marks.has('MOVILIDAD')) add('warn', 'Movilidad', 'valoración periodontal antes de aplicar fuerzas; preferir fuerzas ligeras.');
+  if (marks.has('FISTULA') || marks.has('LESION')) add('warn', marks.has('FISTULA') ? 'Fístula' : 'Lesión', 'resolver el proceso infeccioso o la lesión antes de iniciar fuerzas.');
+  if (cond.has('ENDODONCIA')) add('info', 'Endodoncia', 'diente más frágil; fuerzas ligeras y control radiográfico de reabsorción radicular.');
+  if (cond.has('INCLUIDO')) add('info', 'Diente incluido', 'evaluar exposición quirúrgica y tracción con botón o bracket.');
+  if (cond.has('TEMPORAL')) add('info', 'Diente temporal', 'evitar bandas o brackets salvo como anclaje transitorio; vigilar su exfoliación.');
+  if (cond.has('PROTESIS_REMOVIBLE')) add('info', 'Prótesis removible', 'coordinar su ajuste o retiro con la aparatología.');
+  return out;
+}
+
 @Component({
   selector: 'app-dental-odontogram',
   imports: [FormsModule, NgTemplateOutlet],
@@ -489,7 +534,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                         [class.link-target]="!!linkMode()"
                       >
                         @if (row.upper) {
-                          <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" (click)="onToothClick(tooth, $event)" (contextmenu)="onToothContext(tooth, $event)">{{ tooth }}</button>
+                          <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" [class.alert-warn]="alertLevel(tooth) === 'warn'" [class.alert-stop]="alertLevel(tooth) === 'stop'" (click)="onToothClick(tooth, $event)" (contextmenu)="onToothContext(tooth, $event)">{{ tooth }}</button>
                           @if (showSurfaces()) {
                             <ng-container *ngTemplateOutlet="squareTpl; context: { $implicit: tooth, small: row.small }" />
                           }
@@ -672,7 +717,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                           @if (showSurfaces()) {
                             <ng-container *ngTemplateOutlet="squareTpl; context: { $implicit: tooth, small: row.small }" />
                           }
-                          <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" (click)="onToothClick(tooth, $event)" (contextmenu)="onToothContext(tooth, $event)">{{ tooth }}</button>
+                          <button type="button" class="odg-num" [class.on]="selected() === tooth" [class.marked]="!!record(tooth)" [class.alert-warn]="alertLevel(tooth) === 'warn'" [class.alert-stop]="alertLevel(tooth) === 'stop'" (click)="onToothClick(tooth, $event)" (contextmenu)="onToothContext(tooth, $event)">{{ tooth }}</button>
                         }
                       </div>
                     }
@@ -1055,6 +1100,22 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                     </button>
                   }
                 </div>
+              </section>
+              <section class="odg-card odg-card-wide odg-bond" [class.odg-empty]="!bondingAlerts().length">
+                <h4><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L22 20 H2 Z M12 10 V14 M12 17 V17.5" /></svg>Capa base odontológica · protocolo de adhesión</h4>
+                @if (bondingAlerts().length) {
+                  <ul class="odg-bond-list">
+                    @for (a of bondingAlerts(); track a.tooth + a.text) {
+                      <li [attr.data-level]="a.level">
+                        <button type="button" class="odg-bond-tooth" (click)="selected.set(a.tooth)" [attr.aria-label]="'Seleccionar diente ' + a.tooth">{{ a.tooth }}</button>
+                        <span><b>{{ a.title }}:</b> {{ a.text }}</span>
+                      </li>
+                    }
+                  </ul>
+                  <p class="odg-hint">Sugerencias generadas desde el odontograma general. Prevalece el criterio clínico del ortodoncista.</p>
+                } @else {
+                  <p class="odg-hint">Sin restauraciones ni hallazgos que modifiquen la cementación de aditamentos.</p>
+                }
               </section>
             }
             <section class="odg-card" [class.odg-empty]="!data().odontogramNotes?.trim()">
@@ -1458,6 +1519,13 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
 
     .odg-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
     .odg-card-wide { grid-column: 1 / -1; }
+    .odg-bond-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 6px 12px; margin: 0; padding: 0; list-style: none; }
+    .odg-bond-list li { display: flex; align-items: flex-start; gap: 8px; padding: 7px 10px; border-left: 4px solid #0ea5e9; border-radius: 6px; background: #f0f9ff; font-size: 12.5px; line-height: 1.35; color: #0c4a6e; }
+    .odg-bond-list li[data-level='warn'] { border-color: #f59e0b; background: #fffbeb; color: #78350f; }
+    .odg-bond-list li[data-level='stop'] { border-color: #dc2626; background: #fef2f2; color: #7f1d1d; }
+    .odg-bond-tooth { flex: 0 0 auto; min-width: 30px; height: 24px; border: 1px solid currentColor; border-radius: 12px; background: #fff; color: inherit; font-weight: 800; font-size: 12px; cursor: pointer; }
+    .odg-num.alert-warn::after, .odg-num.alert-stop::after { content: ''; position: absolute; top: 1px; right: 1px; width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 0 2px #fff; }
+    .odg-num.alert-stop::after { background: #dc2626; }
     .odg-wire-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 8px 18px; }
     .odg-wire-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
     .odg-wire-label { font-size: 12px; font-weight: 700; color: var(--ink); min-width: 92px; }
@@ -1671,6 +1739,33 @@ export class DentalOdontogram implements OnDestroy {
     this.version();
     return BRACKET_STYLES[this.data().orthoChart.bracketType] ?? DEFAULT_BRACKET;
   });
+
+  /** Hallazgos del odontograma general que cambian la cementación o la aplicación de fuerzas. */
+  readonly bondingAlerts = computed<BondingAlert[]>(() => {
+    this.version();
+    if (!this.orthoMode()) return [];
+    const out: BondingAlert[] = [];
+    const order = { stop: 0, warn: 1, info: 2 };
+    for (const [key, rec] of Object.entries(this.data().odontogram)) {
+      const tooth = Number(key);
+      if (!rec || !Number.isFinite(tooth)) continue;
+      out.push(...bondingAlertsFor(tooth, rec));
+    }
+    return out.sort((a, b) => order[a.level] - order[b.level] || a.tooth - b.tooth);
+  });
+
+  private readonly alertLevels = computed(() => {
+    const map = new Map<number, BondingAlert['level']>();
+    for (const a of this.bondingAlerts()) {
+      if (a.level === 'info') continue;
+      if (map.get(a.tooth) !== 'stop') map.set(a.tooth, a.level);
+    }
+    return map;
+  });
+
+  alertLevel(tooth: number) {
+    return this.alertLevels().get(tooth) ?? null;
+  }
 
   hasAppliance(key: string) {
     this.version();
