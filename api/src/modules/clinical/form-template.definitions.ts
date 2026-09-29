@@ -282,6 +282,10 @@ export const DENTISTRY_CONTENT_DEFAULTS = {
       diastemas: '',
       dentalMidline: '',
       curveOfSpee: '',
+      crossBiteSide: '',
+      upperMidline: '',
+      lowerMidline: '',
+      lowerCrownHeight: '',
     },
     habits: {},
     cephalometry: {

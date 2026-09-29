@@ -70,6 +70,25 @@ function crownPath(from: number, to: number, cusps: number, edge: number, base: 
 const S = 10;
 const LX = 118;
 const LY = 118;
+const INC_RANGE: Record<'overjet' | 'overbite', [number, number]> = { overjet: [-6, 12], overbite: [-6, 9] };
+const DEFAULT_CROWN = 9;
+
+/** Vista frontal transversal: centro facial y px por mm de desviación de línea media. */
+const FACIAL_X = 170;
+const MID_S = 4;
+type CrossSide = 'Derecha' | 'Izquierda';
+type MidlineField = 'upperMidline' | 'lowerMidline';
+
+function toNum(raw: string | null | undefined): number | null {
+  const text = (raw || '').trim().replace(',', '.');
+  if (!text) return null;
+  const v = Number(text);
+  return Number.isFinite(v) ? v : null;
+}
+
+function fmtMm(v: number) {
+  return String(Object.is(v, -0) ? 0 : v).replace('.', ',');
+}
 
 @Component({
   selector: 'app-ortho-occlusion-map',
@@ -81,8 +100,21 @@ const LY = 118;
           <figure class="occ-side">
             <figcaption>
               <strong>Lado {{ side.label }}</strong>
-              <span>Molar: <b [attr.data-cls]="value(side.key, 'molar')">{{ value(side.key, 'molar') || '—' }}</b></span>
-              <span>Canino: <b [attr.data-cls]="value(side.key, 'canine')">{{ value(side.key, 'canine') || '—' }}</b></span>
+              @for (rel of relations; track rel) {
+                <span class="occ-seg-row">
+                  {{ rel === 'molar' ? 'Molar' : 'Canino' }}
+                  <span class="occ-seg" role="group" [attr.aria-label]="(rel === 'molar' ? 'Clase molar ' : 'Clase canina ') + side.label">
+                    @for (c of classes; track c) {
+                      <button type="button" [attr.data-cls]="c" [class.on]="value(side.key, rel) === c" [disabled]="disabled()" (click)="pick(side.key, rel, c)">
+                        {{ c.replace('Clase ', '') }}
+                      </button>
+                    }
+                  </span>
+                  @if (value(side.key, rel) === 'No evaluable') {
+                    <em>No evaluable</em>
+                  }
+                </span>
+              }
             </figcaption>
             <svg [attr.viewBox]="'0 0 ' + W + ' 176'" class="occ-svg" role="group" [attr.aria-label]="'Oclusión lado ' + side.label">
               <rect x="0" y="0" [attr.width]="W" height="176" class="occ-bg" />
@@ -190,7 +222,115 @@ const LY = 118;
                 <span class="lbl">{{ m.label }}</span>
                 <span class="num">{{ m.text }}</span>
                 <span class="msg">{{ m.message }}</span>
+                <label [class]="'occ-range ' + m.key">
+                  <input
+                    type="range"
+                    [min]="m.min"
+                    [max]="m.max"
+                    step="0.5"
+                    [value]="m.slider"
+                    [disabled]="disabled()"
+                    [attr.aria-label]="m.label + ' en milímetros'"
+                    (input)="setIncMeasure(m.key, $any($event.target).value)"
+                    (change)="changed.emit()"
+                  />
+                  <span class="occ-range-scale"><i>{{ m.min }} mm</i><i>{{ m.max }} mm</i></span>
+                </label>
               </div>
+            }
+            @let pct = overbitePercent();
+            <div class="occ-pct">
+              <span>
+                Overbite en porcentaje:
+                <b>{{ pct === null ? '—' : pct + ' %' }}</b>
+                de la corona del incisivo inferior
+              </span>
+              <label>
+                Altura corona inferior
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  [value]="intraoral().lowerCrownHeight"
+                  [placeholder]="DEFAULT_CROWN + ''"
+                  [readonly]="disabled()"
+                  (input)="setCrownHeight($any($event.target).value)"
+                  (change)="changed.emit()"
+                />
+                mm
+              </label>
+            </div>
+          </div>
+        </div>
+      </figure>
+
+      <figure class="occ-trans">
+        <figcaption>
+          <strong>Análisis transversal</strong>
+          <span>Vista frontal. Haga clic en los molares de un lado para marcar mordida cruzada posterior; mueva los controles para ubicar las líneas medias.</span>
+        </figcaption>
+        <div class="occ-trans-body">
+          <svg viewBox="0 0 340 170" class="occ-trans-svg" role="group" aria-label="Análisis transversal, vista frontal">
+            <rect x="0" y="0" width="340" height="170" class="occ-bg" />
+            <text x="8" y="14" class="occ-dir">derecha del paciente</text>
+            <text x="332" y="14" class="occ-dir" text-anchor="end">izquierda del paciente</text>
+            <line x1="170" y1="18" x2="170" y2="160" class="occ-facial" />
+            <text x="174" y="164" class="occ-dir">línea media facial</text>
+            @for (t of frontTeeth(); track t.id) {
+              <rect [attr.x]="t.x" [attr.y]="t.y" [attr.width]="t.w" [attr.height]="t.h" [attr.rx]="t.rx" class="occ-ft" [class.upper]="t.upper" />
+            }
+            @let um = midlineX('upperMidline');
+            @let lm = midlineX('lowerMidline');
+            <line [attr.x1]="um" y1="34" [attr.x2]="um" y2="86" class="occ-mid upper" />
+            <line [attr.x1]="lm" y1="84" [attr.x2]="lm" y2="136" class="occ-mid lower" />
+            @for (s of crossSides; track s.key) {
+              @let crossed = isCrossed(s.key);
+              <g
+                class="occ-molars"
+                [class.crossed]="crossed"
+                [class.off]="disabled()"
+                [attr.role]="disabled() ? null : 'button'"
+                [attr.tabindex]="disabled() ? null : 0"
+                [attr.aria-pressed]="crossed"
+                [attr.aria-label]="'Mordida cruzada posterior ' + s.label"
+                (click)="toggleCross(s.key)"
+                (keydown.enter)="toggleCross(s.key)"
+                (keydown.space)="$event.preventDefault(); toggleCross(s.key)"
+              >
+                <title>{{ crossed ? 'Mordida cruzada posterior ' + s.label + ' (clic para quitar)' : 'Clic para marcar mordida cruzada posterior ' + s.label }}</title>
+                <rect [attr.x]="s.cx - 36" y="30" width="72" height="110" rx="10" class="occ-molars-hit" />
+                <path [attr.d]="molarPath(s.cx, s.outward, true, crossed)" class="occ-ft upper molar" />
+                <path [attr.d]="molarPath(s.cx, s.outward, false, crossed)" class="occ-ft molar" />
+                <text [attr.x]="s.cx" y="156" text-anchor="middle" class="occ-molars-lbl">{{ crossed ? 'Cruzada' : 'Normal' }}</text>
+              </g>
+            }
+          </svg>
+          <div class="occ-trans-values">
+            <div class="occ-val" [attr.data-state]="crossState()">
+              <span class="lbl">Mordida cruzada posterior</span>
+              <span class="num small">{{ crossText() }}</span>
+            </div>
+            @for (m of midlines; track m.key) {
+              <div class="occ-val" [attr.data-state]="midlineNum(m.key) === null ? 'empty' : midlineNum(m.key) === 0 ? 'ok' : 'out'">
+                <span class="lbl">{{ m.label }}</span>
+                <span class="num small">{{ midlineText(m.key) }}</span>
+                <label [class]="'occ-range ' + m.cls">
+                  <input
+                    type="range"
+                    min="-6"
+                    max="6"
+                    step="0.5"
+                    [value]="-(midlineNum(m.key) ?? 0)"
+                    [disabled]="disabled()"
+                    [attr.aria-label]="m.label + ' en milímetros'"
+                    (input)="setMidline(m.key, $any($event.target).value)"
+                    (change)="changed.emit()"
+                  />
+                  <span class="occ-range-scale"><i>6 mm der.</i><i>centrada</i><i>6 mm izq.</i></span>
+                </label>
+              </div>
+            }
+            @if (midlineGap() !== null) {
+              <p class="occ-help">Discrepancia entre líneas medias superior e inferior: <b>{{ midlineGap() }} mm</b>.</p>
             }
           </div>
         </div>
@@ -261,6 +401,48 @@ const LY = 118;
     .occ-val .lbl { font-size: 0.75rem; font-weight: 800; color: #334155; text-transform: uppercase; }
     .occ-val .num { font-size: 1.2rem; font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums; }
     .occ-val .msg { font-size: 0.78rem; color: #475569; }
+    .occ-val .num.small { font-size: 0.95rem; }
+    .occ-seg-row { display: inline-flex; align-items: center; gap: 6px; }
+    .occ-seg-row em { font-style: normal; font-size: 0.72rem; color: #64748b; }
+    .occ-seg { display: inline-flex; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #fff; }
+    .occ-seg button { border: 0; border-right: 1px solid #e2e8f0; background: none; padding: 3px 9px; font: inherit; font-size: 0.74rem; font-weight: 700; color: #475569; cursor: pointer; transition: background 0.15s, color 0.15s; }
+    .occ-seg button:last-child { border-right: 0; }
+    .occ-seg button:hover:not(:disabled):not(.on) { background: #f1f5f9; }
+    .occ-seg button:disabled { cursor: default; }
+    .occ-seg button.on[data-cls='Clase I'] { background: #dcfce7; color: #15803d; }
+    .occ-seg button.on[data-cls='Clase II'] { background: #ffedd5; color: #c2410c; }
+    .occ-seg button.on[data-cls='Clase III'] { background: #ede9fe; color: #6d28d9; }
+    .occ-range { grid-column: 1 / -1; display: grid; gap: 2px; margin-top: 2px; }
+    .occ-range input { width: 100%; margin: 0; cursor: pointer; accent-color: #0284c7; }
+    .occ-range.overbite input, .occ-range.lower input { accent-color: #7c3aed; }
+    .occ-range input:disabled { cursor: default; }
+    .occ-range-scale { display: flex; justify-content: space-between; font-size: 0.68rem; color: #94a3b8; }
+    .occ-range-scale i { font-style: normal; }
+    .occ-pct { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 8px 10px; border-radius: 10px; background: #f8fafc; font-size: 0.8rem; color: #475569; }
+    .occ-pct b { color: #6d28d9; font-size: 0.95rem; }
+    .occ-pct label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; }
+    .occ-pct input { width: 52px; padding: 3px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font: inherit; text-align: center; }
+    .occ-trans { margin: 0; border: 1px solid #dbe4ea; border-radius: 12px; background: #fff; padding: 10px; }
+    .occ-trans-body { display: grid; grid-template-columns: minmax(260px, 420px) 1fr; gap: 14px; align-items: center; }
+    @media (max-width: 760px) { .occ-trans-body { grid-template-columns: 1fr; } }
+    .occ-trans-svg { width: 100%; height: auto; display: block; border-radius: 10px; }
+    .occ-trans-values { display: grid; gap: 8px; }
+    .occ-trans-values .occ-val { grid-template-columns: 1fr auto; }
+    .occ-facial { stroke: #f472b6; stroke-width: 1.2; stroke-dasharray: 4 3; }
+    .occ-ft { fill: #fff; stroke: #94a3b8; stroke-width: 1.1; }
+    .occ-ft.upper { fill: #f1f5f9; }
+    .occ-ft.molar { transition: d 0.3s ease; }
+    .occ-mid { stroke-width: 2.4; stroke-linecap: round; transition: x1 0.2s, x2 0.2s; }
+    .occ-mid.upper { stroke: #0284c7; }
+    .occ-mid.lower { stroke: #7c3aed; }
+    .occ-molars { cursor: pointer; outline: none; }
+    .occ-molars-hit { fill: transparent; stroke: transparent; transition: fill 0.15s, stroke 0.15s; }
+    .occ-molars:hover .occ-molars-hit, .occ-molars:focus-visible .occ-molars-hit { fill: rgba(14, 165, 233, 0.08); stroke: #38bdf8; }
+    .occ-molars.crossed .occ-molars-hit { fill: rgba(220, 38, 38, 0.07); stroke: #f87171; }
+    .occ-molars.crossed .occ-ft.upper { fill: #fee2e2; stroke: #dc2626; }
+    .occ-molars.off { cursor: default; pointer-events: none; }
+    .occ-molars-lbl { font: 700 9px system-ui, sans-serif; fill: #64748b; }
+    .occ-molars.crossed .occ-molars-lbl { fill: #b91c1c; }
   `,
 })
 export class OrthoOcclusionMapComponent {
@@ -410,13 +592,154 @@ export class OrthoOcclusionMapComponent {
     const io = this.intraoral();
     return (['overjet', 'overbite'] as const).map((f) => {
       const st = checkMeasure(f === 'overjet' ? 'intraoral.overjet' : 'intraoral.overbite', io[f]);
+      const range = INC_RANGE[f];
       return {
+        key: f,
         label: f === 'overjet' ? 'Overjet' : 'Overbite',
         text: st.value === null ? '—' : `${String(st.value).replace('.', ',')} mm`,
         state: st.state,
-        message: st.state === 'empty' ? 'Arrastre el punto rosado del diagrama.' : st.message,
+        message: st.state === 'empty' ? 'Arrastre el punto rosado o mueva el control.' : st.message,
+        min: range[0],
+        max: range[1],
+        slider: Math.min(range[1], Math.max(range[0], st.value ?? 2)),
       };
     });
+  }
+
+  setIncMeasure(field: 'overjet' | 'overbite', raw: string) {
+    if (this.disabled()) return;
+    this.intraoral()[field] = fmtMm(Number(raw));
+    this.tick.update((v) => v + 1);
+  }
+
+  readonly DEFAULT_CROWN = DEFAULT_CROWN;
+
+  overbitePercent(): number | null {
+    const ob = this.num('overbite');
+    const crown = toNum(this.intraoral().lowerCrownHeight) ?? DEFAULT_CROWN;
+    if (ob === null || crown <= 0) return null;
+    return Math.round((ob / crown) * 100);
+  }
+
+  setCrownHeight(raw: string) {
+    this.intraoral().lowerCrownHeight = raw.trim();
+    this.tick.update((v) => v + 1);
+  }
+
+  // ── Análisis transversal ──
+  readonly classes: AngleClass[] = ['Clase I', 'Clase II', 'Clase III'];
+  readonly crossSides: Array<{ key: CrossSide; label: string; cx: number; outward: 1 | -1 }> = [
+    { key: 'Derecha', label: 'derecha', cx: 40, outward: -1 },
+    { key: 'Izquierda', label: 'izquierda', cx: 300, outward: 1 },
+  ];
+  readonly midlines: Array<{ key: MidlineField; label: string; cls: string }> = [
+    { key: 'upperMidline', label: 'Línea media superior', cls: 'upper' },
+    { key: 'lowerMidline', label: 'Línea media inferior', cls: 'lower' },
+  ];
+
+  isCrossed(side: CrossSide) {
+    this.tick();
+    const io = this.intraoral();
+    if (io.crossBite === 'Posterior bilateral') return true;
+    return io.crossBite === 'Posterior unilateral' && io.crossBiteSide === side;
+  }
+
+  toggleCross(side: CrossSide) {
+    if (this.disabled()) return;
+    const io = this.intraoral();
+    const right = side === 'Derecha' ? !this.isCrossed('Derecha') : this.isCrossed('Derecha');
+    const left = side === 'Izquierda' ? !this.isCrossed('Izquierda') : this.isCrossed('Izquierda');
+    if (right && left) {
+      io.crossBite = 'Posterior bilateral';
+      io.crossBiteSide = 'Bilateral';
+    } else if (right || left) {
+      io.crossBite = 'Posterior unilateral';
+      io.crossBiteSide = right ? 'Derecha' : 'Izquierda';
+    } else {
+      if (io.crossBite.startsWith('Posterior')) io.crossBite = 'No';
+      io.crossBiteSide = '';
+    }
+    this.tick.update((v) => v + 1);
+    this.changed.emit();
+  }
+
+  crossText() {
+    const r = this.isCrossed('Derecha');
+    const l = this.isCrossed('Izquierda');
+    if (r && l) return 'Bilateral';
+    if (r || l) return `Unilateral ${r ? 'derecha' : 'izquierda'}`;
+    const cb = this.intraoral().crossBite;
+    if (cb === 'Posterior unilateral') return 'Unilateral (marque el lado)';
+    if (cb === 'Anterior') return 'No (hay cruzada anterior)';
+    return cb ? 'No' : '—';
+  }
+
+  crossState() {
+    if (this.isCrossed('Derecha') || this.isCrossed('Izquierda') || this.intraoral().crossBite === 'Posterior unilateral') return 'out';
+    return this.intraoral().crossBite ? 'ok' : 'empty';
+  }
+
+  /** Corte frontal de los primeros molares: la cúspide vestibular superior cae por fuera (normal) o por dentro (cruzada). */
+  molarPath(cx: number, outward: 1 | -1, upper: boolean, crossed: boolean) {
+    const c = upper ? cx + outward * (crossed ? -8 : 8) : cx;
+    const x0 = c - 22;
+    const x1 = c + 22;
+    return upper
+      ? `M ${x0} 40 L ${x1} 40 L ${x1} 78 Q ${x1 - 5} 92 ${c + 6} 84 Q ${c} 80 ${c - 6} 84 Q ${x0 + 5} 92 ${x0} 78 Z`
+      : `M ${x0} 132 L ${x1} 132 L ${x1} 94 Q ${x1 - 5} 80 ${c + 6} 88 Q ${c} 92 ${c - 6} 88 Q ${x0 + 5} 80 ${x0} 94 Z`;
+  }
+
+  midlineNum(field: MidlineField): number | null {
+    this.tick();
+    return toNum(this.intraoral()[field]);
+  }
+
+  midlineText(field: MidlineField) {
+    const v = this.midlineNum(field);
+    if (v === null) return '—';
+    if (v === 0) return 'Centrada';
+    return `${fmtMm(Math.abs(v))} mm a la ${v > 0 ? 'derecha' : 'izquierda'}`;
+  }
+
+  /** En vista frontal la derecha del paciente queda a la izquierda de la pantalla. */
+  midlineX(field: MidlineField) {
+    return FACIAL_X - (this.midlineNum(field) ?? 0) * MID_S;
+  }
+
+  midlineGap() {
+    const u = this.midlineNum('upperMidline');
+    const l = this.midlineNum('lowerMidline');
+    if (u === null && l === null) return null;
+    return fmtMm(Math.abs((u ?? 0) - (l ?? 0)));
+  }
+
+  setMidline(field: MidlineField, raw: string) {
+    if (this.disabled()) return;
+    const io = this.intraoral();
+    io[field] = fmtMm(-Number(raw));
+    const u = toNum(io.upperMidline) ?? 0;
+    const l = toNum(io.lowerMidline) ?? 0;
+    const part = (v: number) => (v === 0 ? 'centrada' : `desviada ${fmtMm(Math.abs(v))} mm a la ${v > 0 ? 'derecha' : 'izquierda'}`);
+    io.dentalMidline = u === 0 && l === 0 ? 'Coincide con la línea media facial' : `Superior ${part(u)}; inferior ${part(l)} (respecto a la línea media facial)`;
+    this.tick.update((v) => v + 1);
+  }
+
+  /** Incisivos, caninos y premolares en vista frontal, alineados con su línea media. */
+  frontTeeth() {
+    const out: Array<{ id: string; x: number; y: number; w: number; h: number; rx: number; upper: boolean }> = [];
+    const arch = (upper: boolean, widths: number[], y: number, h: number) => {
+      const m = this.midlineX(upper ? 'upperMidline' : 'lowerMidline');
+      for (const d of [-1, 1]) {
+        let acc = 0;
+        widths.forEach((w, i) => {
+          out.push({ id: `${upper ? 'u' : 'l'}${d}${i}`, x: d > 0 ? m + acc : m - acc - w, y, w, h, rx: 5, upper });
+          acc += w;
+        });
+      }
+    };
+    arch(false, [15, 16, 17, 17, 16], 84, 46);
+    arch(true, [24, 18, 18, 17, 16], 36, 50);
+    return out;
   }
 
   onIncDown(event: PointerEvent) {
@@ -433,8 +756,8 @@ export class OrthoOcclusionMapComponent {
     if (!svg || !ctm) return;
     const pt = new DOMPoint(event.clientX, event.clientY).matrixTransform(ctm.inverse());
     const half = (v: number) => Math.round(v * 2) / 2;
-    const oj = Math.min(12, Math.max(-8, half((pt.x - LX) / S)));
-    const ob = Math.min(9, Math.max(-8, half((pt.y - LY) / S)));
+    const oj = Math.min(INC_RANGE.overjet[1], Math.max(INC_RANGE.overjet[0], half((pt.x - LX) / S)));
+    const ob = Math.min(INC_RANGE.overbite[1], Math.max(INC_RANGE.overbite[0], half((pt.y - LY) / S)));
     const io = this.intraoral();
     io.overjet = String(oj).replace('.', ',');
     io.overbite = String(ob).replace('.', ',');

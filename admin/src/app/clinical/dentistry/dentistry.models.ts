@@ -380,6 +380,13 @@ export interface DentistryContent {
       diastemas: string;
       dentalMidline: string;
       curveOfSpee: string;
+      /** Lado de la mordida cruzada posterior: Derecha, Izquierda o Bilateral. */
+      crossBiteSide: string;
+      /** Desviación en mm respecto a la línea media facial; positivo hacia la derecha del paciente. */
+      upperMidline: string;
+      lowerMidline: string;
+      /** Altura de la corona del incisivo inferior (mm) para expresar el overbite en porcentaje. */
+      lowerCrownHeight: string;
     };
     habits: Record<string, boolean>;
     cephalometry: {
@@ -674,6 +681,10 @@ export function emptyDentistry(): DentistryContent {
         diastemas: '',
         dentalMidline: '',
         curveOfSpee: '',
+        crossBiteSide: '',
+        upperMidline: '',
+        lowerMidline: '',
+        lowerCrownHeight: '',
       },
       habits: {},
       cephalometry: {

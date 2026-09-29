@@ -1107,7 +1107,7 @@ export class HcePdfService {
         ['Overjet', oIntra.overjet],
         ['Overbite', oIntra.overbite],
         ['Mordida abierta', oIntra.openBite],
-        ['Mordida cruzada', oIntra.crossBite],
+        ['Mordida cruzada', [oIntra.crossBite, oIntra.crossBiteSide && oIntra.crossBiteSide !== 'Bilateral' ? `lado ${String(oIntra.crossBiteSide).toLowerCase()}` : ''].filter(Boolean).join(', ')],
         ['Mordida profunda', oIntra.deepBite],
         ['Apiñamiento', oIntra.crowding],
         ['Diastemas', oIntra.diastemas],
