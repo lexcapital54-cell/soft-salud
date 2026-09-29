@@ -95,6 +95,17 @@ function fmtMm(v: number) {
   standalone: true,
   template: `
     <div class="occ">
+      <div class="occ-summary" aria-label="Resumen del análisis de la oclusión">
+        @for (c of summary(); track c.label) {
+          <div class="occ-card" [attr.data-state]="c.state">
+            <span class="occ-card-lbl">{{ c.label }}</span>
+            <span class="occ-card-val">{{ c.value }}</span>
+            @if (c.sub) {
+              <span class="occ-card-sub">{{ c.sub }}</span>
+            }
+          </div>
+        }
+      </div>
       <div class="occ-sides">
         @for (side of sides; track side.key) {
           <figure class="occ-side">
@@ -115,22 +126,51 @@ function fmtMm(v: number) {
                   }
                 </span>
               }
+              @if (photoOf(side.key)) {
+                <button type="button" class="linkish occ-photo-toggle" (click)="togglePhoto(side.key)">
+                  {{ photoShown(side.key) ? 'Ocultar foto' : 'Ver foto lateral' }}
+                </button>
+              }
             </figcaption>
+            @if (photoOf(side.key) && photoShown(side.key)) {
+              <div class="occ-photo">
+                <img [src]="photoOf(side.key)" [alt]="'Fotografía intraoral lateral ' + side.label" loading="lazy" />
+                <span>Foto intraoral · lateral {{ side.label }}</span>
+              </div>
+            }
             <svg [attr.viewBox]="'0 0 ' + W + ' 176'" class="occ-svg" role="group" [attr.aria-label]="'Oclusión lado ' + side.label">
+              <defs>
+                <linearGradient [attr.id]="'occ-enamel-lo-' + side.key" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#ffffff" />
+                  <stop offset="1" stop-color="#f5efe3" />
+                </linearGradient>
+                <linearGradient [attr.id]="'occ-enamel-up-' + side.key" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0" stop-color="#ffffff" />
+                  <stop offset="1" stop-color="#f3ecdd" />
+                </linearGradient>
+                <linearGradient [attr.id]="'occ-gum-lo-' + side.key" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#f4a7a7" />
+                  <stop offset="1" stop-color="#e98b8f" />
+                </linearGradient>
+                <linearGradient [attr.id]="'occ-gum-up-' + side.key" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0" stop-color="#f4a7a7" />
+                  <stop offset="1" stop-color="#e98b8f" />
+                </linearGradient>
+              </defs>
               <rect x="0" y="0" [attr.width]="W" height="176" class="occ-bg" />
-              <path [attr.d]="gum(LOWER_BOTTOM - 10, 1)" class="occ-gum" />
-              <path [attr.d]="gum(UPPER_TOP + 10, -1)" class="occ-gum" />
+              <path [attr.d]="gum(LOWER_BOTTOM - 10, 1)" class="occ-gum" [attr.fill]="'url(#occ-gum-lo-' + side.key + ')'" />
+              <path [attr.d]="gum(UPPER_TOP + 10, -1)" class="occ-gum" [attr.fill]="'url(#occ-gum-up-' + side.key + ')'" />
               <text class="occ-dir" [attr.x]="side.key === 'right' ? W - 6 : 6" y="14" [attr.text-anchor]="side.key === 'right' ? 'end' : 'start'">
                 {{ side.key === 'right' ? 'anterior →' : '← anterior' }}
               </text>
 
               @for (t of lowerTeeth(side.key); track t.id) {
-                <path [attr.d]="t.d" class="occ-tooth lower" [class.key]="t.id === 'm1' || t.id === 'c'" />
+                <path [attr.d]="t.d" class="occ-tooth lower" [class.key]="t.id === 'm1' || t.id === 'c'" [attr.fill]="'url(#occ-enamel-lo-' + side.key + ')'" />
               }
               <line [attr.x1]="mx(side.key, MOLAR_GROOVE)" [attr.x2]="mx(side.key, MOLAR_GROOVE)" [attr.y1]="LOWER_TOP - 2" [attr.y2]="LOWER_TOP + 26" class="occ-groove" />
 
               @for (u of upperTeeth(side.key); track u.id) {
-                <path [attr.d]="u.d" class="occ-tooth upper" [class.ghost]="u.ghost" [class.key]="u.key" />
+                <path [attr.d]="u.d" class="occ-tooth upper" [class.ghost]="u.ghost" [class.key]="u.key" [attr.fill]="u.key && !u.ghost ? null : 'url(#occ-enamel-up-' + side.key + ')'" />
               }
               @for (m of markers(side.key); track m.id) {
                 <g class="occ-marker" [style.transform]="'translateX(' + m.x + 'px)'" [class.ghost]="m.ghost">
@@ -351,11 +391,10 @@ function fmtMm(v: number) {
     figcaption b[data-cls='Clase I'] { color: #15803d; }
     .occ-svg { width: 100%; height: auto; display: block; border-radius: 10px; }
     .occ-bg { fill: #f8fafc; }
-    .occ-gum { fill: #f9c6c6; opacity: 0.7; }
+    .occ-gum { opacity: 0.8; }
     .occ-dir { font: 600 9px system-ui, sans-serif; fill: #94a3b8; }
-    .occ-tooth { stroke: #94a3b8; stroke-width: 1.2; stroke-linejoin: round; }
-    .occ-tooth.lower { fill: #ffffff; }
-    .occ-tooth.upper { fill: #f1f5f9; opacity: 0.93; transition: d 0.35s ease; }
+    .occ-tooth { stroke: #a8a29e; stroke-width: 1.2; stroke-linejoin: round; filter: drop-shadow(0 1px 1px rgba(60, 45, 20, 0.18)); }
+    .occ-tooth.upper { opacity: 0.95; transition: d 0.35s ease; }
     .occ-tooth.key { stroke: #0f766e; stroke-width: 1.6; }
     .occ-tooth.upper.key { fill: #e0f2f1; }
     .occ-tooth.ghost { opacity: 0.35; stroke-dasharray: 3 3; }
@@ -402,6 +441,18 @@ function fmtMm(v: number) {
     .occ-val .num { font-size: 1.2rem; font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums; }
     .occ-val .msg { font-size: 0.78rem; color: #475569; }
     .occ-val .num.small { font-size: 0.95rem; }
+    .occ-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+    .occ-card { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid #dbe4ea; border-top: 3px solid #cbd5e1; border-radius: 10px; background: #fff; min-width: 0; }
+    .occ-card[data-state='ok'] { border-top-color: #22c55e; }
+    .occ-card[data-state='out'] { border-top-color: #f59e0b; }
+    .occ-card[data-state='invalid'] { border-top-color: #ef4444; }
+    .occ-card-lbl { font-size: 0.68rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; }
+    .occ-card-val { font-size: 0.92rem; font-weight: 800; color: #0f172a; overflow-wrap: anywhere; }
+    .occ-card-sub { font-size: 0.72rem; color: #64748b; overflow-wrap: anywhere; }
+    .occ-photo { margin: 0 0 6px; border-radius: 10px; overflow: hidden; background: #0f172a; position: relative; }
+    .occ-photo img { display: block; width: 100%; max-height: 190px; object-fit: contain; }
+    .occ-photo span { position: absolute; left: 8px; bottom: 6px; padding: 2px 8px; border-radius: 6px; background: rgba(15, 23, 42, 0.65); color: #fff; font-size: 0.7rem; }
+    .occ-photo-toggle { margin-left: auto; }
     .occ-seg-row { display: inline-flex; align-items: center; gap: 6px; }
     .occ-seg-row em { font-style: normal; font-size: 0.72rem; color: #64748b; }
     .occ-seg { display: inline-flex; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #fff; }
@@ -448,7 +499,74 @@ function fmtMm(v: number) {
 export class OrthoOcclusionMapComponent {
   readonly intraoral = input.required<Intraoral>();
   readonly disabled = input(false);
+  /** URL de las fotos intraorales laterales cargadas en Imágenes. */
+  readonly lateralPhotos = input<{ right: string; left: string }>({ right: '', left: '' });
   readonly changed = output<void>();
+
+  private readonly hiddenPhotos = signal<Record<Side, boolean>>({ right: false, left: false });
+
+  photoOf(side: Side) {
+    return this.lateralPhotos()[side] || '';
+  }
+
+  photoShown(side: Side) {
+    return !this.hiddenPhotos()[side];
+  }
+
+  togglePhoto(side: Side) {
+    this.hiddenPhotos.update((h) => ({ ...h, [side]: !h[side] }));
+  }
+
+  /** Tarjetas de resumen; se leen en cada ciclo porque la historia también edita estos campos. */
+  summary() {
+    this.tick();
+    const io = this.intraoral();
+    const short = (v: string) => (!v ? '—' : v === 'No evaluable' ? 'N/E' : v.replace('Clase ', ''));
+    const classCard = (label: string, right: string, left: string) => {
+      const set = [right, left].filter((v) => v.startsWith('Clase'));
+      return {
+        label,
+        value: `Der. ${short(right)} · Izq. ${short(left)}`,
+        sub: set.length === 2 ? (right === left ? 'Simétrica' : 'Asimétrica') : '',
+        state: !right && !left ? 'empty' : set.length && set.every((v) => v === 'Clase I') ? 'ok' : set.length ? 'out' : 'empty',
+      };
+    };
+    const measureCard = (field: 'overjet' | 'overbite') => {
+      const st = checkMeasure(field === 'overjet' ? 'intraoral.overjet' : 'intraoral.overbite', io[field]);
+      const pct = field === 'overbite' ? this.overbitePercent() : null;
+      return {
+        label: field === 'overjet' ? 'Overjet' : 'Overbite',
+        value: st.value === null ? '—' : `${fmtMm(st.value)} mm${pct !== null ? ` (${pct} %)` : ''}`,
+        sub: st.state === 'empty' ? '' : st.message,
+        state: st.state,
+      };
+    };
+    const u = toNum(io.upperMidline);
+    const l = toNum(io.lowerMidline);
+    const side = (v: number | null) => (v === null ? '—' : v === 0 ? 'centrada' : `${fmtMm(Math.abs(v))} mm ${v > 0 ? 'der.' : 'izq.'}`);
+    const midline =
+      u === null && l === null
+        ? { value: io.dentalMidline ? 'Registrada' : '—', sub: io.dentalMidline, state: io.dentalMidline ? 'ok' : 'empty' }
+        : (u ?? 0) === 0 && (l ?? 0) === 0
+          ? { value: 'Coincidente', sub: 'Con la línea media facial', state: 'ok' }
+          : { value: `Sup. ${side(u)} · Inf. ${side(l)}`, sub: `Discrepancia ${this.midlineGap()} mm`, state: 'out' };
+    const vertical = (() => {
+      const open = io.openBite && io.openBite !== 'No' ? `Abierta ${io.openBite.toLowerCase()}` : '';
+      const deep = io.deepBite === 'Sí' ? 'Profunda' : '';
+      if (open || deep) return { value: [open, deep].filter(Boolean).join(' · '), state: 'out' };
+      return io.openBite || io.deepBite ? { value: 'Sin alteraciones', state: 'ok' } : { value: '—', state: 'empty' };
+    })();
+    return [
+      classCard('Clase molar', io.molarRight, io.molarLeft),
+      classCard('Clase canina', io.canineRight, io.canineLeft),
+      measureCard('overjet'),
+      measureCard('overbite'),
+      { label: 'Línea media', ...midline },
+      { label: 'Curva de Spee', value: io.curveOfSpee || '—', sub: '', state: !io.curveOfSpee ? 'empty' : io.curveOfSpee === 'Profunda' ? 'out' : 'ok' },
+      { label: 'Relación transversal', value: this.crossText(), sub: '', state: this.crossState() },
+      { label: 'Mordida vertical', sub: '', ...vertical },
+    ];
+  }
 
   @ViewChild('inc') private incRef?: ElementRef<SVGSVGElement>;
 

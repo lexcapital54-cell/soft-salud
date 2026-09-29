@@ -2487,6 +2487,7 @@
                     <summary>Mapa de oclusión (clases de Angle, overjet y overbite)</summary>
                     <app-ortho-occlusion-map
                       [intraoral]="dental().orthodontics.intraoral"
+                      [lateralPhotos]="occlusionLateralPhotos()"
                       [disabled]="clinicalFormDisabled()"
                       (changed)="onOrthoMeasureChange('intraoral', 'overjet')"
                     />

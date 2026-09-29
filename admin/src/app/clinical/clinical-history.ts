@@ -648,6 +648,19 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  occlusionLateralPhotos() {
+    const url = (key: string) => {
+      const id = this.dental().photos[key]?.attachmentId;
+      return (id && this.attachmentUrl(id)) || '';
+    };
+    const right = url('intraRight');
+    const left = url('intraLeft');
+    const prev = this.lateralPhotosCache;
+    if (prev.right !== right || prev.left !== left) this.lateralPhotosCache = { right, left };
+    return this.lateralPhotosCache;
+  }
+  private lateralPhotosCache = { right: '', left: '' };
+
   applyFacialResult(res: FacialAnalysisResult) {
     if (this.clinicalFormDisabled()) return;
     const o = this.dental().orthodontics;
