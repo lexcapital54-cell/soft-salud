@@ -195,6 +195,18 @@ function profileMetrics(p: Pts) {
   return { metrics, out, summary };
 }
 
+interface Guide {
+  id: string;
+  kind: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  /** Líneas de tercios y quintos: se arrastran completas moviendo solo un eje del punto. */
+  drag?: { key: string; axis: 'x' | 'y' };
+  name?: string;
+}
+
 @Component({
   selector: 'app-ortho-facial-analysis',
   standalone: true,
@@ -221,7 +233,26 @@ function profileMetrics(p: Pts) {
             }
           </select>
         </label>
+        @if (currentPhoto()) {
+          <span class="fa-zoom">
+            <button type="button" (click)="zoomBy(-0.25)" [disabled]="zoom() <= 1" aria-label="Alejar">−</button>
+            {{ zoom() * 100 }} %
+            <button type="button" (click)="zoomBy(0.25)" [disabled]="zoom() >= 3" aria-label="Acercar">+</button>
+          </span>
+        }
       </div>
+
+      @if (currentPhoto()) {
+        <div class="fa-layers" role="group" aria-label="Capas de análisis">
+          <span>Capas:</span>
+          @for (l of layerDefs(); track l.key) {
+            <label class="fa-layer" [attr.data-kind]="l.key">
+              <input type="checkbox" [checked]="layerOn(l.key)" (change)="toggleLayer(l.key)" />
+              <i></i>{{ l.label }}
+            </label>
+          }
+        </div>
+      }
 
       @if (!currentPhoto()) {
         <p class="fa-empty">
@@ -233,7 +264,7 @@ function profileMetrics(p: Pts) {
         <div class="fa-body">
           <div class="fa-stage-wrap">
             @if (currentPhoto()!.url; as url) {
-              <div class="fa-stage">
+              <div class="fa-stage" [style.width.%]="zoom() * 100">
                 <img [src]="url" alt="Fotografía para análisis facial" draggable="false" (load)="onImageLoad($event)" />
                 @if (size(); as s) {
                   <svg
@@ -249,8 +280,26 @@ function profileMetrics(p: Pts) {
                   >
                     @for (l of guides(); track l.id) {
                       <line [attr.x1]="l.x1" [attr.y1]="l.y1" [attr.x2]="l.x2" [attr.y2]="l.y2" [attr.class]="'fa-line ' + l.kind" [attr.stroke-width]="sc().stroke" />
+                      @if (l.drag && !disabled()) {
+                        <line
+                          [attr.x1]="l.x1"
+                          [attr.y1]="l.y1"
+                          [attr.x2]="l.x2"
+                          [attr.y2]="l.y2"
+                          class="fa-line-hit"
+                          [class.ns]="l.drag.axis === 'y'"
+                          [class.ew]="l.drag.axis === 'x'"
+                          [attr.stroke-width]="sc().hit"
+                          (pointerdown)="onLineDown($event, l.drag.key, l.drag.axis)"
+                        >
+                          <title>Arrastre la línea {{ l.name }}</title>
+                        </line>
+                      }
                     }
-                    @for (t of labels(); track t.id) {
+                    @for (n of lineNames(); track n.id) {
+                      <text [attr.x]="n.x" [attr.y]="n.y" class="fa-name" [attr.font-size]="sc().font * 0.8" [attr.stroke-width]="sc().stroke * 2">{{ n.text }}</text>
+                    }
+                    @for (t of layerOn('values') ? labels() : []; track t.id) {
                       <text [attr.x]="t.x" [attr.y]="t.y" class="fa-lbl" [attr.font-size]="sc().font" [attr.stroke-width]="sc().stroke * 2" [attr.text-anchor]="t.anchor">{{ t.text }}</text>
                     }
                     @for (pt of placed(); track pt.key) {
@@ -342,6 +391,25 @@ function profileMetrics(p: Pts) {
     .fa-line.angle { stroke: #34d399; }
     .fa-line.convex { stroke: #a78bfa; }
     .fa-line.eline { stroke: #f472b6; stroke-dasharray: 10 6; }
+    .fa-line-hit { stroke: transparent; fill: none; pointer-events: stroke; }
+    .fa-line-hit:hover { stroke: rgba(250, 204, 21, 0.28); }
+    .fa-line-hit.ns { cursor: ns-resize; }
+    .fa-line-hit.ew { cursor: ew-resize; }
+    .fa-name { fill: #facc15; stroke: #0b1220; paint-order: stroke; font-weight: 700; font-family: system-ui, sans-serif; pointer-events: none; }
+    .fa-zoom { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #475569; }
+    .fa-zoom button { width: 26px; height: 26px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 1rem; }
+    .fa-zoom button:disabled { opacity: 0.4; cursor: default; }
+    .fa-layers { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: -2px 0 10px; font-size: 0.78rem; color: #475569; }
+    .fa-layers > span { font-weight: 700; color: #334155; }
+    .fa-layer { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid #e2e8f0; border-radius: 999px; background: #f8fafc; cursor: pointer; user-select: none; }
+    .fa-layer input { margin: 0; accent-color: #00798c; }
+    .fa-layer i { width: 14px; height: 3px; border-radius: 2px; background: #94a3b8; }
+    .fa-layer[data-kind='thirds'] i { background: #38bdf8; }
+    .fa-layer[data-kind='fifths'] i { background: #fbbf24; }
+    .fa-layer[data-kind='mid'] i, .fa-layer[data-kind='eline'] i { background: #f472b6; }
+    .fa-layer[data-kind='angle'] i { background: #34d399; }
+    .fa-layer[data-kind='convex'] i { background: #a78bfa; }
+    .fa-layer[data-kind='names'] i { background: #facc15; }
     .fa-lbl { fill: #fff; stroke: #0b1220; paint-order: stroke; font-weight: 700; font-family: system-ui, sans-serif; }
     .fa-pt { cursor: grab; }
     .fa-pt .hit { fill: transparent; }
@@ -445,38 +513,101 @@ export class OrthoFacialAnalysisComponent {
     const s = this.size();
     const p = this.points();
     if (!s) return [];
-    const out: Array<{ id: string; kind: string; x1: number; y1: number; x2: number; y2: number }> = [];
+    const out: Guide[] = [];
+    const name = (key: string) => this.landmarks().find((l) => l.key === key)?.label ?? key;
     if (this.mode() === 'frontal') {
-      for (const k of ['Tr', 'G', 'Sn', 'Me']) {
-        const q = p[k];
-        if (q) out.push({ id: `h-${k}`, kind: 'third', x1: 0, y1: q.y, x2: s.w, y2: q.y });
+      if (this.layerOn('thirds')) {
+        for (const k of ['Tr', 'G', 'Sn', 'Me']) {
+          const q = p[k];
+          if (q) out.push({ id: `h-${k}`, kind: 'third', x1: 0, y1: q.y, x2: s.w, y2: q.y, drag: { key: k, axis: 'y' }, name: name(k) });
+        }
+        if (p['St']) out.push({ id: 'h-St', kind: 'sub', x1: 0, y1: p['St'].y, x2: s.w, y2: p['St'].y, drag: { key: 'St', axis: 'y' }, name: name('St') });
       }
-      if (p['St']) out.push({ id: 'h-St', kind: 'sub', x1: 0, y1: p['St'].y, x2: s.w, y2: p['St'].y });
-      for (const k of ['ZR', 'ExR', 'EnR', 'EnL', 'ExL', 'ZL']) {
-        const q = p[k];
-        if (q) out.push({ id: `v-${k}`, kind: 'fifth', x1: q.x, y1: 0, x2: q.x, y2: s.h });
+      if (this.layerOn('fifths')) {
+        for (const k of ['ZR', 'ExR', 'EnR', 'EnL', 'ExL', 'ZL']) {
+          const q = p[k];
+          if (q) out.push({ id: `v-${k}`, kind: 'fifth', x1: q.x, y1: 0, x2: q.x, y2: s.h, drag: { key: k, axis: 'x' }, name: name(k) });
+        }
       }
       const { EnR, EnL } = p;
-      if (EnR && EnL) {
+      if (EnR && EnL && this.layerOn('mid')) {
         const mid = (EnR.x + EnL.x) / 2;
         out.push({ id: 'mid', kind: 'mid', x1: mid, y1: 0, x2: mid, y2: s.h });
       }
     } else {
       const seg = (id: string, kind: string, a?: CephPoint, b?: CephPoint) => {
-        if (a && b) out.push({ id, kind, x1: a.x, y1: a.y, x2: b.x, y2: b.y });
+        if (a && b && this.layerOn(kind)) out.push({ id, kind, x1: a.x, y1: a.y, x2: b.x, y2: b.y });
       };
       seg('cm-sn', 'angle', p['Cm'], p['Sn']);
       seg('sn-ls', 'angle', p['Sn'], p['Ls']);
       seg('g-sn', 'convex', p['Gs'], p['Sn']);
       seg('sn-pg', 'convex', p['Sn'], p['Pgs']);
       const { Prn, Pgs } = p;
-      if (Prn && Pgs) {
+      if (Prn && Pgs && this.layerOn('eline')) {
         const dx = Pgs.x - Prn.x;
         const dy = Pgs.y - Prn.y;
         out.push({ id: 'eline', kind: 'eline', x1: Prn.x - dx * 0.15, y1: Prn.y - dy * 0.15, x2: Pgs.x + dx * 0.15, y2: Pgs.y + dy * 0.15 });
       }
     }
     return out;
+  }
+
+  /** Nombre de cada línea horizontal junto al borde izquierdo de la foto. */
+  lineNames() {
+    const s = this.size();
+    if (!s || this.mode() !== 'frontal' || !this.layerOn('names')) return [];
+    return this.guides()
+      .filter((g) => g.drag?.axis === 'y')
+      .map((g) => ({ id: g.id, x: s.w * 0.015, y: g.y1 - s.h * 0.008, text: `Línea ${g.name}` }));
+  }
+
+  // ── Capas y zoom ──
+  readonly zoom = signal(1);
+  private readonly hiddenLayers = signal<Set<string>>(new Set());
+
+  layerDefs() {
+    return this.mode() === 'frontal'
+      ? [
+          { key: 'thirds', label: 'Tercios faciales' },
+          { key: 'fifths', label: 'Quintos faciales' },
+          { key: 'mid', label: 'Línea media' },
+          { key: 'values', label: 'Porcentajes' },
+          { key: 'names', label: 'Nombres de líneas' },
+        ]
+      : [
+          { key: 'angle', label: 'Ángulo nasolabial' },
+          { key: 'convex', label: 'Convexidad' },
+          { key: 'eline', label: 'Línea E' },
+          { key: 'values', label: 'Valores' },
+        ];
+  }
+
+  layerOn(key: string) {
+    return !this.hiddenLayers().has(key);
+  }
+
+  toggleLayer(key: string) {
+    this.hiddenLayers.update((set) => {
+      const next = new Set(set);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  zoomBy(delta: number) {
+    this.zoom.update((z) => Math.min(3, Math.max(1, Math.round((z + delta) * 100) / 100)));
+  }
+
+  // ── Arrastre de líneas completas ──
+  private dragLine: { key: string; axis: 'x' | 'y' } | null = null;
+
+  onLineDown(event: PointerEvent, key: string, axis: 'x' | 'y') {
+    if (this.disabled()) return;
+    event.stopPropagation();
+    this.active.set(key);
+    this.dragLine = { key, axis };
+    this.svgRef?.nativeElement.setPointerCapture(event.pointerId);
   }
 
   /** Porcentajes junto a cada franja y el valor de los ángulos. */
@@ -592,16 +723,24 @@ export class OrthoFacialAnalysisComponent {
   }
 
   onMove(event: PointerEvent) {
-    if (!this.dragging) return;
+    if (!this.dragging && !this.dragLine) return;
     const p = this.toImage(event);
     if (!p) return;
-    this.trace().points[this.dragging] = p;
+    if (this.dragLine) {
+      const { key, axis } = this.dragLine;
+      const q = this.trace().points[key];
+      if (!q) return;
+      this.trace().points[key] = axis === 'y' ? { x: q.x, y: p.y } : { x: p.x, y: q.y };
+    } else if (this.dragging) {
+      this.trace().points[this.dragging] = p;
+    }
     this.tick.update((v) => v + 1);
   }
 
   onUp() {
-    if (!this.dragging) return;
+    if (!this.dragging && !this.dragLine) return;
     this.dragging = null;
+    this.dragLine = null;
     this.commit();
   }
 

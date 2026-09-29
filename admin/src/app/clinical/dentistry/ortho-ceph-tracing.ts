@@ -157,6 +157,8 @@ const METRICS: MetricDef[] = [
                         [attr.x2]="l.x2"
                         [attr.y2]="l.y2"
                         [attr.class]="'ceph-line ' + l.kind"
+                        [class.hl]="hlSet().has(l.from) && hlSet().has(l.to)"
+                        [class.dim]="hlSet().size > 0 && !(hlSet().has(l.from) && hlSet().has(l.to))"
                         [attr.stroke-width]="scale().stroke"
                       />
                     }
@@ -184,6 +186,8 @@ const METRICS: MetricDef[] = [
                       <g
                         class="ceph-pt"
                         [class.on]="p.key === active()"
+                        [class.hl]="hlSet().has(p.key)"
+                        [class.dim]="hlSet().size > 0 && !hlSet().has(p.key)"
                         (pointerdown)="onPointPointerDown($event, p.key)"
                       >
                         <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="scale().hit" class="hit" />
@@ -315,6 +319,52 @@ const METRICS: MetricDef[] = [
             }
           </aside>
         </div>
+
+        <section class="ceph-table-wrap" aria-label="Motor de cálculos cefalométricos">
+          <p class="ceph-h">
+            Motor de cálculos
+            <span>Pase el mouse por una fila para ver sus puntos en la radiografía · clic para fijarla o ir al punto que falta</span>
+          </p>
+          <table class="ceph-table">
+            <thead>
+              <tr>
+                <th>Medida</th>
+                <th>Valor obtenido</th>
+                <th>Norma clínica</th>
+                <th>Interpretación automática</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of metricCards(); track m.key) {
+                <tr
+                  [attr.data-tone]="m.tone ?? 'empty'"
+                  [class.pinned]="pinnedMetric() === m.key"
+                  tabindex="0"
+                  (mouseenter)="hoverMetric.set(m.key)"
+                  (mouseleave)="hoverMetric.set(null)"
+                  (focus)="hoverMetric.set(m.key)"
+                  (blur)="hoverMetric.set(null)"
+                  (click)="onMetricRow(m.key, m.needs)"
+                  (keydown.enter)="onMetricRow(m.key, m.needs)"
+                >
+                  <td>
+                    <b>{{ m.label }}</b>
+                    <small>{{ m.name }}</small>
+                  </td>
+                  <td class="num">{{ m.value !== null ? m.text + ' ' + m.unit : '—' }}</td>
+                  <td class="norm">{{ m.normText }}</td>
+                  <td>
+                    @if (m.value !== null) {
+                      <span class="ceph-tag" [attr.data-tone]="m.tone">{{ m.message }}</span>
+                    } @else {
+                      <span class="ceph-missing">Faltan: {{ m.missing }}</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
       }
     </div>
   `,
@@ -431,6 +481,34 @@ const METRICS: MetricDef[] = [
     }
     .ceph-apply:disabled { opacity: 0.45; cursor: not-allowed; }
     .ceph-note { margin: 0; font-size: 0.74rem; color: #64748b; }
+    .ceph-line, .ceph-pt { transition: opacity 0.15s; }
+    .ceph-line.dim, .ceph-pt.dim { opacity: 0.18; }
+    .ceph-line.hl { stroke: #facc15; opacity: 1; }
+    .ceph-pt.hl circle:not(.hit) { fill: #facc15; stroke: #0b1220; }
+    .ceph-table-wrap { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+    .ceph-table-wrap .ceph-h { justify-content: flex-start; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+    .ceph-table-wrap .ceph-h span { font-size: 0.74rem; font-weight: 500; }
+    .ceph-table { width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; font-size: 0.84rem; }
+    .ceph-table th { background: #f8fafc; color: #475569; font-weight: 700; text-align: left; padding: 8px 12px; font-size: 0.76rem; border-bottom: 1px solid #e2e8f0; }
+    .ceph-table td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .ceph-table tr:last-child td { border-bottom: 0; }
+    .ceph-table tbody tr { cursor: pointer; outline: none; transition: background 0.12s; }
+    .ceph-table tbody tr:hover, .ceph-table tbody tr:focus-visible { background: #f0f9ff; }
+    .ceph-table tbody tr.pinned { background: #fefce8; box-shadow: inset 4px 0 0 #facc15; }
+    .ceph-table td b { display: block; color: #0f172a; }
+    .ceph-table td small { color: #64748b; font-size: 0.72rem; }
+    .ceph-table td.num { font-weight: 800; font-variant-numeric: tabular-nums; color: #0f172a; white-space: nowrap; }
+    .ceph-table tr[data-tone='ok'] td.num { color: #047857; }
+    .ceph-table tr[data-tone='low'] td.num { color: #1d4ed8; }
+    .ceph-table tr[data-tone='high'] td.num, .ceph-table tr[data-tone='invalid'] td.num { color: #b91c1c; }
+    .ceph-table td.norm { color: #64748b; white-space: nowrap; }
+    .ceph-tag { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em; }
+    .ceph-tag[data-tone='ok'] { background: #d1fae5; color: #047857; }
+    .ceph-tag[data-tone='low'] { background: #dbeafe; color: #1d4ed8; }
+    .ceph-tag[data-tone='high'] { background: #fee2e2; color: #b91c1c; }
+    .ceph-tag[data-tone='invalid'] { background: #fee2e2; color: #991b1b; }
+    .ceph-missing { font-size: 0.74rem; color: #94a3b8; }
+    @media (max-width: 700px) { .ceph-table td.norm, .ceph-table th:nth-child(3) { display: none; } }
   `,
 })
 export class OrthoCephTracingComponent implements OnInit {
@@ -478,7 +556,7 @@ export class OrthoCephTracingComponent implements OnInit {
     return CEPH_LINES.flatMap((l) => {
       const a = pts[l.from];
       const b = pts[l.to];
-      return a && b ? [{ id: `${l.from}-${l.to}`, kind: l.kind, x1: a.x, y1: a.y, x2: b.x, y2: b.y }] : [];
+      return a && b ? [{ id: `${l.from}-${l.to}`, from: l.from, to: l.to, kind: l.kind, x1: a.x, y1: a.y, x2: b.x, y2: b.y }] : [];
     });
   });
 
@@ -538,9 +616,28 @@ export class OrthoCephTracingComponent implements OnInit {
         message: value === null ? '' : tone === 'invalid' ? `Valor imposible (${fmt(m.min)} a ${fmt(m.max)} ${m.unit})` : m.interpret(value),
         normText: `${fmt(m.norm[0])} a ${fmt(m.norm[1])} ${m.unit}`,
         missing,
+        needs: m.needs,
       };
     });
   });
+
+  readonly hoverMetric = signal<string | null>(null);
+  readonly pinnedMetric = signal<string | null>(null);
+  /** Puntos que usa la medida señalada en la tabla; los demás se atenúan. */
+  readonly hlSet = computed(() => {
+    const key = this.hoverMetric() ?? this.pinnedMetric();
+    return new Set<string>(METRICS.find((m) => m.key === key)?.needs ?? []);
+  });
+
+  onMetricRow(key: string, needs: CephLandmarkKey[]) {
+    const missing = needs.find((k) => !this.points()[k]);
+    if (missing && !this.disabled()) {
+      this.pinnedMetric.set(key);
+      this.active.set(missing);
+      return;
+    }
+    this.pinnedMetric.update((p) => (p === key ? null : key));
+  }
 
   /** Motor de reglas: clase esquelética a partir del ANB del trazado. */
   readonly skeletal = computed(() => {
