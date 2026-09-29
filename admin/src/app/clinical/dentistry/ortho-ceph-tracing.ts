@@ -364,6 +364,12 @@ const METRICS: MetricDef[] = [
               }
             </tbody>
           </table>
+          <p class="ceph-disclaimer" role="note">
+            <strong>Herramienta de apoyo al diagnóstico.</strong> Los valores dependen de la ubicación de los puntos
+            y de la calidad y escala de la radiografía. Las normas son de referencia poblacional y pueden variar
+            según edad, sexo y origen étnico. La interpretación automática no reemplaza el criterio clínico: el
+            diagnóstico y el plan de tratamiento son responsabilidad del profesional.
+          </p>
         </section>
       }
     </div>
@@ -485,6 +491,7 @@ const METRICS: MetricDef[] = [
     .ceph-line.dim, .ceph-pt.dim { opacity: 0.18; }
     .ceph-line.hl { stroke: #facc15; opacity: 1; }
     .ceph-pt.hl circle:not(.hit) { fill: #facc15; stroke: #0b1220; }
+    .ceph-disclaimer { margin: 0; padding: 8px 10px; border-left: 3px solid #d97706; border-radius: 6px; background: #fffbeb; color: #78350f; font-size: 0.76rem; line-height: 1.4; }
     .ceph-table-wrap { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
     .ceph-table-wrap .ceph-h { justify-content: flex-start; gap: 10px; flex-wrap: wrap; align-items: baseline; }
     .ceph-table-wrap .ceph-h span { font-size: 0.74rem; font-weight: 500; }

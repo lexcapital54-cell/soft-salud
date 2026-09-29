@@ -356,6 +356,12 @@ interface Guide {
               }
             </section>
 
+            <p class="fa-disclaimer" role="note">
+              <strong>Herramienta de apoyo al diagnóstico.</strong> Los valores dependen de la ubicación de los
+              puntos y de la toma de la fotografía (posición de la cabeza, distancia y lente). Las normas son de
+              referencia poblacional. El diagnóstico y el plan de tratamiento son responsabilidad del profesional.
+            </p>
+
             @if (!disabled()) {
               <button type="button" class="fa-apply" [disabled]="!analysis().metrics.length" (click)="applyResult()">
                 Pasar resultados al análisis facial
@@ -369,6 +375,7 @@ interface Guide {
   styles: `
     :host { display: block; }
     .fa { border: 1px solid #dbe4ea; border-radius: 12px; background: #fff; padding: 12px; }
+    .fa-disclaimer { margin: 0; padding: 8px 10px; border-left: 3px solid #d97706; border-radius: 6px; background: #fffbeb; color: #78350f; font-size: 0.74rem; line-height: 1.4; }
     .fa-toolbar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; margin-bottom: 10px; }
     .fa-tabs { display: inline-flex; border: 1px solid #cbd5e1; border-radius: 10px; overflow: hidden; }
     .fa-tabs button { border: 0; background: #f8fafc; padding: 7px 12px; font-size: 0.82rem; font-weight: 600; color: #475569; cursor: pointer; }
