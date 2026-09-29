@@ -379,6 +379,9 @@
                           Anexos:
                           @for (a of ev.content.attachments!; track a.id) {
                             <button type="button" class="linkish" (click)="openAttachment(a.id)">{{ a.label }}</button>
+                            @if (isDentistryClinic() && isImageAttachment(a.id)) {
+                              <button type="button" class="linkish" (click)="compareFromTimeline(a.id)">(comparar)</button>
+                            }
                           }
                         </p>
                       }
@@ -510,6 +513,24 @@
                   (uploadPhoto)="uploadOrthoControlPhoto($event)"
                   (removePhoto)="removeOrthoControlPhoto()"
                 />
+              } @else if (isDentistryClinic()) {
+                <div class="session-photos">
+                  <label class="ghost amend-upload" [class.busy]="sessionPhotoUploading()">
+                    {{ sessionPhotoUploading() ? 'Subiendo…' : 'Agregar fotos de esta sesión' }}
+                    <input type="file" accept="image/*" multiple hidden [disabled]="sessionPhotoUploading()" (change)="uploadSessionPhotos($event)" />
+                  </label>
+                  @for (p of sessionPhotos(); track p.id) {
+                    <span class="session-photo">
+                      @if (sessionPhotoUrl(p.id); as url) {
+                        <img [src]="url" alt="Foto clínica de la sesión" />
+                      }
+                      <button type="button" class="chip-x" (click)="removeSessionPhoto(p.id)" aria-label="Quitar foto">×</button>
+                    </span>
+                  }
+                  <span class="muted small">Se anexan a la nota firmada y quedan disponibles en el comparador.</span>
+                </div>
+              }
+              @if (isDentistryClinic()) {
                 @let photos = comparePhotoOptions();
                 <details class="compare-box" [open]="photos.length > 1">
                   <summary>Comparar progreso (antes / después)</summary>
@@ -539,9 +560,13 @@
                     [beforeLabel]="compareLabel(compareBefore())"
                     [afterLabel]="compareLabel(compareAfter())"
                     [emptyText]="
-                      photos.length
-                        ? 'Suba la foto intraoral frontal del control actual para compararla con la del inicio.'
-                        : 'Cargue la foto intraoral frontal en Imágenes de la historia (Día 0) y la del control actual.'
+                      !orthoControlEnabled()
+                        ? photos.length
+                          ? 'Agregue una foto de esta sesión para compararla con la del inicio.'
+                          : 'Cargue las fotos en «Fotos y radiografías» de la historia y agregue las de esta sesión.'
+                        : photos.length
+                          ? 'Suba la foto intraoral frontal del control actual para compararla con la del inicio.'
+                          : 'Cargue la foto intraoral frontal en Imágenes de la historia (Día 0) y la del control actual.'
                     "
                   />
                 </details>

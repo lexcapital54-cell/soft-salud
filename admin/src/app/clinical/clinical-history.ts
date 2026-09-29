@@ -776,8 +776,55 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   readonly compareBeforeId = signal<string | null>(null);
   readonly compareAfterId = signal<string | null>(null);
 
+  // ── Fotos de la sesión (odontología general): se anexan a la evolución firmada ──
+  readonly sessionPhotos = signal<Array<{ id: string; label: string }>>([]);
+  readonly sessionPhotoUploading = signal(false);
+
+  uploadSessionPhotos(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const files = [...(input.files ?? [])];
+    input.value = '';
+    const day = new Date().toLocaleDateString('es-CO');
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        this.error.set('Suba las fotos como imagen (JPG o PNG).');
+        continue;
+      }
+      const req = this.uploadDentalFile(file, `Foto clínica — sesión ${day}`, 'PHOTO');
+      if (!req) continue;
+      this.sessionPhotoUploading.set(true);
+      req.subscribe({
+        next: (att) => {
+          this.sessionPhotoUploading.set(false);
+          this.sessionPhotos.update((list) => [...list, { id: att.id, label: att.label }]);
+          this.dentalPhotoUrls.update((m) => ({ ...m, [att.id]: URL.createObjectURL(file) }));
+          this.attachments.set([att, ...this.attachments()]);
+          this.compareAfterId.set(att.id);
+        },
+        error: (err) => {
+          this.sessionPhotoUploading.set(false);
+          this.error.set(err?.error?.message || `No se pudo subir ${file.name}.`);
+        },
+      });
+    }
+  }
+
+  removeSessionPhoto(id: string) {
+    if (this.compareAfterId() === id) this.compareAfterId.set(null);
+    this.sessionPhotos.update((list) => list.filter((p) => p.id !== id));
+  }
+
+  sessionPhotoUrl(id: string) {
+    return this.attachmentUrl(id);
+  }
+
+  isImageAttachment(id: string) {
+    return !!this.attachments().find((a) => a.id === id)?.mimeType?.startsWith('image/');
+  }
+
   /** Día 0 (foto frontal de la historia), fotos de controles firmados y la del control actual. */
   comparePhotoOptions(): Array<{ id: string; label: string }> {
+    if (!this.orthoControlEnabled()) return this.dentalComparePhotoOptions();
     const out: Array<{ id: string; label: string }> = [];
     const day0 = this.dental().photos['intraFrontal'];
     if (day0?.attachmentId) {
@@ -792,6 +839,27 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     }
     const current = this.orthoControl.photoAttachmentId;
     if (current && !out.some((o) => o.id === current)) out.push({ id: current, label: 'Control actual (sin firmar)' });
+    return out;
+  }
+
+  /** Fotos iniciales de la historia, luego fotos y radiografías en orden de carga, y las de esta sesión. */
+  private dentalComparePhotoOptions(): Array<{ id: string; label: string }> {
+    const out: Array<{ id: string; label: string }> = [];
+    const photos = this.dental().photos;
+    for (const slot of PHOTO_SLOTS) {
+      const p = photos[slot.key];
+      if (!p?.attachmentId) continue;
+      const taken = p.takenAt ? ` (${new Date(p.takenAt).toLocaleDateString('es-CO')})` : '';
+      out.push({ id: p.attachmentId, label: `Inicio · ${slot.group} ${slot.label.toLowerCase()}${taken}` });
+    }
+    const session = new Set(this.sessionPhotos().map((p) => p.id));
+    const images = this.attachments()
+      .filter((a) => a.mimeType?.startsWith('image/') && !session.has(a.id) && !out.some((o) => o.id === a.id))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    for (const a of images) {
+      out.push({ id: a.id, label: `${a.label} (${new Date(a.createdAt).toLocaleDateString('es-CO')})` });
+    }
+    for (const p of this.sessionPhotos()) out.push({ id: p.id, label: `Esta sesión (sin firmar) · ${p.label}` });
     return out;
   }
 
@@ -4518,6 +4586,8 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     const orthoControl = this.orthoControlEnabled()
       ? { ...this.orthoControl, nextAppointment: this.dentalEvolution.nextAppointment || undefined }
       : undefined;
+    const sessionPhotoIds =
+      this.isDentistryClinic() && !orthoControl ? this.sessionPhotos().map((p) => p.id) : [];
     this.signing.set(true);
     this.error.set('');
     this.api
@@ -4528,6 +4598,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
         clinicalAttentionDate: attention.toISOString(),
         signatureBase64: this.currentSignature(),
         orthoControl,
+        attachmentIds: sessionPhotoIds.length ? sessionPhotoIds : undefined,
       })
       .subscribe({
         next: (updated) => {
@@ -4541,6 +4612,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
           this.evolutionMentalExam = '';
           this.dentalEvolution = emptyDentalEvolution();
           this.orthoControl = emptyOrthoControl();
+          this.sessionPhotos.set([]);
           if (this.orthoHistoryOpen()) this.loadOrthoHistory();
           this.evolutionSoap = {
             subjective: '',
@@ -4574,6 +4646,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       this.orthoHistoryOpen.set(false);
       this.compareBeforeId.set(null);
       this.compareAfterId.set(null);
+      this.sessionPhotos.set([]);
       this.cancelAmend();
     }
     if (!this.evolutionAttentionDate) this.evolutionAttentionDate = defaultAttentionDate || this.nowLocal();
