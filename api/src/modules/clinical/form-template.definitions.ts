@@ -266,6 +266,7 @@ export const DENTISTRY_CONTENT_DEFAULTS = {
       smile: '',
       dentalExposure: '',
       buccalCorridor: '',
+      nasolabialAngle: '',
     },
     intraoral: {
       molarRight: '',

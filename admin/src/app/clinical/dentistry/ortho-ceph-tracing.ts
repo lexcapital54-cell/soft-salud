@@ -5,8 +5,10 @@ import {
   CEPH_LINES,
   CephLandmarkKey,
   CephResult,
+  cephDiagnosisText,
   cephValueText,
   computeCeph,
+  footOn,
   skeletalClassForAnb,
   skeletalPatternText,
 } from './ceph-geometry';
@@ -22,7 +24,7 @@ interface MetricDef {
   key: keyof CephResult;
   label: string;
   name: string;
-  unit: '°' | '%';
+  unit: '°' | '%' | 'mm';
   needs: CephLandmarkKey[];
   /** Rango posible; fuera de él los puntos están mal ubicados. */
   min: number;
@@ -45,6 +47,7 @@ const METRICS: MetricDef[] = [
   { key: 'sna', label: 'SNA', name: 'Posición del maxilar', unit: '°', needs: ['S', 'N', 'A'], primary: true, ...fromRule('cephalometry.sna') },
   { key: 'snb', label: 'SNB', name: 'Posición de la mandíbula', unit: '°', needs: ['S', 'N', 'B'], primary: true, ...fromRule('cephalometry.snb') },
   { key: 'anb', label: 'ANB', name: 'Relación maxilomandibular', unit: '°', needs: ['S', 'N', 'A', 'B'], primary: true, ...fromRule('cephalometry.anb') },
+  { key: 'wits', label: 'Wits', name: 'AO − BO sobre plano oclusal', unit: 'mm', needs: ['A', 'B', 'OPp', 'OPa', 'R1', 'R2'], primary: true, ...fromRule('cephalometry.wits') },
   { key: 'fma', label: 'FMA', name: 'Frankfort / plano mandibular', unit: '°', needs: ['Po', 'Or', 'Go', 'Me'], ...fromRule('cephalometry.fma') },
   {
     key: 'snGoGn',
@@ -120,7 +123,8 @@ const METRICS: MetricDef[] = [
       @if (!tracing().attachmentId) {
         <p class="ceph-empty">
           Seleccione o suba la radiografía cefálica lateral. Luego marque los puntos fiduciarios en orden y el sistema
-          calcula SNA, SNB, ANB, FMA, SN-GoGn, ángulo facial, Jarabak, IMPA y U1-SN, y sugiere la clase esquelética.
+          calcula SNA, SNB, ANB, Wits, FMA, SN-GoGn, ángulo facial, Jarabak, IMPA y U1-SN, y redacta el diagnóstico
+          esquelético descriptivo.
         </p>
       } @else {
         <div class="ceph-body">
@@ -155,6 +159,26 @@ const METRICS: MetricDef[] = [
                         [attr.class]="'ceph-line ' + l.kind"
                         [attr.stroke-width]="scale().stroke"
                       />
+                    }
+                    @for (w of witsGuides(); track w.id) {
+                      <line
+                        [attr.x1]="w.x1"
+                        [attr.y1]="w.y1"
+                        [attr.x2]="w.x2"
+                        [attr.y2]="w.y2"
+                        class="ceph-line wits"
+                        [attr.stroke-width]="scale().stroke"
+                      />
+                      <circle [attr.cx]="w.x2" [attr.cy]="w.y2" [attr.r]="scale().r * 0.6" class="ceph-foot" />
+                      <text
+                        class="ceph-foot-lbl"
+                        [attr.x]="w.x2 + scale().r"
+                        [attr.y]="w.y2 + scale().font"
+                        [attr.font-size]="scale().font * 0.8"
+                        [attr.stroke-width]="scale().stroke * 1.5"
+                      >
+                        {{ w.label }}
+                      </text>
                     }
                     @for (p of placed(); track p.key) {
                       <g
@@ -224,6 +248,19 @@ const METRICS: MetricDef[] = [
                   <p class="ceph-hint">Trazado completo. Seleccione un punto de la lista para ajustarlo.</p>
                 }
               }
+              <label class="ceph-calib">
+                Calibración: milímetros entre R1 y R2
+                <input
+                  type="number"
+                  min="1"
+                  max="200"
+                  step="1"
+                  [ngModel]="calibrationMm()"
+                  (ngModelChange)="setCalibration($event)"
+                  [disabled]="disabled()"
+                />
+                <small>Necesaria para el Wits en milímetros. Marque dos rayas de la regla de la radiografía.</small>
+              </label>
             </section>
 
             @let sk = skeletal();
@@ -235,8 +272,8 @@ const METRICS: MetricDef[] = [
                 }
               </div>
               <label class="ceph-dx-field">
-                <span class="sr-only">Patrón esqueletal sugerido</span>
-                <input type="text" readonly [value]="sk?.text ?? ''" placeholder="Marque S, N, A y B para calcular el ANB" />
+                <span class="sr-only">Diagnóstico esqueletal descriptivo</span>
+                <textarea readonly rows="3" [value]="sk?.text ?? ''" placeholder="Marque S, N, A y B para calcular el ANB"></textarea>
               </label>
               <p class="ceph-dx-reason">
                 {{ sk ? sk.reason : 'Regla: ANB > 4° → Clase II · ANB < 0° → Clase III · 0° a 4° → Clase I.' }}
@@ -268,11 +305,12 @@ const METRICS: MetricDef[] = [
 
             @if (!disabled()) {
               <button type="button" class="ceph-apply" [disabled]="!hasAnyResult()" (click)="applyResult()">
-                Pasar medidas y clase esquelética a la historia
+                Pasar medidas y diagnóstico a la historia
               </button>
               <p class="ceph-note">
-                Reemplaza SNA, SNB, ANB, FMA, IMPA, U1-SN y la clase esquelética. SN-GoGn, ángulo facial y Jarabak son de
-                referencia y se recalculan desde los puntos guardados. Wits se sigue registrando a mano.
+                Reemplaza SNA, SNB, ANB, Wits, FMA, IMPA, U1-SN y la clase esquelética, y agrega el diagnóstico descriptivo
+                al diagnóstico ortodóntico. SN-GoGn, ángulo facial y Jarabak son de referencia y se recalculan desde los
+                puntos guardados.
               </p>
             }
           </aside>
@@ -308,6 +346,12 @@ const METRICS: MetricDef[] = [
     .ceph-line { stroke: #38bdf8; fill: none; opacity: 0.9; }
     .ceph-line.ray { stroke: #a7f3d0; stroke-dasharray: 6 4; }
     .ceph-line.axis { stroke: #fbbf24; }
+    .ceph-line.wits { stroke: #f472b6; stroke-dasharray: 4 3; }
+    .ceph-foot { fill: #f472b6; stroke: #fff; stroke-width: 1; }
+    .ceph-foot-lbl { fill: #fbcfe8; stroke: #0b1220; paint-order: stroke; font-weight: 700; font-family: system-ui, sans-serif; }
+    .ceph-calib { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: #334155; font-weight: 600; }
+    .ceph-calib input { width: 100px; padding: 5px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    .ceph-calib small { font-weight: 400; color: #64748b; }
     .ceph-pt { cursor: grab; }
     .ceph-pt .hit { fill: transparent; stroke: none; }
     .ceph-pt circle:not(.hit) { fill: #ef4444; stroke: #fff; }
@@ -337,13 +381,13 @@ const METRICS: MetricDef[] = [
     .ceph-dx[data-tone='c3'] { border-left-color: #8b5cf6; }
     .ceph-dx[data-tone='invalid'] { border-left-color: #ef4444; }
     .ceph-dx-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .ceph-dx-field input {
-      width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1;
-      background: #f8fafc; font-size: 0.95rem; font-weight: 700; color: #0f172a;
+    .ceph-dx-field textarea {
+      width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; resize: vertical;
+      background: #f8fafc; font: inherit; font-size: 0.88rem; font-weight: 700; color: #0f172a; line-height: 1.35;
     }
-    .ceph-dx[data-tone='c2'] .ceph-dx-field input { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
-    .ceph-dx[data-tone='c3'] .ceph-dx-field input { background: #f5f3ff; border-color: #ddd6fe; color: #5b21b6; }
-    .ceph-dx[data-tone='ok'] .ceph-dx-field input { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+    .ceph-dx[data-tone='c2'] .ceph-dx-field textarea { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+    .ceph-dx[data-tone='c3'] .ceph-dx-field textarea { background: #f5f3ff; border-color: #ddd6fe; color: #5b21b6; }
+    .ceph-dx[data-tone='ok'] .ceph-dx-field textarea { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
     .ceph-dx-reason { margin: 0; font-size: 0.76rem; color: #475569; }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .ceph-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -444,7 +488,31 @@ export class OrthoCephTracingComponent implements OnInit {
     return { r: base / 160, hit: base / 70, stroke: base / 650, font: base / 48 };
   });
 
-  readonly result = computed(() => computeCeph(this.points()));
+  readonly calibrationMm = computed(() => {
+    this.tick();
+    return this.tracing().calibrationMm ?? 10;
+  });
+
+  readonly result = computed(() => computeCeph(this.points(), this.calibrationMm()));
+
+  /** Perpendiculares de A y B al plano oclusal (AO y BO del Wits). */
+  readonly witsGuides = computed(() => {
+    const { A, B, OPp, OPa } = this.points();
+    if (!OPp || !OPa) return [];
+    const out: Array<{ id: string; label: string; x1: number; y1: number; x2: number; y2: number }> = [];
+    for (const [id, p] of [['AO', A], ['BO', B]] as const) {
+      const f = p ? footOn(OPp, OPa, p) : null;
+      if (p && f) out.push({ id, label: id, x1: p.x, y1: p.y, x2: f.x, y2: f.y });
+    }
+    return out;
+  });
+
+  setCalibration(value: number | string) {
+    const mm = Number(value);
+    if (!Number.isFinite(mm) || mm <= 0) return;
+    this.tracing().calibrationMm = mm;
+    this.commit();
+  }
 
   readonly metricCards = computed(() => {
     const res = this.result();
@@ -488,12 +556,12 @@ export class OrthoCephTracingComponent implements OnInit {
       : cls === 'Clase III' ? `ANB ${fmt(anb)}° < 0°: mandíbula adelantada respecto al maxilar.`
       : `ANB ${fmt(anb)}° entre 0° y 4°: relación maxilomandibular normal.`;
     const tone = cls === 'Clase II' ? 'c2' : cls === 'Clase III' ? 'c3' : 'ok';
-    return { cls, tone, text: skeletalPatternText(cls), reason };
+    return { cls, tone, text: cephDiagnosisText(this.result()) ?? skeletalPatternText(cls), reason };
   });
 
   readonly hasAnyResult = computed(() => {
     const r = this.result();
-    return [r.sna, r.snb, r.anb, r.fma, r.impa, r.upperIncisor].some((v) => v !== null);
+    return [r.sna, r.snb, r.anb, r.wits, r.fma, r.impa, r.upperIncisor].some((v) => v !== null);
   });
 
   ngOnInit() {

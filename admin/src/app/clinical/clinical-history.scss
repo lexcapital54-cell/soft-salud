@@ -618,6 +618,13 @@ label.check-inline input { width: auto; margin: 0; }
 }
 .evolutions.timeline li.is-closed::before { background: #64748b; }
 .evolutions .ev-cups { margin: 2px 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.ev-gear { display: flex; gap: 10px; align-items: center; margin: 6px 0; }
+.ev-thumb { flex: 0 0 64px; height: 48px; padding: 0; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #f1f5f9; cursor: zoom-in; font-size: 0.7rem; color: #64748b; }
+.ev-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ev-gear-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.gear-chip { padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+.gear-chip.arch { background: #e0f2fe; color: #075985; }
+.gear-chip.elastic { background: #fce7f3; color: #9d174d; }
 .pill.ortho-evt { background: #e0f2f1; color: #00576a; }
 .cups-chip {
   display: inline-flex;

@@ -213,10 +213,31 @@ export interface CephTracing {
   fileName: string;
   points: Partial<Record<string, CephPoint>>;
   tracedAt: string;
+  /** Milímetros reales entre los puntos de regla R1 y R2 (calibra el Wits). */
+  calibrationMm?: number;
 }
 
 export function emptyCephTracing(): CephTracing {
   return { attachmentId: '', fileName: '', points: {}, tracedAt: '' };
+}
+
+/** Trazado de análisis facial sobre una fotografía (coordenadas en píxeles de la imagen original). */
+export interface FacialTrace {
+  attachmentId: string;
+  points: Partial<Record<string, CephPoint>>;
+  tracedAt: string;
+}
+
+export interface FacialTracing {
+  frontal: FacialTrace;
+  profile: FacialTrace;
+}
+
+export function emptyFacialTracing(): FacialTracing {
+  return {
+    frontal: { attachmentId: '', points: {}, tracedAt: '' },
+    profile: { attachmentId: '', points: {}, tracedAt: '' },
+  };
 }
 
 export interface PhotoSlotValue {
@@ -342,7 +363,9 @@ export interface DentistryContent {
       smile: string;
       dentalExposure: string;
       buccalCorridor: string;
+      nasolabialAngle: string;
     };
+    facialTracing: FacialTracing;
     intraoral: {
       molarRight: string;
       molarLeft: string;
@@ -634,7 +657,9 @@ export function emptyDentistry(): DentistryContent {
         smile: '',
         dentalExposure: '',
         buccalCorridor: '',
+        nasolabialAngle: '',
       },
+      facialTracing: emptyFacialTracing(),
       intraoral: {
         molarRight: '',
         molarLeft: '',
@@ -789,6 +814,18 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
         ...(ortho.cephTracing || {}),
         points: { ...(ortho.cephTracing?.points || {}) },
       },
+      facialTracing: {
+        frontal: {
+          ...emptyFacialTracing().frontal,
+          ...(ortho.facialTracing?.frontal || {}),
+          points: { ...(ortho.facialTracing?.frontal?.points || {}) },
+        },
+        profile: {
+          ...emptyFacialTracing().profile,
+          ...(ortho.facialTracing?.profile || {}),
+          points: { ...(ortho.facialTracing?.profile?.points || {}) },
+        },
+      },
       habits: {},
     },
     photos: { ...(raw.photos || {}) },
@@ -815,6 +852,8 @@ export function hasOrthodonticData(d: DentistryContent) {
   const o = d.orthodontics;
   return (
     Object.values(o.facial).some((v) => v.trim()) ||
+    Object.keys(o.facialTracing.frontal.points).length > 0 ||
+    Object.keys(o.facialTracing.profile.points).length > 0 ||
     Object.values(o.intraoral).some((v) => v.trim()) ||
     Object.values(o.habits).some(Boolean) ||
     hasOrthoSpecialistData(d) ||

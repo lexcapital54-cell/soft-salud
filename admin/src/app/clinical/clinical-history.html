@@ -332,6 +332,37 @@
                           <span class="pill ortho-evt">{{ orthoEventText(evt) }}</span>
                         }
                       </p>
+                      @if (ev.content.orthoControl; as oc) {
+                        @if (oc.photoAttachmentId || orthoGearText(oc)) {
+                          <div class="ev-gear">
+                            @if (oc.photoAttachmentId) {
+                              <button
+                                type="button"
+                                class="ev-thumb"
+                                (click)="compareFromTimeline(oc.photoAttachmentId)"
+                                title="Comparar esta foto con la del inicio"
+                              >
+                                @if (compareUrl(oc.photoAttachmentId); as url) {
+                                  <img [src]="url" alt="Foto intraoral del control" />
+                                } @else {
+                                  <span>Foto</span>
+                                }
+                              </button>
+                            }
+                            <div class="ev-gear-chips">
+                              @if (oc.upperArch) {
+                                <span class="gear-chip arch">Arco sup. {{ oc.upperArch }}</span>
+                              }
+                              @if (oc.lowerArch) {
+                                <span class="gear-chip arch">Arco inf. {{ oc.lowerArch }}</span>
+                              }
+                              @if (oc.elastics) {
+                                <span class="gear-chip elastic">Elásticos {{ oc.elastics }}</span>
+                              }
+                            </div>
+                          </div>
+                        }
+                      }
                       @if (ev.content.orthoControl?.cups?.length) {
                         <p class="ev-cups">
                           @for (c of ev.content.orthoControl!.cups!; track c.code) {
@@ -2415,6 +2446,17 @@
                     </p>
                   }
                   <h4 class="odo-sub">Análisis facial</h4>
+                  <details class="ceph-details" [open]="!!dental().orthodontics.facialTracing.frontal.tracedAt || !!dental().orthodontics.facialTracing.profile.tracedAt || isOrthoClinic() || dental().includeOrtho">
+                    <summary>Trazado facial sobre la fotografía (tercios, quintos, ángulo nasolabial y línea E)</summary>
+                    <app-ortho-facial-analysis
+                      [tracing]="dental().orthodontics.facialTracing"
+                      [frontalPhotos]="facialPhotoOptions('frontal')"
+                      [profilePhotos]="facialPhotoOptions('profile')"
+                      [disabled]="clinicalFormDisabled()"
+                      (changed)="onClinicalFieldChange()"
+                      (apply)="applyFacialResult($event)"
+                    />
+                  </details>
                   <p class="muted small">
                     Del examen extraoral:
                     @if (extraoralSummaryForOrtho(); as summary) {
@@ -2441,6 +2483,14 @@
                     }
                   </div>
                   <h4 class="odo-sub">Análisis intraoral y oclusión</h4>
+                  <details class="ceph-details" open>
+                    <summary>Mapa de oclusión (clases de Angle, overjet y overbite)</summary>
+                    <app-ortho-occlusion-map
+                      [intraoral]="dental().orthodontics.intraoral"
+                      [disabled]="clinicalFormDisabled()"
+                      (changed)="onOrthoMeasureChange('intraoral', 'overjet')"
+                    />
+                  </details>
                   <div class="grid-4">
                     @for (f of orthoIntraoralFields; track f.key) {
                       <label

@@ -1099,6 +1099,7 @@ export class HcePdfService {
         ['Sonrisa', facial.smile],
         ['Exposición dental', facial.dentalExposure],
         ['Corredor bucal', facial.buccalCorridor],
+        ['Ángulo nasolabial', facial.nasolabialAngle],
       ]),
       lines([
         ['Clase molar', joinDash(oIntra.molarRight && `D: ${str(oIntra.molarRight)}`, oIntra.molarLeft && `I: ${str(oIntra.molarLeft)}`)],

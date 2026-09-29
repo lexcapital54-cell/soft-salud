@@ -87,7 +87,7 @@ import {
   orthoMeasureErrors,
   skeletalClassFromAnb,
 } from './dentistry/ortho-measures';
-import { CEPH_LANDMARKS, CephResult, cephValueText } from './dentistry/ceph-geometry';
+import { CEPH_LANDMARKS, CephResult, cephDiagnosisText, cephValueText } from './dentistry/ceph-geometry';
 import { CephRadiographOption, OrthoCephTracingComponent } from './dentistry/ortho-ceph-tracing';
 import {
   ORTHO_ARCH_WIRES,
@@ -104,6 +104,12 @@ import {
 } from './dentistry/ortho-controls';
 import { OrthoQuickControlComponent } from './dentistry/ortho-quick-control';
 import { OrthoCompareSliderComponent } from './dentistry/ortho-compare-slider';
+import { OrthoOcclusionMapComponent } from './dentistry/ortho-occlusion-map';
+import {
+  FacialAnalysisResult,
+  FacialPhotoOption,
+  OrthoFacialAnalysisComponent,
+} from './dentistry/ortho-facial-analysis';
 import {
   EVOLUTION_AMEND_OPTIONS,
   amendKindLabel,
@@ -283,6 +289,8 @@ function emptyContent(): ClinicalContent {
     OrthoCephTracingComponent,
     OrthoQuickControlComponent,
     OrthoCompareSliderComponent,
+    OrthoOcclusionMapComponent,
+    OrthoFacialAnalysisComponent,
     OpenEncountersAlert,
     VoiceDictationBtn,
     ClinicalListenBtn,
@@ -465,6 +473,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     { key: 'smile', label: 'Sonrisa', options: ['Consonante', 'No consonante', 'Gingival'] },
     { key: 'dentalExposure', label: 'Exposición dental', placeholder: 'mm en reposo / sonrisa' },
     { key: 'buccalCorridor', label: 'Corredor bucal', options: ['Normal', 'Amplio', 'Reducido'] },
+    { key: 'nasolabialAngle', label: 'Ángulo nasolabial', placeholder: '90° a 110°' },
   ];
 
   readonly orthoIntraoralFields: DentalField<DentistryContent['orthodontics']['intraoral']>[] = [
@@ -601,19 +610,62 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   applyCephResult(res: CephResult) {
     if (this.clinicalFormDisabled()) return;
-    const c = this.dental().orthodontics.cephalometry;
-    const fields = ['sna', 'snb', 'anb', 'fma', 'impa', 'upperIncisor'] as const;
+    const o = this.dental().orthodontics;
+    const c = o.cephalometry;
+    const fields = ['sna', 'snb', 'anb', 'wits', 'fma', 'impa', 'upperIncisor'] as const;
     for (const f of fields) {
       if (res[f] !== null) c[f] = cephValueText(res[f]);
     }
-    const skeletal = skeletalClassFromAnb(this.dental().orthodontics);
+    const skeletal = skeletalClassFromAnb(o);
     if (skeletal) c.skeletalClass = skeletal;
+    const growth = growthPatternFromFma(o);
+    if (growth) c.growthPattern = growth;
+    const dx = cephDiagnosisText(res);
+    if (dx && !o.diagnosis.includes(dx)) {
+      o.diagnosis = o.diagnosis
+        .split('\n')
+        .filter((line) => !/^Cefalometría: /.test(line))
+        .concat(`Cefalometría: ${dx}`)
+        .filter((line) => line.trim())
+        .join('\n');
+    }
     this.onClinicalFieldChange();
     this.message.set(
-      skeletal
-        ? `Medidas del trazado copiadas al análisis cefalométrico. Clase esquelética: ${skeletal}.`
+      dx
+        ? `Medidas del trazado copiadas al análisis cefalométrico. ${dx}`
         : 'Medidas del trazado copiadas al análisis cefalométrico.',
     );
+  }
+
+  // ── Análisis facial sobre fotografía ──
+  facialPhotoOptions(kind: 'frontal' | 'profile'): FacialPhotoOption[] {
+    const slots = kind === 'frontal' ? ['extraFrontal', 'extraSmile'] : ['extraProfileRight', 'extraProfileLeft'];
+    return slots.flatMap((key) => {
+      const photo = this.dental().photos[key];
+      if (!photo?.attachmentId) return [];
+      const slot = PHOTO_SLOTS.find((s) => s.key === key);
+      return [{ id: photo.attachmentId, label: `Extraoral · ${slot?.label ?? key}`, url: this.attachmentUrl(photo.attachmentId) }];
+    });
+  }
+
+  applyFacialResult(res: FacialAnalysisResult) {
+    if (this.clinicalFormDisabled()) return;
+    const o = this.dental().orthodontics;
+    const f = o.facial;
+    if (res.lowerThird) f.lowerThird = res.lowerThird;
+    if (res.midline) f.midline = res.midline;
+    if (res.symmetry) f.symmetry = res.symmetry;
+    if (res.profile) f.profile = res.profile;
+    if (res.nasolabialAngle) f.nasolabialAngle = res.nasolabialAngle;
+    const prefix = res.summary.split(':')[0];
+    o.measurements = o.measurements
+      .split('\n')
+      .filter((line) => !line.startsWith(`${prefix}:`))
+      .concat(res.summary)
+      .filter((line) => line.trim())
+      .join('\n');
+    this.onClinicalFieldChange();
+    this.message.set(`${res.summary} Resultados copiados al análisis facial y a «Otras medidas».`);
   }
 
   // ── Controles de ortodoncia por cita ──
@@ -744,7 +796,35 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   compareLabel(id: string | null) {
-    return this.comparePhotoOptions().find((o) => o.id === id)?.label ?? '';
+    const label = this.comparePhotoOptions().find((o) => o.id === id)?.label ?? '';
+    const gear = id ? this.orthoGearForPhoto(id) : '';
+    return gear ? `${label} · ${gear}` : label;
+  }
+
+  /** Arcos y elásticos del control al que pertenece la foto (vacío para la foto del Día 0). */
+  orthoGearForPhoto(id: string): string {
+    const control =
+      this.orthoControl.photoAttachmentId === id
+        ? this.orthoControl
+        : this.evolutions().find((ev) => ev.content.orthoControl?.photoAttachmentId === id)?.content.orthoControl;
+    return control ? this.orthoGearText(control) : '';
+  }
+
+  orthoGearText(c: { upperArch?: string; lowerArch?: string; elastics?: string }): string {
+    return [
+      c.upperArch ? `Sup. ${c.upperArch}` : '',
+      c.lowerArch ? `Inf. ${c.lowerArch}` : '',
+      c.elastics ? `Elásticos ${c.elastics}` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
+  }
+
+  /** Lleva la foto del control de la línea de tiempo al comparador (como «después»). */
+  compareFromTimeline(id: string) {
+    this.compareAfterId.set(id);
+    document.querySelector('.compare-box')?.setAttribute('open', '');
+    document.querySelector('.compare-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   compareUrl(id: string | null) {
