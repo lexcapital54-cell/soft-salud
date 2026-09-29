@@ -159,8 +159,80 @@ export class AppointmentsService {
       clinicId,
       rows.map((r) => r.patientId).filter((id): id is string => id != null),
     );
+    const pending = await this.clinicalPendingByAppointment(clinicId, rows);
 
-    return rows.map((row) => this.serialize(row, habeasByPatient));
+    return rows.map((row) => this.serialize(row, habeasByPatient, pending));
+  }
+
+  /**
+   * Psicología: citas de hoy o anteriores cuya sesión aún no está documentada.
+   * La primera sesión queda cubierta al cerrar la HC; las siguientes, con una
+   * nota de evolución cuya fecha de atención caiga el mismo día de la cita.
+   */
+  private async clinicalPendingByAppointment(
+    clinicId: string,
+    rows: { id: string; eventType: AppointmentEventType; status: AppointmentStatus; startsAt: Date; patientId: string | null }[],
+  ): Promise<Map<string, string>> {
+    const out = new Map<string, string>();
+    const today = this.bogotaDateKey();
+    const candidates = rows.filter(
+      (r) =>
+        r.eventType !== AppointmentEventType.BLOQUEO &&
+        r.patientId &&
+        r.status !== AppointmentStatus.CANCELLED &&
+        r.status !== AppointmentStatus.NO_SHOW &&
+        this.bogotaDateKey(r.startsAt) <= today,
+    );
+    if (!candidates.length) return out;
+
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+      select: { specialty: true },
+    });
+    if (clinic?.specialty !== ClinicSpecialty.PSYCHOLOGY) return out;
+
+    const encounters = await this.prisma.encounter.findMany({
+      where: {
+        clinicId,
+        patientId: { in: [...new Set(candidates.map((r) => r.patientId as string))] },
+        clinicalRecord: { isNot: null },
+      },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        patientId: true,
+        createdAt: true,
+        clinicalRecord: {
+          select: {
+            status: true,
+            evolutions: { select: { clinicalAttentionDate: true, signedAt: true } },
+          },
+        },
+      },
+    });
+    const historyByPatient = new Map<string, (typeof encounters)[number]>();
+    for (const enc of encounters) {
+      if (!historyByPatient.has(enc.patientId)) historyByPatient.set(enc.patientId, enc);
+    }
+
+    for (const appt of candidates) {
+      const history = historyByPatient.get(appt.patientId as string);
+      const record = history?.clinicalRecord;
+      if (!history || !record) {
+        out.set(appt.id, 'Historia clínica sin diligenciar');
+        continue;
+      }
+      if (record.status === 'DRAFT') {
+        out.set(appt.id, 'Historia clínica abierta sin cerrar');
+        continue;
+      }
+      const day = this.bogotaDateKey(appt.startsAt);
+      if (day <= this.bogotaDateKey(history.createdAt)) continue;
+      const documented = record.evolutions.some(
+        (ev) => this.bogotaDateKey(ev.clinicalAttentionDate ?? ev.signedAt) === day,
+      );
+      if (!documented) out.set(appt.id, 'Falta nota de evolución de la sesión');
+    }
+    return out;
   }
 
   async getOne(user: User, id: string) {
@@ -177,7 +249,7 @@ export class AppointmentsService {
       clinicId,
       row.patientId ? [row.patientId] : [],
     );
-    return this.serialize(row, habeas);
+    return this.serialize(row, habeas, await this.clinicalPendingByAppointment(clinicId, [row]));
   }
 
   /** Profesionales del consultorio disponibles para agendar. */
@@ -288,7 +360,11 @@ export class AppointmentsService {
       clinicId,
       patientId ? [patientId] : [],
     );
-    const serialized = this.serialize(created, habeas);
+    const serialized = this.serialize(
+      created,
+      habeas,
+      await this.clinicalPendingByAppointment(clinicId, [created]),
+    );
 
     if (!isBlock && patientId) {
       void this.notifications
@@ -377,7 +453,11 @@ export class AppointmentsService {
       clinicId,
       updated.patientId ? [updated.patientId] : [],
     );
-    const serialized = this.serialize(updated, habeas);
+    const serialized = this.serialize(
+      updated,
+      habeas,
+      await this.clinicalPendingByAppointment(clinicId, [updated]),
+    );
 
     const timeChanged =
       existing.startsAt.getTime() !== updated.startsAt.getTime() ||
@@ -519,7 +599,11 @@ export class AppointmentsService {
     const target = dto.status;
     if (appointment.status === target) {
       const habeas = await this.habeasDataByPatient(clinicId, [patientId]);
-      return this.serialize(appointment, habeas);
+      return this.serialize(
+        appointment,
+        habeas,
+        await this.clinicalPendingByAppointment(clinicId, [appointment]),
+      );
     }
 
     const allowed = ALLOWED_TRANSITIONS[appointment.status] ?? [];
@@ -636,7 +720,11 @@ export class AppointmentsService {
     }
 
     const habeas = await this.habeasDataByPatient(clinicId, [patientId]);
-    return this.serialize(updated, habeas);
+    return this.serialize(
+      updated,
+      habeas,
+      await this.clinicalPendingByAppointment(clinicId, [updated]),
+    );
   }
 
   /** Admisión de front-desk: deja constancia del Habeas Data firmado en papel o en sitio. */
@@ -791,6 +879,7 @@ export class AppointmentsService {
   private serialize(
     row: AppointmentWithRelations,
     habeasByPatient: Map<string, boolean>,
+    clinicalPending: Map<string, string> = new Map(),
   ) {
     if (row.eventType === AppointmentEventType.BLOQUEO) {
       return {
@@ -818,6 +907,7 @@ export class AppointmentsService {
         professional: row.professional,
         patient: null,
         habeasDataSigned: false,
+        clinicalPending: null,
         admission: null,
         allowedTransitions:
           row.status === AppointmentStatus.SCHEDULED
@@ -882,6 +972,7 @@ export class AppointmentsService {
         profileComplete: missingProfileFields(patient).length === 0,
       },
       habeasDataSigned: habeasByPatient.get(row.patientId) ?? false,
+      clinicalPending: clinicalPending.get(row.id) ?? null,
       admission: row.admission,
       allowedTransitions: ALLOWED_TRANSITIONS[row.status] ?? [],
     };

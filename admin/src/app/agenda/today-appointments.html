@@ -466,6 +466,12 @@
       <span class="counter-value">{{ counters().pendingHabeas }}</span>
       <span class="counter-label">Sin Habeas Data</span>
     </div>
+    @if (counters().clinicalPending > 0) {
+      <div class="counter danger">
+        <span class="counter-value">{{ counters().clinicalPending }}</span>
+        <span class="counter-label">HC / evolución por diligenciar</span>
+      </div>
+    }
   </div>
 
   @if (viewMode() === 'grid') {
@@ -508,7 +514,9 @@
                         class="slot-appt"
                         [attr.data-status]="appt.status"
                         [class.block]="isBlock(appt)"
+                        [class.pending-hc]="!!appt.clinicalPending"
                         [class.selected]="selected()?.id === appt.id"
+                        [attr.title]="appt.clinicalPending"
                         (click)="selectAppointment(appt)"
                       >
                         <span class="slot-time">
@@ -596,6 +604,9 @@
               @if (!isBlock(appt) && appt.patient && !appt.patient.profileComplete) {
                 <span class="status-badge profile-missing">Ficha por completar</span>
               }
+              @if (appt.clinicalPending) {
+                <span class="status-badge hc-pending">{{ appt.clinicalPending }}</span>
+              }
             </div>
             @if (appt.blockReason) {
               <p class="reason">{{ appt.blockReason }}</p>
@@ -621,13 +632,13 @@
                   Cobrar
                 </a>
               }
-              @if (!isBlock(appt) && appt.encounterId && appt.patient && !isReceptionist()) {
+              @if (!isBlock(appt) && (appt.encounterId || appt.clinicalPending) && appt.patient && !isReceptionist()) {
                 <a
                   class="linkish"
                   routerLink="/consultorio/historia-clinica"
                   [queryParams]="{ patientId: appt.patient.id }"
                 >
-                  Abrir HC
+                  {{ appt.clinicalPending ? 'Diligenciar HC' : 'Abrir HC' }}
                 </a>
               }
               @if (canManage()) {
@@ -662,6 +673,7 @@
                 type="button"
                 [class.active]="selected()?.id === appt.id"
                 [class.block-item]="isBlock(appt)"
+                [class.pending-hc]="!!appt.clinicalPending"
                 (click)="selectAppointment(appt)"
               >
                 <span class="panel-time">
@@ -691,6 +703,7 @@
         class="appointment"
         [class.busy]="busyId() === appt.id"
         [class.block-card]="isBlock(appt)"
+        [class.pending-hc]="!!appt.clinicalPending"
       >
         <div class="time-col">
           <strong>{{ appt.startsAt | date: 'HH:mm' }}</strong>
@@ -751,6 +764,9 @@
             }
             @if (!isBlock(appt) && appt.patient && !appt.patient.profileComplete) {
               <span class="status-badge profile-missing">Ficha por completar</span>
+            }
+            @if (appt.clinicalPending) {
+              <span class="status-badge hc-pending">{{ appt.clinicalPending }}</span>
             }
           </div>
         </div>

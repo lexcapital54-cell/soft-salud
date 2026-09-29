@@ -422,6 +422,7 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
           !a.habeasDataSigned &&
           a.status !== 'CANCELLED',
       ).length,
+      clinicalPending: rows.filter((a) => !!a.clinicalPending).length,
     };
   });
 

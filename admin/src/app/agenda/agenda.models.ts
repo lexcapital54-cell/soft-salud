@@ -75,6 +75,8 @@ export interface TodayAppointment {
   };
   patient: AppointmentPatient | null;
   habeasDataSigned: boolean;
+  /** Psicología: motivo por el que la sesión sigue sin documentar; null si está al día. */
+  clinicalPending: string | null;
   admission: AppointmentAdmission | null;
   allowedTransitions: AppointmentStatus[];
 }
