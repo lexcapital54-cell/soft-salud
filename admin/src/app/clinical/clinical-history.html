@@ -2931,6 +2931,19 @@
                       <p class="muted small">Cargando alternativas de tratamiento…</p>
                     }
                   }
+                  <h4 class="odo-sub">Mecánica del tratamiento</h4>
+                  @defer (on viewport) {
+                    <app-ortho-mechanics
+                      [data]="dental()"
+                      [disabled]="clinicalFormDisabled()"
+                      [controlRows]="orthoControlArches()"
+                      [wireOptions]="orthoWireOptions"
+                      [professionalName]="encounter()?.professional?.fullName || user()?.fullName || ''"
+                      (changed)="onClinicalFieldChange()"
+                    />
+                  } @placeholder {
+                    <p class="muted small">Cargando mecánica del tratamiento…</p>
+                  }
                   @if (encounter()) {
                     <h4 class="odo-sub">Seguimiento del tratamiento</h4>
                     @let timeline = orthoTimeline();

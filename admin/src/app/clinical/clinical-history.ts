@@ -16,6 +16,7 @@ import { OrthoCephTable } from './dentistry/ortho-ceph-table';
 import { OrthoDigitalModels } from './dentistry/ortho-digital-models';
 import { OrthoDiagnosis } from './dentistry/ortho-diagnosis';
 import { OrthoPlanOptions } from './dentistry/ortho-plan-options';
+import { OrthoMechanics } from './dentistry/ortho-mechanics';
 import type { DigitalModelUpload } from './dentistry/ortho-digital-models';
 import { ORTHO_CASE_STATUSES } from './dentistry/ortho-case.models';
 import { CompletenessContext, ModuleStatus, dentalModuleStatus, moduleDotStyle } from './dentistry/dental-completeness';
@@ -327,6 +328,7 @@ function emptyContent(): ClinicalContent {
     OrthoDigitalModels,
     OrthoDiagnosis,
     OrthoPlanOptions,
+    OrthoMechanics,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -745,6 +747,10 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     const attention = this.evolutionAttentionDate ? new Date(this.evolutionAttentionDate) : new Date();
     if (Number.isNaN(attention.getTime())) return [];
     return orthoControlProblems(this.orthoControl, attention, this.dentalEvolution.nextAppointment, this.evolutions());
+  }
+
+  orthoControlArches() {
+    return this.orthoTimeline().rows.map((r) => ({ date: r.date, arches: r.arches, elastics: r.elastics }));
   }
 
   orthoTimeline() {
@@ -1718,6 +1724,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  readonly orthoWireOptions = ORTHO_ARCH_WIRES;
   readonly modelsUploading = signal('');
   readonly loadAttachmentBlob = (id: string) => firstValueFrom(this.api.downloadAttachment(id));
 

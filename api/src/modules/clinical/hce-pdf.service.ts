@@ -1543,6 +1543,90 @@ export class HcePdfService {
       );
     }
 
+    const mech = obj(dental.orthoMech);
+    const appliances = rows(mech.appliances).filter((r) => str(r.type));
+    if (appliances.length) {
+      sections.push(
+        table(
+          'Aparatología',
+          ['24%', '11%', '16%', '*', '13%', '12%'],
+          ['Tipo', 'Arcada', 'Marca', 'Referencia', 'Fecha', 'Estado'],
+          appliances.map((r) => [str(r.type), str(r.arch), str(r.brand), str(r.reference), str(r.date), str(r.status)]),
+        ),
+      );
+    }
+    const wires = rows(mech.wires).filter((r) => str(r.wire));
+    if (wires.length) {
+      sections.push(
+        table(
+          'Secuencia de arcos',
+          ['12%', '28%', '14%', '14%', '*'],
+          ['Arcada', 'Arco', 'Fecha', 'Estado', 'Observaciones'],
+          wires.map((r) => [str(r.arch), str(r.wire), str(r.date), str(r.status), str(r.notes)]),
+        ),
+      );
+    }
+    const elastics = rows(mech.elastics).filter((r) => str(r.type) || str(r.from));
+    if (elastics.length) {
+      sections.push(
+        table(
+          'Elásticos',
+          ['20%', '10%', '12%', '*', '16%', '14%'],
+          ['Tipo', 'Lado', 'Piezas', 'Calibre / fuerza / uso', 'Fechas', 'Cumplimiento'],
+          elastics.map((r) => [
+            str(r.type),
+            str(r.side),
+            `${str(r.from)} → ${str(r.to)}`,
+            joinDash(r.size, r.force, r.usage, str(r.hours) && `${str(r.hours)} h/día`),
+            joinDash(r.start, r.end),
+            str(r.compliance),
+          ]),
+        ),
+      );
+    }
+    const ipr = rows(mech.ipr).filter((r) => str(r.contact));
+    if (ipr.length) {
+      const total = ipr.reduce((s, r) => s + (Number(str(r.amount).replace(',', '.')) || 0), 0);
+      sections.push(
+        table(
+          `Reducción interproximal (IPR) · total ${Math.round(total * 100) / 100} mm`,
+          ['18%', '12%', '16%', '*', '14%'],
+          ['Contacto', 'Cantidad', 'Fecha', 'Profesional', 'Estado'],
+          ipr.map((r) => [str(r.contact), str(r.amount) ? `${str(r.amount)} mm` : '', str(r.date), str(r.professional), str(r.status)]),
+        ),
+      );
+    }
+    const tads = rows(mech.tads).filter((r) => str(r.location) || str(r.tooth));
+    if (tads.length) {
+      sections.push(
+        table(
+          'Mini implantes (TAD)',
+          ['20%', '10%', '12%', '14%', '*', '12%'],
+          ['Ubicación', 'Pieza', 'Medidas', 'Colocación / retiro', 'Objetivo', 'Estado'],
+          tads.map((r) => [
+            str(r.location),
+            str(r.tooth),
+            joinDash(str(r.diameter) && `Ø${str(r.diameter)}`, str(r.length) && `${str(r.length)} mm`),
+            joinDash(r.date, r.removalDate),
+            joinDash(r.objective, str(r.brand), str(r.torque) && `${str(r.torque)} Ncm`),
+            str(r.status),
+          ]),
+        ),
+      );
+    }
+    const al = obj(mech.aligners);
+    const alStates = Object.values(obj(al.states)).map(str);
+    const alText = lines([
+      ['Marca', al.brand],
+      ['Plan', al.plan],
+      ['Número total', al.total],
+      ['Inicio', al.start],
+      ['Uso diario', str(al.hoursPerDay) && str(al.total) ? `${str(al.hoursPerDay)} horas` : ''],
+      ['Completados', str(al.total) ? String(alStates.filter((s) => s === 'Completado').length) : ''],
+      ['Cumplimiento', al.compliance],
+    ]);
+    if (str(al.total) && alText) sections.push(this.section('Alineadores', alText, titleColor, band));
+
     const mvLabels: Record<string, [string, string]> = {
       MESIALIZACION: ['Mesialización', 'mm'],
       DISTALIZACION: ['Distalización', 'mm'],

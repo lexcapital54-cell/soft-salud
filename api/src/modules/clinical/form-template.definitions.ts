@@ -247,6 +247,14 @@ export const DENTISTRY_CONTENT_DEFAULTS = {
   orthoMovements: [],
   orthoCeph: { analysis: '', rows: {}, notes: '' },
   orthoModels3d: [],
+  orthoMech: {
+    appliances: [],
+    wires: [],
+    elastics: [],
+    ipr: [],
+    tads: [],
+    aligners: { brand: '', plan: '', total: '', start: '', hoursPerDay: '22', daysPerAligner: '14', compliance: '', states: {}, delivered: {} },
+  },
   orthoDx: {
     categories: { skeletal: '', dental: '', vertical: '', transverse: '', functional: '', softTissue: '', crowding: '' },
     problems: [],
