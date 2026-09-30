@@ -1,0 +1,196 @@
+/* Menú de módulos compacto: una fila desplazable con el módulo actual resaltado. */
+.odo-nav {
+  gap: 6px 8px;
+  padding: 8px 10px;
+}
+.odo-nav-mods,
+.odo-nav-subs {
+  position: relative;
+  display: flex;
+  flex: 1 1 100%;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+.odo-nav-mods button,
+.odo-nav-subs button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.odo-nav-mods button.on {
+  background: #0d9488;
+  border-color: #0d9488;
+  color: #fff;
+}
+.odo-nav-mods button.on span {
+  color: #ccfbf1;
+}
+.odo-nav-subs {
+  padding-top: 6px;
+  border-top: 1px dashed #b2dfdb;
+  scrollbar-width: none;
+}
+.odo-nav .odo-nav-subs button {
+  padding: 3px 10px;
+  border: 0;
+  background: transparent;
+}
+.odo-nav .odo-nav-subs button:hover {
+  background: #e0f2f1;
+}
+.odo-nav .odo-nav-subs button.on {
+  background: #ccfbf1;
+  font-weight: 700;
+}
+@media (max-width: 900px) {
+  .odo-nav > strong {
+    display: none;
+  }
+}
+
+/* Al saltar desde el menú, el título de la sección no queda tapado por la barra fija. */
+[id^='odo-'],
+#odontograma,
+#hce-section-3,
+#consent-section,
+#anexos-section {
+  scroll-margin-top: 110px;
+}
+#odo-ortodoncia h4.odo-sub {
+  scroll-margin-top: 150px;
+}
+
+/* Barra de guardado compacta: la ayuda completa queda en el tooltip. */
+.save-bar {
+  gap: 10px 14px;
+  margin-top: 12px;
+  padding: 8px 14px;
+}
+.save-bar-info .muted {
+  display: -webkit-box;
+  max-width: 64ch;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+@media (max-width: 900px) {
+  .save-bar-info .muted {
+    display: none;
+  }
+}
+
+/* Casillas en línea (antes quedaban centradas en columna). */
+label.checkbox-inline {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+}
+label.checkbox-inline input {
+  width: auto;
+  margin: 0;
+}
+
+/* Bloques plegables (RDA, incapacidad). */
+.fold-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.fold-head h3 {
+  margin-bottom: 0;
+}
+.fold-btn {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+/* Plan de tratamiento: cada procedimiento es una tarjeta de dos líneas con etiquetas. */
+.odo-table.plan-cards {
+  display: block;
+}
+.odo-table.plan-cards thead {
+  display: none;
+}
+.odo-table.plan-cards tbody {
+  display: grid;
+  gap: 8px;
+}
+.odo-table.plan-cards tr {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 6px 8px;
+  align-items: start;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #cbd5e1;
+  border-radius: 12px;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+.odo-table.plan-cards tr:hover,
+.odo-table.plan-cards tr:focus-within {
+  box-shadow: 0 2px 12px rgba(13, 148, 136, 0.1);
+}
+.odo-table.plan-cards tr:has(.odo-phase[data-phase='URGENCIA']) { border-left-color: #dc2626; }
+.odo-table.plan-cards tr:has(.odo-phase[data-phase='HIGIENICA']) { border-left-color: #0891b2; }
+.odo-table.plan-cards tr:has(.odo-phase[data-phase='CORRECTIVA']) { border-left-color: #7c3aed; }
+.odo-table.plan-cards tr:has(.odo-phase[data-phase='MANTENIMIENTO']) { border-left-color: #16a34a; }
+.odo-table.plan-cards tr:has(.odo-status[data-status='TERMINADO']) { background: #f6fdf8; }
+.odo-table.plan-cards tr:has(.odo-status[data-status='CANCELADO']) { opacity: 0.6; }
+.odo-table.plan-cards td {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 0;
+}
+.odo-table.plan-cards td::before {
+  content: attr(data-label);
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+.odo-table.plan-cards td[data-label='']::before {
+  content: none;
+}
+.odo-table.plan-cards td > input,
+.odo-table.plan-cards td > select {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+.odo-table.plan-cards .odo-wide,
+.odo-table.plan-cards .odo-suggest-cell {
+  width: auto;
+  min-width: 0;
+}
+.odo-table.plan-cards td:nth-child(1) { grid-area: 1 / 1 / 2 / 2; }
+.odo-table.plan-cards td:nth-child(3) { grid-area: 1 / 2 / 2 / 4; }
+.odo-table.plan-cards td:nth-child(4) { grid-area: 1 / 4 / 2 / 10; }
+.odo-table.plan-cards td:nth-child(10) { grid-area: 1 / 10 / 2 / 12; }
+.odo-table.plan-cards td:nth-child(11) { grid-area: 1 / 12 / 2 / 13; align-items: flex-end; }
+.odo-table.plan-cards td:nth-child(2) { grid-area: 2 / 1 / 3 / 4; }
+.odo-table.plan-cards td:nth-child(5) { grid-area: 2 / 4 / 3 / 6; }
+.odo-table.plan-cards td:nth-child(6) { grid-area: 2 / 6 / 3 / 9; }
+.odo-table.plan-cards td:nth-child(7) { grid-area: 2 / 9 / 3 / 10; }
+.odo-table.plan-cards td:nth-child(8) { grid-area: 2 / 10 / 3 / 12; }
+.odo-table.plan-cards td:nth-child(9) { grid-area: 2 / 12 / 3 / 13; }
+@media (max-width: 760px) {
+  .odo-table.plan-cards tr {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .odo-table.plan-cards td {
+    grid-area: auto !important;
+    grid-column: span 2 !important;
+  }
+  .odo-table.plan-cards td:nth-child(4) {
+    grid-column: span 6 !important;
+  }
+}

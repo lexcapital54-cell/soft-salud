@@ -1065,13 +1065,28 @@
                 · <span [style.color]="autosaveStatus() === 'error' ? '#dc2626' : autosaveStatus() === 'saved' ? '#16a34a' : '#b45309'">{{ autosaveLabel() }}</span>
               }
             </span>
-            @for (m of mods; track m.id) {
-              <button type="button" (click)="scrollToOdo(m.id)" [title]="m.status ? m.label + ': ' + m.status.hint : m.label">
-                <span>{{ m.n }}</span>{{ m.label }}
-                @if (m.dot) {
-                  <i aria-hidden="true" [style]="m.dot"></i>
+            <div class="odo-nav-mods">
+              @for (m of mods; track m.id) {
+                <button
+                  type="button"
+                  [class.on]="activeOdo() === m.id"
+                  [attr.aria-current]="activeOdo() === m.id ? 'location' : null"
+                  (click)="scrollToOdo(m.id)"
+                  [title]="m.status ? m.label + ': ' + m.status.hint : m.label"
+                >
+                  <span>{{ m.n }}</span>{{ m.label }}
+                  @if (m.dot) {
+                    <i aria-hidden="true" [style]="m.dot"></i>
+                  }
+                </button>
+              }
+            </div>
+            @if (activeOdo() === 'odo-ortodoncia' && orthoSubs().length) {
+              <div class="odo-nav-subs" aria-label="Secciones de ortodoncia">
+                @for (sub of orthoSubs(); track sub) {
+                  <button type="button" [class.on]="activeOrthoSub() === sub" (click)="scrollToOrthoSub(sub)">{{ sub }}</button>
                 }
-              </button>
+              </div>
             }
           </nav>
           @if (showOrthoModule()) {
@@ -2630,23 +2645,15 @@
                       sin datos aún (perfil, simetría y tercios se registran en el Examen clínico).
                     }
                   </p>
-                  <div class="grid-3">
-                    @for (f of visibleOrthoFacialFields(); track f.key) {
-                      <label
-                        >{{ f.label }}
-                        @if (f.options) {
-                          <select [(ngModel)]="dental().orthodontics.facial[f.key]" [disabled]="clinicalFormDisabled()">
-                            <option value="">Seleccione…</option>
-                            @for (o of f.options; track o) {
-                              <option [value]="o">{{ o }}</option>
-                            }
-                          </select>
-                        } @else {
-                          <input [(ngModel)]="dental().orthodontics.facial[f.key]" [readonly]="clinicalFormDisabled()" [placeholder]="f.placeholder || ''" />
-                        }
-                      </label>
-                    }
-                  </div>
+                  <app-dental-exam-group
+                    class="odo-mt"
+                    [fields]="$any(visibleOrthoFacialFields())"
+                    [values]="$any(dental().orthodontics.facial)"
+                    [notes]="dental().examNotes"
+                    prefix="orthoFacial"
+                    [disabled]="clinicalFormDisabled()"
+                    (changed)="onClinicalFieldChange()"
+                  />
                   <h4 class="odo-sub">Sonrisa y proporciones faciales</h4>
                   @defer (on viewport) {
                     <app-ortho-exam-panel part="smile" [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
@@ -3270,7 +3277,7 @@
               <section class="block odo-hce" id="odo-plan">
                 <h3>{{ odoNum(9) }}. Plan de tratamiento</h3>
                 <div class="odo-table-wrap">
-                  <table class="odo-table">
+                  <table class="odo-table plan-cards">
                     <thead>
                       <tr>
                         <th>Pieza</th>
@@ -3289,8 +3296,8 @@
                     <tbody>
                       @for (row of dental().treatmentPlan; track $index; let i = $index) {
                         <tr>
-                          <td><input class="odo-narrow" [(ngModel)]="row.tooth" [readonly]="clinicalFormDisabled()" placeholder="16" /></td>
-                          <td>
+                          <td data-label="Pieza"><input class="odo-narrow" [(ngModel)]="row.tooth" [readonly]="clinicalFormDisabled()" placeholder="16" /></td>
+                          <td data-label="Diagnóstico">
                             <select [(ngModel)]="row.diagnosis" [disabled]="clinicalFormDisabled()">
                               <option value="">—</option>
                               @for (dx of dentalDiagnosisOptions(); track dx.value) {
@@ -3298,7 +3305,7 @@
                               }
                             </select>
                           </td>
-                          <td class="odo-suggest-cell">
+                          <td class="odo-suggest-cell" data-label="CUPS">
                             <input
                               [(ngModel)]="row.code"
                               (ngModelChange)="onDentalCupsInput(i, $event)"
@@ -3324,34 +3331,34 @@
                               </ul>
                             }
                           </td>
-                          <td class="odo-wide">
+                          <td class="odo-wide" data-label="Procedimiento">
                             <input [(ngModel)]="row.description" (blur)="onTreatmentDescriptionBlur(row)" [readonly]="clinicalFormDisabled()" />
                           </td>
-                          <td>
-                            <select class="odo-phase" [(ngModel)]="row.phase" [disabled]="clinicalFormDisabled()" [title]="'Fase del plan'">
+                          <td data-label="Fase">
+                            <select class="odo-phase" [attr.data-phase]="row.phase" [(ngModel)]="row.phase" [disabled]="clinicalFormDisabled()" [title]="'Fase del plan'">
                               <option value="">—</option>
                               @for (p of treatmentPhases; track p.key) {
                                 <option [value]="p.key">{{ p.label }}</option>
                               }
                             </select>
                           </td>
-                          <td>
+                          <td data-label="Profesional">
                             <input [(ngModel)]="row.professional" [readonly]="clinicalFormDisabled()" [placeholder]="user()?.fullName || ''" />
                           </td>
-                          <td>
+                          <td data-label="Cant.">
                             <input class="odo-qty" [(ngModel)]="row.quantity" [readonly]="clinicalFormDisabled()" inputmode="decimal" placeholder="1" />
                           </td>
-                          <td>
+                          <td data-label="Valor unit.">
                             <input class="odo-money" [(ngModel)]="row.value" [readonly]="clinicalFormDisabled()" inputmode="numeric" placeholder="0" />
                             @let net = treatmentRowNet(row);
                             @if (net && (row.quantity && row.quantity !== '1' || row.discount)) {
                               <small class="odo-net">Neto {{ '$' }}{{ net | number: '1.0-0' }}</small>
                             }
                           </td>
-                          <td>
+                          <td data-label="Desc. %">
                             <input class="odo-qty" [(ngModel)]="row.discount" [readonly]="clinicalFormDisabled()" inputmode="decimal" placeholder="0" />
                           </td>
-                          <td>
+                          <td data-label="Estado">
                             <select
                               class="odo-status"
                               [attr.data-status]="row.status"
@@ -3363,7 +3370,7 @@
                               }
                             </select>
                           </td>
-                          <td>
+                          <td data-label="">
                             @if (!clinicalFormDisabled()) {
                               <button type="button" class="ghost" title="Quitar fila" (click)="removeTreatmentRow(i)">✕</button>
                             }
@@ -4020,7 +4027,7 @@
           <section class="block control-mode" id="odo-evoluciones-en-formulario">
             <div class="control-mode-head">
               <div>
-                <h3>{{ odoNum(10) }}. Evolución odontológica</h3>
+                <h3>{{ odoNum(10) }}. Evolución {{ isOrthoClinic() ? 'ortodóntica' : 'odontológica' }}</h3>
                 <p class="muted small">
                   Registro por consulta: fecha, profesional, procedimiento, piezas tratadas, hallazgos,
                   anestesia, material, complicaciones, indicaciones, próxima cita y firma electrónica.
@@ -4072,9 +4079,19 @@
             (input)="onClinicalFormInput($event)"
             (change)="onClinicalFormInput($event)"
           >
-            <h3>
-              {{ hceSectionNumber('rda') }}Registro Digital de Atención (RDA) — Res. 1888 de 2025
-            </h3>
+            <div class="fold-head">
+              <h3>
+                {{ hceSectionNumber('rda') }}Registro Digital de Atención (RDA) — Res. 1888 de 2025
+              </h3>
+              @if (isDentistryClinic()) {
+                <button type="button" class="ghost fold-btn" [attr.aria-expanded]="rdaOpen()" (click)="rdaOpen.set(!rdaOpen())">
+                  {{ rdaOpen() ? 'Ocultar' : 'Ver detalle' }}
+                </button>
+              }
+            </div>
+            @if (isDentistryClinic() && !rdaOpen()) {
+              <p class="muted small">Se genera solo al guardar la historia clínica. No requiere diligenciarse.</p>
+            } @else {
             <p class="muted small">
               <strong>¿Para qué es?</strong> Es el paquete digital (formato FHIR) que HabiliSALUD
               genera y conserva para interoperabilidad con el Ministerio de Salud (Res. 866 / Ley
@@ -4108,9 +4125,11 @@
               <p class="muted small">Opcional: marque qué bloques incluir en el RDA al firmar.</p>
               <div class="checks">
                 <label><input type="checkbox" [(ngModel)]="rdaEvents.anamnesis" /> Anamnesis</label>
-                <label
-                  ><input type="checkbox" [(ngModel)]="rdaEvents.mentalExam" /> Examen mental</label
-                >
+                @if (!isDentistryClinic()) {
+                  <label
+                    ><input type="checkbox" [(ngModel)]="rdaEvents.mentalExam" /> Examen mental</label
+                  >
+                }
                 <label
                   ><input type="checkbox" [(ngModel)]="rdaEvents.evaluation" /> Evaluación</label
                 >
@@ -4128,6 +4147,7 @@
                 Con la historia sellada el RDA ya quedó generado; esta sección es solo informativa.
               </p>
             }
+            }
           </section>
         }
 
@@ -4141,7 +4161,15 @@
 
             @if (encounter() && canWrite() && supportsIncapacity()) {
               <section class="block">
-                <h3>Incapacidad</h3>
+                <div class="fold-head">
+                  <h3>Incapacidad</h3>
+                  @if (isDentistryClinic() && !incapacities().length) {
+                    <button type="button" class="ghost fold-btn" [attr.aria-expanded]="incapacityOpen()" (click)="incapacityOpen.set(!incapacityOpen())">
+                      {{ incapacityOpen() ? 'Ocultar' : '+ Registrar incapacidad' }}
+                    </button>
+                  }
+                </div>
+                @if (incapacityVisible()) {
                 <div class="grid-4">
                   <label
                     >Inicio <input type="date" [(ngModel)]="incapacityDraft.startDate"
@@ -4160,6 +4188,7 @@
                   Diligencie solo lo que aplique: la incapacidad se expide y se firma al pulsar
                   <strong>Guardar historia clínica</strong>, y queda lista para imprimir.
                 </p>
+                }
                 @if (incapacities().length) {
                   <ul class="chips" style="margin-top: 12px">
                     @for (inc of incapacities(); track inc.id) {
@@ -4803,7 +4832,7 @@
   <!-- Único punto de guardado de la historia: acompaña el scroll de la página. -->
   @if (canWrite()) {
     <div class="save-bar">
-      <div class="save-bar-info">
+      <div class="save-bar-info" [title]="isLocked() ? 'Modo control: se guardan la identificación y la nota de evolución de esta sesión.' : 'Guardar borrador: persiste sin cerrar. Guardar historia clínica: firma y sella; solo quedan editables la identificación y las notas de evolución.'">
         @if (isLocked()) {
           <strong>Modo control</strong>
           <span class="muted small">

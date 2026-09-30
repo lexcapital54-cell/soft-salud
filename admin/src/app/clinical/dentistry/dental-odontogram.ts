@@ -1395,9 +1395,9 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
     .odg-apps .odg-chip:disabled { cursor: default; }
     .odg-left { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     .odg-main { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; overflow-x: auto; padding: 14px 10px; background: rgba(255, 255, 255, 0.82); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 4px 16px rgba(11, 58, 110, 0.05); }
-    .odg-chart { position: relative; width: max-content; min-width: 100%; margin: 0 auto; padding: 0 104px; box-sizing: border-box; }
-    .odg-chart::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; border-left: 2px dashed #9ec1e6; pointer-events: none; }
-    .odg-jaw { position: absolute; left: -96px; top: 50%; transform: translateY(-50%); width: 84px; padding: 8px 10px; border-radius: 6px; background: linear-gradient(90deg, #dbe8f6, #eef4fb); color: var(--ink); font-size: 11.5px; font-weight: 800; line-height: 1.25; letter-spacing: 0.02em; }
+    .odg-chart { position: relative; width: max-content; min-width: 100%; margin: 0 auto; padding: 0 12px 0 86px; box-sizing: border-box; }
+    .odg-chart::before { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% + 37px); border-left: 2px dashed #9ec1e6; pointer-events: none; }
+    .odg-jaw { position: absolute; left: -82px; top: 50%; transform: translateY(-50%); width: 72px; padding: 8px 8px; border-radius: 6px; background: linear-gradient(90deg, #dbe8f6, #eef4fb); color: var(--ink); font-size: 11.5px; font-weight: 800; line-height: 1.25; letter-spacing: 0.02em; }
     .odg-row { position: relative; display: flex; justify-content: center; align-items: flex-end; min-width: max-content; }
     .odg-row:not(.upper) { align-items: flex-start; }
     .odg-row.small { margin: 6px 0; }
@@ -1589,7 +1589,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
       .odg-brand { border-right: none; }
       .odg-tagline { display: none; }
     }
-    @container (max-width: 980px) {
+    @container (max-width: 1240px) {
       .odg-body { grid-template-columns: 1fr; }
       .odg-cards.ortho { grid-template-columns: 1fr; }
       .odg-legend-wide .odg-legend-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }

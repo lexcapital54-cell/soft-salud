@@ -5,6 +5,7 @@ import { ClinicalImageViewer } from './dentistry/clinical-image-viewer';
 import type { ViewerItem } from './dentistry/clinical-image-viewer';
 import { DentalTreatmentBudget } from './dentistry/dental-treatment-budget';
 import { PlanPayments } from './dentistry/plan-payments';
+import { ODO_SPY_LINE, currentSection, orthoSubHeadings, revealActiveChip } from './dentistry/odo-nav';
 import { DentalRehab } from './dentistry/dental-rehab';
 import { hasRehabData } from './dentistry/rehab.models';
 import { DentalPatientSummary } from './dentistry/dental-patient-summary';
@@ -364,7 +365,7 @@ function emptyContent(): ClinicalContent {
   ],
   providers: [ClinicalAutosaveService, OrthoTrackingService],
   templateUrl: './clinical-history.html',
-  styleUrl: './clinical-history.scss',
+  styleUrls: ['./clinical-history.scss', './clinical-history-ux.scss'],
   host: {
     '[class.embedded]': 'embedded()',
   },
@@ -1180,9 +1181,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /** Módulos de la historia odontológica (menú superior). */
-  odoModules() {
+  private odoModuleList() {
     const ortho = this.showOrthoModule();
-    const list = [
+    return [
       { id: 'odo-identificacion', label: 'Identificación' },
       { id: 'odo-motivo', label: 'Motivo' },
       { id: 'hce-section-3', label: 'Antecedentes' },
@@ -1198,6 +1199,10 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       { id: 'anexos-section', label: 'Anexos' },
       { id: 'odo-cierre', label: 'Cierre' },
     ];
+  }
+
+  odoModules() {
+    const list = this.odoModuleList();
     const ctx: CompletenessContext = {
       patient: this.patientForm,
       motive: this.content.careMinimum?.motive || '',
@@ -1231,7 +1236,66 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   scrollToOdo(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const el = document.getElementById(id);
+    if (!el) return;
+    this.activeOdo.set(id);
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── Menú de módulos: resalta el módulo visible y, en ortodoncia, sus sub-secciones ──
+  readonly activeOdo = signal('');
+  readonly orthoSubs = signal<string[]>([]);
+  readonly activeOrthoSub = signal('');
+  private odoSpyFrame = 0;
+
+  @HostListener('window:scroll')
+  onOdoScroll() {
+    if (this.odoSpyFrame || !this.isDentistryClinic()) return;
+    this.odoSpyFrame = requestAnimationFrame(() => {
+      this.odoSpyFrame = 0;
+      this.updateOdoSpy();
+    });
+  }
+
+  private updateOdoSpy() {
+    const current = currentSection(this.odoModuleList().map((m) => m.id));
+    if (current !== this.activeOdo()) {
+      this.activeOdo.set(current);
+      queueMicrotask(() => revealActiveChip(document.querySelector('.odo-nav-mods')));
+    }
+    if (current === 'odo-ortodoncia') {
+      const subs = orthoSubHeadings();
+      const labels = subs.map((x) => x.label);
+      if (labels.join('|') !== this.orthoSubs().join('|')) this.orthoSubs.set(labels);
+      let active = labels[0] ?? '';
+      for (const x of subs) if (x.el.getBoundingClientRect().top <= ODO_SPY_LINE + 60) active = x.label;
+      if (active !== this.activeOrthoSub()) {
+        this.activeOrthoSub.set(active);
+        queueMicrotask(() => revealActiveChip(document.querySelector('.odo-nav-subs')));
+      }
+    }
+  }
+
+  scrollToOrthoSub(label: string) {
+    const target = orthoSubHeadings().find((x) => x.label === label);
+    if (!target) return;
+    this.activeOrthoSub.set(label);
+    target.el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Los bloques diferidos que cargan durante el desplazamiento corren el destino.
+    setTimeout(() => {
+      const offset = parseFloat(getComputedStyle(target.el).scrollMarginTop) || 0;
+      if (Math.abs(target.el.getBoundingClientRect().top - offset) > 40) {
+        target.el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 1000);
+  }
+
+  // ── Bloques poco frecuentes plegados en odontología ──
+  readonly rdaOpen = signal(false);
+  readonly incapacityOpen = signal(false);
+
+  incapacityVisible() {
+    return !this.isDentistryClinic() || this.incapacityOpen() || this.incapacities().length > 0;
   }
 
   /** Numeración de módulos: sin ortodoncia, los módulos 7+ se corren un lugar. */
