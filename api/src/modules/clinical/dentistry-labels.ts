@@ -76,6 +76,8 @@ export const DENTAL_HABIT_LABELS: Record<string, string> = {
   atypicalSwallowing: 'Deglución atípica',
   lipBiting: 'Mordisqueo de labios',
   objectBiting: 'Mordisqueo de objetos',
+  lipInterposition: 'Interposición labial',
+  snoring: 'Ronquido',
   other: 'Otros',
 };
 

@@ -7,6 +7,9 @@ import { DentalTreatmentBudget } from './dentistry/dental-treatment-budget';
 import { DentalRehab } from './dentistry/dental-rehab';
 import { hasRehabData } from './dentistry/rehab.models';
 import { DentalPatientSummary } from './dentistry/dental-patient-summary';
+import { OrthoCaseDashboard } from './dentistry/ortho-case-dashboard';
+import { OrthoCaseIntake } from './dentistry/ortho-case-intake';
+import { ORTHO_CASE_STATUSES } from './dentistry/ortho-case.models';
 import { CompletenessContext, ModuleStatus, dentalModuleStatus, moduleDotStyle } from './dentistry/dental-completeness';
 import { TREATMENT_PHASES, budgetTotals, rowNet, suggestPhase } from './dentistry/treatment-budget.models';
 import { hasPerioData } from './dentistry/periodontogram.models';
@@ -307,6 +310,8 @@ function emptyContent(): ClinicalContent {
     DentalTreatmentBudget,
     DentalRehab,
     DentalPatientSummary,
+    OrthoCaseDashboard,
+    OrthoCaseIntake,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -1170,6 +1175,11 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   odoProgress(mods: Array<{ status: ModuleStatus | null }>) {
     const required = mods.filter((m) => m.status && m.status.state !== 'optional');
     return { done: required.filter((m) => m.status!.state === 'done').length, total: required.length };
+  }
+
+  orthoCaseBadge() {
+    const s = ORTHO_CASE_STATUSES.find((x) => x.key === this.dental().orthoCase.status);
+    return s ? { label: s.label, style: `color:#fff;background:${s.color};padding:1px 8px;border-radius:99px` } : null;
   }
 
   lastEvolutionText() {

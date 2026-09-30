@@ -7,6 +7,7 @@ import {
   normalizeTreatmentBudget,
 } from './treatment-budget.models';
 import { RehabData, emptyRehab, normalizeRehab } from './rehab.models';
+import { OrthoCaseData, emptyOrthoCase, normalizeOrthoCase } from './ortho-case.models';
 
 /** Servicio de la atención; «ORTODONCIA» activa el módulo de ortodoncia. «ODONTOLOGIA» es el valor antiguo de general. */
 export type DentalService =
@@ -470,6 +471,7 @@ export interface DentistryContent {
   treatmentPlan: TreatmentPlanRow[];
   budget: TreatmentBudget;
   rehab: RehabData;
+  orthoCase: OrthoCaseData;
   prescriptions: PrescriptionRow[];
   orders: OrderRow[];
   requiredConsents: string[];
@@ -547,6 +549,8 @@ export const HABIT_ITEMS: CheckItem[] = [
   { key: 'atypicalSwallowing', label: 'Deglución atípica' },
   { key: 'lipBiting', label: 'Mordisqueo de labios' },
   { key: 'objectBiting', label: 'Mordisqueo de objetos' },
+  { key: 'lipInterposition', label: 'Interposición labial' },
+  { key: 'snoring', label: 'Ronquido' },
   { key: 'other', label: 'Otros' },
 ];
 
@@ -789,6 +793,7 @@ export function emptyDentistry(): DentistryContent {
     treatmentPlan: [emptyTreatmentRow()],
     budget: emptyTreatmentBudget(),
     rehab: emptyRehab(),
+    orthoCase: emptyOrthoCase(),
     prescriptions: [],
     orders: [],
     requiredConsents: [],
@@ -936,6 +941,7 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
       : base.treatmentPlan,
     budget: normalizeTreatmentBudget(raw.budget),
     rehab: normalizeRehab(raw.rehab),
+    orthoCase: normalizeOrthoCase(raw.orthoCase),
     prescriptions: (raw.prescriptions || []).map((r) => ({ ...emptyPrescriptionRow(), ...r })),
     orders: (raw.orders || []).map((r) => ({ ...emptyOrderRow(), ...r })),
     requiredConsents: [...(raw.requiredConsents || [])],

@@ -1279,6 +1279,57 @@ export class HcePdfService {
     ]
       .filter(Boolean)
       .join('\n');
+    const orthoCase = obj(dental.orthoCase);
+    const prior = obj(orthoCase.prior);
+    const caseStatus: Record<string, string> = {
+      NUEVO: 'Nuevo',
+      VALORACION: 'Valoración',
+      DIAGNOSTICO: 'Diagnóstico',
+      PLANIFICADO: 'Planificado',
+      EN_TRATAMIENTO: 'En tratamiento',
+      RETENCION: 'Retención',
+      FINALIZADO: 'Finalizado',
+      SUSPENDIDO: 'Suspendido',
+    };
+    const retainerUse: Record<string, string> = { SI: 'Sí, constante', IRREGULAR: 'Irregular', NO: 'No' };
+    const motives = Array.isArray(orthoCase.motives) ? (orthoCase.motives as unknown[]).map(str).filter(Boolean) : [];
+    const caseText = [
+      lines([
+        ['Estado del caso', caseStatus[str(orthoCase.status)]],
+        ['Tipo de tratamiento', orthoCase.treatmentType],
+        ['Fecha de inicio', str(orthoCase.startDate).split('-').reverse().join('/')],
+        ['Ortodoncista', orthoCase.orthodontist],
+        ['Motivos', motives.join(', ')],
+        ['Motivo estético', orthoCase.motiveAesthetic],
+        ['Motivo funcional', orthoCase.motiveFunctional],
+        ['Preocupación principal', orthoCase.concern],
+        ['Tiempo de evolución', orthoCase.evolutionTime],
+        ['Expectativas del tratamiento', orthoCase.expectations],
+      ]),
+      prior.had === 'SI'
+        ? lines([
+            ['Ortodoncia previa', 'Sí'],
+            ['Edad de inicio', prior.ageStart],
+            ['Aparatología previa', prior.applianceType],
+            ['Duración', prior.duration],
+            ['Motivo de finalización', prior.endReason],
+            ['Uso de retenedores', retainerUse[str(prior.retainerUse)]],
+            ['Tipo de retenedor', prior.retainerType],
+            ['Recidiva', prior.relapse],
+          ])
+        : prior.had === 'NO'
+          ? 'Ortodoncia previa: No'
+          : '',
+      lines([
+        ['Tratamientos quirúrgicos', prior.surgery],
+        ['Extracciones anteriores', prior.extractions],
+      ]),
+    ]
+      .filter(Boolean)
+      .join('\n');
+    if (caseText) {
+      sections.push(this.section('Caso de ortodoncia', caseText, titleColor, band));
+    }
     if (orthoText) {
       sections.push(this.section('Ortodoncia', orthoText, titleColor, band));
     }

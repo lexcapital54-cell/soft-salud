@@ -1058,6 +1058,12 @@
               @if (prog.total) {
                 · <b title="Módulos esenciales completos (orientativo, no bloquea la firma)">{{ prog.done }}/{{ prog.total }} completos</b>
               }
+              @if (showOrthoModule() && orthoCaseBadge(); as badge) {
+                · <b [style]="badge.style">{{ badge.label }}</b>
+              }
+              @if (autosaveLabel()) {
+                · <span [style.color]="autosaveStatus() === 'error' ? '#dc2626' : autosaveStatus() === 'saved' ? '#16a34a' : '#b45309'">{{ autosaveLabel() }}</span>
+              }
             </span>
             @for (m of mods; track m.id) {
               <button type="button" (click)="scrollToOdo(m.id)" [title]="m.status ? m.label + ': ' + m.status.hint : m.label">
@@ -1068,6 +1074,19 @@
               </button>
             }
           </nav>
+          @if (showOrthoModule()) {
+            @defer (on idle) {
+              <app-ortho-case-dashboard
+                [data]="dental()"
+                [timeline]="orthoTimeline()"
+                [disabled]="clinicalFormDisabled()"
+                [professionalName]="encounter()?.professional?.fullName || user()?.fullName || ''"
+                [lastVisit]="lastEvolutionText()"
+                (changed)="onClinicalFieldChange()"
+                (goto)="scrollToOdo($event)"
+              />
+            }
+          }
           @defer (on idle) {
             <app-dental-patient-summary [data]="dental()" [lastVisit]="lastEvolutionText()" (goto)="scrollToOdo($event)" />
           }
@@ -2045,6 +2064,14 @@
                     placeholder="Inicio, evolución, localización, intensidad del dolor, desencadenantes, tratamientos recibidos…"
                   ></textarea>
                 </label>
+                @if (showOrthoModule()) {
+                  <h4 class="odo-sub">Motivo ortodóntico</h4>
+                  @defer (on viewport) {
+                    <app-ortho-case-intake part="motive" [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                  } @placeholder {
+                    <p class="muted small">Cargando motivo ortodóntico…</p>
+                  }
+                }
               </section>
 
               <section class="block odo-hce" id="hce-section-3">
@@ -2397,6 +2424,14 @@
                     placeholder="Frecuencia, desde cuándo, uso de placa miorrelajante…"
                   />
                 </label>
+                @if (showOrthoModule()) {
+                  <h4 class="odo-sub">Historia ortodóntica</h4>
+                  @defer (on viewport) {
+                    <app-ortho-case-intake part="history" [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                  } @placeholder {
+                    <p class="muted small">Cargando historia ortodóntica…</p>
+                  }
+                }
               </section>
 
               <section class="block odo-hce" id="odo-examen">
