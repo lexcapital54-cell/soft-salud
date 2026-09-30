@@ -34,6 +34,7 @@ import {
   diffOrthoPlan,
 } from './ortho-plan-audit';
 import { OrthoControlCups, orthoControlCupsCodes } from './ortho-control-procedures';
+import { removedLockedRows, stampOrthoRows } from './ortho-integrity';
 import { CUPS_CATALOG_VERSION } from './ortho-cups.catalog';
 import {
   EVOLUTION_AMEND_LABELS,
@@ -652,6 +653,13 @@ export class EncountersService {
         encounter.createdAt.toISOString(),
       ),
     );
+    const removedLocked = removedLockedRows(existingContent, contentToSave);
+    if (removedLocked.length) {
+      throw new BadRequestException(
+        `No se puede quitar un registro clínico ya realizado (${removedLocked.join('; ')}). Cambie su estado en lugar de borrarlo.`,
+      );
+    }
+    stampOrthoRows(existingContent, contentToSave, user.fullName || user.email, new Date());
 
     await this.prisma.$transaction(async (tx) => {
       await tx.encounter.update({

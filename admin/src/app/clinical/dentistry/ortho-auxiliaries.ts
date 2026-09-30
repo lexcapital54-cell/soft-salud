@@ -113,7 +113,7 @@ const TAD_LOCATIONS = ['Interradicular vestibular', 'Interradicular palatino', '
               <input type="date" [(ngModel)]="r.date" (ngModelChange)="touch()" [readonly]="disabled()" aria-label="Fecha" />
               <input [(ngModel)]="r.professional" (ngModelChange)="touch()" [readonly]="disabled()" placeholder="Profesional" />
               <button type="button" class="ax-status" [class.ok]="r.status === 'Realizado'" [disabled]="disabled()" (click)="toggleIpr(r)">{{ r.status }}</button>
-              @if (!disabled()) {
+              @if (!disabled() && r.status !== 'Realizado') {
                 <button type="button" class="ax-del" (click)="remove(m.ipr, r, 'el IPR ' + r.contact)" aria-label="Quitar">×</button>
               }
               @if (iprWarn(r)) {
@@ -135,7 +135,7 @@ const TAD_LOCATIONS = ['Interradicular vestibular', 'Interradicular palatino', '
               <div class="ax-head">
                 <strong class="ax-strong">TAD {{ t.tooth ? 'junto a ' + t.tooth : '' }}</strong>
                 <button type="button" class="ax-status" [style.background]="tadColor(t.status)" [style.color]="'#fff'" [disabled]="disabled()" (click)="cycleTad(t)">{{ t.status }}</button>
-                @if (!disabled()) {
+                @if (!disabled() && (!t.status || t.status === 'Planificado')) {
                   <button type="button" class="ax-del" (click)="remove(m.tads, t, 'el TAD')" aria-label="Quitar">×</button>
                 }
               </div>

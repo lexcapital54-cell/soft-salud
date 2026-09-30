@@ -88,7 +88,7 @@ export interface ControlArchRow {
                 <input [(ngModel)]="a.reference" (ngModelChange)="touch()" [readonly]="disabled()" placeholder="Referencia / prescripción" />
                 <input type="date" [(ngModel)]="a.date" (ngModelChange)="touch()" [readonly]="disabled()" aria-label="Fecha de colocación" />
                 <button type="button" class="mc-status" [style.background]="statusColor(a.status)" [disabled]="disabled()" (click)="cycleAppliance(a)">{{ a.status }}</button>
-                @if (!disabled()) {
+                @if (!disabled() && a.status === 'Planificado') {
                   <button type="button" class="mc-del" (click)="removeRow(m.appliances, a, a.type || 'aparato')" aria-label="Quitar">×</button>
                 }
               </div>
@@ -151,7 +151,9 @@ export interface ControlArchRow {
                     @if (!disabled()) {
                       <button type="button" class="mc-link" (click)="moveWire(w, -1)">← Antes</button>
                       <button type="button" class="mc-link" (click)="moveWire(w, 1)">Después →</button>
-                      <button type="button" class="mc-del" (click)="removeRow(m.wires, w, w.wire || 'arco')" aria-label="Quitar arco">×</button>
+                      @if (w.status === 'Planificado') {
+                        <button type="button" class="mc-del" (click)="removeRow(m.wires, w, w.wire || 'arco')" aria-label="Quitar arco">×</button>
+                      }
                     }
                   </div>
                 }
