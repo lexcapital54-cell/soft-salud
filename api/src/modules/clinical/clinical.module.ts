@@ -25,6 +25,8 @@ import { SivigilaController } from './sivigila.controller';
 import { SivigilaService } from './sivigila.service';
 import { RemoteConsentController } from './remote-consent.controller';
 import { RemoteConsentService } from './remote-consent.service';
+import { OrthoTrackingController } from './ortho-tracking.controller';
+import { OrthoTrackingService } from './ortho-tracking.service';
 
 @Module({
   imports: [NotificationsModule],
@@ -38,6 +40,7 @@ import { RemoteConsentService } from './remote-consent.service';
     AttachmentsController,
     SivigilaController,
     HceExportController,
+    OrthoTrackingController,
   ],
   providers: [
     CatalogsService,
@@ -56,6 +59,7 @@ import { RemoteConsentService } from './remote-consent.service';
     OrthoEpicrisisPdfService,
     HceExportService,
     RemoteConsentService,
+    OrthoTrackingService,
   ],
   exports: [
     FormTemplatesService,

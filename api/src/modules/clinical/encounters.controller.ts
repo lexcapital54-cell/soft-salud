@@ -46,7 +46,7 @@ export class EncountersController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.AUDITOR,
+    UserRole.AUDITOR, UserRole.AUXILIAR,
     UserRole.RECEPTIONIST,
   )
   list(@Req() req: { user: User }, @Query() query: ListEncountersQueryDto) {
@@ -58,7 +58,7 @@ export class EncountersController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.AUDITOR,
+    UserRole.AUDITOR, UserRole.AUXILIAR,
   )
   forPatient(
     @Req() req: { user: User },
@@ -81,7 +81,7 @@ export class EncountersController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.AUDITOR,
+    UserRole.AUDITOR, UserRole.AUXILIAR,
     UserRole.RECEPTIONIST,
   )
   listOpen(@Req() req: { user: User }) {
@@ -92,14 +92,14 @@ export class EncountersController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.AUDITOR,
+    UserRole.AUDITOR, UserRole.AUXILIAR,
   )
   getOne(@Req() req: { user: User }, @Param('id') id: string) {
     return this.encountersService.getOne(req.user, id);
   }
 
   @Get('encounters/:id/ortho-history')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.AUDITOR)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.AUDITOR, UserRole.AUXILIAR)
   orthoHistory(@Req() req: { user: User }, @Param('id') id: string) {
     return this.encountersService.orthoHistory(req.user, id);
   }

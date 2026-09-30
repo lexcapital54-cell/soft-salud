@@ -16,7 +16,7 @@ export class NotificationsController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.RECEPTIONIST,
+    UserRole.RECEPTIONIST, UserRole.AUXILIAR,
     UserRole.AUDITOR,
   )
   listByAppointment(
@@ -27,7 +27,7 @@ export class NotificationsController {
   }
 
   @Post('resend')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   resend(@Req() req: { user: User }, @Body() dto: ResendNotificationDto) {
     return this.notifications.resend(req.user, dto.appointmentId, dto.channel);
   }

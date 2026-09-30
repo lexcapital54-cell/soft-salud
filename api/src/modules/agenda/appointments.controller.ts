@@ -43,7 +43,7 @@ export class AppointmentsController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.RECEPTIONIST,
+    UserRole.RECEPTIONIST, UserRole.AUXILIAR,
     UserRole.AUDITOR,
   )
   listToday(
@@ -54,7 +54,7 @@ export class AppointmentsController {
   }
 
   @Get('professionals')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   listProfessionals(@Req() req: AuthedRequest) {
     return this.appointmentsService.listProfessionals(req.user);
   }
@@ -63,7 +63,7 @@ export class AppointmentsController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.RECEPTIONIST,
+    UserRole.RECEPTIONIST, UserRole.AUXILIAR,
     UserRole.AUDITOR,
   )
   getOne(@Req() req: AuthedRequest, @Param('id') id: string) {
@@ -71,13 +71,13 @@ export class AppointmentsController {
   }
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   create(@Req() req: AuthedRequest, @Body() dto: CreateAppointmentDto) {
     return this.appointmentsService.create(req.user, dto, requestContext(req));
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   update(
     @Req() req: AuthedRequest,
     @Param('id') id: string,
@@ -92,7 +92,7 @@ export class AppointmentsController {
   }
 
   @Patch(':id/status')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   updateStatus(
     @Req() req: AuthedRequest,
     @Param('id') id: string,
@@ -112,7 +112,7 @@ export class AppointmentsController {
    */
   @Post(':id/status')
   @HttpCode(200)
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   updateStatusByPost(
     @Req() req: AuthedRequest,
     @Param('id') id: string,
@@ -122,7 +122,7 @@ export class AppointmentsController {
   }
 
   @Post(':id/admission')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   registerAdmission(
     @Req() req: AuthedRequest,
     @Param('id') id: string,

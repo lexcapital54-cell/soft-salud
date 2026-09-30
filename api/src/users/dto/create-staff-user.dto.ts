@@ -14,7 +14,7 @@ import { UserRole } from '../../common/enums';
 export const STAFF_CREATABLE_ROLES = [
   UserRole.ADMIN,
   UserRole.HEALTH_PROFESSIONAL,
-  UserRole.RECEPTIONIST,
+  UserRole.RECEPTIONIST, UserRole.AUXILIAR,
   UserRole.AUDITOR,
 ] as const;
 

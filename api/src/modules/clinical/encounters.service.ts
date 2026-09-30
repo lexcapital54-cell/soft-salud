@@ -1346,7 +1346,7 @@ export class EncountersService {
     const entries: OrthoHistoryEntry[] = logs.map((l) => ({
       at: l.createdAt.toISOString(),
       userName: l.user?.fullName || '—',
-      source: 'HISTORIA',
+      source: ((l.metadata ?? {}) as Record<string, unknown>).source === 'SEGUIMIENTO' ? 'SEGUIMIENTO' : 'HISTORIA',
       changes: (((l.metadata ?? {}) as Record<string, unknown>).changes as OrthoPlanChange[]) || [],
     }));
 

@@ -20,7 +20,7 @@ export interface OrthoPlanChange {
 export interface OrthoHistoryEntry {
   at: string;
   userName: string;
-  source: 'HISTORIA' | 'CONTROL' | 'FIRMA' | 'CONSENTIMIENTO';
+  source: 'HISTORIA' | 'SEGUIMIENTO' | 'CONTROL' | 'FIRMA' | 'CONSENTIMIENTO';
   changes: OrthoPlanChange[];
 }
 
@@ -255,6 +255,8 @@ export function diffOrthoPlan(previous: Json, next: Json): OrthoPlanChange[] {
   return changes;
 }
 
+const MERGEABLE = new Set<OrthoHistoryEntry['source']>(['HISTORIA', 'SEGUIMIENTO']);
+
 /**
  * Une los autoguardados seguidos del mismo profesional sobre el mismo campo
  * (mientras escribe) en un solo cambio: valor inicial → valor final.
@@ -269,7 +271,7 @@ export function coalesceOrthoHistory(entries: OrthoHistoryEntry[], windowMs = 20
     for (const c of e.changes) {
       const key = `${e.source}|${e.userName}|${c.field}`;
       const prev = open.get(key);
-      if (e.source === 'HISTORIA' && prev && at - prev.lastAt <= windowMs) {
+      if (MERGEABLE.has(e.source) && prev && at - prev.lastAt <= windowMs) {
         prev.change.to = c.to;
         prev.entry.at = e.at;
         prev.lastAt = at;
@@ -288,7 +290,7 @@ export function coalesceOrthoHistory(entries: OrthoHistoryEntry[], windowMs = 20
       changes: e.changes
         .filter((c) => c.from !== c.to)
         .map((c) =>
-          e.source === 'HISTORIA' && c.action ? { ...c, action: !c.from ? ('Crear' as const) : !c.to ? ('Eliminar' as const) : ('Editar' as const) } : c,
+          MERGEABLE.has(e.source) && c.action ? { ...c, action: !c.from ? ('Crear' as const) : !c.to ? ('Eliminar' as const) : ('Editar' as const) } : c,
         ),
     }))
     .filter((e) => e.changes.length)

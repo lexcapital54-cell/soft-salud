@@ -42,6 +42,7 @@ export class PasswordAdminPage implements OnInit {
     { value: 'HEALTH_PROFESSIONAL', label: ROLE_LABELS.HEALTH_PROFESSIONAL },
     { value: 'RECEPTIONIST', label: ROLE_LABELS.RECEPTIONIST },
     { value: 'AUDITOR', label: ROLE_LABELS.AUDITOR },
+    { value: 'AUXILIAR', label: ROLE_LABELS.AUXILIAR },
   ];
 
   ngOnInit() {

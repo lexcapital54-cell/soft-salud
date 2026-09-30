@@ -21,7 +21,8 @@ export class AuthService {
       role === 'ADMIN' ||
       role === 'HEALTH_PROFESSIONAL' ||
       role === 'RECEPTIONIST' ||
-      role === 'AUDITOR'
+      role === 'AUDITOR' ||
+      role === 'AUXILIAR'
     );
   });
   readonly canWriteClinical = computed(() => {
@@ -69,7 +70,12 @@ export class AuthService {
   /** Recepción incluida: puede mover estados de cita y registrar admisión. */
   readonly canManageAgenda = computed(() => {
     const role = this.userSignal()?.role;
-    return role === 'ADMIN' || role === 'HEALTH_PROFESSIONAL' || role === 'RECEPTIONIST';
+    return (
+      role === 'ADMIN' ||
+      role === 'HEALTH_PROFESSIONAL' ||
+      role === 'RECEPTIONIST' ||
+      role === 'AUXILIAR'
+    );
   });
   readonly canAuditSivigila = computed(() => {
     const role = this.userSignal()?.role;
@@ -77,6 +83,9 @@ export class AuthService {
   });
   readonly isReceptionist = computed(() => this.userSignal()?.role === 'RECEPTIONIST');
   readonly isAuditor = computed(() => this.userSignal()?.role === 'AUDITOR');
+  readonly isAuxiliar = computed(() => this.userSignal()?.role === 'AUXILIAR');
+  /** Seguimiento longitudinal de ortodoncia: el auxiliar solo agenda controles y retención. */
+  readonly canEditOrthoFollow = computed(() => this.canWriteClinical() || this.isAuxiliar());
   /** Admin del consultorio (gestiona accesos multi-sede). */
   readonly canManageClinicAccess = computed(() => {
     const role = this.userSignal()?.role;

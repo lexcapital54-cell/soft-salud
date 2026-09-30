@@ -31,7 +31,7 @@ export class ClinicAccessController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.RECEPTIONIST,
+    UserRole.RECEPTIONIST, UserRole.AUXILIAR,
     UserRole.AUDITOR,
     UserRole.SUPER_ADMIN,
   )
@@ -44,7 +44,7 @@ export class ClinicAccessController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.RECEPTIONIST,
+    UserRole.RECEPTIONIST, UserRole.AUXILIAR,
     UserRole.AUDITOR,
     UserRole.SUPER_ADMIN,
   )

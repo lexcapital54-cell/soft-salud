@@ -36,7 +36,7 @@ export class PatientsController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.RECEPTIONIST,
+    UserRole.RECEPTIONIST, UserRole.AUXILIAR,
     UserRole.AUDITOR,
   )
   list(
@@ -52,7 +52,7 @@ export class PatientsController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.RECEPTIONIST,
+    UserRole.RECEPTIONIST, UserRole.AUXILIAR,
     UserRole.AUDITOR,
   )
   getPhoto(@Req() req: { user: User }, @Param('id') id: string) {
@@ -60,7 +60,7 @@ export class PatientsController {
   }
 
   @Post(':id/photo')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -76,7 +76,7 @@ export class PatientsController {
   }
 
   @Delete(':id/photo')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   removePhoto(@Req() req: { user: User }, @Param('id') id: string) {
     return this.patientsService.removePhoto(req.user, id);
   }
@@ -85,7 +85,7 @@ export class PatientsController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.RECEPTIONIST,
+    UserRole.RECEPTIONIST, UserRole.AUXILIAR,
     UserRole.AUDITOR,
   )
   getOne(@Req() req: { user: User }, @Param('id') id: string) {
@@ -93,19 +93,19 @@ export class PatientsController {
   }
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   create(@Req() req: { user: User }, @Body() dto: CreatePatientDto) {
     return this.patientsService.create(req.user, dto);
   }
 
   @Post('quick')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   quickCreate(@Req() req: { user: User }, @Body() dto: QuickPatientDto) {
     return this.patientsService.quickCreate(req.user, dto);
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   update(
     @Req() req: { user: User },
     @Param('id') id: string,
@@ -120,7 +120,7 @@ export class PatientsController {
    * frontend actualiza por esta ruta.
    */
   @Post(':id/update')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   updateViaPost(
     @Req() req: { user: User },
     @Param('id') id: string,

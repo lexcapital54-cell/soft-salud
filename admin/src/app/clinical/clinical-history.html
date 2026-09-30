@@ -2931,15 +2931,17 @@
                       <p class="muted small">Cargando alternativas de tratamiento…</p>
                     }
                   }
-                  <h4 class="odo-sub">Mecánica del tratamiento</h4>
+                  <app-ortho-live-chip [status]="orthoTracking.status()" [label]="orthoTrackingLabel()">
+                    <h4 class="odo-sub">Mecánica del tratamiento</h4>
+                  </app-ortho-live-chip>
                   @defer (on viewport) {
                     <app-ortho-mechanics
                       [data]="dental()"
-                      [disabled]="clinicalFormDisabled()"
+                      [disabled]="orthoLiveDisabled()"
                       [controlRows]="orthoControlArches()"
                       [wireOptions]="orthoWireOptions"
                       [professionalName]="encounter()?.professional?.fullName || user()?.fullName || ''"
-                      (changed)="onClinicalFieldChange()"
+                      (changed)="onOrthoLiveChange()"
                     />
                   } @placeholder {
                     <p class="muted small">Cargando mecánica del tratamiento…</p>
@@ -2959,7 +2961,7 @@
                   }
                   <h4 class="odo-sub">Presupuesto de ortodoncia</h4>
                   @defer (on viewport) {
-                    <app-ortho-budget [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                    <app-ortho-budget [data]="dental()" [disabled]="orthoLiveDisabled()" (changed)="onOrthoLiveChange()" />
                   } @placeholder {
                     <p class="muted small">Cargando presupuesto…</p>
                   }
@@ -3034,12 +3036,12 @@
                     @defer (on viewport) {
                       <app-ortho-agenda
                         [data]="dental()"
-                        [disabled]="clinicalFormDisabled()"
+                        [disabled]="orthoFollowDisabled()"
                         [professionalName]="encounter()?.professional?.fullName || user()?.fullName || ''"
                         [patientId]="encounter()?.patient?.id || ''"
                         [patientDocument]="encounter()?.patient?.documentNumber || ''"
                         [lastControl]="timeline.rows[0]?.date || null"
-                        (changed)="onClinicalFieldChange()"
+                        (changed)="onOrthoLiveChange()"
                       />
                     } @placeholder {
                       <p class="muted small">Cargando controles programados…</p>
@@ -3048,9 +3050,9 @@
                     @defer (on viewport) {
                       <app-ortho-retention
                         [data]="dental()"
-                        [disabled]="clinicalFormDisabled()"
+                        [disabled]="orthoFollowDisabled()"
                         [debondedAt]="timeline.debondedAt"
-                        (changed)="onClinicalFieldChange()"
+                        (changed)="onOrthoLiveChange()"
                       />
                     } @placeholder {
                       <p class="muted small">Cargando retención…</p>

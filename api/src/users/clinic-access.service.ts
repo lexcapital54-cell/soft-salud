@@ -227,7 +227,7 @@ export class ClinicAccessService {
           clinicId: { not: null },
           role: {
             in: [
-              UserRole.RECEPTIONIST,
+              UserRole.RECEPTIONIST, UserRole.AUXILIAR,
               UserRole.HEALTH_PROFESSIONAL,
               UserRole.ADMIN,
               UserRole.AUDITOR,
@@ -274,7 +274,7 @@ export class ClinicAccessService {
         isActive: true,
         role: {
           in: [
-            UserRole.RECEPTIONIST,
+            UserRole.RECEPTIONIST, UserRole.AUXILIAR,
             UserRole.HEALTH_PROFESSIONAL,
             UserRole.ADMIN,
             UserRole.AUDITOR,
@@ -468,6 +468,8 @@ export class ClinicAccessService {
         return 'Administrador';
       case UserRole.AUDITOR:
         return 'Auditor';
+      case UserRole.AUXILIAR:
+        return 'Auxiliar';
       default:
         return role;
     }

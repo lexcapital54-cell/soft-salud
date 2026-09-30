@@ -121,4 +121,5 @@ export const CLINIC_STAFF_ROLES: UserRole[] = [
   'HEALTH_PROFESSIONAL',
   'RECEPTIONIST',
   'AUDITOR',
+  'AUXILIAR',
 ];

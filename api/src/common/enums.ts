@@ -4,6 +4,7 @@ export enum UserRole {
   HEALTH_PROFESSIONAL = 'HEALTH_PROFESSIONAL',
   RECEPTIONIST = 'RECEPTIONIST',
   AUDITOR = 'AUDITOR',
+  AUXILIAR = 'AUXILIAR',
 }
 
 export enum ClinicSpecialty {

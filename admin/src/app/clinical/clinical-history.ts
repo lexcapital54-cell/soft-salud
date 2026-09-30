@@ -24,6 +24,8 @@ import { OrthoBudget } from './dentistry/ortho-budget';
 import { OrthoConsentBoard } from './dentistry/ortho-consent-board';
 import type { SignedConsentInfo } from './dentistry/ortho-consent-board';
 import { OrthoAuditTimeline } from './dentistry/ortho-audit-timeline';
+import { OrthoLiveChip } from './dentistry/ortho-live-chip';
+import { OrthoTrackingService } from './dentistry/ortho-tracking.service';
 import type { DigitalModelUpload } from './dentistry/ortho-digital-models';
 import { ORTHO_CASE_STATUSES } from './dentistry/ortho-case.models';
 import { CompletenessContext, ModuleStatus, dentalModuleStatus, moduleDotStyle } from './dentistry/dental-completeness';
@@ -342,6 +344,7 @@ function emptyContent(): ClinicalContent {
     OrthoBudget,
     OrthoConsentBoard,
     OrthoAuditTimeline,
+    OrthoLiveChip,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -357,7 +360,7 @@ function emptyContent(): ClinicalContent {
     VoiceDictationBtn,
     ClinicalListenBtn,
   ],
-  providers: [ClinicalAutosaveService],
+  providers: [ClinicalAutosaveService, OrthoTrackingService],
   templateUrl: './clinical-history.html',
   styleUrl: './clinical-history.scss',
   host: {
@@ -368,6 +371,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   private readonly api = inject(ClinicalApiService);
   private readonly auth = inject(AuthService);
   private readonly autosave = inject(ClinicalAutosaveService);
+  readonly orthoTracking = inject(OrthoTrackingService);
   private readonly localDrafts = inject(HceLocalDraftService);
   private readonly unsaved = inject(UnsavedWorkService);
   private readonly router = inject(Router);
@@ -2569,6 +2573,38 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     return !this.canWrite() || this.isLocked();
   }
 
+  /** Aparatología y presupuesto: siguen editables después de firmar (seguimiento por paciente). */
+  orthoLiveDisabled(): boolean {
+    return !this.canWrite() || !this.encounter();
+  }
+
+  /** Controles programados y retención: también los registra el auxiliar. */
+  orthoFollowDisabled(): boolean {
+    return !this.auth.canEditOrthoFollow() || !this.encounter();
+  }
+
+  onOrthoLiveChange() {
+    this.orthoTracking.queue(this.dental());
+    this.onClinicalFieldChange();
+  }
+
+  orthoTrackingLabel(): string {
+    const at = this.orthoTracking.savedAt();
+    switch (this.orthoTracking.status()) {
+      case 'loading': return 'Cargando seguimiento…';
+      case 'pending': return 'Cambios sin guardar…';
+      case 'saving': return 'Guardando seguimiento…';
+      case 'error':
+      case 'conflict': return this.orthoTracking.message() || 'No se pudo guardar';
+      case 'saved': {
+        const when = at ? new Date(at).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : '';
+        const who = this.orthoTracking.savedBy();
+        return `Seguimiento guardado ${when}${who ? ' · ' + who : ''}`;
+      }
+      default: return this.isLocked() ? 'Historia firmada: el seguimiento sigue editable' : 'Seguimiento del paciente';
+    }
+  }
+
   onDictationError(message: string) {
     this.error.set(message);
   }
@@ -3465,6 +3501,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.orthoTracking.flush();
     this.writeLocalDraftNow();
     clearInterval(this.systemClockTimer);
     if (this.saveToastTimer) clearTimeout(this.saveToastTimer);
@@ -4033,6 +4070,11 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       }
     } else {
       this.maybeRestoreLocalDraft(enc);
+    }
+    if (this.isDentistryClinic()) {
+      this.orthoTracking.load(enc.patient.id, () => this.dental(), () => {
+        this.content.dentistry = { ...this.dental() };
+      });
     }
   }
 

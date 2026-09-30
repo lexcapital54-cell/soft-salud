@@ -88,7 +88,7 @@ export const ORTHO_RATING = ['Buena', 'Regular', 'Deficiente'];
 export interface OrthoHistoryEntry {
   at: string;
   userName: string;
-  source: 'HISTORIA' | 'CONTROL' | 'FIRMA' | 'CONSENTIMIENTO';
+  source: 'HISTORIA' | 'SEGUIMIENTO' | 'CONTROL' | 'FIRMA' | 'CONSENTIMIENTO';
   changes: Array<{ field: string; label: string; from: string; to: string; module?: string; action?: string }>;
 }
 

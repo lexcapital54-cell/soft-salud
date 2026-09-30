@@ -80,6 +80,7 @@ export class Login {
             'HEALTH_PROFESSIONAL',
             'RECEPTIONIST',
             'AUDITOR',
+            'AUXILIAR',
           ];
           if (!allowed.includes(res.user.role)) {
             this.auth.logout();

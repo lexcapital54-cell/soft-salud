@@ -14,6 +14,7 @@ const ACTION_STYLE: Record<string, { color: string; icon: string }> = {
 
 const SOURCE_LABEL: Record<string, string> = {
   HISTORIA: 'Historia clínica',
+  SEGUIMIENTO: 'Seguimiento',
   CONTROL: 'Control firmado',
   FIRMA: 'Firma',
   CONSENTIMIENTO: 'Consentimiento',

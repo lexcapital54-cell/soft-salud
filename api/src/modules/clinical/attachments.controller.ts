@@ -30,7 +30,7 @@ export class AttachmentsController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.AUDITOR,
+    UserRole.AUDITOR, UserRole.AUXILIAR,
   )
   list(
     @Req() req: { user: User },
@@ -43,7 +43,7 @@ export class AttachmentsController {
   @Roles(
     UserRole.ADMIN,
     UserRole.HEALTH_PROFESSIONAL,
-    UserRole.AUDITOR,
+    UserRole.AUDITOR, UserRole.AUXILIAR,
   )
   async download(@Req() req: { user: User }, @Param('id') id: string) {
     const { file } = await this.attachmentsService.download(req.user, id);

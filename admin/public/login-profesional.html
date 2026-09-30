@@ -90,7 +90,7 @@
             throw new Error((data && data.message) || 'Credenciales inválidas o usuario inactivo.');
           }
           var role = data.user && data.user.role;
-          var allowed = ['ADMIN', 'HEALTH_PROFESSIONAL', 'RECEPTIONIST', 'AUDITOR'];
+          var allowed = ['ADMIN', 'HEALTH_PROFESSIONAL', 'RECEPTIONIST', 'AUDITOR', 'AUXILIAR'];
           if (allowed.indexOf(role) === -1) {
             throw new Error('Este acceso es solo para personal del consultorio.');
           }
