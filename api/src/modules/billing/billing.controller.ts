@@ -4,6 +4,7 @@ import {
   Get,
   Header,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -19,6 +20,7 @@ import { RolesGuard } from '../../auth/roles.guard';
 import { UserRole } from '../../common/enums';
 import { User } from '../../users/user.entity';
 import { BillingService } from './billing.service';
+import { BillingPlanService } from './billing-plan.service';
 import {
   CreateExpenseDto,
   CreatePackageDto,
@@ -36,7 +38,17 @@ const ROLES = [
 @Controller('billing')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class BillingController {
-  constructor(private readonly billing: BillingService) {}
+  constructor(
+    private readonly billing: BillingService,
+    private readonly plan: BillingPlanService,
+  ) {}
+
+  /** Plan de tratamiento de la historia (odontología y ortodoncia) con lo abonado y el saldo. */
+  @Get('patients/:patientId/treatment-plan')
+  @Roles(...ROLES)
+  treatmentPlan(@Req() req: AuthedRequest, @Param('patientId', ParseUUIDPipe) patientId: string) {
+    return this.plan.planForPatient(req.user, patientId);
+  }
 
   @Get('receipts')
   @Roles(...ROLES)

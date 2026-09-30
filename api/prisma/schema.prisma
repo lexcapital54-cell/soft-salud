@@ -1096,8 +1096,13 @@ model InvoiceItem {
   package       SessionPackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
   appointmentId String?         @map("appointment_id") @db.Uuid
   appointment   Appointment?    @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  /// Procedimiento del plan de tratamiento o concepto del presupuesto de ortodoncia que abona.
+  planItemKey   String?         @map("plan_item_key") @db.VarChar(120)
+  /// PLAN (plan odontológico) | ORTHO (presupuesto de ortodoncia)
+  planSource    String?         @map("plan_source") @db.VarChar(20)
 
   @@index([invoiceId])
+  @@index([planItemKey])
   @@map("invoice_items")
 }
 

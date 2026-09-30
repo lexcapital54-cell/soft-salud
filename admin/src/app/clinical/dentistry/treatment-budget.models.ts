@@ -53,8 +53,12 @@ interface BudgetRowLike {
   code?: string;
 }
 
+/** "150.000" y "150000" son lo mismo; "7,5" y "7.5" son decimales. */
 export function parseMoney(v: unknown): number {
-  const n = Number(String(v ?? '').replace(/[^\d.]/g, ''));
+  let t = String(v ?? '').replace(/[^\d.,]/g, '');
+  if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
+  const n = Number(t);
   return Number.isFinite(n) ? n : 0;
 }
 

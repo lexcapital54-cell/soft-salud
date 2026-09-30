@@ -4,6 +4,7 @@ import { DentalPeriodontogram } from './dentistry/dental-periodontogram';
 import { ClinicalImageViewer } from './dentistry/clinical-image-viewer';
 import type { ViewerItem } from './dentistry/clinical-image-viewer';
 import { DentalTreatmentBudget } from './dentistry/dental-treatment-budget';
+import { PlanPayments } from './dentistry/plan-payments';
 import { DentalRehab } from './dentistry/dental-rehab';
 import { hasRehabData } from './dentistry/rehab.models';
 import { DentalPatientSummary } from './dentistry/dental-patient-summary';
@@ -326,6 +327,7 @@ function emptyContent(): ClinicalContent {
     DentalPeriodontogram,
     ClinicalImageViewer,
     DentalTreatmentBudget,
+    PlanPayments,
     DentalRehab,
     DentalPatientSummary,
     OrthoCaseDashboard,

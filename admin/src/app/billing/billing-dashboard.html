@@ -81,6 +81,16 @@
           }
         </select>
       </label>
+      @if (receiptForm.patientId) {
+        <div class="span-2">
+          <app-receipt-plan-picker
+            [patientId]="receiptForm.patientId"
+            [reloadKey]="planReloadKey()"
+            (linesChange)="planLines.set($event)"
+          />
+        </div>
+        <h3 class="span-2 manual-title">{{ planLines().length ? 'Línea adicional (opcional)' : 'Concepto del recibo' }}</h3>
+      }
       <label>
         Descripción
         <input [(ngModel)]="receiptForm.description" />
@@ -117,6 +127,7 @@
         <input [(ngModel)]="receiptForm.notes" />
       </label>
     </div>
+    <p class="receipt-total">Total del recibo: <strong>{{ receiptTotal() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong></p>
     <button type="button" class="primary" [disabled]="loading()" (click)="createReceipt()">
       {{ loading() ? 'Guardando…' : 'Emitir recibo' }}
     </button>

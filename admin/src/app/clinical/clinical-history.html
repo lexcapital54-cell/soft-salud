@@ -2962,6 +2962,9 @@
                   <h4 class="odo-sub">Presupuesto de ortodoncia</h4>
                   @defer (on viewport) {
                     <app-ortho-budget [data]="dental()" [disabled]="orthoLiveDisabled()" (changed)="onOrthoLiveChange()" />
+                    @if (canWrite() && encounter()?.patient?.id) {
+                      <app-plan-payments source="ORTHO" [patientId]="encounter()!.patient.id" [patientName]="consentPatientName()" />
+                    }
                   } @placeholder {
                     <p class="muted small">Cargando presupuesto…</p>
                   }
@@ -3392,6 +3395,13 @@
                   />
                 } @placeholder {
                   <p class="muted small">Cargando plan por fases y presupuesto…</p>
+                }
+                @if (canWrite() && encounter()?.patient?.id) {
+                  @defer (on viewport) {
+                    <app-plan-payments source="PLAN" [patientId]="encounter()!.patient.id" [patientName]="consentPatientName()" />
+                  } @placeholder {
+                    <p class="muted small">Cargando pagos en caja…</p>
+                  }
                 }
               </section>
             } @else if (isSoap()) {

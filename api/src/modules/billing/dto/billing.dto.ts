@@ -42,6 +42,11 @@ export class ReceiptItemDto {
   @IsOptional()
   @IsUUID()
   appointmentId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  planItemKey?: string;
 }
 
 export class CreateReceiptDto {

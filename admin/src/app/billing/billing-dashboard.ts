@@ -13,12 +13,13 @@ import {
   DailyClose,
   PaymentMethod,
 } from './billing-api.service';
+import { PlanReceiptLine, ReceiptPlanPicker } from './receipt-plan-picker';
 
 type Tab = 'recibos' | 'nuevo' | 'gastos' | 'paquetes' | 'cierre';
 
 @Component({
   selector: 'app-billing-dashboard',
-  imports: [FormsModule, RouterLink, CurrencyPipe, DatePipe],
+  imports: [FormsModule, RouterLink, CurrencyPipe, DatePipe, ReceiptPlanPicker],
   templateUrl: './billing-dashboard.html',
   styleUrl: './billing-dashboard.scss',
 })
@@ -38,6 +39,8 @@ export class BillingDashboard implements OnInit {
   packages = signal<BillingPackage[]>([]);
   daily = signal<DailyClose | null>(null);
   patients = signal<Patient[]>([]);
+  readonly planLines = signal<PlanReceiptLine[]>([]);
+  readonly planReloadKey = signal(0);
 
   readonly methods: Array<{ value: PaymentMethod; label: string }> = [
     { value: 'CASH', label: 'Efectivo' },
@@ -191,6 +194,11 @@ export class BillingDashboard implements OnInit {
       this.error.set('El valor no puede ser negativo.');
       return;
     }
+    const items = this.receiptItems();
+    if (!items.length) {
+      this.error.set('Seleccione procedimientos del plan o diligencie la línea manual.');
+      return;
+    }
     this.loading.set(true);
     this.api
       .createReceipt({
@@ -198,15 +206,7 @@ export class BillingDashboard implements OnInit {
         appointmentId: this.receiptForm.appointmentId || undefined,
         method: this.receiptForm.method,
         notes: this.receiptForm.notes || undefined,
-        items: [
-          {
-            description: this.receiptForm.description || 'Consulta',
-            quantity: this.receiptForm.quantity || 1,
-            unitPrice: Number(this.receiptForm.unitPrice) || 0,
-            packageId: this.receiptForm.packageId || undefined,
-            appointmentId: this.receiptForm.appointmentId || undefined,
-          },
-        ],
+        items,
       })
       .subscribe({
         next: (row) => {
@@ -215,6 +215,7 @@ export class BillingDashboard implements OnInit {
           this.receiptForm.appointmentId = '';
           this.receiptForm.notes = '';
           this.receiptForm.packageId = '';
+          this.planReloadKey.update((k) => k + 1);
           this.tab.set('recibos');
           this.reload();
           this.openPdf(row.id);
@@ -224,6 +225,29 @@ export class BillingDashboard implements OnInit {
           this.error.set(err?.error?.message || 'No se pudo crear el recibo.');
         },
       });
+  }
+
+  /** Líneas del plan de tratamiento más la línea manual (si tiene valor o no hay líneas del plan). */
+  private receiptItems() {
+    const plan = this.planLines();
+    const manualPrice = Number(this.receiptForm.unitPrice) || 0;
+    const manual =
+      !plan.length || manualPrice > 0 || this.receiptForm.packageId
+        ? [
+            {
+              description: this.receiptForm.description || 'Consulta',
+              quantity: this.receiptForm.quantity || 1,
+              unitPrice: manualPrice,
+              packageId: this.receiptForm.packageId || undefined,
+              appointmentId: this.receiptForm.appointmentId || undefined,
+            },
+          ]
+        : [];
+    return [...plan, ...manual];
+  }
+
+  receiptTotal() {
+    return this.receiptItems().reduce((s, i) => s + (i.quantity || 1) * i.unitPrice, 0);
   }
 
   createExpense() {

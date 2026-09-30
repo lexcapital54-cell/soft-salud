@@ -19,6 +19,41 @@ export interface BillingPatientRef {
   documentNumber?: string;
 }
 
+export interface PlanItemBalance {
+  key: string;
+  source: 'PLAN' | 'ORTHO';
+  label: string;
+  detail: string;
+  cupsCode: string | null;
+  tooth: string | null;
+  phase: string | null;
+  status: string;
+  quantity: number;
+  unitValue: number;
+  discountPct: number;
+  net: number;
+  paid: number;
+  balance: number;
+}
+
+export interface PlanGroup {
+  items: PlanItemBalance[];
+  net: number;
+  paid: number;
+  balance: number;
+}
+
+/** Plan de tratamiento de la historia (odontología y ortodoncia) con abonos y saldo. */
+export interface TreatmentPlanBilling {
+  patient: { id: string; fullName: string; document: string; phone: string | null; email: string | null; eps: string | null };
+  record: { encounterId: string; code: string; specialty: string; signed: boolean; includesOrtho: boolean } | null;
+  plan: PlanGroup;
+  ortho: PlanGroup & {
+    financing: { downPayment: number; installments: number; installmentValue: number; startDate: string | null };
+  };
+  totals: { net: number; paid: number; balance: number };
+}
+
 export interface BillingReceipt {
   id: string;
   number: string;
@@ -100,6 +135,7 @@ export class BillingApiService {
       cupsCode?: string;
       packageId?: string;
       appointmentId?: string;
+      planItemKey?: string;
     }>;
     method?: PaymentMethod;
     appointmentId?: string;
@@ -107,6 +143,10 @@ export class BillingApiService {
     tax?: number;
   }) {
     return this.http.post<BillingReceipt>(`${API}/billing/receipts`, body);
+  }
+
+  treatmentPlan(patientId: string) {
+    return this.http.get<TreatmentPlanBilling>(`${API}/billing/patients/${patientId}/treatment-plan`);
   }
 
   receiptPdfUrl(id: string) {

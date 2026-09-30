@@ -21,6 +21,7 @@ import {
   CreateReceiptDto,
 } from './dto/billing.dto';
 import { ReceiptPdfService } from './receipt-pdf.service';
+import { BillingPlanService } from './billing-plan.service';
 
 const BILLING_ROLES: UserRole[] = [
   UserRole.ADMIN,
@@ -37,6 +38,7 @@ export class BillingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pdfService: ReceiptPdfService,
+    private readonly planService: BillingPlanService,
   ) {}
 
   private requireClinicId(user: User) {
@@ -168,6 +170,7 @@ export class BillingService {
     const paidAt = dto.paidAt ? new Date(dto.paidAt) : new Date();
 
     const created = await this.prisma.$transaction(async (tx) => {
+      const planLink = await this.planService.validateLines(tx, clinicId, dto.patientId, dto.items);
       for (const item of dto.items) {
         if (!item.packageId) continue;
         const pkg = await tx.sessionPackage.findFirst({
@@ -203,7 +206,7 @@ export class BillingService {
           clinicId,
           patientId: dto.patientId,
           appointmentId: dto.appointmentId ?? null,
-          encounterId: dto.encounterId ?? null,
+          encounterId: dto.encounterId ?? planLink?.encounterId ?? null,
           number,
           issuedAt: paidAt,
           status: InvoiceStatus.ISSUED,
@@ -219,6 +222,8 @@ export class BillingService {
               unitPrice: item.unitPrice,
               packageId: item.packageId ?? null,
               appointmentId: item.appointmentId ?? dto.appointmentId ?? null,
+              planItemKey: item.planItemKey ?? null,
+              planSource: item.planItemKey ? planLink?.sources.get(item.planItemKey) ?? null : null,
             })),
           },
         },
