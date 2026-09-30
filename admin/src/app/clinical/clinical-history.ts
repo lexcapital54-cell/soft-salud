@@ -10,6 +10,7 @@ import { DentalPatientSummary } from './dentistry/dental-patient-summary';
 import { OrthoCaseDashboard } from './dentistry/ortho-case-dashboard';
 import { OrthoCaseIntake } from './dentistry/ortho-case-intake';
 import { OrthoExamPanel } from './dentistry/ortho-exam-panel';
+import { OrthoMovementPlan } from './dentistry/ortho-movement-plan';
 import { ORTHO_CASE_STATUSES } from './dentistry/ortho-case.models';
 import { CompletenessContext, ModuleStatus, dentalModuleStatus, moduleDotStyle } from './dentistry/dental-completeness';
 import { TREATMENT_PHASES, budgetTotals, rowNet, suggestPhase } from './dentistry/treatment-budget.models';
@@ -314,6 +315,7 @@ function emptyContent(): ClinicalContent {
     OrthoCaseDashboard,
     OrthoCaseIntake,
     OrthoExamPanel,
+    OrthoMovementPlan,
     FormsModule,
     RouterLink,
     DatePipe,

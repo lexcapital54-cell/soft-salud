@@ -1382,6 +1382,39 @@ export class HcePdfService {
       sections.push(this.section('Sonrisa, proporciones y examen funcional', examText, titleColor, band));
     }
 
+    const mvLabels: Record<string, [string, string]> = {
+      MESIALIZACION: ['Mesialización', 'mm'],
+      DISTALIZACION: ['Distalización', 'mm'],
+      INTRUSION: ['Intrusión', 'mm'],
+      EXTRUSION: ['Extrusión', 'mm'],
+      ROTACION: ['Rotación', '°'],
+      TORQUE: ['Torque', '°'],
+      TIP: ['Tip (angulación)', '°'],
+      INCLINACION: ['Inclinación', '°'],
+      TRASLACION: ['Traslación', 'mm'],
+      PROTRUSION: ['Protrusión', 'mm'],
+      RETRUSION: ['Retrusión', 'mm'],
+      EXPANSION: ['Expansión', 'mm'],
+      CONTRACCION: ['Contracción', 'mm'],
+    };
+    const mvStatus: Record<string, string> = { PLANIFICADO: 'Planificado', EN_CURSO: 'En curso', LOGRADO: 'Logrado', SUSPENDIDO: 'Suspendido' };
+    const movements = rows(dental.orthoMovements)
+      .filter((r) => mvLabels[str(r.type)])
+      .sort((a, b) => Number(str(a.tooth)) - Number(str(b.tooth)));
+    if (movements.length) {
+      sections.push(
+        table(
+          'Plan de movimientos dentarios',
+          ['9%', '20%', '20%', '11%', '13%', '*'],
+          ['Diente', 'Movimiento', 'Dirección', 'Magnitud', 'Estado', 'Observación'],
+          movements.map((r) => {
+            const [label, unit] = mvLabels[str(r.type)];
+            return [str(r.tooth), label, str(r.direction), str(r.magnitude) ? `${str(r.magnitude)} ${unit}` : '', mvStatus[str(r.status)] || '', str(r.notes)];
+          }),
+        ),
+      );
+    }
+
     const photos = Object.values(obj(dental.photos)).length;
     const imaging = rows(dental.imaging).filter((r) => str(r.type) || str(r.attachmentId) || str(r.findings));
     if (imaging.length) {

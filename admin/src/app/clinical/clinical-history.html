@@ -2573,6 +2573,16 @@
                   (changed)="onClinicalFieldChange()"
                   (save)="saveDraftOnly()"
                 />
+                @if (showOrthoModule()) {
+                  <details class="ceph-details odo-mt" open>
+                    <summary>Plan de movimientos dentarios: tipo, dirección y magnitud por diente</summary>
+                    @defer (on viewport) {
+                      <app-ortho-movement-plan [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                    } @placeholder {
+                      <p class="muted small">Cargando plan de movimientos…</p>
+                    }
+                  </details>
+                }
                 <details class="ceph-details odo-mt" [open]="rehabOpenByDefault()">
                   <summary>Rehabilitación oral: Kennedy automático, implantes y prótesis</summary>
                   @defer (on viewport) {

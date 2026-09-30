@@ -244,6 +244,7 @@ export const DENTISTRY_CONTENT_DEFAULTS = {
   },
   examNotes: {},
   periodontogram: { teeth: {}, updatedAt: '' },
+  orthoMovements: [],
   orthoExam: {
     smile: { smileLine: '', restExposure: '', smileExposure: '', gingivalExposure: '', smileArc: '', symmetry: '', occlusalCant: '', notes: '' },
     proportions: { upperThird: '', middleThird: '', lowerThird: '', facialHeight: '', facialWidth: '' },
