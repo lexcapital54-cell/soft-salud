@@ -1476,6 +1476,73 @@ export class HcePdfService {
       );
     }
 
+    const orthoDx = obj(dental.orthoDx);
+    const dxCat = obj(orthoDx.categories);
+    const dxText = lines([
+      ['Esquelético', dxCat.skeletal],
+      ['Dental', dxCat.dental],
+      ['Vertical', dxCat.vertical],
+      ['Transversal', dxCat.transverse],
+      ['Funcional', dxCat.functional],
+      ['Tejidos blandos', dxCat.softTissue],
+      ['Apiñamiento', dxCat.crowding],
+    ]);
+    if (dxText) sections.push(this.section('Diagnóstico ortodóntico por categorías', dxText, titleColor, band));
+    const problems = rows(orthoDx.problems).filter((r) => str(r.problem));
+    if (problems.length) {
+      sections.push(
+        table(
+          'Problemas del paciente',
+          ['*', '14%', '20%', '12%', '14%'],
+          ['Problema', 'Severidad', 'Localización', 'Prioridad', 'Estado'],
+          problems.map((r) => [str(r.problem), str(r.severity), str(r.location), str(r.priority), str(r.status)]),
+        ),
+      );
+    }
+    const objectives = rows(orthoDx.objectives).filter((r) => str(r.objective));
+    if (objectives.length) {
+      const pbName = (id: unknown) => str(problems.find((p) => str(p.id) === str(id))?.problem);
+      sections.push(
+        table(
+          'Objetivos del tratamiento',
+          ['30%', '*', '12%', '14%'],
+          ['Problema', 'Objetivo', 'Prioridad', 'Estado'],
+          objectives.map((r) => [pbName(r.problemId), str(r.objective), str(r.priority), str(r.status)]),
+        ),
+      );
+    }
+    const plans = rows(orthoDx.plans);
+    if (plans.length) {
+      const planText = plans
+        .map((p) => {
+          const chosen = str(orthoDx.selectedPlan) === str(p.id);
+          const head = `Plan ${str(p.label)}${chosen ? ` (elegido${str(orthoDx.selectedBy) ? ' por ' + str(orthoDx.selectedBy) : ''}${str(orthoDx.selectedAt) ? ', ' + str(orthoDx.selectedAt) : ''})` : ''}`;
+          const body = lines([
+            ['Descripción', p.description],
+            ['Ventajas', p.advantages],
+            ['Consideraciones', p.considerations],
+            ['Extracciones', p.extractions],
+            ['Aparatología', p.appliance],
+            ['Duración estimada', p.duration],
+            ['Observaciones', p.notes],
+          ]);
+          return `${head}\n${body}`;
+        })
+        .join('\n\n');
+      sections.push(this.section('Alternativas de tratamiento', planText, titleColor, band));
+    }
+    const extractions = rows(orthoDx.extractions).filter((r) => str(r.tooth));
+    if (extractions.length) {
+      sections.push(
+        table(
+          'Plan de extracciones',
+          ['10%', '20%', '*', '14%', '14%'],
+          ['Pieza', 'Motivo', 'Indicación', 'Fecha', 'Estado'],
+          extractions.map((r) => [str(r.tooth), str(r.reason), str(r.indication), str(r.date), str(r.status)]),
+        ),
+      );
+    }
+
     const mvLabels: Record<string, [string, string]> = {
       MESIALIZACION: ['Mesialización', 'mm'],
       DISTALIZACION: ['Distalización', 'mm'],

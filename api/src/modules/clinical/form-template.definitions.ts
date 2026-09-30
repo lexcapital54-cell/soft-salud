@@ -247,6 +247,16 @@ export const DENTISTRY_CONTENT_DEFAULTS = {
   orthoMovements: [],
   orthoCeph: { analysis: '', rows: {}, notes: '' },
   orthoModels3d: [],
+  orthoDx: {
+    categories: { skeletal: '', dental: '', vertical: '', transverse: '', functional: '', softTissue: '', crowding: '' },
+    problems: [],
+    objectives: [],
+    plans: [],
+    selectedPlan: '',
+    selectedAt: '',
+    selectedBy: '',
+    extractions: [],
+  },
   orthoArch: {
     upper: { form: '', intercanine: '', intermolar: '', depth: '', perimeter: '', requiredManual: '', symmetry: '', notes: '' },
     lower: { form: '', intercanine: '', intermolar: '', depth: '', perimeter: '', requiredManual: '', symmetry: '', notes: '' },

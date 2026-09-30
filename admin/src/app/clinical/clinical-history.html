@@ -2832,6 +2832,12 @@
                       <p class="muted small">Cargando modelos digitales…</p>
                     }
                   }
+                  <h4 class="odo-sub">Diagnóstico, problemas y objetivos</h4>
+                  @defer (on viewport) {
+                    <app-ortho-diagnosis [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                  } @placeholder {
+                    <p class="muted small">Cargando diagnóstico ortodóntico…</p>
+                  }
                   <div class="ft-grid-2 odo-mt">
                     <label
                       >{{ showOrthoSpecialistFields() ? 'Otras medidas' : 'Medidas (cefalometría y modelos)' }}
@@ -2912,6 +2918,18 @@
                         ></textarea>
                       </label>
                     </div>
+                    <h4 class="odo-sub">Alternativas de tratamiento y extracciones</h4>
+                    @defer (on viewport) {
+                      <app-ortho-plan-options
+                        [data]="dental()"
+                        [disabled]="clinicalFormDisabled()"
+                        [professionalName]="encounter()?.professional?.fullName || user()?.fullName || ''"
+                        [applianceOptions]="orthoAppliances"
+                        (changed)="onClinicalFieldChange()"
+                      />
+                    } @placeholder {
+                      <p class="muted small">Cargando alternativas de tratamiento…</p>
+                    }
                   }
                   @if (encounter()) {
                     <h4 class="odo-sub">Seguimiento del tratamiento</h4>

@@ -13,6 +13,7 @@ import { OrthoMovement, normalizeMovements } from './ortho-movement.data';
 import { OrthoArchData, emptyOrthoArch, normalizeOrthoArch } from './ortho-arch.data';
 import { OrthoCephData, emptyOrthoCeph, normalizeOrthoCeph } from './ortho-ceph.data';
 import { DigitalModelRow, normalizeDigitalModels } from './ortho-models3d.data';
+import { OrthoDxData, emptyOrthoDx, normalizeOrthoDx } from './ortho-dx.data';
 
 /** Servicio de la atención; «ORTODONCIA» activa el módulo de ortodoncia. «ODONTOLOGIA» es el valor antiguo de general. */
 export type DentalService =
@@ -485,6 +486,7 @@ export interface DentistryContent {
   orthoArch: OrthoArchData;
   orthoCeph: OrthoCephData;
   orthoModels3d: DigitalModelRow[];
+  orthoDx: OrthoDxData;
   prescriptions: PrescriptionRow[];
   orders: OrderRow[];
   requiredConsents: string[];
@@ -812,6 +814,7 @@ export function emptyDentistry(): DentistryContent {
     orthoArch: emptyOrthoArch(),
     orthoCeph: emptyOrthoCeph(),
     orthoModels3d: [],
+    orthoDx: emptyOrthoDx(),
     prescriptions: [],
     orders: [],
     requiredConsents: [],
@@ -965,6 +968,7 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
     orthoArch: normalizeOrthoArch(raw.orthoArch),
     orthoCeph: normalizeOrthoCeph(raw.orthoCeph),
     orthoModels3d: normalizeDigitalModels(raw.orthoModels3d),
+    orthoDx: normalizeOrthoDx(raw.orthoDx),
     prescriptions: (raw.prescriptions || []).map((r) => ({ ...emptyPrescriptionRow(), ...r })),
     orders: (raw.orders || []).map((r) => ({ ...emptyOrderRow(), ...r })),
     requiredConsents: [...(raw.requiredConsents || [])],
