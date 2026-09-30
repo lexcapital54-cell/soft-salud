@@ -2482,6 +2482,20 @@
                     En «Movilidad» anote solo el grado de cada pieza.
                   </p>
                 }
+                @if (!clinicalFormDisabled() || hasPeriodontogram()) {
+                  <details class="ceph-details odo-mt perio-details" [open]="dental().service === 'PERIODONCIA' || hasPeriodontogram()">
+                    <summary>Periodontograma (6 sitios por diente: sondaje, margen, NIC, sangrado, placa, supuración, movilidad y furca)</summary>
+                    @defer (on viewport) {
+                      <app-dental-periodontogram
+                        [data]="dental()"
+                        [disabled]="clinicalFormDisabled()"
+                        (changed)="onClinicalFieldChange()"
+                      />
+                    } @placeholder {
+                      <p class="muted small">Cargando periodontograma…</p>
+                    }
+                  </details>
+                }
                 <label class="odo-mt"
                   >Observaciones periodontales
                   <input [(ngModel)]="dental().periodontal.notes" [readonly]="clinicalFormDisabled()" />

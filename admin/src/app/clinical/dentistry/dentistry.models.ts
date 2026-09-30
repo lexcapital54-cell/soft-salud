@@ -1,4 +1,5 @@
 import * as z from 'zod/mini';
+import { Periodontogram, emptyPeriodontogram, normalizePeriodontogram } from './periodontogram.models';
 
 /** Servicio de la atención; «ORTODONCIA» activa el módulo de ortodoncia. «ODONTOLOGIA» es el valor antiguo de general. */
 export type DentalService =
@@ -368,6 +369,7 @@ export interface DentistryContent {
   };
   /** Descripción de hallazgos alterados del examen, clave «extraoral.lips», «intraoral.tongue»… */
   examNotes: Record<string, string>;
+  periodontogram: Periodontogram;
   periodontal: {
     gingiva: string;
     bleeding: string;
@@ -690,6 +692,7 @@ export function emptyDentistry(): DentistryContent {
       occlusionNotes: '',
     },
     examNotes: {},
+    periodontogram: emptyPeriodontogram(),
     periodontal: {
       gingiva: '',
       bleeding: '',
@@ -862,6 +865,7 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
     extraoral: { ...base.extraoral, ...(raw.extraoral || {}) },
     intraoral: { ...base.intraoral, ...(raw.intraoral || {}) },
     examNotes: { ...(raw.examNotes || {}) },
+    periodontogram: normalizePeriodontogram(raw.periodontogram),
     periodontal: { ...base.periodontal, ...(raw.periodontal || {}) },
     odontogram,
     orthoArches: { ...base.orthoArches, ...(raw.orthoArches || {}) },

@@ -1052,6 +1052,50 @@ export class HcePdfService {
         band,
       ),
     );
+    const perioTeeth = obj(obj(dental.periodontogram).teeth);
+    const triple = (v: unknown) => {
+      const a = Array.isArray(v) ? v : [];
+      return [0, 1, 2].map((i) => (typeof a[i] === 'number' ? String(a[i]) : '·')).join('-');
+    };
+    const flagged = (v: unknown) => (Array.isArray(v) ? v.filter((x) => x === true).length : 0);
+    const perioOrder = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28, 48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
+    const romanFurca = ['0', 'I', 'II', 'III'];
+    const perioRows = perioOrder
+      .map(String)
+      .filter((t) => perioTeeth[t])
+      .map((t) => {
+        const r = obj(perioTeeth[t]);
+        const pd = obj(r.pd);
+        const rec = obj(r.rec);
+        const bop = flagged(obj(r.bop).b) + flagged(obj(r.bop).l);
+        const plq = flagged(obj(r.plq).b) + flagged(obj(r.plq).l);
+        const sup = flagged(obj(r.sup).b) + flagged(obj(r.sup).l);
+        return {
+          row: [
+            t,
+            triple(pd.b),
+            triple(rec.b),
+            triple(pd.l),
+            triple(rec.l),
+            [bop ? `S ${bop}` : '', plq ? `P ${plq}` : '', sup ? `Sup ${sup}` : ''].filter(Boolean).join(' · '),
+            typeof r.mobility === 'number' ? String(r.mobility) : '',
+            typeof r.furcation === 'number' ? romanFurca[r.furcation] || String(r.furcation) : '',
+          ],
+          hasData: [pd.b, pd.l, rec.b, rec.l].some((v) => Array.isArray(v) && v.some((x) => typeof x === 'number')) || bop + plq + sup > 0 || typeof r.mobility === 'number' || typeof r.furcation === 'number',
+        };
+      })
+      .filter((r) => r.hasData)
+      .map((r) => r.row);
+    if (perioRows.length) {
+      sections.push(
+        table(
+          'Periodontograma (mm, sitios mesial-central-distal)',
+          ['7%', '15%', '15%', '15%', '15%', '*', '6%', '6%'],
+          ['Pieza', 'Sondaje V', 'Margen V', 'Sondaje P/L', 'Margen P/L', 'Sitios con sangrado / placa / supuración', 'Mov.', 'Furca'],
+          perioRows,
+        ),
+      );
+    }
 
     const odontogram = obj(dental.odontogram);
     const label = (k: unknown) => DENTAL_TOOTH_LABELS[str(k)] || str(k);

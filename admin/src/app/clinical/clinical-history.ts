@@ -1,5 +1,7 @@
 import { DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { DentalExamGroup } from './dentistry/dental-exam-group';
+import { DentalPeriodontogram } from './dentistry/dental-periodontogram';
+import { hasPerioData } from './dentistry/periodontogram.models';
 import {
   AfterViewInit,
   Component,
@@ -292,6 +294,7 @@ function emptyContent(): ClinicalContent {
   imports: [
     NgTemplateOutlet,
     DentalExamGroup,
+    DentalPeriodontogram,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -1179,6 +1182,10 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   /** Fuera de Periodoncia solo se piden los hallazgos básicos; el resto aparece si ya tiene dato. */
   private readonly basicPeriodontalKeys = new Set(['gingiva', 'bleeding', 'plaque', 'calculus']);
+
+  hasPeriodontogram() {
+    return hasPerioData(this.dental().periodontogram);
+  }
 
   visiblePeriodontalFields() {
     const d = this.dental();
