@@ -153,6 +153,10 @@ export class OrthoControlDto {
   @IsOptional() @IsString() @MaxLength(40) hygiene?: string;
   @IsOptional() @IsString() @MaxLength(40) cooperation?: string;
   @IsOptional() @IsString() @MaxLength(200) ipr?: string;
+  @IsOptional() @IsString() @MaxLength(40) pain?: string;
+  @IsOptional() @IsString() @MaxLength(300) emergency?: string;
+  @IsOptional() @IsString() @MaxLength(200) brackets?: string;
+  @IsOptional() @IsString() @MaxLength(120) ligatures?: string;
 
   /** Procedimientos rápidos marcados; el CUPS se asigna en el servidor. */
   @IsOptional()

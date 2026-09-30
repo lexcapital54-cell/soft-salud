@@ -2965,6 +2965,15 @@
                         <strong>{{ dental().orthodontics.estimatedDuration || '—' }}</strong>
                       </div>
                     </div>
+                    @defer (on viewport) {
+                      <app-ortho-evolution-track
+                        [timeline]="timeline"
+                        [estimatedDuration]="dental().orthodontics.estimatedDuration"
+                        [planned]="dental().orthoFollow.agenda"
+                      />
+                    } @placeholder {
+                      <p class="muted small">Cargando línea de tiempo…</p>
+                    }
                     @if (timeline.rows.length) {
                       <div class="ortho-controls-wrap">
                         <table class="ortho-controls">
@@ -3001,6 +3010,31 @@
                         Aún no hay controles firmados. Después de guardar la historia, cada cita se registra en
                         «Notas de evolución / control» con arcos, elásticos, higiene y próxima cita.
                       </p>
+                    }
+                    <h4 class="odo-sub">Controles programados</h4>
+                    @defer (on viewport) {
+                      <app-ortho-agenda
+                        [data]="dental()"
+                        [disabled]="clinicalFormDisabled()"
+                        [professionalName]="encounter()?.professional?.fullName || user()?.fullName || ''"
+                        [patientId]="encounter()?.patient?.id || ''"
+                        [patientDocument]="encounter()?.patient?.documentNumber || ''"
+                        [lastControl]="timeline.rows[0]?.date || null"
+                        (changed)="onClinicalFieldChange()"
+                      />
+                    } @placeholder {
+                      <p class="muted small">Cargando controles programados…</p>
+                    }
+                    <h4 class="odo-sub">Retención</h4>
+                    @defer (on viewport) {
+                      <app-ortho-retention
+                        [data]="dental()"
+                        [disabled]="clinicalFormDisabled()"
+                        [debondedAt]="timeline.debondedAt"
+                        (changed)="onClinicalFieldChange()"
+                      />
+                    } @placeholder {
+                      <p class="muted small">Cargando retención…</p>
                     }
                     <button type="button" class="linkish ortho-history-toggle" (click)="toggleOrthoHistory()">
                       {{ orthoHistoryOpen() ? 'Ocultar' : 'Ver' }} quién y cuándo cambió el diagnóstico, el plan y la fase

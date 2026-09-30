@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { OrthoControlCatalog } from '../clinical.models';
-import { ORTHO_ARCH_WIRES, ORTHO_CONTROL_EVENTS, ORTHO_ELASTICS, ORTHO_RATING, OrthoControl } from './ortho-controls';
+import { ORTHO_ARCH_WIRES, ORTHO_CONTROL_EVENTS, ORTHO_ELASTICS, ORTHO_LIGATURES, ORTHO_PAIN, ORTHO_RATING, OrthoControl } from './ortho-controls';
 
 /** Control de ortodoncia en el sillón: botones para lo frecuente y campos solo cuando aplican. */
 @Component({
@@ -87,6 +87,28 @@ import { ORTHO_ARCH_WIRES, ORTHO_CONTROL_EVENTS, ORTHO_ELASTICS, ORTHO_RATING, O
         </div>
       </div>
 
+      <div class="oqc-grid">
+        <div>
+          <p class="oqc-label">Dolor referido</p>
+          <div class="oqc-seg small">
+            @for (o of pain; track o) {
+              <button type="button" [class.on]="c.pain === o" (click)="c.pain = c.pain === o ? '' : o">{{ o }}</button>
+            }
+          </div>
+        </div>
+        <label>Ligaduras <input [(ngModel)]="c.ligatures" list="oqc-ligatures" placeholder="Elásticas grises" maxlength="120" /></label>
+        <label>Brackets <input [(ngModel)]="c.brackets" placeholder="Todos en posición · despegado 22" maxlength="200" /></label>
+      </div>
+      <div class="oqc-emergency">
+        <button type="button" class="oqc-toggle" [class.on]="emergencyOn" [attr.aria-pressed]="emergencyOn" (click)="toggleEmergency()">
+          <span class="chk" aria-hidden="true">{{ emergencyOn ? '!' : '+' }}</span>
+          Consulta de emergencia
+        </button>
+        @if (emergencyOn || c.emergency) {
+          <input [(ngModel)]="c.emergency" placeholder="Motivo: arco que pincha, bracket suelto, dolor agudo…" maxlength="300" />
+        }
+      </div>
+
       <div class="oqc-photo">
         <p class="oqc-label">Foto intraoral frontal del control</p>
         @if (c.photoAttachmentId) {
@@ -121,6 +143,11 @@ import { ORTHO_ARCH_WIRES, ORTHO_CONTROL_EVENTS, ORTHO_ELASTICS, ORTHO_RATING, O
 
       <datalist id="oqc-wires">
         @for (w of wires; track w) {
+          <option [value]="w"></option>
+        }
+      </datalist>
+      <datalist id="oqc-ligatures">
+        @for (w of ligatures; track w) {
           <option [value]="w"></option>
         }
       </datalist>
@@ -169,6 +196,10 @@ import { ORTHO_ARCH_WIRES, ORTHO_CONTROL_EVENTS, ORTHO_ELASTICS, ORTHO_RATING, O
     .oqc-upload.busy { opacity: 0.6; cursor: progress; }
     .oqc-cups { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.76rem; color: #334155; }
     .oqc-chip { padding: 2px 8px; border-radius: 99px; background: #e0f2fe; color: #075985; font-weight: 600; }
+    .oqc-emergency { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .oqc-emergency input { flex: 1 1 260px; }
+    .oqc-emergency .oqc-toggle.on { border-color: #dc2626; background: #fef2f2; color: #991b1b; }
+    .oqc-emergency .oqc-toggle.on .chk { background: #dc2626; }
     .oqc-issue { margin: 0; font-size: 0.8rem; color: #b42318; }
   `,
 })
@@ -189,6 +220,20 @@ export class OrthoQuickControlComponent {
   readonly rating = ORTHO_RATING;
   readonly wires = ORTHO_ARCH_WIRES;
   readonly elastics = ORTHO_ELASTICS;
+  readonly pain = ORTHO_PAIN;
+  readonly ligatures = ORTHO_LIGATURES;
+  emergencyOn = false;
+
+  toggleEmergency() {
+    const c = this.control();
+    if (this.emergencyOn || c.emergency) {
+      if (c.emergency?.trim() && !confirm('¿Quitar el motivo de emergencia escrito en este control?')) return;
+      c.emergency = '';
+      this.emergencyOn = false;
+    } else {
+      this.emergencyOn = true;
+    }
+  }
 
   has(key: string) {
     return this.control().procedures.includes(key);

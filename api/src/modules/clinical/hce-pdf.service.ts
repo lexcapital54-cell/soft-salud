@@ -1627,6 +1627,53 @@ export class HcePdfService {
     ]);
     if (str(al.total) && alText) sections.push(this.section('Alineadores', alText, titleColor, band));
 
+    const follow = obj(dental.orthoFollow);
+    const agenda = rows(follow.agenda).filter((r) => str(r.date));
+    if (agenda.length) {
+      sections.push(
+        table(
+          'Controles programados',
+          ['16%', '10%', '22%', '*', '16%'],
+          ['Fecha', 'Hora', 'Tipo', 'Profesional', 'Estado'],
+          [...agenda]
+            .sort((a, b) => str(a.date).localeCompare(str(b.date)))
+            .map((r) => [str(r.date).split('-').reverse().join('/'), str(r.time), str(r.type), str(r.professional), str(r.status)]),
+        ),
+      );
+    }
+    const retainers = rows(follow.retainers).filter((r) => str(r.type) || str(r.arch));
+    if (retainers.length) {
+      sections.push(
+        table(
+          'Retenedores',
+          ['16%', '11%', '13%', '*', '16%', '12%', '12%'],
+          ['Tipo', 'Arcada', 'Instalación', 'Material', 'Uso', 'Estado', 'Cumplimiento'],
+          retainers.map((r) => [
+            str(r.type),
+            str(r.arch),
+            str(r.installedAt),
+            str(r.material),
+            joinDash(r.usage, str(r.hoursPerDay) && `${str(r.hoursPerDay)} h/día`),
+            str(r.status),
+            str(r.compliance),
+          ]),
+        ),
+      );
+    }
+    const retentionChecks = rows(follow.checks).filter((r) => str(r.date) || str(r.stability) || str(r.notes));
+    if (retentionChecks.length) {
+      sections.push(
+        table(
+          'Seguimiento de retención',
+          ['12%', '14%', '16%', '18%', '*'],
+          ['Control', 'Fecha', 'Uso', 'Estabilidad', 'Observaciones'],
+          [...retentionChecks]
+            .sort((a, b) => Number(str(a.milestone)) - Number(str(b.milestone)))
+            .map((r) => [`${str(r.milestone)} m`, str(r.date), str(r.compliance), str(r.stability), str(r.notes)]),
+        ),
+      );
+    }
+
     const mvLabels: Record<string, [string, string]> = {
       MESIALIZACION: ['Mesialización', 'mm'],
       DISTALIZACION: ['Distalización', 'mm'],

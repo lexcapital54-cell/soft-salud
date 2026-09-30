@@ -23,6 +23,10 @@ export interface OrthoControl {
   /** Procedimientos rápidos marcados; el servidor les asigna el CUPS. */
   procedures: string[];
   ipr: string;
+  pain?: string;
+  emergency?: string;
+  brackets?: string;
+  ligatures?: string;
   photoAttachmentId?: string;
   nextAppointment?: string;
 }
@@ -40,8 +44,15 @@ export function emptyOrthoControl(): OrthoControl {
     cooperation: '',
     procedures: [],
     ipr: '',
+    pain: '',
+    emergency: '',
+    brackets: '',
+    ligatures: '',
   };
 }
+
+export const ORTHO_PAIN = ['Sin dolor', 'Leve', 'Moderado', 'Severo'];
+export const ORTHO_LIGATURES = ['Elásticas', 'Metálicas', 'Autoligado (sin ligadura)', 'Cadeneta'];
 
 export const ORTHO_ARCH_WIRES = [
   'NiTi 0.012',
@@ -98,6 +109,10 @@ export function orthoControlNoteLines(c: OrthoControl, procedureLabels: Record<s
     ['Activaciones', c.activations],
     ['IPR', c.ipr],
     ['Reparaciones / recementados', c.repairs],
+    ['Brackets', c.brackets || ''],
+    ['Ligaduras', c.ligatures || ''],
+    ['Dolor', c.pain || ''],
+    ['Emergencia', c.emergency || ''],
     ['Higiene', c.hygiene],
     ['Colaboración', c.cooperation],
   ];
@@ -177,6 +192,15 @@ export interface OrthoControlRow {
   nextAppointment: string;
   professional: string;
   cups: string;
+  cooperation: string;
+  ipr: string;
+  repairs: string;
+  pain: string;
+  emergency: string;
+  brackets: string;
+  ligatures: string;
+  eventCode: string;
+  photoAttachmentId: string;
 }
 
 export interface OrthoTimeline {
@@ -214,6 +238,15 @@ export function orthoTreatmentTimeline(evolutions: ClinicalEvolution[], now = ne
       nextAppointment: c.nextAppointment || '',
       professional: ev.content.professionalName || ev.author?.fullName || '',
       cups: (c.cups || []).map((x) => x.code).join(', '),
+      cooperation: c.cooperation || '',
+      ipr: c.ipr || '',
+      repairs: c.repairs || '',
+      pain: c.pain || '',
+      emergency: c.emergency || '',
+      brackets: c.brackets || '',
+      ligatures: c.ligatures || '',
+      eventCode: c.event || 'CONTROL',
+      photoAttachmentId: c.photoAttachmentId || '',
     });
   }
   let months: number | null = null;

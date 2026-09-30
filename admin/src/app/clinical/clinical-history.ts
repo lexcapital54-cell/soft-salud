@@ -17,6 +17,9 @@ import { OrthoDigitalModels } from './dentistry/ortho-digital-models';
 import { OrthoDiagnosis } from './dentistry/ortho-diagnosis';
 import { OrthoPlanOptions } from './dentistry/ortho-plan-options';
 import { OrthoMechanics } from './dentistry/ortho-mechanics';
+import { OrthoEvolutionTrack } from './dentistry/ortho-evolution-track';
+import { OrthoAgenda } from './dentistry/ortho-agenda';
+import { OrthoRetention } from './dentistry/ortho-retention';
 import type { DigitalModelUpload } from './dentistry/ortho-digital-models';
 import { ORTHO_CASE_STATUSES } from './dentistry/ortho-case.models';
 import { CompletenessContext, ModuleStatus, dentalModuleStatus, moduleDotStyle } from './dentistry/dental-completeness';
@@ -329,6 +332,9 @@ function emptyContent(): ClinicalContent {
     OrthoDiagnosis,
     OrthoPlanOptions,
     OrthoMechanics,
+    OrthoEvolutionTrack,
+    OrthoAgenda,
+    OrthoRetention,
     FormsModule,
     RouterLink,
     DatePipe,

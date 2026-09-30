@@ -234,7 +234,21 @@ export interface ClinicalEvolution {
     /** Control de ortodoncia estructurado de la sesión. */
     orthoControl?: Partial<
       Record<
-        'phase' | 'upperArch' | 'lowerArch' | 'elastics' | 'activations' | 'repairs' | 'hygiene' | 'cooperation' | 'nextAppointment' | 'ipr' | 'photoAttachmentId',
+        | 'phase'
+        | 'upperArch'
+        | 'lowerArch'
+        | 'elastics'
+        | 'activations'
+        | 'repairs'
+        | 'hygiene'
+        | 'cooperation'
+        | 'nextAppointment'
+        | 'ipr'
+        | 'pain'
+        | 'emergency'
+        | 'brackets'
+        | 'ligatures'
+        | 'photoAttachmentId',
         string
       >
     > & {
