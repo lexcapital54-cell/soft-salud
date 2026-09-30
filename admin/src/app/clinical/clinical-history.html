@@ -1051,13 +1051,26 @@
           <nav class="odo-nav" aria-label="Módulos de la historia clínica">
             <ng-container [ngTemplateOutlet]="allergyStrip" />
             <strong>{{ isOrthoClinic() ? 'Historia clínica de ortodoncia' : 'Historia clínica odontológica' }}</strong>
-            <span class="odo-specialty">{{ dentalSpecialtyLabel() }} · {{ dentalRecordCode() }}</span>
-            @for (m of odoModules(); track m.id) {
-              <button type="button" (click)="scrollToOdo(m.id)">
+            @let mods = odoModules();
+            @let prog = odoProgress(mods);
+            <span class="odo-specialty">
+              {{ dentalSpecialtyLabel() }} · {{ dentalRecordCode() }}
+              @if (prog.total) {
+                · <b title="Módulos esenciales completos (orientativo, no bloquea la firma)">{{ prog.done }}/{{ prog.total }} completos</b>
+              }
+            </span>
+            @for (m of mods; track m.id) {
+              <button type="button" (click)="scrollToOdo(m.id)" [title]="m.status ? m.label + ': ' + m.status.hint : m.label">
                 <span>{{ m.n }}</span>{{ m.label }}
+                @if (m.dot) {
+                  <i aria-hidden="true" [style]="m.dot"></i>
+                }
               </button>
             }
           </nav>
+          @defer (on idle) {
+            <app-dental-patient-summary [data]="dental()" [lastVisit]="lastEvolutionText()" (goto)="scrollToOdo($event)" />
+          }
         }
 
         <section

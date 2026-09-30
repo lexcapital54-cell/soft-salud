@@ -6,6 +6,8 @@ import type { ViewerItem } from './dentistry/clinical-image-viewer';
 import { DentalTreatmentBudget } from './dentistry/dental-treatment-budget';
 import { DentalRehab } from './dentistry/dental-rehab';
 import { hasRehabData } from './dentistry/rehab.models';
+import { DentalPatientSummary } from './dentistry/dental-patient-summary';
+import { CompletenessContext, ModuleStatus, dentalModuleStatus, moduleDotStyle } from './dentistry/dental-completeness';
 import { TREATMENT_PHASES, budgetTotals, rowNet, suggestPhase } from './dentistry/treatment-budget.models';
 import { hasPerioData } from './dentistry/periodontogram.models';
 import {
@@ -304,6 +306,7 @@ function emptyContent(): ClinicalContent {
     ClinicalImageViewer,
     DentalTreatmentBudget,
     DentalRehab,
+    DentalPatientSummary,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -1150,7 +1153,31 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       { id: 'anexos-section', label: 'Anexos' },
       { id: 'odo-cierre', label: 'Cierre' },
     ];
-    return list.map((m, i) => ({ ...m, n: i + 1 }));
+    const ctx: CompletenessContext = {
+      patient: this.patientForm,
+      motive: this.content.careMinimum?.motive || '',
+      evolutions: this.evolutions().length,
+      consents: this.consents,
+      attachments: this.attachments().length,
+    };
+    const d = this.dental();
+    return list.map((m, i) => {
+      const status = dentalModuleStatus(m.id, d, ctx);
+      return { ...m, n: i + 1, status, dot: status ? moduleDotStyle(status.state) : '' };
+    });
+  }
+
+  odoProgress(mods: Array<{ status: ModuleStatus | null }>) {
+    const required = mods.filter((m) => m.status && m.status.state !== 'optional');
+    return { done: required.filter((m) => m.status!.state === 'done').length, total: required.length };
+  }
+
+  lastEvolutionText() {
+    const evs = this.evolutions();
+    const last = evs[evs.length - 1];
+    if (!last) return '';
+    const when = this.evolutionAttentionDateOf(last);
+    return when ? new Date(when).toLocaleDateString('es-CO') : '';
   }
 
   scrollToOdo(id: string) {
