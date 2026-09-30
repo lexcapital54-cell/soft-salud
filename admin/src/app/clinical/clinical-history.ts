@@ -3,6 +3,8 @@ import { DentalExamGroup } from './dentistry/dental-exam-group';
 import { DentalPeriodontogram } from './dentistry/dental-periodontogram';
 import { ClinicalImageViewer } from './dentistry/clinical-image-viewer';
 import type { ViewerItem } from './dentistry/clinical-image-viewer';
+import { DentalTreatmentBudget } from './dentistry/dental-treatment-budget';
+import { TREATMENT_PHASES, budgetTotals, rowNet, suggestPhase } from './dentistry/treatment-budget.models';
 import { hasPerioData } from './dentistry/periodontogram.models';
 import {
   AfterViewInit,
@@ -74,6 +76,7 @@ import {
   ORTHO_HABITS,
   PHOTO_SLOTS,
   TREATMENT_STATUSES,
+  TreatmentPlanRow,
   TreatmentStatus,
   dentalAllergyList,
   dentalMedicationList,
@@ -297,6 +300,7 @@ function emptyContent(): ClinicalContent {
     DentalExamGroup,
     DentalPeriodontogram,
     ClinicalImageViewer,
+    DentalTreatmentBudget,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -1467,10 +1471,23 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     return this.dental().treatmentPlan.filter((r) => (r.status || 'PENDIENTE') === status).length;
   }
 
+  /** Total neto: cantidad × valor, menos descuentos por fila y global; sin cancelados. */
   treatmentTotal() {
-    return this.dental()
-      .treatmentPlan.filter((r) => r.status !== 'CANCELADO')
-      .reduce((sum, r) => sum + (Number(String(r.value || '').replace(/[^\d.]/g, '')) || 0), 0);
+    return budgetTotals(this.dental().treatmentPlan, this.dental().budget).total;
+  }
+
+  readonly treatmentPhases = TREATMENT_PHASES;
+
+  treatmentRowNet(row: TreatmentPlanRow) {
+    return rowNet(row);
+  }
+
+  onTreatmentDescriptionBlur(row: TreatmentPlanRow) {
+    if (row.phase || !row.description.trim()) return;
+    const phase = suggestPhase(row.description);
+    if (!phase) return;
+    row.phase = phase;
+    this.onClinicalFieldChange();
   }
 
   // ── Fotografías clínicas y radiografías ──
@@ -1708,17 +1725,21 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
         const rows = this.dental().treatmentPlan.filter((r) => r.description.trim() && r.status !== 'CANCELADO');
         const lines = rows.map((r, i) => {
           const tooth = r.tooth ? ` (pieza ${r.tooth})` : '';
-          const value = Number(String(r.value || '').replace(/[^\d.]/g, ''));
+          const value = rowNet(r);
           const price = value ? ` — $${value.toLocaleString('es-CO')}` : '';
           return `${i + 1}. ${r.description.trim()}${tooth}${price}`;
         });
-        const total = this.treatmentTotal();
+        const totals = budgetTotals(this.dental().treatmentPlan, this.dental().budget);
+        const total = totals.total;
+        const valid = this.dental().budget.validUntil;
         return [
           hello,
           '',
           'Este es su plan de tratamiento odontológico:',
           ...(lines.length ? lines : ['(Sin procedimientos registrados)']),
+          ...(totals.globalDiscount ? ['', `Descuento: −$${totals.globalDiscount.toLocaleString('es-CO')}`] : []),
           ...(total ? ['', `Valor total estimado: $${total.toLocaleString('es-CO')}`] : []),
+          ...(valid ? [`Presupuesto válido hasta el ${valid.split('-').reverse().join('/')}.`] : []),
           '',
           'Si tiene preguntas sobre el plan, con gusto las resolvemos en su próxima cita.',
         ].join('\n');
@@ -1899,6 +1920,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     if (!row) return;
     row.code = item.code;
     if (!row.description.trim()) row.description = item.description;
+    if (!row.phase) row.phase = suggestPhase(`${row.description} ${item.description}`);
     this.dentalCupsResults.set([]);
     this.dentalCupsRow.set(null);
     this.onClinicalFieldChange();

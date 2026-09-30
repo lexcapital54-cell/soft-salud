@@ -1,5 +1,11 @@
 import * as z from 'zod/mini';
 import { Periodontogram, emptyPeriodontogram, normalizePeriodontogram } from './periodontogram.models';
+import {
+  TreatmentBudget,
+  TreatmentPhase,
+  emptyTreatmentBudget,
+  normalizeTreatmentBudget,
+} from './treatment-budget.models';
 
 /** Servicio de la atención; «ORTODONCIA» activa el módulo de ortodoncia. «ODONTOLOGIA» es el valor antiguo de general. */
 export type DentalService =
@@ -113,6 +119,10 @@ export interface TreatmentPlanRow {
   professional: string;
   value: string;
   status: TreatmentStatus;
+  phase: TreatmentPhase;
+  quantity: string;
+  /** Descuento de la fila en porcentaje. */
+  discount: string;
   /** Campos v1, se conservan para historias antiguas. */
   priority?: string;
   sessions?: string;
@@ -457,6 +467,7 @@ export interface DentistryContent {
   imaging: ImagingRow[];
   diagnoses: DentalDiagnosisRow[];
   treatmentPlan: TreatmentPlanRow[];
+  budget: TreatmentBudget;
   prescriptions: PrescriptionRow[];
   orders: OrderRow[];
   requiredConsents: string[];
@@ -591,6 +602,9 @@ export function emptyTreatmentRow(): TreatmentPlanRow {
     professional: '',
     value: '',
     status: 'PENDIENTE',
+    phase: '',
+    quantity: '1',
+    discount: '',
   };
 }
 
@@ -771,6 +785,7 @@ export function emptyDentistry(): DentistryContent {
     imaging: [],
     diagnoses: [emptyDentalDiagnosis()],
     treatmentPlan: [emptyTreatmentRow()],
+    budget: emptyTreatmentBudget(),
     prescriptions: [],
     orders: [],
     requiredConsents: [],
@@ -916,6 +931,7 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
           status: (r.status as TreatmentStatus) || 'PENDIENTE',
         }))
       : base.treatmentPlan,
+    budget: normalizeTreatmentBudget(raw.budget),
     prescriptions: (raw.prescriptions || []).map((r) => ({ ...emptyPrescriptionRow(), ...r })),
     orders: (raw.orders || []).map((r) => ({ ...emptyOrderRow(), ...r })),
     requiredConsents: [...(raw.requiredConsents || [])],
@@ -1198,8 +1214,18 @@ export const dentistrySealSchema = z.object({
         code: z.string(),
         description: z.string(),
         value: z.string(),
+        quantity: z.optional(z.string()),
+        discount: z.optional(z.string()),
       }),
     ).check(
+      z.refine(
+        (rows) => rows.every((r) => !trimmed(r.discount) || (/^\d+([.,]\d+)?$/.test(trimmed(r.discount)) && Number(trimmed(r.discount).replace(',', '.')) <= 100)),
+        'Plan de tratamiento: el descuento por fila es un porcentaje entre 0 y 100.',
+      ),
+      z.refine(
+        (rows) => rows.every((r) => !trimmed(r.quantity) || /^\d+([.,]\d+)?$/.test(trimmed(r.quantity))),
+        'Plan de tratamiento: la cantidad debe ser un número.',
+      ),
       z.refine(
         (rows) => rows.every((r) => !trimmed(r.code) || trimmed(r.description)),
         'Plan de tratamiento: cada fila con CUPS necesita el procedimiento.',

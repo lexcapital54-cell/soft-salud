@@ -3097,8 +3097,11 @@
                         <th>Diagnóstico</th>
                         <th>CUPS</th>
                         <th>Procedimiento</th>
+                        <th>Fase</th>
                         <th>Profesional</th>
-                        <th>Valor</th>
+                        <th>Cant.</th>
+                        <th>Valor unit.</th>
+                        <th>Desc. %</th>
                         <th>Estado</th>
                         <th></th>
                       </tr>
@@ -3142,13 +3145,31 @@
                             }
                           </td>
                           <td class="odo-wide">
-                            <input [(ngModel)]="row.description" [readonly]="clinicalFormDisabled()" />
+                            <input [(ngModel)]="row.description" (blur)="onTreatmentDescriptionBlur(row)" [readonly]="clinicalFormDisabled()" />
+                          </td>
+                          <td>
+                            <select class="odo-phase" [(ngModel)]="row.phase" [disabled]="clinicalFormDisabled()" [title]="'Fase del plan'">
+                              <option value="">—</option>
+                              @for (p of treatmentPhases; track p.key) {
+                                <option [value]="p.key">{{ p.label }}</option>
+                              }
+                            </select>
                           </td>
                           <td>
                             <input [(ngModel)]="row.professional" [readonly]="clinicalFormDisabled()" [placeholder]="user()?.fullName || ''" />
                           </td>
                           <td>
+                            <input class="odo-qty" [(ngModel)]="row.quantity" [readonly]="clinicalFormDisabled()" inputmode="decimal" placeholder="1" />
+                          </td>
+                          <td>
                             <input class="odo-money" [(ngModel)]="row.value" [readonly]="clinicalFormDisabled()" inputmode="numeric" placeholder="0" />
+                            @let net = treatmentRowNet(row);
+                            @if (net && (row.quantity && row.quantity !== '1' || row.discount)) {
+                              <small class="odo-net">Neto {{ '$' }}{{ net | number: '1.0-0' }}</small>
+                            }
+                          </td>
+                          <td>
+                            <input class="odo-qty" [(ngModel)]="row.discount" [readonly]="clinicalFormDisabled()" inputmode="decimal" placeholder="0" />
                           </td>
                           <td>
                             <select
@@ -3182,9 +3203,19 @@
                         <span class="odo-status-pill" [attr.data-status]="s.key">{{ s.label }}: {{ treatmentCount(s.key) }}</span>
                       }
                     }
-                    <strong>Total: {{ treatmentTotal() | number: '1.0-0' }}</strong>
+                    <strong>Total neto: {{ treatmentTotal() | number: '1.0-0' }}</strong>
                   </span>
                 </div>
+                @defer (on viewport) {
+                  <app-dental-treatment-budget
+                    [data]="dental()"
+                    [disabled]="clinicalFormDisabled()"
+                    [patientName]="consentPatientName()"
+                    (changed)="onClinicalFieldChange()"
+                  />
+                } @placeholder {
+                  <p class="muted small">Cargando plan por fases y presupuesto…</p>
+                }
               </section>
             } @else if (isSoap()) {
               <section class="block" id="hce-section-3">

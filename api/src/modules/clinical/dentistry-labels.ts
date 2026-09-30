@@ -109,6 +109,13 @@ export const DENTAL_TREATMENT_STATUS_LABELS: Record<string, string> = {
   CANCELADO: 'Cancelado',
 };
 
+export const DENTAL_TREATMENT_PHASE_LABELS: Record<string, string> = {
+  URGENCIA: '1. Sistémica / urgencia',
+  HIGIENICA: '2. Higiénica / básica',
+  CORRECTIVA: '3. Correctiva / rehabilitadora',
+  MANTENIMIENTO: '4. Mantenimiento',
+};
+
 export const DENTAL_ORDER_TYPE_LABELS: Record<string, string> = {
   RADIOGRAFIA: 'Radiografía / imagen',
   LABORATORIO: 'Laboratorio',

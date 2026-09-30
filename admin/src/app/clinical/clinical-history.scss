@@ -2713,6 +2713,8 @@ label.photo-btn {
   min-width: 90px;
   text-align: right;
 }
+.odo-table .odo-qty{width:56px;text-align:right}
+.odo-net{display:block;font-size:11px;color:#0f766e;text-align:right}
 .odo-status[data-status='PENDIENTE'],
 .odo-status-pill[data-status='PENDIENTE'] {
   background: #fff4e5;

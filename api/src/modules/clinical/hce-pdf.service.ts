@@ -29,6 +29,7 @@ import {
   DENTAL_SYMPTOM_LABELS,
   DENTAL_TOOTH_LABELS,
   DENTAL_TREATMENT_LABELS,
+  DENTAL_TREATMENT_PHASE_LABELS,
   DENTAL_TREATMENT_STATUS_LABELS,
   ORTHO_APPLIANCE_LABELS,
   ORTHO_BRACKET_LABELS,
@@ -1280,28 +1281,57 @@ export class HcePdfService {
         const n = Number(str(v).replace(/[^\d.]/g, ''));
         return n ? `$${n.toLocaleString('es-CO')}` : '';
       };
-      const total = plan
-        .filter((r) => r.status !== 'CANCELADO')
-        .reduce((sum, r) => sum + (Number(str(r.value).replace(/[^\d.]/g, '')) || 0), 0);
+      const num = (v: unknown) => Number(str(v).replace(',', '.').replace(/[^\d.]/g, '')) || 0;
+      const qty = (r: Record<string, unknown>) => num(r.quantity) || 1;
+      const net = (r: Record<string, unknown>) =>
+        Math.round(num(r.value) * qty(r) * (1 - Math.min(100, num(r.discount)) / 100));
+      const active = plan.filter((r) => r.status !== 'CANCELADO');
+      const gross = active.reduce((sum, r) => sum + num(r.value) * qty(r), 0);
+      const afterRows = active.reduce((sum, r) => sum + net(r), 0);
+      const budget = obj(dental.budget);
+      const dv = budget.discountType === 'AMOUNT' ? num(budget.discountValue) : Math.min(100, num(budget.discountValue));
+      const globalDiscount = Math.min(afterRows, Math.round(budget.discountType === 'AMOUNT' ? dv : (afterRows * dv) / 100));
+      const total = afterRows - globalDiscount;
       sections.push(
         table(
           'Plan de tratamiento',
-          ['8%', '16%', '*', '11%', '15%', '11%', '11%'],
-          ['Pieza', 'Diagnóstico', 'Procedimiento', 'CUPS', 'Profesional', 'Valor', 'Estado'],
+          ['6%', '13%', '*', '9%', '11%', '12%', '5%', '9%', '9%', '9%'],
+          ['Pieza', 'Diagnóstico', 'Procedimiento', 'CUPS', 'Fase', 'Profesional', 'Cant.', 'Valor unit.', 'Neto', 'Estado'],
           [
             ...plan.map((r) => [
               str(r.tooth),
               str(r.diagnosis),
               str(r.description),
               str(r.code),
+              DENTAL_TREATMENT_PHASE_LABELS[str(r.phase)] || '',
               str(r.professional),
+              str(r.quantity) && str(r.quantity) !== '1' ? str(r.quantity) : '',
               money(r.value),
+              money(net(r)) + (num(r.discount) ? ` (−${num(r.discount)} %)` : ''),
               DENTAL_TREATMENT_STATUS_LABELS[str(r.status)] || 'Pendiente',
             ]),
-            ...(total ? [['', '', 'Total (sin cancelados)', '', '', money(total), '']] : []),
           ],
         ),
       );
+      if (gross) {
+        const budgetRows: string[][] = [['Subtotal (sin cancelados)', money(gross)]];
+        if (gross !== afterRows) budgetRows.push(['Descuentos por procedimiento', `−${money(gross - afterRows)}`]);
+        if (globalDiscount) {
+          const why = str(budget.discountReason);
+          budgetRows.push([`Descuento general${why ? ` (${why})` : ''}`, `−${money(globalDiscount)}`]);
+        }
+        budgetRows.push(['Total', money(total) || '$0']);
+        const installments = Math.floor(num(budget.installments));
+        if (str(budget.paymentMethod)) budgetRows.push(['Forma de pago', str(budget.paymentMethod)]);
+        if (installments > 1 && total) budgetRows.push([`Cuotas (${installments})`, money(Math.ceil(total / installments))]);
+        if (str(budget.validUntil)) budgetRows.push(['Válido hasta', str(budget.validUntil).split('-').reverse().join('/')]);
+        if (str(budget.notes)) budgetRows.push(['Observaciones', str(budget.notes)]);
+        if (str(budget.acceptedAt)) {
+          const when = new Date(str(budget.acceptedAt)).toLocaleDateString('es-CO');
+          budgetRows.push(['Aceptación del paciente', `${when}${str(budget.acceptedBy) ? ` · ${str(budget.acceptedBy)}` : ''}`]);
+        }
+        sections.push(table('Presupuesto', ['40%', '*'], ['Concepto', 'Valor'], budgetRows));
+      }
     }
 
     const consents = Array.isArray(dental.requiredConsents)
