@@ -192,7 +192,10 @@ export const DENTISTRY_CONTENT_DEFAULTS = {
     oralHabits: '',
   },
   medicalConditions: {},
+  medicalConditionAnswers: {},
+  medicalConditionDetails: {},
   allergies: {},
+  allergyRows: [],
   medications: { none: false, rows: [], groups: {} },
   dentalHistory: {
     lastVisit: '',

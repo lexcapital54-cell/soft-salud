@@ -1,4 +1,4 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import {
   AfterViewInit,
   Component,
@@ -45,6 +45,13 @@ import { ConsentSigner } from './consent-signer';
 import { DentalOdontogram } from './dentistry/dental-odontogram';
 import {
   ALLERGY_ITEMS,
+  ALLERGY_SEVERITIES,
+  AllergyRow,
+  ConditionDetail,
+  allergyRowTexts,
+  emptyAllergyRow,
+  emptyConditionDetail,
+  isEmptyAllergyRow,
   DENTAL_CONSENT_OPTIONS,
   DENTAL_ONLY_CONSENT_KEYS,
   DENTAL_SERVICES,
@@ -280,6 +287,7 @@ function emptyContent(): ClinicalContent {
 @Component({
   selector: 'app-clinical-history',
   imports: [
+    NgTemplateOutlet,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -1185,19 +1193,113 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /** «Niega» y «No sabe» excluyen al resto de alergias. */
-  toggleDentalAllergy(key: string, checked: boolean) {
-    const flags = this.dental().allergies;
+  toggleDentalAllergy(key: string, checked: boolean, event?: Event) {
+    const d = this.dental();
+    const flags = d.allergies;
     const exclusive = key === 'none' || key === 'unknown';
+    if (checked && exclusive && d.allergyRows.some((r) => r.allergen.trim())) {
+      if (event) (event.target as HTMLInputElement).checked = false;
+      this.error.set('Hay alérgenos registrados: quítelos antes de marcar «No refiere alergias» o «Desconoce».');
+      return;
+    }
     if (checked) {
-      if (exclusive) for (const k of Object.keys(flags)) delete flags[k];
-      else {
+      if (exclusive) {
+        for (const k of Object.keys(flags)) delete flags[k];
+        d.allergyRows = d.allergyRows.filter((r) => !isEmptyAllergyRow(r));
+      } else {
         delete flags['none'];
         delete flags['unknown'];
+        if (!d.allergyRows.some((r) => r.category === key)) d.allergyRows.push(emptyAllergyRow(key));
       }
       flags[key] = true;
-    } else delete flags[key];
+    } else {
+      delete flags[key];
+      d.allergyRows = d.allergyRows.filter((r) => r.category !== key || !isEmptyAllergyRow(r));
+    }
     if (key === 'anesthetics' && checked && !this.dental().dentalHistory.anesthesiaReaction) {
       this.dental().dentalHistory.anesthesiaReaction = 'SI';
+    }
+    this.onClinicalFieldChange();
+  }
+
+  readonly allergySeverities = ALLERGY_SEVERITIES;
+  readonly allergyCategories = ALLERGY_ITEMS.filter((i) => i.key !== 'none' && i.key !== 'unknown');
+
+  allergyCategoryLabel(key: string) {
+    return ALLERGY_ITEMS.find((i) => i.key === key)?.label ?? '';
+  }
+
+  addAllergyRow() {
+    const d = this.dental();
+    delete d.allergies['none'];
+    delete d.allergies['unknown'];
+    d.allergyRows.push(emptyAllergyRow());
+    this.onClinicalFieldChange();
+  }
+
+  onAllergyCategoryChange(row: AllergyRow, key: string) {
+    row.category = key;
+    const flags = this.dental().allergies;
+    if (key) {
+      delete flags['none'];
+      delete flags['unknown'];
+      flags[key] = true;
+    }
+    this.onClinicalFieldChange();
+  }
+
+  removeAllergyRow(i: number) {
+    this.dental().allergyRows.splice(i, 1);
+    this.onClinicalFieldChange();
+  }
+
+  /** Alertas de alergia para la franja fija de la historia (vacío si niega o no hay registro). */
+  allergyAlerts(): { text: string; severe: boolean }[] {
+    const d = this.dental();
+    const rows = d.allergyRows
+      .filter((r) => r.allergen.trim())
+      .map((r) => ({ text: allergyRowTexts({ ...d, allergyRows: [r] })[0], severe: r.severity === 'SEVERA' }));
+    const withRows = new Set(d.allergyRows.filter((r) => r.allergen.trim()).map((r) => r.category));
+    const flags = ALLERGY_ITEMS.filter(
+      (i) => d.allergies[i.key] && i.key !== 'none' && i.key !== 'unknown' && !withRows.has(i.key),
+    ).map((i) => ({ text: i.label, severe: false }));
+    const free = d.antecedents.allergic.trim();
+    return [...rows, ...flags, ...(free ? [{ text: free, severe: false }] : [])];
+  }
+
+  conditionAnswer(key: string): 'SI' | 'NO' | 'DESCONOCIDO' | '' {
+    const d = this.dental();
+    if (d.medicalConditions[key]) return 'SI';
+    return d.medicalConditionAnswers[key] ?? '';
+  }
+
+  setConditionAnswer(key: string, answer: 'SI' | 'NO' | 'DESCONOCIDO') {
+    const d = this.dental();
+    const same = this.conditionAnswer(key) === answer;
+    delete d.medicalConditions[key];
+    delete d.medicalConditionAnswers[key];
+    if (!same) {
+      if (answer === 'SI') {
+        d.medicalConditions[key] = true;
+        d.medicalConditionDetails[key] ??= emptyConditionDetail();
+      } else d.medicalConditionAnswers[key] = answer;
+    }
+    this.onClinicalFieldChange();
+  }
+
+  conditionDetail(key: string): ConditionDetail {
+    const details = this.dental().medicalConditionDetails;
+    return (details[key] ??= emptyConditionDetail());
+  }
+
+  conditionsUnanswered(): number {
+    return this.dentalMedicalConditions.filter((c) => !this.conditionAnswer(c.key)).length;
+  }
+
+  markRemainingConditionsNo() {
+    const d = this.dental();
+    for (const c of this.dentalMedicalConditions) {
+      if (!this.conditionAnswer(c.key)) d.medicalConditionAnswers[c.key] = 'NO';
     }
     this.onClinicalFieldChange();
   }

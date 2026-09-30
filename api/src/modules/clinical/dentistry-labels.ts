@@ -21,6 +21,9 @@ export const DENTAL_MEDICAL_CONDITION_LABELS: Record<string, string> = {
   coagulation: 'Alteraciones de coagulación',
   epilepsy: 'Epilepsia',
   osteoporosis: 'Osteoporosis',
+  cancer: 'Cáncer / radio o quimioterapia',
+  autoimmune: 'Enfermedades autoinmunes',
+  endocrine: 'Alteraciones endocrinas',
   pregnancy: 'Embarazo',
   other: 'Otras condiciones',
 };
@@ -28,6 +31,7 @@ export const DENTAL_MEDICAL_CONDITION_LABELS: Record<string, string> = {
 export const DENTAL_ALLERGY_LABELS: Record<string, string> = {
   none: 'No refiere alergias',
   medications: 'Medicamentos',
+  antibiotics: 'Antibióticos',
   food: 'Alimentos',
   latex: 'Látex',
   anesthetics: 'Anestésicos',

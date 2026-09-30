@@ -116,6 +116,34 @@ export interface TreatmentPlanRow {
   sessions?: string;
 }
 
+export type AllergySeverity = '' | 'LEVE' | 'MODERADA' | 'SEVERA';
+
+export const ALLERGY_SEVERITIES: Array<{ key: Exclude<AllergySeverity, ''>; label: string }> = [
+  { key: 'LEVE', label: 'Leve' },
+  { key: 'MODERADA', label: 'Moderada' },
+  { key: 'SEVERA', label: 'Severa / anafilaxia' },
+];
+
+export interface AllergyRow {
+  /** Clave de ALLERGY_ITEMS (medications, antibiotics, anesthetics, latex, food, other). */
+  category: string;
+  allergen: string;
+  reaction: string;
+  severity: AllergySeverity;
+  notes: string;
+}
+
+/** Respuesta explícita de un antecedente; «Sí» se guarda en `medicalConditions[key] = true`. */
+export type ConditionAnswer = 'NO' | 'DESCONOCIDO';
+
+export interface ConditionDetail {
+  diagnosis: string;
+  since: string;
+  treatment: string;
+  physician: string;
+  notes: string;
+}
+
 export interface MedicationRow {
   name: string;
   dose: string;
@@ -278,7 +306,10 @@ export interface DentistryContent {
     oralHabits: string;
   };
   medicalConditions: Record<string, boolean>;
+  medicalConditionAnswers: Record<string, ConditionAnswer>;
+  medicalConditionDetails: Record<string, ConditionDetail>;
   allergies: Record<string, boolean>;
+  allergyRows: AllergyRow[];
   medications: {
     none: boolean;
     rows: MedicationRow[];
@@ -444,6 +475,9 @@ export const MEDICAL_CONDITIONS: CheckItem[] = [
   { key: 'coagulation', label: 'Alteraciones de coagulación' },
   { key: 'epilepsy', label: 'Epilepsia' },
   { key: 'osteoporosis', label: 'Osteoporosis' },
+  { key: 'cancer', label: 'Cáncer / radio o quimioterapia' },
+  { key: 'autoimmune', label: 'Enfermedades autoinmunes' },
+  { key: 'endocrine', label: 'Alteraciones endocrinas (tiroides, otras)' },
   { key: 'pregnancy', label: 'Embarazo' },
   { key: 'other', label: 'Otras condiciones' },
 ];
@@ -451,6 +485,7 @@ export const MEDICAL_CONDITIONS: CheckItem[] = [
 export const ALLERGY_ITEMS: CheckItem[] = [
   { key: 'none', label: 'No refiere alergias' },
   { key: 'medications', label: 'Medicamentos' },
+  { key: 'antibiotics', label: 'Antibióticos' },
   { key: 'food', label: 'Alimentos' },
   { key: 'latex', label: 'Látex' },
   { key: 'anesthetics', label: 'Anestésicos' },
@@ -554,6 +589,18 @@ export function emptyTreatmentRow(): TreatmentPlanRow {
   };
 }
 
+export function emptyAllergyRow(category = ''): AllergyRow {
+  return { category, allergen: '', reaction: '', severity: '', notes: '' };
+}
+
+export function isEmptyAllergyRow(r: AllergyRow) {
+  return !r.allergen.trim() && !r.reaction.trim() && !r.severity && !r.notes.trim();
+}
+
+export function emptyConditionDetail(): ConditionDetail {
+  return { diagnosis: '', since: '', treatment: '', physician: '', notes: '' };
+}
+
 export function emptyMedicationRow(): MedicationRow {
   return { name: '', dose: '', frequency: '', reason: '' };
 }
@@ -590,7 +637,10 @@ export function emptyDentistry(): DentistryContent {
       oralHabits: '',
     },
     medicalConditions: {},
+    medicalConditionAnswers: {},
+    medicalConditionDetails: {},
     allergies: {},
+    allergyRows: [],
     medications: { none: false, rows: [], groups: {} },
     dentalHistory: {
       lastVisit: '',
@@ -786,7 +836,12 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
     includeOrtho: raw.service !== 'ORTODONCIA' && !!raw.includeOrtho,
     antecedents: { ...base.antecedents, ...(raw.antecedents || {}) },
     medicalConditions: { ...(raw.medicalConditions || {}) },
+    medicalConditionAnswers: { ...(raw.medicalConditionAnswers || {}) },
+    medicalConditionDetails: Object.fromEntries(
+      Object.entries(raw.medicalConditionDetails || {}).map(([k, v]) => [k, { ...emptyConditionDetail(), ...v }]),
+    ),
     allergies: { ...(raw.allergies || {}) },
+    allergyRows: (raw.allergyRows || []).map((r) => ({ ...emptyAllergyRow(), ...r })),
     medications: {
       none: !!raw.medications?.none,
       rows: (raw.medications?.rows || []).map((r) => ({ ...emptyMedicationRow(), ...r })),
@@ -1024,11 +1079,25 @@ export const DENTAL_SYSTEMS: CheckItem[] = [
 
 /** Texto de alergias y medicamentos para `content.allergies` / `content.medications` (RDA). */
 export function dentalAllergyList(d: DentistryContent): string[] {
-  const out = ALLERGY_ITEMS.filter((i) => d.allergies[i.key]).map((i) =>
+  const detailed = allergyRowTexts(d);
+  const withRows = new Set(d.allergyRows.filter((r) => r.allergen.trim()).map((r) => r.category));
+  const out = ALLERGY_ITEMS.filter((i) => d.allergies[i.key] && !withRows.has(i.key)).map((i) =>
     i.key === 'none' ? 'No refiere alergias' : i.label,
   );
+  out.push(...detailed);
   if (d.antecedents.allergic.trim()) out.push(d.antecedents.allergic.trim());
   return out;
+}
+
+/** «Penicilina (urticaria, severa)» por cada alérgeno registrado. */
+export function allergyRowTexts(d: DentistryContent): string[] {
+  return d.allergyRows
+    .filter((r) => r.allergen.trim())
+    .map((r) => {
+      const severity = ALLERGY_SEVERITIES.find((s) => s.key === r.severity)?.label.toLowerCase() ?? '';
+      const extra = [r.reaction.trim(), severity].filter(Boolean).join(', ');
+      return extra ? `${r.allergen.trim()} (${extra})` : r.allergen.trim();
+    });
 }
 
 export function dentalMedicationList(d: DentistryContent): string[] {
@@ -1065,6 +1134,12 @@ export const dentistrySealSchema = z.object({
       z.refine(
         (map) => Object.values(map).some(Boolean),
         'Antecedentes: registre las alergias (o marque «No refiere alergias» / «Desconoce»).',
+      ),
+    ),
+    allergyRows: z.array(z.object({ allergen: z.string(), reaction: z.string(), severity: z.string() })).check(
+      z.refine(
+        (rows) => rows.every((r) => trimmed(r.allergen) || (!trimmed(r.reaction) && !trimmed(r.severity))),
+        'Alergias: cada fila con reacción o severidad necesita el alérgeno.',
       ),
     ),
     dentalHistory: z.object({

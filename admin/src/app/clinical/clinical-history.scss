@@ -2508,6 +2508,73 @@ label.photo-btn {
   border: 1px solid #b2dfdb;
   border-radius: 12px;
 }
+.allergy-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 6px 10px;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #dc2626;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #7f1d1d;
+  font-size: 12px;
+}
+.allergy-strip-title { font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; margin-right: 4px; }
+.allergy-pill {
+  padding: 2px 9px;
+  border: 1px solid #fca5a5;
+  border-radius: 999px;
+  background: #fff;
+  font-weight: 600;
+}
+.allergy-pill.severe { background: #dc2626; border-color: #dc2626; color: #fff; }
+.control-mode .allergy-strip { margin: 0 0 12px; }
+
+.cond-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.cond-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 8px; }
+.cond-card {
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cond-card[data-ans='SI'] { grid-column: 1 / -1; border-color: #f59e0b; background: #fffbeb; }
+.cond-card[data-ans='NO'] { background: #f8fafc; }
+.cond-card[data-ans='DESCONOCIDO'] { border-style: dashed; }
+.cond-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cond-name { font-size: 13px; font-weight: 600; color: #334155; }
+.cond-card[data-ans='NO'] .cond-name { color: #64748b; font-weight: 500; }
+.cond-seg { display: inline-flex; flex-shrink: 0; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; }
+.cond-seg button {
+  padding: 4px 10px;
+  border: 0;
+  border-left: 1px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cond-seg button:first-child { border-left: 0; }
+.cond-seg button.on { background: #12609a; color: #fff; }
+.cond-seg button.si.on { background: #d97706; }
+.cond-seg button:disabled { cursor: default; }
+.cond-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+  label { font-size: 12px; }
+  .wide { grid-column: span 2; }
+}
+.allergy-table tr[data-sev='SEVERA'] td { background: #fef2f2; }
+.allergy-table tr[data-sev='MODERADA'] td { background: #fffbeb; }
+
 .odo-nav strong {
   margin-right: 6px;
   color: #0b5563;

@@ -883,6 +883,36 @@ export class HcePdfService {
       ),
     );
 
+    const conditionDetails = obj(dental.medicalConditionDetails);
+    const conditionsText = Object.entries(obj(dental.medicalConditions))
+      .filter(([, on]) => on === true)
+      .map(([k]) => {
+        const det = obj(conditionDetails[k]);
+        const extra = [
+          str(det.diagnosis),
+          str(det.since) ? `desde ${str(det.since)}` : '',
+          str(det.treatment),
+          str(det.physician) ? `médico: ${str(det.physician)}` : '',
+          str(det.notes),
+        ].filter(Boolean);
+        const label = DENTAL_MEDICAL_CONDITION_LABELS[k] || k;
+        return extra.length ? `${label} (${extra.join('; ')})` : label;
+      })
+      .join(', ');
+    const answers = obj(dental.medicalConditionAnswers);
+    const answered = (value: string) =>
+      Object.entries(answers)
+        .filter(([, a]) => a === value)
+        .map(([k]) => DENTAL_MEDICAL_CONDITION_LABELS[k] || k)
+        .join(', ');
+    const severityLabels: Record<string, string> = { LEVE: 'leve', MODERADA: 'moderada', SEVERA: 'severa / anafilaxia' };
+    const allergyRowsText = rows(dental.allergyRows)
+      .filter((r) => str(r.allergen))
+      .map((r) => {
+        const extra = [str(r.reaction), severityLabels[str(r.severity)] || '', str(r.notes)].filter(Boolean);
+        return extra.length ? `${str(r.allergen)} (${extra.join(', ')})` : str(r.allergen);
+      })
+      .join('; ');
     const anesthesia: Record<string, string> = { SI: 'Sí', NO: 'No', NO_SABE: 'No sabe' };
     const medRows = rows(meds.rows)
       .filter((r) => str(r.name))
@@ -891,8 +921,10 @@ export class HcePdfService {
       this.section(
         'Antecedentes médicos',
         lines([
-          ['Condiciones', flags(dental.medicalConditions, DENTAL_MEDICAL_CONDITION_LABELS)],
-          ['Alergias', joinDash(flags(dental.allergies, DENTAL_ALLERGY_LABELS), ant.allergic)],
+          ['Condiciones', conditionsText],
+          ['Niega', answered('NO')],
+          ['Desconoce', answered('DESCONOCIDO')],
+          ['Alergias', joinDash(flags(dental.allergies, DENTAL_ALLERGY_LABELS), allergyRowsText, ant.allergic)],
           [
             'Medicamentos actuales',
             meds.none === true ? 'No consume medicamentos' : medRows.join('; '),

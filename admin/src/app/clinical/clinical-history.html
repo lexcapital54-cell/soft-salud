@@ -306,6 +306,9 @@
               </div>
             </div>
 
+            @if (isDentistryClinic()) {
+              <ng-container [ngTemplateOutlet]="allergyStrip" />
+            }
             <div class="control-split" [class.split]="orthoControlEnabled()">
             <div class="control-past">
               <h4>
@@ -1032,8 +1035,21 @@
           </section>
         }
 
+        <ng-template #allergyStrip>
+          @let alerts = allergyAlerts();
+          @if (alerts.length) {
+            <div class="allergy-strip" role="alert">
+              <span class="allergy-strip-title">⚠ Alergias</span>
+              @for (a of alerts; track $index) {
+                <span class="allergy-pill" [class.severe]="a.severe">{{ a.text }}</span>
+              }
+            </div>
+          }
+        </ng-template>
+
         @if (isDentistryClinic()) {
           <nav class="odo-nav" aria-label="Módulos de la historia clínica">
+            <ng-container [ngTemplateOutlet]="allergyStrip" />
             <strong>{{ isOrthoClinic() ? 'Historia clínica de ortodoncia' : 'Historia clínica odontológica' }}</strong>
             <span class="odo-specialty">{{ dentalSpecialtyLabel() }} · {{ dentalRecordCode() }}</span>
             @for (m of odoModules(); track m.id) {
@@ -2021,18 +2037,37 @@
               <section class="block odo-hce" id="hce-section-3">
                 <h3>3. Antecedentes</h3>
 
-                <h4 class="odo-sub">Antecedentes médicos</h4>
-                <div class="odo-check-grid">
+                <div class="cond-head">
+                  <h4 class="odo-sub">Antecedentes médicos</h4>
+                  @if (!clinicalFormDisabled() && conditionsUnanswered()) {
+                    <button type="button" class="ghost small" (click)="markRemainingConditionsNo()">
+                      Marcar las {{ conditionsUnanswered() }} restantes como «No»
+                    </button>
+                  }
+                </div>
+                <div class="cond-grid">
                   @for (item of dentalMedicalConditions; track item.key) {
-                    <label class="checkbox-inline">
-                      <input
-                        type="checkbox"
-                        [checked]="!!dental().medicalConditions[item.key]"
-                        [disabled]="clinicalFormDisabled()"
-                        (change)="toggleDentalFlag(dental().medicalConditions, item.key, $any($event.target).checked)"
-                      />
-                      {{ item.label }}
-                    </label>
+                    @let ans = conditionAnswer(item.key);
+                    <div class="cond-card" [attr.data-ans]="ans || 'none'">
+                      <div class="cond-row">
+                        <span class="cond-name">{{ item.label }}</span>
+                        <div class="cond-seg" role="group" [attr.aria-label]="item.label">
+                          <button type="button" [class.on]="ans === 'NO'" [disabled]="clinicalFormDisabled()" (click)="setConditionAnswer(item.key, 'NO')">No</button>
+                          <button type="button" class="si" [class.on]="ans === 'SI'" [disabled]="clinicalFormDisabled()" (click)="setConditionAnswer(item.key, 'SI')">Sí</button>
+                          <button type="button" [class.on]="ans === 'DESCONOCIDO'" [disabled]="clinicalFormDisabled()" (click)="setConditionAnswer(item.key, 'DESCONOCIDO')" title="Desconocido">No sabe</button>
+                        </div>
+                      </div>
+                      @if (ans === 'SI') {
+                        @let det = conditionDetail(item.key);
+                        <div class="cond-detail">
+                          <label>Diagnóstico<input [(ngModel)]="det.diagnosis" [readonly]="clinicalFormDisabled()" (change)="onClinicalFieldChange()" placeholder="Ej. HTA estadio 1" /></label>
+                          <label>Desde<input [(ngModel)]="det.since" [readonly]="clinicalFormDisabled()" (change)="onClinicalFieldChange()" placeholder="Año o fecha" /></label>
+                          <label class="wide">Tratamiento / medicamentos<input [(ngModel)]="det.treatment" [readonly]="clinicalFormDisabled()" (change)="onClinicalFieldChange()" placeholder="Losartán 50 mg c/12 h…" /></label>
+                          <label>Médico tratante<input [(ngModel)]="det.physician" [readonly]="clinicalFormDisabled()" (change)="onClinicalFieldChange()" /></label>
+                          <label>Observaciones<input [(ngModel)]="det.notes" [readonly]="clinicalFormDisabled()" (change)="onClinicalFieldChange()" placeholder="Control, estado actual…" /></label>
+                        </div>
+                      }
+                    </div>
                   }
                 </div>
                 <div class="grid-3 odo-mt">
@@ -2079,20 +2114,71 @@
                         type="checkbox"
                         [checked]="!!dental().allergies[item.key]"
                         [disabled]="clinicalFormDisabled()"
-                        (change)="toggleDentalAllergy(item.key, $any($event.target).checked)"
+                        (change)="toggleDentalAllergy(item.key, $any($event.target).checked, $event)"
                       />
                       {{ item.label }}
                     </label>
                   }
                 </div>
-                <label class="odo-mt"
-                  >¿A qué es alérgico? / reacción
-                  <input
-                    [(ngModel)]="dental().antecedents.allergic"
-                    [readonly]="clinicalFormDisabled()"
-                    placeholder="Ej. penicilina (urticaria), lidocaína, látex…"
-                  />
-                </label>
+                @if (dental().allergyRows.length || (!dental().allergies['none'] && !dental().allergies['unknown'] && !clinicalFormDisabled())) {
+                  <div class="odo-table-wrap odo-mt">
+                    <table class="odo-table allergy-table">
+                      <thead>
+                        <tr>
+                          <th>Tipo</th>
+                          <th>Alérgeno</th>
+                          <th>Reacción</th>
+                          <th>Severidad</th>
+                          <th>Observaciones</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (r of dental().allergyRows; track $index; let i = $index) {
+                          <tr [attr.data-sev]="r.severity || null">
+                            <td>
+                              <select [ngModel]="r.category" (ngModelChange)="onAllergyCategoryChange(r, $event)" [disabled]="clinicalFormDisabled()">
+                                <option value="">—</option>
+                                @for (c of allergyCategories; track c.key) {
+                                  <option [value]="c.key">{{ c.label }}</option>
+                                }
+                              </select>
+                            </td>
+                            <td class="odo-wide"><input [(ngModel)]="r.allergen" [readonly]="clinicalFormDisabled()" (change)="onClinicalFieldChange()" placeholder="Penicilina, lidocaína, látex…" /></td>
+                            <td><input [(ngModel)]="r.reaction" [readonly]="clinicalFormDisabled()" (change)="onClinicalFieldChange()" placeholder="Urticaria, edema…" /></td>
+                            <td>
+                              <select [(ngModel)]="r.severity" [disabled]="clinicalFormDisabled()" (ngModelChange)="onClinicalFieldChange()">
+                                <option value="">—</option>
+                                @for (s of allergySeverities; track s.key) {
+                                  <option [value]="s.key">{{ s.label }}</option>
+                                }
+                              </select>
+                            </td>
+                            <td><input [(ngModel)]="r.notes" [readonly]="clinicalFormDisabled()" (change)="onClinicalFieldChange()" /></td>
+                            <td>
+                              @if (!clinicalFormDisabled()) {
+                                <button type="button" class="ghost" title="Quitar fila" (click)="removeAllergyRow(i)">✕</button>
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                  @if (!clinicalFormDisabled()) {
+                    <button type="button" class="ghost small odo-mt" (click)="addAllergyRow()">+ Agregar alérgeno</button>
+                  }
+                }
+                @if (dental().antecedents.allergic || !dental().allergyRows.length) {
+                  <label class="odo-mt"
+                    >{{ dental().allergyRows.length ? 'Otras observaciones de alergias' : '¿A qué es alérgico? / reacción' }}
+                    <input
+                      [(ngModel)]="dental().antecedents.allergic"
+                      [readonly]="clinicalFormDisabled()"
+                      placeholder="Ej. penicilina (urticaria), lidocaína, látex…"
+                    />
+                  </label>
+                }
                 @if (dental().allergies['anesthetics'] || dental().allergies['latex']) {
                   <p class="banner warn">
                     Alergia a <strong>{{ dental().allergies['anesthetics'] ? 'anestésicos' : '' }}{{ dental().allergies['anesthetics'] && dental().allergies['latex'] ? ' y ' : '' }}{{ dental().allergies['latex'] ? 'látex' : '' }}</strong>:
