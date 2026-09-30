@@ -4,6 +4,8 @@ import { DentalPeriodontogram } from './dentistry/dental-periodontogram';
 import { ClinicalImageViewer } from './dentistry/clinical-image-viewer';
 import type { ViewerItem } from './dentistry/clinical-image-viewer';
 import { DentalTreatmentBudget } from './dentistry/dental-treatment-budget';
+import { DentalRehab } from './dentistry/dental-rehab';
+import { hasRehabData } from './dentistry/rehab.models';
 import { TREATMENT_PHASES, budgetTotals, rowNet, suggestPhase } from './dentistry/treatment-budget.models';
 import { hasPerioData } from './dentistry/periodontogram.models';
 import {
@@ -301,6 +303,7 @@ function emptyContent(): ClinicalContent {
     DentalPeriodontogram,
     ClinicalImageViewer,
     DentalTreatmentBudget,
+    DentalRehab,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -1477,6 +1480,11 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   readonly treatmentPhases = TREATMENT_PHASES;
+
+  rehabOpenByDefault() {
+    const d = this.dental();
+    return d.service === 'REHABILITACION' || hasRehabData(d.rehab);
+  }
 
   treatmentRowNet(row: TreatmentPlanRow) {
     return rowNet(row);

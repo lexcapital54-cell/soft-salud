@@ -244,6 +244,14 @@ export const DENTISTRY_CONTENT_DEFAULTS = {
   },
   examNotes: {},
   periodontogram: { teeth: {}, updatedAt: '' },
+  rehab: {
+    implants: [],
+    prostheses: [],
+    kennedy: { upper: '', lower: '', at: '' },
+    verticalDimension: '',
+    occlusalScheme: '',
+    notes: '',
+  },
   periodontal: {
     gingiva: '',
     bleeding: '',

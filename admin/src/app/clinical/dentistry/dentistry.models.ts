@@ -6,6 +6,7 @@ import {
   emptyTreatmentBudget,
   normalizeTreatmentBudget,
 } from './treatment-budget.models';
+import { RehabData, emptyRehab, normalizeRehab } from './rehab.models';
 
 /** Servicio de la atención; «ORTODONCIA» activa el módulo de ortodoncia. «ODONTOLOGIA» es el valor antiguo de general. */
 export type DentalService =
@@ -468,6 +469,7 @@ export interface DentistryContent {
   diagnoses: DentalDiagnosisRow[];
   treatmentPlan: TreatmentPlanRow[];
   budget: TreatmentBudget;
+  rehab: RehabData;
   prescriptions: PrescriptionRow[];
   orders: OrderRow[];
   requiredConsents: string[];
@@ -786,6 +788,7 @@ export function emptyDentistry(): DentistryContent {
     diagnoses: [emptyDentalDiagnosis()],
     treatmentPlan: [emptyTreatmentRow()],
     budget: emptyTreatmentBudget(),
+    rehab: emptyRehab(),
     prescriptions: [],
     orders: [],
     requiredConsents: [],
@@ -932,6 +935,7 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
         }))
       : base.treatmentPlan,
     budget: normalizeTreatmentBudget(raw.budget),
+    rehab: normalizeRehab(raw.rehab),
     prescriptions: (raw.prescriptions || []).map((r) => ({ ...emptyPrescriptionRow(), ...r })),
     orders: (raw.orders || []).map((r) => ({ ...emptyOrderRow(), ...r })),
     requiredConsents: [...(raw.requiredConsents || [])],

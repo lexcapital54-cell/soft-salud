@@ -2525,6 +2525,14 @@
                   (changed)="onClinicalFieldChange()"
                   (save)="saveDraftOnly()"
                 />
+                <details class="ceph-details odo-mt" [open]="rehabOpenByDefault()">
+                  <summary>Rehabilitación oral: Kennedy automático, implantes y prótesis</summary>
+                  @defer (on viewport) {
+                    <app-dental-rehab [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                  } @placeholder {
+                    <p class="muted small">Cargando rehabilitación oral…</p>
+                  }
+                </details>
               </section>
 
               @if (showOrthoModule()) {

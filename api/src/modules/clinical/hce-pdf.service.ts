@@ -1098,6 +1098,59 @@ export class HcePdfService {
       );
     }
 
+    const rehab = obj(dental.rehab);
+    const kennedy = obj(rehab.kennedy);
+    const rehabText = lines([
+      ['Kennedy maxilar superior', kennedy.upper],
+      ['Kennedy mandíbula', kennedy.lower],
+      ['Dimensión vertical', rehab.verticalDimension],
+      ['Esquema oclusal', rehab.occlusalScheme],
+      ['Plan / observaciones', rehab.notes],
+    ]);
+    if (rehabText) sections.push(this.section('Rehabilitación oral', rehabText));
+    const implants = rows(rehab.implants).filter((r) => str(r.tooth) || str(r.brand));
+    if (implants.length) {
+      const size = (r: Record<string, unknown>) =>
+        [str(r.diameter), str(r.length)].filter(Boolean).join(' × ') + (str(r.diameter) || str(r.length) ? ' mm' : '');
+      sections.push(
+        table(
+          'Implantes',
+          ['6%', '15%', '10%', '9%', '9%', '9%', '12%', '12%', '*'],
+          ['Pieza', 'Sistema / plataforma', 'Medidas', 'Colocación', 'Torque / ISQ', 'Carga', 'Rehabilitación', 'Estado', 'Injerto / observaciones'],
+          implants.map((r) => [
+            str(r.tooth),
+            joinDash(r.brand, r.platform),
+            size(r),
+            str(r.placedAt).split('-').reverse().join('/'),
+            joinDash(str(r.torque) ? `${str(r.torque)} Ncm` : '', str(r.isq) ? `ISQ ${str(r.isq)}` : ''),
+            str(r.loading),
+            str(r.restoration),
+            str(r.status),
+            joinDash(r.graft, r.notes),
+          ]),
+        ),
+      );
+    }
+    const prostheses = rows(rehab.prostheses).filter((r) => str(r.type) || str(r.teeth));
+    if (prostheses.length) {
+      sections.push(
+        table(
+          'Prótesis',
+          ['16%', '10%', '14%', '12%', '14%', '10%', '*'],
+          ['Tipo', 'Piezas', 'Material', 'Estado', 'Laboratorio', 'Instalación', 'Observaciones'],
+          prostheses.map((r) => [
+            str(r.type),
+            str(r.teeth),
+            str(r.material),
+            str(r.status),
+            str(r.lab),
+            str(r.installedAt).split('-').reverse().join('/'),
+            str(r.notes),
+          ]),
+        ),
+      );
+    }
+
     const odontogram = obj(dental.odontogram);
     const label = (k: unknown) => DENTAL_TOOTH_LABELS[str(k)] || str(k);
     const toothRows = Object.keys(odontogram)
