@@ -245,6 +245,14 @@ export const DENTISTRY_CONTENT_DEFAULTS = {
   examNotes: {},
   periodontogram: { teeth: {}, updatedAt: '' },
   orthoMovements: [],
+  orthoArch: {
+    upper: { form: '', intercanine: '', intermolar: '', depth: '', perimeter: '', requiredManual: '', symmetry: '', notes: '' },
+    lower: { form: '', intercanine: '', intermolar: '', depth: '', perimeter: '', requiredManual: '', symmetry: '', notes: '' },
+    widths: {},
+    transverse: { maxillaryCompression: '', mandibularCompression: '', asymmetry: '', notes: '' },
+    sagittal: { classification: '', incisorRelation: '', notes: '' },
+    vertical: { pattern: '', notes: '' },
+  },
   orthoExam: {
     smile: { smileLine: '', restExposure: '', smileExposure: '', gingivalExposure: '', smileArc: '', symmetry: '', occlusalCant: '', notes: '' },
     proportions: { upperThird: '', middleThird: '', lowerThird: '', facialHeight: '', facialWidth: '' },

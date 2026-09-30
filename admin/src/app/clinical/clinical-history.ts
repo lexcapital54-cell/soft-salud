@@ -11,6 +11,7 @@ import { OrthoCaseDashboard } from './dentistry/ortho-case-dashboard';
 import { OrthoCaseIntake } from './dentistry/ortho-case-intake';
 import { OrthoExamPanel } from './dentistry/ortho-exam-panel';
 import { OrthoMovementPlan } from './dentistry/ortho-movement-plan';
+import { OrthoArchAnalysis } from './dentistry/ortho-arch-analysis';
 import { ORTHO_CASE_STATUSES } from './dentistry/ortho-case.models';
 import { CompletenessContext, ModuleStatus, dentalModuleStatus, moduleDotStyle } from './dentistry/dental-completeness';
 import { TREATMENT_PHASES, budgetTotals, rowNet, suggestPhase } from './dentistry/treatment-budget.models';
@@ -316,6 +317,7 @@ function emptyContent(): ClinicalContent {
     OrthoCaseIntake,
     OrthoExamPanel,
     OrthoMovementPlan,
+    OrthoArchAnalysis,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -544,7 +546,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     { key: 'upperDiscrepancy', label: 'Discrepancia superior (mm)', placeholder: '-3' },
     { key: 'lowerDiscrepancy', label: 'Discrepancia inferior (mm)', placeholder: '-2' },
     { key: 'bolton', label: 'Índice de Bolton', placeholder: 'Anterior 77,2 % · total 91,3 %' },
-    { key: 'archForm', label: 'Forma de arcada', options: ['Ovoide', 'Cuadrada', 'Triangular'] },
+    { key: 'archForm', label: 'Forma de arcada', options: ['Ovoide', 'Cuadrada', 'Triangular', 'Estrecha', 'Ancha'] },
   ];
 
   readonly orthoPhases = ['Interceptiva / ortopedia', 'Correctiva', 'Preparación quirúrgica (ortognática)', 'Retención'];

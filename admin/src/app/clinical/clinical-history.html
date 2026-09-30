@@ -2706,6 +2706,12 @@
                       </ul>
                     </div>
                   }
+                  <h4 class="odo-sub">Arcadas, espacios, Bolton y planos</h4>
+                  @defer (on viewport) {
+                    <app-ortho-arch-analysis [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                  } @placeholder {
+                    <p class="muted small">Cargando análisis de arcadas…</p>
+                  }
                   <h4 class="odo-sub">Hábitos</h4>
                   <p class="muted small">
                     @if (orthoHabitSummary().length) {

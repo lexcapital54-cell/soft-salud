@@ -1382,6 +1382,48 @@ export class HcePdfService {
       sections.push(this.section('Sonrisa, proporciones y examen funcional', examText, titleColor, band));
     }
 
+    const orthoArch = obj(dental.orthoArch);
+    const archLine = (label: string, v: unknown) => {
+      const a = obj(v);
+      const parts = [
+        str(a.form) && `forma ${str(a.form).toLowerCase()}`,
+        str(a.intercanine) && `intercanino ${str(a.intercanine)} mm`,
+        str(a.intermolar) && `intermolar ${str(a.intermolar)} mm`,
+        str(a.depth) && `longitud ${str(a.depth)} mm`,
+        str(a.perimeter) && `perímetro ${str(a.perimeter)} mm`,
+        str(a.symmetry),
+      ].filter(Boolean);
+      return parts.length ? `${label}: ${parts.join(', ')}` : '';
+    };
+    const widths = obj(orthoArch.widths);
+    const widthText = Object.keys(widths)
+      .filter((k) => str(widths[k]))
+      .sort((a, b) => Number(a) - Number(b))
+      .map((k) => `${k}: ${str(widths[k])}`)
+      .join(' · ');
+    const tv = obj(orthoArch.transverse);
+    const sg = obj(orthoArch.sagittal);
+    const vt = obj(orthoArch.vertical);
+    const archPlanesText = [
+      archLine('Arcada superior', orthoArch.upper),
+      archLine('Arcada inferior', orthoArch.lower),
+      widthText && `Anchos mesiodistales (mm): ${widthText}`,
+      lines([
+        ['Compresión maxilar', tv.maxillaryCompression],
+        ['Compresión mandibular', tv.mandibularCompression],
+        ['Asimetría transversal', tv.asymmetry],
+        ['Clasificación sagital', sg.classification],
+        ['Relación incisiva', sg.incisorRelation],
+        ['Patrón vertical', vt.pattern],
+        ['Observaciones verticales', vt.notes],
+      ]),
+    ]
+      .filter(Boolean)
+      .join('\n');
+    if (archPlanesText) {
+      sections.push(this.section('Análisis de arcadas y planos', archPlanesText, titleColor, band));
+    }
+
     const mvLabels: Record<string, [string, string]> = {
       MESIALIZACION: ['Mesialización', 'mm'],
       DISTALIZACION: ['Distalización', 'mm'],
