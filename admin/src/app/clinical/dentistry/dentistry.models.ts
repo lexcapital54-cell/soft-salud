@@ -8,6 +8,7 @@ import {
 } from './treatment-budget.models';
 import { RehabData, emptyRehab, normalizeRehab } from './rehab.models';
 import { OrthoCaseData, emptyOrthoCase, normalizeOrthoCase } from './ortho-case.models';
+import { OrthoExamData, emptyOrthoExam, normalizeOrthoExam } from './ortho-exam.models';
 
 /** Servicio de la atención; «ORTODONCIA» activa el módulo de ortodoncia. «ODONTOLOGIA» es el valor antiguo de general. */
 export type DentalService =
@@ -288,11 +289,13 @@ export interface PhotoSlotValue {
   takenAt: string;
 }
 
-export const PHOTO_SLOTS: Array<{ key: string; label: string; group: 'Extraoral' | 'Intraoral' }> = [
+export const PHOTO_SLOTS: Array<{ key: string; label: string; group: 'Extraoral' | 'Intraoral'; orthoOnly?: boolean }> = [
   { key: 'extraFrontal', label: 'Frontal', group: 'Extraoral' },
   { key: 'extraProfileRight', label: 'Perfil derecho', group: 'Extraoral' },
   { key: 'extraProfileLeft', label: 'Perfil izquierdo', group: 'Extraoral' },
   { key: 'extraSmile', label: 'Sonrisa', group: 'Extraoral' },
+  { key: 'extraFrontalRest', label: 'Frontal en reposo', group: 'Extraoral', orthoOnly: true },
+  { key: 'extraProfileRest', label: 'Perfil en reposo', group: 'Extraoral', orthoOnly: true },
   { key: 'intraFrontal', label: 'Frontal', group: 'Intraoral' },
   { key: 'intraRight', label: 'Lateral derecha', group: 'Intraoral' },
   { key: 'intraLeft', label: 'Lateral izquierda', group: 'Intraoral' },
@@ -472,6 +475,7 @@ export interface DentistryContent {
   budget: TreatmentBudget;
   rehab: RehabData;
   orthoCase: OrthoCaseData;
+  orthoExam: OrthoExamData;
   prescriptions: PrescriptionRow[];
   orders: OrderRow[];
   requiredConsents: string[];
@@ -794,6 +798,7 @@ export function emptyDentistry(): DentistryContent {
     budget: emptyTreatmentBudget(),
     rehab: emptyRehab(),
     orthoCase: emptyOrthoCase(),
+    orthoExam: emptyOrthoExam(),
     prescriptions: [],
     orders: [],
     requiredConsents: [],
@@ -942,6 +947,7 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
     budget: normalizeTreatmentBudget(raw.budget),
     rehab: normalizeRehab(raw.rehab),
     orthoCase: normalizeOrthoCase(raw.orthoCase),
+    orthoExam: normalizeOrthoExam(raw.orthoExam),
     prescriptions: (raw.prescriptions || []).map((r) => ({ ...emptyPrescriptionRow(), ...r })),
     orders: (raw.orders || []).map((r) => ({ ...emptyOrderRow(), ...r })),
     requiredConsents: [...(raw.requiredConsents || [])],

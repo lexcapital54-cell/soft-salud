@@ -1334,6 +1334,54 @@ export class HcePdfService {
       sections.push(this.section('Ortodoncia', orthoText, titleColor, band));
     }
 
+    const orthoExam = obj(dental.orthoExam);
+    const smile = obj(orthoExam.smile);
+    const prop = obj(orthoExam.proportions);
+    const fx = obj(orthoExam.functional);
+    const sidesOf = (v: unknown) => {
+      const o = obj(v);
+      return o.right && o.left ? 'Bilateral' : o.right ? 'Derecha' : o.left ? 'Izquierda' : '';
+    };
+    const mm = (v: unknown) => (str(v) ? `${str(v)} mm` : '');
+    const fnText = (v: unknown) => {
+      const o = obj(v);
+      if (o.state === 'NORMAL') return 'Normal';
+      if (o.state !== 'ALTERADA') return '';
+      return joinDash('Alterada', o.description, o.referral && `Remitir a ${str(o.referral)}`);
+    };
+    const examText = lines([
+      ['Línea de sonrisa', smile.smileLine],
+      ['Arco de sonrisa', smile.smileArc],
+      ['Simetría de la sonrisa', smile.symmetry],
+      ['Plano oclusal', smile.occlusalCant],
+      ['Exposición incisiva en reposo', mm(smile.restExposure)],
+      ['Exposición incisiva al sonreír', mm(smile.smileExposure)],
+      ['Exposición gingival', mm(smile.gingivalExposure)],
+      ['Observaciones de la sonrisa', smile.notes],
+      ['Tercios faciales (sup./medio/inf.)', [prop.upperThird, prop.middleThird, prop.lowerThird].some((v) => str(v)) ? [prop.upperThird, prop.middleThird, prop.lowerThird].map((v) => str(v) || '—').join(' / ') + ' mm' : ''],
+      ['Altura facial N–Me', mm(prop.facialHeight)],
+      ['Ancho bicigomático', mm(prop.facialWidth)],
+      ['ATM dolor', sidesOf(fx.tmjPain)],
+      ['ATM click', sidesOf(fx.click)],
+      ['ATM crepitación', sidesOf(fx.crepitus)],
+      ['Trayectoria de apertura', fx.deviation],
+      ['Apertura máxima', mm(fx.maxOpening)],
+      ['Lateralidad derecha', mm(fx.lateralRight)],
+      ['Lateralidad izquierda', mm(fx.lateralLeft)],
+      ['Protrusión', mm(fx.protrusion)],
+      ['Dolor muscular temporal', sidesOf(fx.temporal)],
+      ['Dolor muscular masetero', sidesOf(fx.masseter)],
+      ['Dolor muscular pterigoideos', sidesOf(fx.pterygoid)],
+      ['Respiración', fnText(fx.breathing)],
+      ['Deglución', fnText(fx.swallowing)],
+      ['Fonación', fnText(fx.phonation)],
+      ['Masticación', fnText(fx.chewing)],
+      ['Observaciones funcionales', fx.notes],
+    ]);
+    if (examText) {
+      sections.push(this.section('Sonrisa, proporciones y examen funcional', examText, titleColor, band));
+    }
+
     const photos = Object.values(obj(dental.photos)).length;
     const imaging = rows(dental.imaging).filter((r) => str(r.type) || str(r.attachmentId) || str(r.findings));
     if (imaging.length) {

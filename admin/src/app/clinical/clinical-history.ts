@@ -9,6 +9,7 @@ import { hasRehabData } from './dentistry/rehab.models';
 import { DentalPatientSummary } from './dentistry/dental-patient-summary';
 import { OrthoCaseDashboard } from './dentistry/ortho-case-dashboard';
 import { OrthoCaseIntake } from './dentistry/ortho-case-intake';
+import { OrthoExamPanel } from './dentistry/ortho-exam-panel';
 import { ORTHO_CASE_STATUSES } from './dentistry/ortho-case.models';
 import { CompletenessContext, ModuleStatus, dentalModuleStatus, moduleDotStyle } from './dentistry/dental-completeness';
 import { TREATMENT_PHASES, budgetTotals, rowNet, suggestPhase } from './dentistry/treatment-budget.models';
@@ -312,6 +313,7 @@ function emptyContent(): ClinicalContent {
     DentalPatientSummary,
     OrthoCaseDashboard,
     OrthoCaseIntake,
+    OrthoExamPanel,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -671,7 +673,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Análisis facial sobre fotografía ──
   facialPhotoOptions(kind: 'frontal' | 'profile'): FacialPhotoOption[] {
-    const slots = kind === 'frontal' ? ['extraFrontal', 'extraSmile'] : ['extraProfileRight', 'extraProfileLeft'];
+    const slots = kind === 'frontal' ? ['extraFrontal', 'extraFrontalRest', 'extraSmile'] : ['extraProfileRight', 'extraProfileLeft', 'extraProfileRest'];
     return slots.flatMap((key) => {
       const photo = this.dental().photos[key];
       if (!photo?.attachmentId) return [];
@@ -1542,7 +1544,8 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   private readonly dentalPhotoPending = new Set<string>();
 
   photoSlotsOf(group: string) {
-    return PHOTO_SLOTS.filter((s) => s.group === group);
+    const ortho = this.showOrthoModule();
+    return PHOTO_SLOTS.filter((s) => s.group === group && (ortho || !s.orthoOnly || this.dental().photos[s.key]?.attachmentId));
   }
 
   /** Miniatura de la foto del espacio; se descarga una sola vez por adjunto. */
