@@ -366,6 +366,8 @@ export interface DentistryContent {
     occlusion: string;
     occlusionNotes: string;
   };
+  /** Descripción de hallazgos alterados del examen, clave «extraoral.lips», «intraoral.tongue»… */
+  examNotes: Record<string, string>;
   periodontal: {
     gingiva: string;
     bleeding: string;
@@ -687,6 +689,7 @@ export function emptyDentistry(): DentistryContent {
       occlusion: '',
       occlusionNotes: '',
     },
+    examNotes: {},
     periodontal: {
       gingiva: '',
       bleeding: '',
@@ -858,6 +861,7 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
     vitals: { ...base.vitals, ...(raw.vitals || {}) },
     extraoral: { ...base.extraoral, ...(raw.extraoral || {}) },
     intraoral: { ...base.intraoral, ...(raw.intraoral || {}) },
+    examNotes: { ...(raw.examNotes || {}) },
     periodontal: { ...base.periodontal, ...(raw.periodontal || {}) },
     odontogram,
     orthoArches: { ...base.orthoArches, ...(raw.orthoArches || {}) },

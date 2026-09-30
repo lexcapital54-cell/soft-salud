@@ -242,6 +242,7 @@ export const DENTISTRY_CONTENT_DEFAULTS = {
     occlusion: '',
     occlusionNotes: '',
   },
+  examNotes: {},
   periodontal: {
     gingiva: '',
     bleeding: '',

@@ -1,4 +1,5 @@
 import { DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { DentalExamGroup } from './dentistry/dental-exam-group';
 import {
   AfterViewInit,
   Component,
@@ -151,6 +152,8 @@ type DentalField<T> = {
   label: string;
   options?: string[];
   placeholder?: string;
+  normal?: string;
+  notePlaceholder?: string;
 };
 
 function emptyDentalEvolution() {
@@ -288,6 +291,7 @@ function emptyContent(): ClinicalContent {
   selector: 'app-clinical-history',
   imports: [
     NgTemplateOutlet,
+    DentalExamGroup,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -427,35 +431,35 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   private readonly normalAltered = ['Normal', 'Alterado'];
 
   readonly dentalExtraoralFields: DentalField<DentistryContent['extraoral']>[] = [
-    { key: 'symmetry', label: 'Simetría facial', options: ['Simétrica', 'Asimetría leve', 'Asimetría marcada'] },
+    { key: 'symmetry', label: 'Simetría facial', options: ['Simétrica', 'Asimetría leve', 'Asimetría marcada'], normal: 'Simétrica', notePlaceholder: 'Lado, tejido, causa aparente…' },
     { key: 'profile', label: 'Perfil', options: ['Recto', 'Convexo', 'Cóncavo'] },
-    { key: 'facialThirds', label: 'Tercios faciales', options: ['Proporcionados', 'Tercio inferior aumentado', 'Tercio inferior disminuido'] },
-    { key: 'lymphNodes', label: 'Ganglios', options: ['No palpables', 'Palpables no dolorosos', 'Palpables dolorosos'] },
-    { key: 'lips', label: 'Labios', options: this.normalAltered },
-    { key: 'breathing', label: 'Respiración', options: ['Nasal', 'Oral', 'Mixta'] },
-    { key: 'skin', label: 'Piel', options: this.normalAltered },
+    { key: 'facialThirds', label: 'Tercios faciales', options: ['Proporcionados', 'Tercio inferior aumentado', 'Tercio inferior disminuido'], normal: 'Proporcionados' },
+    { key: 'lymphNodes', label: 'Ganglios', options: ['No palpables', 'Palpables no dolorosos', 'Palpables dolorosos'], normal: 'No palpables', notePlaceholder: 'Submandibulares, cervicales… tamaño, consistencia, movilidad' },
+    { key: 'lips', label: 'Labios', options: this.normalAltered, normal: 'Normal', notePlaceholder: 'Queilitis, lesiones, sequedad…' },
+    { key: 'breathing', label: 'Respiración', options: ['Nasal', 'Oral', 'Mixta'], normal: 'Nasal' },
+    { key: 'skin', label: 'Piel', options: this.normalAltered, normal: 'Normal', notePlaceholder: 'Lesiones, cicatrices, coloración…' },
   ];
 
   readonly dentalTmjFields: DentalField<DentistryContent['extraoral']>[] = [
-    { key: 'tmj', label: 'ATM', options: ['Sin alteración', 'Dolor', 'Ruidos', 'Limitación'] },
+    { key: 'tmj', label: 'ATM', options: ['Sin alteración', 'Dolor', 'Ruidos', 'Limitación'], normal: 'Sin alteración', notePlaceholder: 'Lado, crepitación, deflexión, desde cuándo…' },
     { key: 'mouthOpening', label: 'Apertura bucal (mm)', placeholder: '40' },
-    { key: 'muscularPain', label: 'Dolor muscular', options: ['No', 'Sí'] },
-    { key: 'clicking', label: 'Chasquidos', options: ['No', 'Derecho', 'Izquierdo', 'Bilateral'] },
-    { key: 'mandibularDeviation', label: 'Desviación mandibular', options: ['No', 'Derecha', 'Izquierda'] },
+    { key: 'muscularPain', label: 'Dolor muscular', options: ['No', 'Sí'], normal: 'No', notePlaceholder: 'Masetero, temporal, pterigoideos… lado, hipertonicidad' },
+    { key: 'clicking', label: 'Chasquidos', options: ['No', 'Derecho', 'Izquierdo', 'Bilateral'], normal: 'No', notePlaceholder: 'Apertura / cierre, recíproco…' },
+    { key: 'mandibularDeviation', label: 'Desviación mandibular', options: ['No', 'Derecha', 'Izquierda'], normal: 'No', notePlaceholder: 'Desviación (vuelve) o deflexión (no vuelve), mm…' },
   ];
 
   readonly dentalIntraoralFields: DentalField<DentistryContent['intraoral']>[] = [
-    { key: 'hygiene', label: 'Higiene oral', options: ['Buena', 'Regular', 'Deficiente'] },
-    { key: 'lips', label: 'Labios', options: this.normalAltered },
-    { key: 'mucosa', label: 'Carrillos / mucosa', options: this.normalAltered },
-    { key: 'palate', label: 'Paladar', options: this.normalAltered },
-    { key: 'tongue', label: 'Lengua', options: this.normalAltered },
-    { key: 'floorOfMouth', label: 'Piso de boca', options: this.normalAltered },
-    { key: 'frenula', label: 'Frenillos', options: this.normalAltered },
-    { key: 'tonsils', label: 'Amígdalas / orofaringe', options: this.normalAltered },
-    { key: 'glands', label: 'Glándulas salivales', options: ['Flujo normal', 'Xerostomía', 'Sialorrea'] },
+    { key: 'hygiene', label: 'Higiene oral', options: ['Buena', 'Regular', 'Deficiente'], normal: 'Buena', notePlaceholder: 'Placa, cálculos, zonas críticas…' },
+    { key: 'lips', label: 'Labios', options: this.normalAltered, normal: 'Normal' },
+    { key: 'mucosa', label: 'Carrillos / mucosa', options: this.normalAltered, normal: 'Normal', notePlaceholder: 'Línea alba, úlceras, mordisqueo…' },
+    { key: 'palate', label: 'Paladar', options: this.normalAltered, normal: 'Normal', notePlaceholder: 'Torus, lesiones, profundidad…' },
+    { key: 'tongue', label: 'Lengua', options: this.normalAltered, normal: 'Normal', notePlaceholder: 'Saburral, geográfica, fisurada, lesiones…' },
+    { key: 'floorOfMouth', label: 'Piso de boca', options: this.normalAltered, normal: 'Normal' },
+    { key: 'frenula', label: 'Frenillos', options: this.normalAltered, normal: 'Normal', notePlaceholder: 'Inserción baja, anquiloglosia…' },
+    { key: 'tonsils', label: 'Amígdalas / orofaringe', options: this.normalAltered, normal: 'Normal' },
+    { key: 'glands', label: 'Glándulas salivales', options: ['Flujo normal', 'Xerostomía', 'Sialorrea'], normal: 'Flujo normal' },
     { key: 'dentition', label: 'Dentición', options: ['Permanente', 'Temporal', 'Mixta'] },
-    { key: 'occlusion', label: 'Oclusión', options: ['Normal', 'Maloclusión'] },
+    { key: 'occlusion', label: 'Oclusión', options: ['Normal', 'Maloclusión'], normal: 'Normal', notePlaceholder: 'Tipo de maloclusión…' },
     { key: 'otherLesions', label: 'Otras lesiones', placeholder: 'Úlceras, leucoplasias…' },
   ];
 

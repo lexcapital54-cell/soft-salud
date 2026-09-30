@@ -2413,68 +2413,38 @@
                 </div>
 
                 <h4 class="odo-sub">Examen extraoral</h4>
-                <div class="grid-4">
-                  @for (f of dentalExtraoralFields; track f.key) {
-                    <label
-                      >{{ f.label }}
-                      @if (f.options) {
-                        <select
-                          [(ngModel)]="dental().extraoral[f.key]"
-                          (ngModelChange)="onExtraoralChange(f.key, $event)"
-                          [disabled]="clinicalFormDisabled()"
-                        >
-                          <option value="">Seleccione…</option>
-                          @for (o of f.options; track o) {
-                            <option [value]="o">{{ o }}</option>
-                          }
-                        </select>
-                      } @else {
-                        <input [(ngModel)]="dental().extraoral[f.key]" [readonly]="clinicalFormDisabled()" [placeholder]="f.placeholder || ''" />
-                      }
-                    </label>
-                  }
-                </div>
-                <h4 class="odo-sub">ATM</h4>
-                <div class="grid-4">
-                  @for (f of dentalTmjFields; track f.key) {
-                    <label
-                      >{{ f.label }}
-                      @if (f.options) {
-                        <select [(ngModel)]="dental().extraoral[f.key]" [disabled]="clinicalFormDisabled()">
-                          <option value="">Seleccione…</option>
-                          @for (o of f.options; track o) {
-                            <option [value]="o">{{ o }}</option>
-                          }
-                        </select>
-                      } @else {
-                        <input [(ngModel)]="dental().extraoral[f.key]" [readonly]="clinicalFormDisabled()" [placeholder]="f.placeholder || ''" />
-                      }
-                    </label>
-                  }
-                </div>
+                <app-dental-exam-group
+                  [fields]="dentalExtraoralFields"
+                  [values]="$any(dental().extraoral)"
+                  [notes]="dental().examNotes"
+                  prefix="extraoral"
+                  [disabled]="clinicalFormDisabled()"
+                  (valueChange)="onExtraoralChange($event.key, $event.value)"
+                  (changed)="onClinicalFieldChange()"
+                />
+                <h4 class="odo-sub">ATM y músculos</h4>
+                <app-dental-exam-group
+                  [fields]="dentalTmjFields"
+                  [values]="$any(dental().extraoral)"
+                  [notes]="dental().examNotes"
+                  prefix="extraoral"
+                  [disabled]="clinicalFormDisabled()"
+                  (changed)="onClinicalFieldChange()"
+                />
                 <label class="odo-mt"
                   >Observaciones extraorales
                   <input [(ngModel)]="dental().extraoral.notes" [readonly]="clinicalFormDisabled()" />
                 </label>
 
                 <h4 class="odo-sub">Examen intraoral — tejidos blandos</h4>
-                <div class="grid-4">
-                  @for (f of dentalIntraoralFields; track f.key) {
-                    <label
-                      >{{ f.label }}
-                      @if (f.options) {
-                        <select [(ngModel)]="dental().intraoral[f.key]" [disabled]="clinicalFormDisabled()">
-                          <option value="">Seleccione…</option>
-                          @for (o of f.options; track o) {
-                            <option [value]="o">{{ o }}</option>
-                          }
-                        </select>
-                      } @else {
-                        <input [(ngModel)]="dental().intraoral[f.key]" [readonly]="clinicalFormDisabled()" [placeholder]="f.placeholder || ''" />
-                      }
-                    </label>
-                  }
-                </div>
+                <app-dental-exam-group
+                  [fields]="dentalIntraoralFields"
+                  [values]="$any(dental().intraoral)"
+                  [notes]="dental().examNotes"
+                  prefix="intraoral"
+                  [disabled]="clinicalFormDisabled()"
+                  (changed)="onClinicalFieldChange()"
+                />
                 @if (!showOrthoModule() || dental().intraoral.occlusionNotes) {
                   <label class="odo-mt"
                     >Observaciones de oclusión
