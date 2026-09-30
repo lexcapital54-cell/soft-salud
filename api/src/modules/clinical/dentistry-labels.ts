@@ -102,6 +102,10 @@ export const DENTAL_CONSENT_LABELS: Record<string, string> = {
   ODO_AESTHETIC: 'Procedimientos estéticos',
   ODO_TELEHEALTH: 'Atención virtual',
   HABEAS_DATA: 'Tratamiento de datos (Habeas Data)',
+  ORT_RETENTION: 'Fase de retención ortodóncica',
+  ORT_ALIGNERS: 'Tratamiento con alineadores',
+  ORT_TAD: 'Mini implantes de anclaje (TAD)',
+  ORT_ADDITIONAL: 'Procedimiento adicional de ortodoncia',
 };
 
 export const DENTAL_TREATMENT_STATUS_LABELS: Record<string, string> = {

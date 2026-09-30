@@ -12,7 +12,6 @@ import {
 } from './auth.guard';
 import { TodayAppointmentsDashboard } from './agenda/today-appointments';
 import { HceExport } from './clinical/hce-export';
-import { HceWorkspace } from './clinical/hce-workspace';
 import { PatientsDirectory } from './clinical/patients-directory';
 import { SivigilaAudit } from './clinical/sivigila-audit';
 import { ClinicHome } from './clinic-home/clinic-home';
@@ -70,7 +69,7 @@ export const routes: Routes = [
   },
   {
     path: 'consultorio/historia-clinica',
-    component: HceWorkspace,
+    loadComponent: () => import('./clinical/hce-workspace').then((m) => m.HceWorkspace),
     canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard],
   },
   {

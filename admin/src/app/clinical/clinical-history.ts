@@ -20,6 +20,10 @@ import { OrthoMechanics } from './dentistry/ortho-mechanics';
 import { OrthoEvolutionTrack } from './dentistry/ortho-evolution-track';
 import { OrthoAgenda } from './dentistry/ortho-agenda';
 import { OrthoRetention } from './dentistry/ortho-retention';
+import { OrthoBudget } from './dentistry/ortho-budget';
+import { OrthoConsentBoard } from './dentistry/ortho-consent-board';
+import type { SignedConsentInfo } from './dentistry/ortho-consent-board';
+import { OrthoAuditTimeline } from './dentistry/ortho-audit-timeline';
 import type { DigitalModelUpload } from './dentistry/ortho-digital-models';
 import { ORTHO_CASE_STATUSES } from './dentistry/ortho-case.models';
 import { CompletenessContext, ModuleStatus, dentalModuleStatus, moduleDotStyle } from './dentistry/dental-completeness';
@@ -335,6 +339,9 @@ function emptyContent(): ClinicalContent {
     OrthoEvolutionTrack,
     OrthoAgenda,
     OrthoRetention,
+    OrthoBudget,
+    OrthoConsentBoard,
+    OrthoAuditTimeline,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -1786,6 +1793,16 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       (r) => r.template?.code === code && (!encId || !r.encounterId || r.encounterId === encId),
     );
     return match?.signedAt || null;
+  }
+
+  orthoSignedConsents(): SignedConsentInfo[] {
+    return (this.consentSigner?.signed() || [])
+      .filter((r) => r.template?.code)
+      .map((r) => ({ code: r.template!.code, signedAt: r.signedAt, version: r.template?.version ?? null, signer: r.signerName || '' }));
+  }
+
+  orthoConsentCodes(): string[] {
+    return this.isOrthoClinic() ? [...ORTHO_CONSENT_KEYS] : [...DENTAL_ONLY_CONSENT_KEYS, 'ODO_ORTHODONTICS'];
   }
 
   signDentalConsent(code: string) {

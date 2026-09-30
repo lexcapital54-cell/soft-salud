@@ -248,6 +248,7 @@ export const DENTISTRY_CONTENT_DEFAULTS = {
   orthoCeph: { analysis: '', rows: {}, notes: '' },
   orthoModels3d: [],
   orthoFollow: { agenda: [], retainers: [], checks: [] },
+  orthoBudget: { items: [], downPayment: '', installments: '', startDate: '', quotedAt: '', notes: '' },
   orthoMech: {
     appliances: [],
     wires: [],

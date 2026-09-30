@@ -99,7 +99,7 @@ export class EncountersController {
   }
 
   @Get('encounters/:id/ortho-history')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.AUDITOR)
   orthoHistory(@Req() req: { user: User }, @Param('id') id: string) {
     return this.encountersService.orthoHistory(req.user, id);
   }

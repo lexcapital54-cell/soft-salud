@@ -1674,6 +1674,46 @@ export class HcePdfService {
       );
     }
 
+    const budget = obj(dental.orthoBudget);
+    const budgetItems = rows(budget.items).filter((r) => str(r.concept));
+    if (budgetItems.length) {
+      const toNum = (v: unknown) => {
+        let t = str(v).replace(/[^\d.,-]/g, '');
+        if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+        else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
+        return Number(t) || 0;
+      };
+      const cop = (n: number) => `$ ${Math.round(n).toLocaleString('es-CO')}`;
+      const netOf = (r: Record<string, unknown>) =>
+        (toNum(r.qty) || 0) * toNum(r.unitValue) * (1 - Math.min(100, Math.max(0, toNum(r.discountPct))) / 100);
+      const total = budgetItems.filter((r) => str(r.status) !== 'Cancelado').reduce((s, r) => s + netOf(r), 0);
+      sections.push(
+        table(
+          `Presupuesto de ortodoncia · total ${cop(total)}`,
+          ['20%', '*', '8%', '15%', '8%', '15%', '12%'],
+          ['Concepto', 'Detalle', 'Cant.', 'Valor unitario', 'Desc.', 'Total', 'Estado'],
+          budgetItems.map((r) => [
+            str(r.concept),
+            str(r.description),
+            str(r.qty),
+            str(r.unitValue) ? cop(toNum(r.unitValue)) : '',
+            str(r.discountPct) ? `${str(r.discountPct)} %` : '',
+            cop(netOf(r)),
+            str(r.status),
+          ]),
+        ),
+      );
+      const installments = Math.floor(toNum(budget.installments));
+      const finText = lines([
+        ['Cuota inicial', str(budget.downPayment) ? cop(toNum(budget.downPayment)) : ''],
+        ['Cuotas', installments ? `${installments} de ${cop(Math.max(0, total - toNum(budget.downPayment)) / installments)}` : ''],
+        ['Primera cuota', budget.startDate],
+        ['Fecha de cotización', budget.quotedAt],
+        ['Condiciones', budget.notes],
+      ]);
+      if (finText) sections.push(this.section('Financiación del presupuesto', finText, titleColor, band));
+    }
+
     const mvLabels: Record<string, [string, string]> = {
       MESIALIZACION: ['Mesialización', 'mm'],
       DISTALIZACION: ['Distalización', 'mm'],

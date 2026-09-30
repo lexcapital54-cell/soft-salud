@@ -1315,6 +1315,10 @@ export class EncountersService {
         clinicalRecord: {
           select: {
             content: true,
+            createdAt: true,
+            signedAt: true,
+            closedAt: true,
+            author: { select: { fullName: true } },
             evolutions: {
               select: { content: true, clinicalAttentionDate: true, signedAt: true, author: { select: { fullName: true } } },
               orderBy: [{ clinicalAttentionDate: 'asc' }, { signedAt: 'asc' }],
@@ -1351,12 +1355,21 @@ export class EncountersService {
         | Record<string, string>
         | undefined;
       if (!control) continue;
-      const changes: OrthoPlanChange[] = [];
+      const changes: OrthoPlanChange[] = [
+        {
+          field: 'controlSigned',
+          label: 'Control firmado',
+          from: '',
+          to: [eventLabels[control.event] || 'Control', control.emergency ? `Emergencia: ${control.emergency}` : ''].filter(Boolean).join(' · '),
+          module: 'Evolución',
+          action: 'Firmar',
+        },
+      ];
       if (eventLabels[control.event]) {
-        changes.push({ field: 'event', label: 'Evento', from: '', to: eventLabels[control.event] });
+        changes.push({ field: 'event', label: 'Evento', from: '', to: eventLabels[control.event], module: 'Evolución', action: 'Crear' });
       }
       if (control.phase && control.phase !== phase) {
-        changes.push({ field: 'phase', label: 'Fase de tratamiento', from: phase, to: control.phase });
+        changes.push({ field: 'phase', label: 'Fase de tratamiento', from: phase, to: control.phase, module: 'Plan', action: 'Editar' });
         phase = control.phase;
       }
       if (changes.length) {
@@ -1367,6 +1380,49 @@ export class EncountersService {
           changes,
         });
       }
+    }
+    const record = encounter.clinicalRecord;
+    const author = record?.author?.fullName || '—';
+    const recordEvent = (at: Date | null | undefined, field: string, label: string, action: OrthoPlanChange['action']) => {
+      if (at) entries.push({ at: at.toISOString(), userName: author, source: 'FIRMA', changes: [{ field, label, from: '', to: label, module: 'Historia clínica', action }] });
+    };
+    recordEvent(record?.createdAt, 'recordCreated', 'Historia clínica creada', 'Crear');
+    recordEvent(record?.signedAt, 'recordSigned', 'Historia clínica firmada', 'Firmar');
+    recordEvent(record?.closedAt, 'recordClosed', 'Historia clínica cerrada', 'Cerrar');
+    for (const ev of record?.evolutions ?? []) {
+      const amends = ((ev.content ?? {}) as Record<string, unknown>).amends as { kind?: string } | undefined;
+      if (!amends?.kind) continue;
+      const kind = amends.kind === 'CORRECCION' ? 'Corregir' : 'Anexar';
+      const label = amends.kind === 'CORRECCION' ? 'Nota de corrección' : amends.kind === 'ACLARATORIA' ? 'Nota aclaratoria' : 'Anexo';
+      entries.push({
+        at: ev.signedAt.toISOString(),
+        userName: ev.author?.fullName || '—',
+        source: 'FIRMA',
+        changes: [{ field: `amend-${ev.signedAt.getTime()}`, label, from: '', to: label, module: 'Evolución', action: kind }],
+      });
+    }
+    const consents = await this.prisma.patientConsent.findMany({
+      where: { clinicId, patientId: encounter.patientId },
+      orderBy: { signedAt: 'asc' },
+      take: 500,
+      select: { id: true, signedAt: true, signerName: true, template: { select: { title: true, version: true } } },
+    });
+    for (const c of consents) {
+      entries.push({
+        at: c.signedAt.toISOString(),
+        userName: c.signerName || '—',
+        source: 'CONSENTIMIENTO',
+        changes: [
+          {
+            field: `consent-${c.id}`,
+            label: `${c.template.title} (v${c.template.version})`,
+            from: '',
+            to: c.signerName ? `Firmado por ${c.signerName}` : 'Firmado',
+            module: 'Consentimientos',
+            action: 'Firmar',
+          },
+        ],
+      });
     }
     return coalesceOrthoHistory(entries);
   }

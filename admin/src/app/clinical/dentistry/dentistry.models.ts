@@ -16,6 +16,7 @@ import { DigitalModelRow, normalizeDigitalModels } from './ortho-models3d.data';
 import { OrthoDxData, emptyOrthoDx, normalizeOrthoDx } from './ortho-dx.data';
 import { OrthoMechData, emptyOrthoMech, normalizeOrthoMech } from './ortho-mech.data';
 import { OrthoFollowData, emptyOrthoFollow, normalizeOrthoFollow } from './ortho-follow.data';
+import { OrthoBudgetData, emptyOrthoBudget, normalizeOrthoBudget } from './ortho-budget.data';
 
 /** Servicio de la atención; «ORTODONCIA» activa el módulo de ortodoncia. «ODONTOLOGIA» es el valor antiguo de general. */
 export type DentalService =
@@ -491,6 +492,7 @@ export interface DentistryContent {
   orthoDx: OrthoDxData;
   orthoMech: OrthoMechData;
   orthoFollow: OrthoFollowData;
+  orthoBudget: OrthoBudgetData;
   prescriptions: PrescriptionRow[];
   orders: OrderRow[];
   requiredConsents: string[];
@@ -594,6 +596,9 @@ export const DENTAL_CONSENT_OPTIONS: CheckItem[] = [
   { key: 'ODO_ANESTHESIA', label: 'Anestesia local' },
   { key: 'ODO_AESTHETIC', label: 'Procedimientos estéticos' },
   { key: 'ORT_RETENTION', label: 'Fase de retención ortodóncica' },
+  { key: 'ORT_ALIGNERS', label: 'Tratamiento con alineadores' },
+  { key: 'ORT_TAD', label: 'Mini implantes de anclaje (TAD)' },
+  { key: 'ORT_ADDITIONAL', label: 'Procedimiento adicional de ortodoncia' },
   { key: 'ODO_TELEHEALTH', label: 'Atención virtual' },
   { key: 'HABEAS_DATA', label: 'Tratamiento de datos (Habeas Data)' },
 ];
@@ -602,6 +607,9 @@ export const DENTAL_CONSENT_OPTIONS: CheckItem[] = [
 export const ORTHO_CONSENT_KEYS = new Set([
   'ODO_ORTHODONTICS',
   'ORT_RETENTION',
+  'ORT_ALIGNERS',
+  'ORT_TAD',
+  'ORT_ADDITIONAL',
   'ODO_EXTRACTION',
   'ODO_PHOTOS',
   'ODO_IMAGE_USE',
@@ -609,7 +617,7 @@ export const ORTHO_CONSENT_KEYS = new Set([
   'HABEAS_DATA',
 ]);
 export const DENTAL_ONLY_CONSENT_KEYS = new Set(
-  DENTAL_CONSENT_OPTIONS.map((c) => c.key).filter((k) => k !== 'ODO_ORTHODONTICS' && k !== 'ORT_RETENTION'),
+  DENTAL_CONSENT_OPTIONS.map((c) => c.key).filter((k) => k !== 'ODO_ORTHODONTICS' && !k.startsWith('ORT_')),
 );
 
 export const CLASS_OPTIONS = ['Clase I', 'Clase II', 'Clase III', 'No evaluable'];
@@ -821,6 +829,7 @@ export function emptyDentistry(): DentistryContent {
     orthoDx: emptyOrthoDx(),
     orthoMech: emptyOrthoMech(),
     orthoFollow: emptyOrthoFollow(),
+    orthoBudget: emptyOrthoBudget(),
     prescriptions: [],
     orders: [],
     requiredConsents: [],
@@ -977,6 +986,7 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
     orthoDx: normalizeOrthoDx(raw.orthoDx),
     orthoMech: normalizeOrthoMech(raw.orthoMech),
     orthoFollow: normalizeOrthoFollow(raw.orthoFollow),
+    orthoBudget: normalizeOrthoBudget(raw.orthoBudget),
     prescriptions: (raw.prescriptions || []).map((r) => ({ ...emptyPrescriptionRow(), ...r })),
     orders: (raw.orders || []).map((r) => ({ ...emptyOrderRow(), ...r })),
     requiredConsents: [...(raw.requiredConsents || [])],

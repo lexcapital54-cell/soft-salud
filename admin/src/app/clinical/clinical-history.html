@@ -2944,6 +2944,25 @@
                   } @placeholder {
                     <p class="muted small">Cargando mecánica del tratamiento…</p>
                   }
+                  <h4 class="odo-sub">Consentimientos del tratamiento</h4>
+                  @defer (on viewport) {
+                    <app-ortho-consent-board
+                      [data]="dental()"
+                      [signed]="orthoSignedConsents()"
+                      [available]="orthoConsentCodes()"
+                      [disabled]="clinicalFormDisabled()"
+                      (toggle)="toggleDentalConsent($event.code, $event.checked)"
+                      (sign)="signDentalConsent($event)"
+                    />
+                  } @placeholder {
+                    <p class="muted small">Cargando consentimientos…</p>
+                  }
+                  <h4 class="odo-sub">Presupuesto de ortodoncia</h4>
+                  @defer (on viewport) {
+                    <app-ortho-budget [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                  } @placeholder {
+                    <p class="muted small">Cargando presupuesto…</p>
+                  }
                   @if (encounter()) {
                     <h4 class="odo-sub">Seguimiento del tratamiento</h4>
                     @let timeline = orthoTimeline();
@@ -3037,33 +3056,19 @@
                       <p class="muted small">Cargando retención…</p>
                     }
                     <button type="button" class="linkish ortho-history-toggle" (click)="toggleOrthoHistory()">
-                      {{ orthoHistoryOpen() ? 'Ocultar' : 'Ver' }} quién y cuándo cambió el diagnóstico, el plan y la fase
+                      {{ orthoHistoryOpen() ? 'Ocultar' : 'Ver' }} auditoría del caso: quién, cuándo y qué cambió
                     </button>
                     @if (orthoHistoryOpen()) {
                       @if (orthoHistoryLoading() && !orthoHistory()) {
                         <p class="muted small">Cargando historial…</p>
                       } @else if (!orthoHistory()?.length) {
-                        <p class="muted small">Sin cambios registrados en el diagnóstico, el plan o la fase.</p>
+                        <p class="muted small">Sin cambios registrados en el caso.</p>
                       } @else {
-                        <ul class="ortho-history">
-                          @for (h of orthoHistory(); track $index) {
-                            <li>
-                              <p class="ortho-history-head">
-                                <strong>{{ h.at | date: 'dd/MM/yyyy HH:mm' }}</strong> · {{ h.userName }}
-                                <span class="pill">{{ h.source === 'CONTROL' ? 'Control firmado' : 'Historia clínica' }}</span>
-                              </p>
-                              @for (c of h.changes; track c.field) {
-                                <p class="ortho-history-change">
-                                  <span>{{ c.label }}:</span>
-                                  @if (c.from) {
-                                    <del>{{ c.from }}</del> →
-                                  }
-                                  <ins>{{ c.to || '(vacío)' }}</ins>
-                                </p>
-                              }
-                            </li>
-                          }
-                        </ul>
+                        @defer {
+                          <app-ortho-audit-timeline [entries]="orthoHistory() || []" />
+                        } @placeholder {
+                          <p class="muted small">Cargando auditoría…</p>
+                        }
                       }
                     }
                   }

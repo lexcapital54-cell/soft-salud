@@ -13,12 +13,14 @@ export interface OrthoPlanChange {
   label: string;
   from: string;
   to: string;
+  module?: string;
+  action?: 'Crear' | 'Editar' | 'Eliminar' | 'Firmar' | 'Cerrar' | 'Corregir' | 'Anexar';
 }
 
 export interface OrthoHistoryEntry {
   at: string;
   userName: string;
-  source: 'HISTORIA' | 'CONTROL';
+  source: 'HISTORIA' | 'CONTROL' | 'FIRMA' | 'CONSENTIMIENTO';
   changes: OrthoPlanChange[];
 }
 
@@ -26,18 +28,19 @@ type Json = Record<string, unknown>;
 
 const MAX_VALUE = 400;
 
-const TRACKED: Array<{ field: string; label: string; read: (d: Json) => string }> = [
-  { field: 'diagnosis', label: 'Diagnóstico ortodóntico', read: (d) => text(ortho(d).diagnosis) },
-  { field: 'skeletalClass', label: 'Clase esquelética', read: (d) => text(ceph(d).skeletalClass) },
-  { field: 'growthPattern', label: 'Patrón de crecimiento', read: (d) => text(ceph(d).growthPattern) },
-  { field: 'phase', label: 'Fase de tratamiento', read: (d) => text(ortho(d).phase) },
-  { field: 'objectives', label: 'Objetivos de tratamiento', read: (d) => text(ortho(d).objectives) },
-  { field: 'appliance', label: 'Aparatología propuesta', read: (d) => text(ortho(d).appliance) },
-  { field: 'estimatedDuration', label: 'Duración estimada', read: (d) => text(ortho(d).estimatedDuration) },
-  { field: 'extractions', label: 'Extracciones indicadas', read: (d) => text(ortho(d).extractions) },
-  { field: 'retention', label: 'Plan de retención', read: (d) => text(ortho(d).retention) },
+const TRACKED: Array<{ field: string; label: string; module?: string; read: (d: Json) => string }> = [
+  { field: 'diagnosis', module: 'Diagnóstico', label: 'Diagnóstico ortodóntico', read: (d) => text(ortho(d).diagnosis) },
+  { field: 'skeletalClass', module: 'Diagnóstico', label: 'Clase esquelética', read: (d) => text(ceph(d).skeletalClass) },
+  { field: 'growthPattern', module: 'Diagnóstico', label: 'Patrón de crecimiento', read: (d) => text(ceph(d).growthPattern) },
+  { field: 'phase', module: 'Plan', label: 'Fase de tratamiento', read: (d) => text(ortho(d).phase) },
+  { field: 'objectives', module: 'Diagnóstico', label: 'Objetivos de tratamiento', read: (d) => text(ortho(d).objectives) },
+  { field: 'appliance', module: 'Plan', label: 'Aparatología propuesta', read: (d) => text(ortho(d).appliance) },
+  { field: 'estimatedDuration', module: 'Plan', label: 'Duración estimada', read: (d) => text(ortho(d).estimatedDuration) },
+  { field: 'extractions', module: 'Plan', label: 'Extracciones indicadas', read: (d) => text(ortho(d).extractions) },
+  { field: 'retention', module: 'Retención', label: 'Plan de retención', read: (d) => text(ortho(d).retention) },
   {
     field: 'bracketType',
+    module: 'Aparatología',
     label: 'Tipo de brackets',
     read: (d) => {
       const v = text(chart(d).bracketType);
@@ -46,11 +49,13 @@ const TRACKED: Array<{ field: string; label: string; read: (d: Json) => string }
   },
   {
     field: 'appliances',
+    module: 'Aparatología',
     label: 'Aparatos del caso',
     read: (d) => list(chart(d).appliances, ORTHO_APPLIANCE_LABELS),
   },
   {
     field: 'archSegments',
+    module: 'Aparatología',
     label: 'Arco seccionado',
     read: (d) =>
       (Array.isArray(chart(d).archSegments) ? (chart(d).archSegments as unknown[]) : [])
@@ -61,6 +66,7 @@ const TRACKED: Array<{ field: string; label: string; read: (d: Json) => string }
   },
   {
     field: 'elastics',
+    module: 'Aparatología',
     label: 'Elásticos',
     read: (d) =>
       (Array.isArray(chart(d).elastics) ? (chart(d).elastics as unknown[]) : [])
@@ -71,10 +77,127 @@ const TRACKED: Array<{ field: string; label: string; read: (d: Json) => string }
   },
   {
     field: 'planPhases',
+    module: 'Aparatología',
     label: 'Fases del plan cumplidas',
     read: (d) => list(chart(d).planPhases, ORTHO_PLAN_PHASE_LABELS),
   },
+  { field: 'cephConclusion', module: 'Cefalometría', label: 'Conclusión cefalométrica', read: (d) => text(obj(d.orthoCeph).notes) },
+  {
+    field: 'dxSelectedPlan',
+    module: 'Plan',
+    label: 'Alternativa de tratamiento elegida',
+    read: (d) => {
+      const dx = obj(d.orthoDx);
+      const plan = rows(dx.plans).find((p) => text(p.id) === text(dx.selectedPlan));
+      return plan ? joinParts(text(plan.label), text(plan.description)) : '';
+    },
+  },
+  {
+    field: 'dxExtractions',
+    module: 'Plan',
+    label: 'Extracciones (detalle)',
+    read: (d) => sorted(rows(obj(d.orthoDx).extractions).map((e) => joinParts(text(e.tooth), text(e.status)))),
+  },
+  {
+    field: 'movements',
+    module: 'Movimientos',
+    label: 'Movimientos dentarios',
+    read: (d) => sorted(rows(d.orthoMovements).map((m) => joinParts(text(m.tooth), text(m.type), text(m.direction), text(m.status)))),
+  },
+  {
+    field: 'mechAppliances',
+    module: 'Aparatología',
+    label: 'Aparatología registrada',
+    read: (d) => sorted(rows(mech(d).appliances).map((a) => joinParts(text(a.type), text(a.arch), text(a.status)))),
+  },
+  {
+    field: 'mechWires',
+    module: 'Arcos',
+    label: 'Secuencia de arcos',
+    read: (d) => sorted(rows(mech(d).wires).map((w) => joinParts(text(w.arch), text(w.wire), text(w.status)))),
+  },
+  {
+    field: 'mechElastics',
+    module: 'Elásticos',
+    label: 'Elásticos (mecánica)',
+    read: (d) => sorted(rows(mech(d).elastics).map((e) => joinParts(text(e.type), `${text(e.from)}-${text(e.to)}`, text(e.size)))),
+  },
+  {
+    field: 'mechIpr',
+    module: 'IPR',
+    label: 'Reducción interproximal',
+    read: (d) => sorted(rows(mech(d).ipr).map((r) => joinParts(text(r.contact), text(r.amount) && `${text(r.amount)} mm`, text(r.status)))),
+  },
+  {
+    field: 'mechTads',
+    module: 'TAD',
+    label: 'Mini implantes',
+    read: (d) => sorted(rows(mech(d).tads).map((t) => joinParts(text(t.location), text(t.tooth), text(t.status)))),
+  },
+  {
+    field: 'aligners',
+    module: 'Alineadores',
+    label: 'Alineadores',
+    read: (d) => {
+      const a = obj(mech(d).aligners);
+      const total = text(a.total);
+      if (!total) return '';
+      const done = Object.values(obj(a.states)).filter((v) => v === 'Completado').length;
+      return `${joinParts(text(a.brand), text(a.plan))} · ${done}/${total} completados`;
+    },
+  },
+  {
+    field: 'retainers',
+    module: 'Retención',
+    label: 'Retenedores',
+    read: (d) => sorted(rows(follow(d).retainers).map((r) => joinParts(text(r.type), text(r.arch), text(r.status)))),
+  },
+  {
+    field: 'retentionChecks',
+    module: 'Retención',
+    label: 'Controles de retención',
+    read: (d) =>
+      sorted(rows(follow(d).checks).filter((c) => text(c.date)).map((c) => joinParts(`${text(c.milestone)} m`, text(c.date), text(c.stability)))),
+  },
+  {
+    field: 'agenda',
+    module: 'Controles',
+    label: 'Controles programados',
+    read: (d) => sorted(rows(follow(d).agenda).map((a) => joinParts(text(a.date), text(a.type), text(a.status)))),
+  },
+  {
+    field: 'budget',
+    module: 'Presupuesto',
+    label: 'Presupuesto',
+    read: (d) => sorted(rows(obj(d.orthoBudget).items).map((i) => joinParts(text(i.concept), text(i.qty) && `×${text(i.qty)}`, text(i.unitValue), text(i.status)))),
+  },
+  {
+    field: 'requiredConsents',
+    module: 'Consentimientos',
+    label: 'Consentimientos solicitados',
+    read: (d) => (Array.isArray(d.requiredConsents) ? (d.requiredConsents as unknown[]).filter((x) => typeof x === 'string').sort().join(', ') : ''),
+  },
 ];
+
+function rows(v: unknown): Json[] {
+  return Array.isArray(v) ? v.map((x) => obj(x)) : [];
+}
+
+function mech(d: Json) {
+  return obj(d.orthoMech);
+}
+
+function follow(d: Json) {
+  return obj(d.orthoFollow);
+}
+
+function joinParts(...parts: string[]) {
+  return parts.filter(Boolean).join(' ');
+}
+
+function sorted(items: string[]) {
+  return items.filter(Boolean).sort().join(', ');
+}
 
 function text(v: unknown): string {
   return typeof v === 'string' ? v.trim() : '';
@@ -118,7 +241,16 @@ export function diffOrthoPlan(previous: Json, next: Json): OrthoPlanChange[] {
   for (const t of TRACKED) {
     const from = t.read(before);
     const to = t.read(after);
-    if (from !== to) changes.push({ field: t.field, label: t.label, from: clip(from), to: clip(to) });
+    if (from !== to) {
+      changes.push({
+        field: t.field,
+        label: t.label,
+        from: clip(from),
+        to: clip(to),
+        module: t.module,
+        action: !from ? 'Crear' : !to ? 'Eliminar' : 'Editar',
+      });
+    }
   }
   return changes;
 }
@@ -151,7 +283,14 @@ export function coalesceOrthoHistory(entries: OrthoHistoryEntry[], windowMs = 20
     for (const c of fresh) open.set(`${e.source}|${e.userName}|${c.field}`, { entry, change: c, lastAt: at });
   }
   return out
-    .map((e) => ({ ...e, changes: e.changes.filter((c) => c.from !== c.to) }))
+    .map((e) => ({
+      ...e,
+      changes: e.changes
+        .filter((c) => c.from !== c.to)
+        .map((c) =>
+          e.source === 'HISTORIA' && c.action ? { ...c, action: !c.from ? ('Crear' as const) : !c.to ? ('Eliminar' as const) : ('Editar' as const) } : c,
+        ),
+    }))
     .filter((e) => e.changes.length)
     .sort((a, b) => b.at.localeCompare(a.at));
 }

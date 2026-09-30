@@ -478,6 +478,51 @@ const ORTHODONTICS_CONSENTS_V1: ConsentSeed[] = [
       'Habiendo resuelto mis dudas, acepto la fase de retención y sus cuidados.',
     ),
   },
+  {
+    code: 'ORT_ALIGNERS',
+    title: 'Consentimiento informado para tratamiento con alineadores',
+    bodyHtml: odoConsent(
+      'CONSENTIMIENTO INFORMADO PARA TRATAMIENTO CON ALINEADORES',
+      `
+  <ol>
+    <li><strong>Procedimiento:</strong> uso de una secuencia de alineadores removibles y, cuando el plan lo indique, adhesión de aditamentos (attachments), reducción interproximal y uso de elásticos.</li>
+    <li><strong>Uso:</strong> los alineadores deben usarse entre 20 y 22 horas al día y cambiarse según las indicaciones; el resultado depende directamente del uso.</li>
+    <li><strong>Riesgos:</strong> molestias o presión al cambiar de alineador, sensibilidad, desprendimiento de aditamentos, caries o inflamación gingival por higiene deficiente, necesidad de alineadores adicionales (refinamiento) o de cambiar a otra aparatología.</li>
+    <li><strong>Compromisos:</strong> asistir a los controles, conservar los alineadores anteriores, informar pérdida o fractura y seguir la fase de retención al terminar.</li>
+  </ol>`,
+      'Habiendo resuelto mis dudas, autorizo el tratamiento con alineadores.',
+    ),
+  },
+  {
+    code: 'ORT_TAD',
+    title: 'Consentimiento informado para colocación de mini implantes (TAD)',
+    bodyHtml: odoConsent(
+      'CONSENTIMIENTO INFORMADO PARA MINI IMPLANTES DE ANCLAJE (TAD)',
+      `
+  <ol>
+    <li><strong>Procedimiento:</strong> colocación bajo anestesia local de uno o más mini tornillos en el hueso como anclaje temporal del tratamiento de ortodoncia, y su retiro al terminar su función.</li>
+    <li><strong>Riesgos:</strong> dolor o inflamación en la zona, movilidad o pérdida del mini implante, contacto con raíces dentales, lesión de tejidos blandos, fractura del tornillo e infección.</li>
+    <li><strong>Cuidados:</strong> higiene de la zona con cepillo suave y enjuague indicado, no manipular el mini implante e informar movilidad o dolor persistente.</li>
+    <li><strong>Alternativas:</strong> otros sistemas de anclaje (aparatos extraorales o intraorales) o modificar los objetivos del tratamiento.</li>
+  </ol>`,
+      'Habiendo resuelto mis dudas, autorizo la colocación de mini implantes de anclaje.',
+    ),
+  },
+  {
+    code: 'ORT_ADDITIONAL',
+    title: 'Consentimiento informado para procedimiento adicional de ortodoncia',
+    bodyHtml: odoConsent(
+      'CONSENTIMIENTO INFORMADO PARA PROCEDIMIENTO ADICIONAL',
+      `
+  <ol>
+    <li><strong>Procedimiento:</strong> procedimiento complementario al tratamiento de ortodoncia descrito por el profesional en la historia clínica (por ejemplo desgaste interproximal, exposición quirúrgica, frenectomía o recontorneado).</li>
+    <li><strong>Beneficios:</strong> facilitar los movimientos dentales planificados o mejorar la estabilidad del resultado.</li>
+    <li><strong>Riesgos:</strong> sensibilidad, dolor o inflamación transitoria, sangrado y los propios del procedimiento, explicados por el profesional.</li>
+    <li><strong>Alternativas:</strong> no realizar el procedimiento, aceptando las limitaciones que esto implica para el tratamiento.</li>
+  </ol>`,
+      'Habiendo resuelto mis dudas, autorizo el procedimiento adicional propuesto.',
+    ),
+  },
 ];
 
 const CONSENTS_BY_SPECIALTY: Array<[ClinicSpecialty, ConsentSeed[]]> = [
