@@ -2784,6 +2784,12 @@
                         </label>
                       }
                     </div>
+                    <h4 class="odo-sub">Tabla cefalométrica</h4>
+                    @defer (on viewport) {
+                      <app-ortho-ceph-table [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                    } @placeholder {
+                      <p class="muted small">Cargando tabla cefalométrica…</p>
+                    }
                     <h4 class="odo-sub">Análisis de modelos</h4>
                     <div class="grid-4">
                       @for (f of orthoModelFields; track f.key) {
@@ -2812,6 +2818,19 @@
                         </label>
                       }
                     </div>
+                    <h4 class="odo-sub">Modelos digitales</h4>
+                    @defer (on viewport) {
+                      <app-ortho-digital-models
+                        [data]="dental()"
+                        [disabled]="clinicalFormDisabled()"
+                        [uploading]="modelsUploading()"
+                        [loadFile]="loadAttachmentBlob"
+                        (changed)="onClinicalFieldChange()"
+                        (upload)="uploadDigitalModel($event)"
+                      />
+                    } @placeholder {
+                      <p class="muted small">Cargando modelos digitales…</p>
+                    }
                   }
                   <div class="ft-grid-2 odo-mt">
                     <label
@@ -3041,6 +3060,7 @@
                       <tr>
                         <th>Tipo</th>
                         <th>Fecha</th>
+                        <th>Región</th>
                         <th>Archivo</th>
                         <th>Diagnóstico asociado</th>
                         <th>Interpretación / observaciones</th>
@@ -3059,6 +3079,7 @@
                             </select>
                           </td>
                           <td><input type="date" [(ngModel)]="img.date" [readonly]="clinicalFormDisabled()" /></td>
+                          <td><input [(ngModel)]="img.region" [readonly]="clinicalFormDisabled()" placeholder="Zona / piezas" /></td>
                           <td class="odo-file-cell">
                             @if (img.attachmentId) {
                               <button type="button" class="linkish" (click)="openImagingFile(img.attachmentId)">{{ img.fileName || 'Ver archivo' }}</button>

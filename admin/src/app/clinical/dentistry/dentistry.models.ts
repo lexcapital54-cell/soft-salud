@@ -11,6 +11,8 @@ import { OrthoCaseData, emptyOrthoCase, normalizeOrthoCase } from './ortho-case.
 import { OrthoExamData, emptyOrthoExam, normalizeOrthoExam } from './ortho-exam.models';
 import { OrthoMovement, normalizeMovements } from './ortho-movement.data';
 import { OrthoArchData, emptyOrthoArch, normalizeOrthoArch } from './ortho-arch.data';
+import { OrthoCephData, emptyOrthoCeph, normalizeOrthoCeph } from './ortho-ceph.data';
+import { DigitalModelRow, normalizeDigitalModels } from './ortho-models3d.data';
 
 /** Servicio de la atención; «ORTODONCIA» activa el módulo de ortodoncia. «ODONTOLOGIA» es el valor antiguo de general. */
 export type DentalService =
@@ -201,6 +203,7 @@ export interface ImagingRow {
   fileName: string;
   diagnosis: string;
   findings: string;
+  region?: string;
 }
 
 export const IMAGING_TYPES = [
@@ -480,6 +483,8 @@ export interface DentistryContent {
   orthoExam: OrthoExamData;
   orthoMovements: OrthoMovement[];
   orthoArch: OrthoArchData;
+  orthoCeph: OrthoCephData;
+  orthoModels3d: DigitalModelRow[];
   prescriptions: PrescriptionRow[];
   orders: OrderRow[];
   requiredConsents: string[];
@@ -805,6 +810,8 @@ export function emptyDentistry(): DentistryContent {
     orthoExam: emptyOrthoExam(),
     orthoMovements: [],
     orthoArch: emptyOrthoArch(),
+    orthoCeph: emptyOrthoCeph(),
+    orthoModels3d: [],
     prescriptions: [],
     orders: [],
     requiredConsents: [],
@@ -956,6 +963,8 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
     orthoExam: normalizeOrthoExam(raw.orthoExam),
     orthoMovements: normalizeMovements(raw.orthoMovements),
     orthoArch: normalizeOrthoArch(raw.orthoArch),
+    orthoCeph: normalizeOrthoCeph(raw.orthoCeph),
+    orthoModels3d: normalizeDigitalModels(raw.orthoModels3d),
     prescriptions: (raw.prescriptions || []).map((r) => ({ ...emptyPrescriptionRow(), ...r })),
     orders: (raw.orders || []).map((r) => ({ ...emptyOrderRow(), ...r })),
     requiredConsents: [...(raw.requiredConsents || [])],

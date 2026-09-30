@@ -12,6 +12,9 @@ import { OrthoCaseIntake } from './dentistry/ortho-case-intake';
 import { OrthoExamPanel } from './dentistry/ortho-exam-panel';
 import { OrthoMovementPlan } from './dentistry/ortho-movement-plan';
 import { OrthoArchAnalysis } from './dentistry/ortho-arch-analysis';
+import { OrthoCephTable } from './dentistry/ortho-ceph-table';
+import { OrthoDigitalModels } from './dentistry/ortho-digital-models';
+import type { DigitalModelUpload } from './dentistry/ortho-digital-models';
 import { ORTHO_CASE_STATUSES } from './dentistry/ortho-case.models';
 import { CompletenessContext, ModuleStatus, dentalModuleStatus, moduleDotStyle } from './dentistry/dental-completeness';
 import { TREATMENT_PHASES, budgetTotals, rowNet, suggestPhase } from './dentistry/treatment-budget.models';
@@ -318,6 +321,8 @@ function emptyContent(): ClinicalContent {
     OrthoExamPanel,
     OrthoMovementPlan,
     OrthoArchAnalysis,
+    OrthoCephTable,
+    OrthoDigitalModels,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -1623,13 +1628,13 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /** Sube la foto o imagen; si la atención aún no está abierta, la abre primero. */
-  private uploadDentalFile(file: File, label: string, category: 'PHOTO' | 'IMAGE') {
+  private uploadDentalFile(file: File, label: string, category: 'PHOTO' | 'IMAGE' | 'OTHER', maxMbOverride?: number) {
     if (!this.encounter() && !this.selectedPatientId) {
       this.showMediaError('Seleccione o cree el paciente antes de subir fotografías o radiografías.');
       return null;
     }
     const isImage = file.type.startsWith('image/');
-    const maxMb = isImage ? 25 : 10;
+    const maxMb = maxMbOverride ?? (isImage ? 25 : 10);
     if (file.size > maxMb * 1024 * 1024) {
       this.showMediaError(`${file.name} pesa más de ${maxMb} MB; redúzcalo antes de subirlo.`);
       return null;
@@ -1705,6 +1710,41 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       error: (err) => {
         this.imagingUploading.set(null);
         this.showMediaError(err?.error?.message || 'No se pudo subir la imagen.');
+      },
+    });
+  }
+
+  readonly modelsUploading = signal('');
+  readonly loadAttachmentBlob = (id: string) => firstValueFrom(this.api.downloadAttachment(id));
+
+  uploadDigitalModel({ file, kind }: DigitalModelUpload) {
+    const req = this.uploadDentalFile(file, `${kind} — ${file.name}`, 'OTHER', 25);
+    if (!req) return;
+    this.modelsUploading.set(kind);
+    this.mediaError.set('');
+    req.subscribe({
+      next: (att) => {
+        this.modelsUploading.set('');
+        const list = this.dental().orthoModels3d;
+        const version = list.filter((r) => r.kind === kind).reduce((m, r) => Math.max(m, r.version), 0) + 1;
+        list.push({
+          id: `dm-${Date.now().toString(36)}`,
+          kind,
+          format: (file.name.split('.').pop() || '').toUpperCase(),
+          date: new Date().toISOString().slice(0, 10),
+          version,
+          attachmentId: att.id,
+          fileName: file.name,
+          sizeKb: Math.round(file.size / 1024),
+          source: '',
+          notes: '',
+        });
+        this.attachments.set([att, ...this.attachments()]);
+        this.onClinicalFieldChange();
+      },
+      error: (err) => {
+        this.modelsUploading.set('');
+        this.showMediaError(err?.error?.message || 'No se pudo subir el modelo digital.');
       },
     });
   }

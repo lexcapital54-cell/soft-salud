@@ -1424,6 +1424,58 @@ export class HcePdfService {
       sections.push(this.section('Análisis de arcadas y planos', archPlanesText, titleColor, band));
     }
 
+    const cephDefs: Array<[string, string, string, number, string?]> = [
+      ['sna', 'SNA', '°', 82, 'sna'],
+      ['snb', 'SNB', '°', 80, 'snb'],
+      ['anb', 'ANB', '°', 2, 'anb'],
+      ['wits', 'Wits', 'mm', 0, 'wits'],
+      ['fma', 'FMA', '°', 25, 'fma'],
+      ['sngogn', 'SN-GoGn', '°', 32],
+      ['impa', 'IMPA', '°', 90, 'impa'],
+      ['u1sn', '1-SN', '°', 103, 'upperIncisor'],
+      ['u1na', '1-NA', '°', 22],
+      ['l1nb', '1-NB', '°', 25],
+      ['interincisal', 'Ángulo interincisal', '°', 131],
+      ['facialAxis', 'Eje facial', '°', 90],
+      ['facialDepth', 'Profundidad facial', '°', 87],
+      ['lowerFaceHeight', 'Altura facial inferior', '°', 47],
+    ];
+    const orthoCeph = obj(dental.orthoCeph);
+    const cephRows = obj(orthoCeph.rows);
+    const cephValues = obj(obj(dental.orthodontics).cephalometry);
+    const numOf = (v: unknown) => {
+      const n = Number(str(v).replace(',', '.'));
+      return str(v) && Number.isFinite(n) ? n : null;
+    };
+    const cephTable = cephDefs
+      .map(([key, label, unit, norm, linked]) => {
+        const row = obj(cephRows[key]);
+        const value = linked ? str(cephValues[linked]) : str(row.value);
+        const v = numOf(value);
+        if (v === null) return null;
+        const n = numOf(row.norm) ?? norm;
+        const diff = Math.round((v - n) * 10) / 10;
+        return [label, `${value} ${unit}`, `${n} ${unit}`, `${diff > 0 ? '+' : ''}${diff}`, str(row.note)];
+      })
+      .filter((r): r is string[] => !!r);
+    if (cephTable.length) {
+      sections.push(table('Tabla cefalométrica', ['24%', '14%', '14%', '12%', '*'], ['Medición', 'Valor', 'Norma', 'Desviación', 'Observación'], cephTable));
+    }
+    if (str(orthoCeph.notes)) {
+      sections.push(this.section('Conclusión cefalométrica', str(orthoCeph.notes), titleColor, band));
+    }
+    const models3d = rows(dental.orthoModels3d).filter((r) => str(r.fileName));
+    if (models3d.length) {
+      sections.push(
+        table(
+          'Modelos digitales',
+          ['20%', '*', '10%', '9%', '13%', '18%'],
+          ['Tipo', 'Archivo', 'Formato', 'Versión', 'Fecha', 'Origen / observación'],
+          models3d.map((r) => [str(r.kind), str(r.fileName), str(r.format), `v${str(r.version)}`, str(r.date), joinDash(r.source, r.notes)]),
+        ),
+      );
+    }
+
     const mvLabels: Record<string, [string, string]> = {
       MESIALIZACION: ['Mesialización', 'mm'],
       DISTALIZACION: ['Distalización', 'mm'],
@@ -1463,11 +1515,12 @@ export class HcePdfService {
       sections.push(
         table(
           'Radiografías e imágenes diagnósticas',
-          ['18%', '12%', '20%', '*'],
-          ['Tipo', 'Fecha', 'Diagnóstico asociado', 'Hallazgos / archivo'],
+          ['16%', '11%', '13%', '18%', '*'],
+          ['Tipo', 'Fecha', 'Región', 'Diagnóstico asociado', 'Hallazgos / archivo'],
           imaging.map((r) => [
             str(r.type),
             str(r.date),
+            str(r.region),
             str(r.diagnosis),
             joinDash(r.findings, r.fileName && `Archivo: ${str(r.fileName)}`),
           ]),

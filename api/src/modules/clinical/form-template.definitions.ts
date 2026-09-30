@@ -245,6 +245,8 @@ export const DENTISTRY_CONTENT_DEFAULTS = {
   examNotes: {},
   periodontogram: { teeth: {}, updatedAt: '' },
   orthoMovements: [],
+  orthoCeph: { analysis: '', rows: {}, notes: '' },
+  orthoModels3d: [],
   orthoArch: {
     upper: { form: '', intercanine: '', intermolar: '', depth: '', perimeter: '', requiredManual: '', symmetry: '', notes: '' },
     lower: { form: '', intercanine: '', intermolar: '', depth: '', perimeter: '', requiredManual: '', symmetry: '', notes: '' },
