@@ -153,6 +153,8 @@ export const DENTAL_TOOTH_LABELS: Record<string, string> = {
   RESTAURACION: 'Obturación',
   SELLANTE: 'Sellante',
   FRACTURA: 'Fractura',
+  DESGASTE: 'Desgaste',
+  RECESION: 'Recesión gingival',
   ENDODONCIA: 'Endodoncia',
   CORONA: 'Corona',
   PROTESIS: 'Prótesis',

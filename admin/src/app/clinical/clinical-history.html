@@ -2543,14 +2543,18 @@
                   <h4 class="odo-sub">Análisis facial</h4>
                   <details class="ceph-details" [open]="!!dental().orthodontics.facialTracing.frontal.tracedAt || !!dental().orthodontics.facialTracing.profile.tracedAt || isOrthoClinic() || dental().includeOrtho">
                     <summary>Trazado facial sobre la fotografía (tercios, quintos, ángulo nasolabial y línea E)</summary>
-                    <app-ortho-facial-analysis
-                      [tracing]="dental().orthodontics.facialTracing"
-                      [frontalPhotos]="facialPhotoOptions('frontal')"
-                      [profilePhotos]="facialPhotoOptions('profile')"
-                      [disabled]="clinicalFormDisabled()"
-                      (changed)="onClinicalFieldChange()"
-                      (apply)="applyFacialResult($event)"
-                    />
+                    @defer (on viewport) {
+                      <app-ortho-facial-analysis
+                        [tracing]="dental().orthodontics.facialTracing"
+                        [frontalPhotos]="facialPhotoOptions('frontal')"
+                        [profilePhotos]="facialPhotoOptions('profile')"
+                        [disabled]="clinicalFormDisabled()"
+                        (changed)="onClinicalFieldChange()"
+                        (apply)="applyFacialResult($event)"
+                      />
+                    } @placeholder {
+                      <p class="muted small">Cargando trazado facial…</p>
+                    }
                   </details>
                   <p class="muted small">
                     Del examen extraoral:
@@ -2645,16 +2649,20 @@
                           </span>
                         }
                       </summary>
-                      <app-ortho-ceph-tracing
-                        [tracing]="dental().orthodontics.cephTracing"
-                        [imageUrl]="cephImageUrl()"
-                        [radiographs]="cephRadiographs()"
-                        [disabled]="clinicalFormDisabled()"
-                        [uploading]="cephUploading()"
-                        (changed)="onClinicalFieldChange()"
-                        (upload)="uploadCephRadiograph($event)"
-                        (apply)="applyCephResult($event)"
-                      />
+                      @defer (on viewport) {
+                        <app-ortho-ceph-tracing
+                          [tracing]="dental().orthodontics.cephTracing"
+                          [imageUrl]="cephImageUrl()"
+                          [radiographs]="cephRadiographs()"
+                          [disabled]="clinicalFormDisabled()"
+                          [uploading]="cephUploading()"
+                          (changed)="onClinicalFieldChange()"
+                          (upload)="uploadCephRadiograph($event)"
+                          (apply)="applyCephResult($event)"
+                        />
+                      } @placeholder {
+                        <p class="muted small">Cargando trazado cefalométrico…</p>
+                      }
                     </details>
                     <div class="grid-4">
                       @for (f of orthoCephFields; track f.key) {
@@ -2896,6 +2904,11 @@
 
               <section class="block odo-hce" id="odo-imagenes">
                 <h3>{{ odoNum(7) }}. Imágenes</h3>
+                @if (viewerItems(); as items) {
+                  @defer {
+                    <app-clinical-image-viewer [items]="items" [start]="viewerStart()" (close)="closeImageViewer()" />
+                  }
+                }
                 @if (!encounter() && !selectedPatientId) {
                   <p class="banner tip">Seleccione o cree el paciente arriba para poder subir fotografías y radiografías.</p>
                 }
@@ -2910,7 +2923,7 @@
                       <div class="odo-photo" [class.filled]="!!dental().photos[slot.key]">
                         <div class="odo-photo-frame">
                           @if (dentalPhotoUrl(slot.key); as url) {
-                            <img [src]="url" [alt]="group + ' ' + slot.label" (click)="openAttachment(dental().photos[slot.key].attachmentId)" />
+                            <img [src]="url" [alt]="group + ' ' + slot.label" title="Ver en pantalla completa" (click)="openImageViewer(dental().photos[slot.key].attachmentId)" />
                           } @else if (dental().photos[slot.key]) {
                             <span class="muted small">Cargando…</span>
                           } @else {
@@ -2964,7 +2977,7 @@
                           <td><input type="date" [(ngModel)]="img.date" [readonly]="clinicalFormDisabled()" /></td>
                           <td class="odo-file-cell">
                             @if (img.attachmentId) {
-                              <button type="button" class="linkish" (click)="openAttachment(img.attachmentId)">{{ img.fileName || 'Ver archivo' }}</button>
+                              <button type="button" class="linkish" (click)="openImagingFile(img.attachmentId)">{{ img.fileName || 'Ver archivo' }}</button>
                             }
                             @if (!clinicalFormDisabled()) {
                               <input #imgInput type="file" accept="image/*,application/pdf,.dcm" hidden (change)="uploadDentalImaging(i, $event)" />

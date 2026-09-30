@@ -29,7 +29,7 @@ export function dentalServiceLabel(service?: string | null) {
 export type ToothSurface = 'V' | 'L' | 'M' | 'D' | 'O';
 
 /** Hallazgos que se pintan por superficie. */
-export type SurfaceState = 'CARIES' | 'RESTAURACION' | 'SELLANTE' | 'FRACTURA';
+export type SurfaceState = 'CARIES' | 'RESTAURACION' | 'SELLANTE' | 'FRACTURA' | 'DESGASTE';
 /** Condiciones del diente completo (pueden combinarse, salvo Ausente). */
 export type ToothCondition =
   | 'AUSENTE'
@@ -46,6 +46,7 @@ export type ToothCondition =
 /** Marcas complementarias (periodontales, trauma y aparatología de ortodoncia). */
 export type ToothMark =
   | 'MOVILIDAD'
+  | 'RECESION'
   | 'FISTULA'
   | 'LESION'
   | 'TRAUMA'
@@ -784,6 +785,7 @@ const LEGACY_SURFACE: Record<string, SurfaceState> = {
   RESTAURACION: 'RESTAURACION',
   SELLANTE: 'SELLANTE',
   FRACTURA: 'FRACTURA',
+  DESGASTE: 'DESGASTE',
 };
 
 const CONDITION_KEYS: ToothCondition[] = [
@@ -964,6 +966,7 @@ export const SURFACE_TOOLS: DentalToolDef[] = [
   { key: 'RESTAURACION', label: 'Obturación', color: '#1e63d6', scope: 'surface' },
   { key: 'SELLANTE', label: 'Sellante', color: '#14b8a6', scope: 'surface' },
   { key: 'FRACTURA', label: 'Fractura', color: '#f97316', scope: 'surface' },
+  { key: 'DESGASTE', label: 'Desgaste', color: '#a16207', scope: 'surface' },
 ];
 
 export const CONDITION_TOOLS: DentalToolDef[] = [
@@ -978,6 +981,7 @@ export const CONDITION_TOOLS: DentalToolDef[] = [
 
 export const MARK_TOOLS: DentalToolDef[] = [
   { key: 'MOVILIDAD', label: 'Movilidad', color: '#0b5563', scope: 'mark' },
+  { key: 'RECESION', label: 'Recesión gingival', color: '#be185d', scope: 'mark' },
   { key: 'FISTULA', label: 'Fístula', color: '#db2777', scope: 'mark' },
   { key: 'LESION', label: 'Lesión periodontal', color: '#e11d48', scope: 'mark' },
   { key: 'TRAUMA', label: 'Trauma', color: '#1e3a8a', scope: 'mark' },

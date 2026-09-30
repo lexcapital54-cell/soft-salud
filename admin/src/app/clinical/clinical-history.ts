@@ -1,6 +1,8 @@
 import { DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { DentalExamGroup } from './dentistry/dental-exam-group';
 import { DentalPeriodontogram } from './dentistry/dental-periodontogram';
+import { ClinicalImageViewer } from './dentistry/clinical-image-viewer';
+import type { ViewerItem } from './dentistry/clinical-image-viewer';
 import { hasPerioData } from './dentistry/periodontogram.models';
 import {
   AfterViewInit,
@@ -10,6 +12,7 @@ import {
   OnDestroy,
   OnInit,
   ViewChild,
+  computed,
   effect,
   inject,
   input,
@@ -98,7 +101,8 @@ import {
   skeletalClassFromAnb,
 } from './dentistry/ortho-measures';
 import { CEPH_LANDMARKS, CephResult, cephDiagnosisText, cephValueText } from './dentistry/ceph-geometry';
-import { CephRadiographOption, OrthoCephTracingComponent } from './dentistry/ortho-ceph-tracing';
+import { OrthoCephTracingComponent } from './dentistry/ortho-ceph-tracing';
+import type { CephRadiographOption } from './dentistry/ortho-ceph-tracing';
 import {
   ORTHO_ARCH_WIRES,
   ORTHO_CONTROL_EVENTS,
@@ -115,11 +119,8 @@ import {
 import { OrthoQuickControlComponent } from './dentistry/ortho-quick-control';
 import { OrthoCompareSliderComponent } from './dentistry/ortho-compare-slider';
 import { OrthoOcclusionMapComponent } from './dentistry/ortho-occlusion-map';
-import {
-  FacialAnalysisResult,
-  FacialPhotoOption,
-  OrthoFacialAnalysisComponent,
-} from './dentistry/ortho-facial-analysis';
+import { OrthoFacialAnalysisComponent } from './dentistry/ortho-facial-analysis';
+import type { FacialAnalysisResult, FacialPhotoOption } from './dentistry/ortho-facial-analysis';
 import {
   EVOLUTION_AMEND_OPTIONS,
   amendKindLabel,
@@ -295,6 +296,7 @@ function emptyContent(): ClinicalContent {
     NgTemplateOutlet,
     DentalExamGroup,
     DentalPeriodontogram,
+    ClinicalImageViewer,
     FormsModule,
     RouterLink,
     DatePipe,
@@ -1499,6 +1501,47 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       });
     }
     return null;
+  }
+
+  /** Galería del visor: fotos de la historia y radiografías que sean imagen, en orden de pantalla. */
+  private readonly viewerEntries = signal<Array<{ id: string; label: string; date?: string }> | null>(null);
+  readonly viewerStart = signal(0);
+  readonly viewerItems = computed<ViewerItem[] | null>(() => {
+    const entries = this.viewerEntries();
+    if (!entries) return null;
+    this.dentalPhotoUrls();
+    return entries.map((e) => ({ ...e, url: this.attachmentUrl(e.id) }));
+  });
+
+  openImageViewer(attachmentId: string) {
+    const d = this.dental();
+    const fmt = (v?: string) => (v ? new Date(v).toLocaleDateString('es-CO') : undefined);
+    const entries: Array<{ id: string; label: string; date?: string }> = [];
+    for (const slot of PHOTO_SLOTS) {
+      const p = d.photos[slot.key];
+      if (p?.attachmentId) entries.push({ id: p.attachmentId, label: `${slot.group} · ${slot.label}`, date: fmt(p.takenAt) });
+    }
+    for (const img of d.imaging) {
+      if (img.attachmentId && this.isImageAttachment(img.attachmentId) && !entries.some((e) => e.id === img.attachmentId)) {
+        entries.push({ id: img.attachmentId, label: img.type || img.fileName || 'Imagen diagnóstica', date: img.date || undefined });
+      }
+    }
+    if (!entries.some((e) => e.id === attachmentId)) {
+      const att = this.attachments().find((a) => a.id === attachmentId);
+      entries.push({ id: attachmentId, label: att?.label || 'Imagen' });
+    }
+    this.viewerStart.set(entries.findIndex((e) => e.id === attachmentId));
+    this.viewerEntries.set(entries);
+  }
+
+  closeImageViewer() {
+    this.viewerEntries.set(null);
+  }
+
+  /** Las imágenes se abren en el visor; PDF y DICOM se descargan como antes. */
+  openImagingFile(attachmentId: string) {
+    if (this.isImageAttachment(attachmentId)) this.openImageViewer(attachmentId);
+    else this.openAttachment(attachmentId);
   }
 
   /** Error de carga mostrado junto a las fotos y radiografías (además del aviso general). */

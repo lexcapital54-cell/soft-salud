@@ -398,6 +398,7 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
   'RESTAURACION',
   'FRACTURA',
   'SELLANTE',
+  'DESGASTE',
 ];
 
 @Component({
@@ -603,6 +604,10 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                               }
                               @if (hasMark(tooth, 'MOVILIDAD')) {
                                 <path d="M14 63 H36 M14 63 l4.5 -3.5 M14 63 l4.5 3.5 M36 63 l-4.5 -3.5 M36 63 l-4.5 3.5" fill="none" stroke="#0b3a6e" stroke-width="2.6" stroke-linecap="round" />
+                              }
+                              @if (hasMark(tooth, 'RECESION')) {
+                                <path d="M11 55 Q25 44 39 55" fill="none" stroke="#be185d" stroke-width="2.6" stroke-linecap="round" />
+                                <path d="M25 46 V39 M22 42 L25 38.5 L28 42" fill="none" stroke="#be185d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
                               }
                               @if (hasMark(tooth, 'TRAUMA')) {
                                 <path d="M28 64 L19 79 H25 L22 93 L32 75 H26 Z" fill="#1e3a8a" stroke="#fff" stroke-width="1" stroke-linejoin="round" />
@@ -1313,6 +1318,10 @@ const OCCLUSAL_PRIORITY: DentalTool[] = [
                 <button type="button" class="odg-action primary" (click)="onSave()">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3 H16 L21 8 V21 H3 V3 Z M7 3 V9 H15 V3 M7 21 V14 H17 V21" /></svg>
                   {{ savedFlash() ? 'Guardado ✓' : 'Guardar' }}
+                </button>
+                <button type="button" class="odg-action" [disabled]="!undoCount()" (click)="undo()" title="Deshacer el último cambio del odontograma (Ctrl/Cmd + Z)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 L4 9 L9 4 M4 9 H14 A6 6 0 0 1 14 21 H9" /></svg>
+                  Deshacer{{ undoCount() ? ' (' + undoCount() + ')' : '' }}
                 </button>
               }
               <button type="button" class="odg-action" (click)="print()">
@@ -2625,7 +2634,62 @@ export class DentalOdontogram implements OnDestroy {
   }
 
   private bump() {
+    this.recordUndo();
     this.version.update((v) => v + 1);
     this.changed.emit();
+  }
+
+  // ── Deshacer (solo piezas del odontograma de esta sesión de edición) ──
+  private undoStack: string[] = [];
+  private undoBase = '';
+  private undoActive = false;
+  readonly undoCount = signal(0);
+
+  private readonly resetUndo = effect(() => {
+    this.undoBase = JSON.stringify(this.data().odontogram);
+    this.undoStack = [];
+    this.undoCount.set(0);
+  });
+
+  private recordUndo() {
+    const now = JSON.stringify(this.data().odontogram);
+    if (now === this.undoBase) return;
+    this.undoStack.push(this.undoBase);
+    if (this.undoStack.length > 50) this.undoStack.shift();
+    this.undoBase = now;
+    this.undoCount.set(this.undoStack.length);
+  }
+
+  undo() {
+    if (this.disabled()) return;
+    const prev = this.undoStack.pop();
+    if (prev === undefined) return;
+    const map = this.data().odontogram;
+    for (const k of Object.keys(map)) delete map[k];
+    Object.assign(map, JSON.parse(prev) as Record<string, ToothRecord>);
+    this.undoBase = prev;
+    this.undoCount.set(this.undoStack.length);
+    this.version.update((v) => v + 1);
+    this.changed.emit();
+  }
+
+  @HostListener('pointerdown')
+  onHostPointer() {
+    this.undoActive = true;
+  }
+
+  @HostListener('document:pointerdown', ['$event'])
+  onDocPointer(e: PointerEvent) {
+    if (!this.hostRef.nativeElement.contains(e.target as Node)) this.undoActive = false;
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onUndoKey(e: KeyboardEvent) {
+    if (!this.undoActive || !(e.ctrlKey || e.metaKey) || e.shiftKey || e.key.toLowerCase() !== 'z') return;
+    const t = e.target as HTMLElement | null;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    if (!this.undoStack.length) return;
+    e.preventDefault();
+    this.undo();
   }
 }
