@@ -2,19 +2,34 @@ import { CephPoint } from './dentistry.models';
 
 /** Puntos del análisis de sonrisa sobre fotografía (coordenadas en píxeles de la imagen original). */
 export interface SmileLandmark {
-  key: 'Md' | 'CR' | 'CL' | 'Mf';
+  key: 'Md' | 'CR' | 'CL' | 'Mf' | 'R1' | 'R2' | 'R3' | 'L1' | 'L2' | 'L3';
   short: string;
   label: string;
   hint: string;
   optional?: boolean;
+  group: 'ref' | 'teeth';
 }
 
 export const SMILE_LANDMARKS: SmileLandmark[] = [
-  { key: 'Md', short: 'LMD', label: 'Línea media dental', hint: 'Punto de contacto entre los incisivos centrales superiores, a nivel del borde incisal.' },
-  { key: 'CR', short: 'CD', label: 'Comisura derecha', hint: 'Comisura labial derecha del paciente (a la izquierda en la foto).' },
-  { key: 'CL', short: 'CI', label: 'Comisura izquierda', hint: 'Comisura labial izquierda del paciente (a la derecha en la foto).' },
-  { key: 'Mf', short: 'LMF', label: 'Línea media facial', hint: 'Centro del filtrum o punto subnasal: referencia de la línea media de la cara.', optional: true },
+  { key: 'Md', short: 'LMD', label: 'Línea media dental', hint: 'Punto de contacto entre los incisivos centrales superiores, a nivel del borde incisal.', group: 'ref' },
+  { key: 'CR', short: 'CD', label: 'Comisura derecha', hint: 'Comisura labial derecha del paciente (a la izquierda en la foto).', group: 'ref' },
+  { key: 'CL', short: 'CI', label: 'Comisura izquierda', hint: 'Comisura labial izquierda del paciente (a la derecha en la foto).', group: 'ref' },
+  { key: 'Mf', short: 'LMF', label: 'Línea media facial', hint: 'Centro del filtrum o punto subnasal: referencia de la línea media de la cara.', optional: true, group: 'ref' },
+  { key: 'R1', short: '12|11', label: 'Contacto 12 | 11', hint: 'Contacto entre el incisivo lateral y el central superior derechos, en el borde incisal.', optional: true, group: 'teeth' },
+  { key: 'R2', short: '13|12', label: 'Contacto 13 | 12', hint: 'Contacto entre el canino y el incisivo lateral superior derechos.', optional: true, group: 'teeth' },
+  { key: 'R3', short: 'D13', label: 'Distal del 13', hint: 'Borde distal visible del canino superior derecho.', optional: true, group: 'teeth' },
+  { key: 'L1', short: '21|22', label: 'Contacto 21 | 22', hint: 'Contacto entre el incisivo central y el lateral superior izquierdos, en el borde incisal.', optional: true, group: 'teeth' },
+  { key: 'L2', short: '22|23', label: 'Contacto 22 | 23', hint: 'Contacto entre el incisivo lateral y el canino superior izquierdos.', optional: true, group: 'teeth' },
+  { key: 'L3', short: 'D23', label: 'Distal del 23', hint: 'Borde distal visible del canino superior izquierdo.', optional: true, group: 'teeth' },
 ];
+
+/** mm por píxel según la distancia real entre comisuras; null si no está calibrado. */
+export function smileScale(p: Partial<Record<string, CephPoint>>, refMm?: number): number | null {
+  const { CR, CL } = p;
+  if (!CR || !CL || !refMm || refMm <= 0) return null;
+  const w = Math.hypot(CL.x - CR.x, CL.y - CR.y);
+  return w ? refMm / w : null;
+}
 
 /** Tolerancias orientativas; el profesional interpreta el resultado. */
 export const COMMISSURE_TILT_TOL_DEG = 2;
@@ -45,7 +60,7 @@ function alongAxis(cr: CephPoint, cl: CephPoint, ref: CephPoint, p: CephPoint) {
   return ((p.x - ref.x) * (cl.x - cr.x) + (p.y - ref.y) * (cl.y - cr.y)) / len;
 }
 
-export function smilePhotoAnalysis(p: Pts, refMm?: number): SmilePhotoResult {
+export function smilePhotoAnalysis(p: Pts, refMm?: number, extra: string[] = []): SmilePhotoResult {
   const metrics: SmilePhotoMetric[] = [];
   const summary: string[] = [];
   let cant: SmilePhotoResult['cant'] = '';
@@ -102,6 +117,7 @@ export function smilePhotoAnalysis(p: Pts, refMm?: number): SmilePhotoResult {
       summary.push(ok ? 'línea media dental centrada entre comisuras' : `línea media dental desviada ${dist(Math.abs(d))} a la ${side(d)} del centro comisural`);
     }
   }
+  summary.push(...extra);
   return { metrics, cant, summary: summary.length ? `Análisis fotográfico de sonrisa: ${summary.join('; ')}.` : '' };
 }
 

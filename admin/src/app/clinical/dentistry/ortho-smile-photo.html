@@ -1,0 +1,173 @@
+@let tr = trace();
+@let res = result();
+@let th = teeth();
+@let ly = layers();
+<section class="spa">
+  <header class="spa-head">
+    <span class="spa-badge">{{ placedCount() }}/{{ landmarks.length }} puntos</span>
+    <h5>Análisis de sonrisa interactivo</h5>
+    <span class="spa-badge">{{ th.segments.length }}/6 dientes</span>
+  </header>
+  @if (!photos().length) {
+    <p class="spa-empty">Cargue la fotografía de «Sonrisa» (o la frontal) en la sección de Fotografías para marcar la línea media, las comisuras y los dientes anteriores.</p>
+  } @else {
+    <div class="spa-photos">
+      @for (ph of photos(); track ph.id) {
+        <button type="button" [class.on]="ph.id === current()?.id" [disabled]="disabled()" (click)="selectPhoto(ph)">{{ ph.label }}</button>
+      }
+    </div>
+    <div class="spa-main">
+      <div class="spa-stage">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        @if (stale()) {
+          <p class="spa-empty">La fotografía usada en este análisis ya no está disponible. Reinicie para trazar sobre otra.</p>
+        } @else if (current()?.url; as url) {
+          <div class="spa-canvas">
+            <img [src]="url" alt="Fotografía de sonrisa" draggable="false" (load)="onLoad($event)" />
+            @if (size(); as s) {
+              @let k = s.w / 600;
+              <svg class="spa-ov" [class.placing]="!disabled() && !!active()" [attr.viewBox]="'0 0 ' + s.w + ' ' + s.h" preserveAspectRatio="none"
+                (pointerdown)="onStageDown($event)" (pointermove)="onMove($event)" (pointerup)="onUp()" (pointerleave)="onUp()">
+                <defs>
+                  <filter id="spa-glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur [attr.stdDeviation]="2.5 * k" result="b" />
+                    <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
+                </defs>
+                @if (ly.muscles) {
+                  <g class="g-mus" filter="url(#spa-glow)">
+                    @for (m of muscles(); track $index) {
+                      <line [attr.x1]="m.from.x" [attr.y1]="m.from.y" [attr.x2]="m.to.x" [attr.y2]="m.to.y" [attr.stroke-width]="1.3 * k" />
+                      <circle [attr.cx]="m.from.x" [attr.cy]="m.from.y" [attr.r]="3 * k" />
+                      <circle [attr.cx]="m.to.x" [attr.cy]="m.to.y" [attr.r]="5.5 * k" class="node" [attr.stroke-width]="1.5 * k" />
+                      @if (m.labelled) {
+                        <text [attr.x]="m.to.x - 9 * k" [attr.y]="m.to.y + 4 * k" [attr.font-size]="11 * k" [attr.stroke-width]="3.5 * k">{{ m.name }}</text>
+                      }
+                    }
+                  </g>
+                }
+                @if (ly.proportion) {
+                  @if (th.arc) {
+                    <path [attr.d]="th.arc" class="g-arc" [attr.stroke-width]="2.4 * k" filter="url(#spa-glow)" />
+                  }
+                  @for (sg of th.segments; track sg.fdi) {
+                    <polygon [attr.points]="sg.poly" class="g-tooth" [class.sel]="selTooth() === sg.fdi" [class.out]="sg.ratio?.tone === 'out'" [attr.stroke-width]="1.6 * k" />
+                    <text [attr.x]="sg.label.x" [attr.y]="sg.label.y" class="g-num" [attr.font-size]="min(16 * k, sg.font)" [attr.stroke-width]="3 * k">{{ sg.fdi }}</text>
+                  }
+                }
+                @if (ly.occlusion) {
+                  @if (pts().CR && pts().CL) {
+                    @let cr = pts().CR!;
+                    @let cl = pts().CL!;
+                    <line [attr.x1]="0" [attr.y1]="(cr.y + cl.y) / 2" [attr.x2]="s.w" [attr.y2]="(cr.y + cl.y) / 2" class="g-ref" [attr.stroke-width]="1.2 * k" [attr.stroke-dasharray]="6 * k + ' ' + 5 * k" />
+                    <line [attr.x1]="cr.x" [attr.y1]="cr.y" [attr.x2]="cl.x" [attr.y2]="cl.y" class="g-com" [attr.stroke-width]="2 * k" filter="url(#spa-glow)" />
+                    @if (pts().Md; as md) {
+                      @let l = perp(cr, cl, md, s.h);
+                      <line [attr.x1]="l.x1" [attr.y1]="l.y1" [attr.x2]="l.x2" [attr.y2]="l.y2" class="g-md" [attr.stroke-width]="2 * k" filter="url(#spa-glow)" />
+                    }
+                    @if (pts().Mf; as mf) {
+                      @let l = perp(cr, cl, mf, s.h);
+                      <line [attr.x1]="l.x1" [attr.y1]="l.y1" [attr.x2]="l.x2" [attr.y2]="l.y2" class="g-mf" [attr.stroke-width]="1.6 * k" [attr.stroke-dasharray]="10 * k + ' ' + 6 * k" />
+                    }
+                  } @else if (pts().Md; as md) {
+                    <line [attr.x1]="md.x" y1="0" [attr.x2]="md.x" [attr.y2]="s.h" class="g-md" [attr.stroke-width]="2 * k" />
+                  }
+                }
+                @if (ly.proportion || ly.status) {
+                  @for (sg of th.segments; track sg.fdi) {
+                    <g class="badge" [class.warn]="ly.status && sg.findings.length" [class.ok]="ly.status && !sg.findings.length" [class.sel]="selTooth() === sg.fdi"
+                      (pointerdown)="$event.stopPropagation()" (click)="toggleTooth(sg.fdi)">
+                      @let br = min(11 * k, sg.badge);
+                      <circle [attr.cx]="sg.center.x" [attr.cy]="sg.center.y" [attr.r]="br" [attr.stroke-width]="br * 0.15" />
+                      <text [attr.x]="sg.center.x" [attr.y]="sg.center.y + br * 0.4" [attr.font-size]="br * 1.2">i</text>
+                    </g>
+                  }
+                }
+                @for (lm of landmarks; track lm.key) {
+                  @if (pts()[lm.key]; as p) {
+                    @let r = lm.group === 'teeth' ? 4 : 6;
+                    <g class="pt" [class.on]="active() === lm.key" [class.tooth]="lm.group === 'teeth'" (pointerdown)="onPointDown($event, lm.key)">
+                      <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="14 * k" class="hit" />
+                      <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="r * k" [attr.stroke-width]="1.8 * k" filter="url(#spa-glow)" />
+                      @if (lm.group === 'ref') {
+                        <text [attr.x]="p.x + 10 * k" [attr.y]="p.y - 10 * k" [attr.font-size]="14 * k" [attr.stroke-width]="4 * k">{{ lm.short }}</text>
+                      }
+                    </g>
+                  }
+                }
+              </svg>
+              @if (selected(); as sg) {
+                <div class="spa-tip" [class.above]="sg.center.y / s.h > 0.5" [style.left.%]="(sg.center.x / s.w) * 100" [style.top.%]="(sg.center.y / s.h) * 100">
+                  <button type="button" class="x" aria-label="Cerrar" (click)="selTooth.set(null)">×</button>
+                  <b>Diente {{ sg.fdi }}:</b>
+                  <span>{{ sg.name }}</span>
+                  <dl>
+                    <dt>Estado</dt>
+                    <dd>{{ sg.findings.length ? sg.findings.join(', ') : 'Sin hallazgos en el odontograma' }}</dd>
+                    <dt>Ancho aparente</dt>
+                    <dd>{{ sg.widthText }}</dd>
+                    @if (sg.ratio; as r) {
+                      <dt>Proporción</dt>
+                      <dd [class.out]="r.tone === 'out'">{{ r.text }} · {{ r.tone === 'ok' ? 'en rango orientativo' : 'fuera del rango orientativo' }}</dd>
+                    }
+                  </dl>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+      <app-ortho-smile-hud [data]="data()" [result]="res" [teeth]="th" [layers]="ly" (toggle)="toggleLayer($event)" />
+    </div>
+    <div class="spa-tools">
+      <div class="spa-side">
+        @for (grp of groups; track grp.key) {
+          <p class="spa-group">{{ grp.title }}</p>
+          <ol class="spa-steps">
+            @for (lm of grp.items; track lm.key) {
+              <li>
+                <button type="button" [class.done]="!!pts()[lm.key]" [class.on]="active() === lm.key" [disabled]="disabled()" (click)="pick.set(lm.key)">
+                  <b>{{ lm.short }}</b> {{ lm.label }} @if (lm.optional) { <small>opcional</small> }
+                </button>
+              </li>
+            }
+          </ol>
+        }
+      </div>
+      <div class="spa-side">
+        <p class="spa-help">
+          @if (activeLandmark(); as lm) {
+            <strong>Marque:</strong> {{ lm.hint }}
+          } @else {
+            Todos los puntos están marcados. Arrastre cualquier punto para ajustarlo.
+          }
+        </p>
+        <label class="spa-cal">
+          Distancia real entre comisuras (mm)
+          <input type="number" min="0" step="0.5" [value]="tr.refMm ?? ''" [readOnly]="disabled()" (input)="setRef($any($event.target).value)" placeholder="Opcional, para ver mm" />
+        </label>
+        @for (m of res.metrics; track m.label) {
+          <div class="spa-metric" [attr.data-tone]="m.tone">
+            <span>{{ m.label }}</span>
+            <b>{{ m.value }}</b>
+            <small>{{ m.message }}</small>
+          </div>
+        }
+        @if (!disabled()) {
+          <div class="spa-actions">
+            @if (res.cant && res.cant !== data().orthoExam.smile.occlusalCant) {
+              <button type="button" class="apply" (click)="applyCant(res.cant)">Registrar plano oclusal: {{ res.cant }}</button>
+            }
+            @if (res.summary && !data().orthoExam.smile.notes.includes(res.summary)) {
+              <button type="button" class="apply" (click)="appendSummary(res.summary)">Agregar resumen a observaciones</button>
+            }
+            @if (placedCount()) {
+              <button type="button" class="ghost" (click)="undo()">Deshacer último punto</button>
+              <button type="button" class="ghost" (click)="reset()">Reiniciar análisis</button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</section>
