@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 
 type Json = Record<string, unknown>;
 
-export type PlanSource = 'PLAN' | 'ORTHO';
+export type PlanSource = 'PLAN' | 'ORTHO' | 'PHYSIO';
 
 export interface BillablePlanItem {
   key: string;
@@ -120,6 +120,31 @@ export function orthoBudgetItems(orthoBudget: Json): BillablePlanItem[] {
         unitValue: unit,
         discountPct: d,
         net: Math.round(q * unit * (1 - d / 100)),
+      };
+    });
+}
+
+/** Plan de tratamiento de fisioterapia: procedimiento CUPS × sesiones (cada fila trae id estable). */
+export function physioPlanItems(physio: Json): BillablePlanItem[] {
+  return arr(physio.treatmentPlan)
+    .filter((r) => text(r.id) && text(r.status) !== 'CANCELADO' && (text(r.description) || text(r.cupsCode)))
+    .map((r) => {
+      const sessions = qty(r.sessions);
+      const unit = num(r.unitValue);
+      const d = pct(r.discountPct);
+      return {
+        key: `PHYSIO:${text(r.id)}`,
+        source: 'PHYSIO' as const,
+        label: text(r.description) || text(r.cupsCode),
+        detail: [`${sessions} sesi${sessions === 1 ? 'ón' : 'ones'}`, text(r.notes)].filter(Boolean).join(' · '),
+        cupsCode: text(r.cupsCode) || null,
+        tooth: null,
+        phase: null,
+        status: STATUS_LABELS[text(r.status)] ?? 'Pendiente',
+        quantity: sessions,
+        unitValue: unit,
+        discountPct: d,
+        net: Math.round(sessions * unit * (1 - d / 100)),
       };
     });
 }

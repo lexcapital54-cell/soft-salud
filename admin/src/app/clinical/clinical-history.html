@@ -1880,6 +1880,20 @@
                   </label>
                 </div>
 
+                <h4>Plan de tratamiento y valores</h4>
+                @defer (on viewport) {
+                  <app-physio-treatment-plan [data]="physio()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                } @placeholder {
+                  <p class="muted small">Cargando plan de tratamiento…</p>
+                }
+                @if (canWrite() && encounter()?.patient?.id) {
+                  @defer (on viewport) {
+                    <app-plan-payments source="PLAN" [patientId]="encounter()!.patient.id" [patientName]="consentPatientName()" />
+                  } @placeholder {
+                    <p class="muted small">Cargando pagos en caja…</p>
+                  }
+                }
+
                 <h4>Cierre de historia (opcional)</h4>
                 <div class="ft-grid-3">
                   <label>

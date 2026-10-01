@@ -14,6 +14,7 @@ import { OrthoCaseIntake } from './dentistry/ortho-case-intake';
 import { OrthoExamPanel } from './dentistry/ortho-exam-panel';
 import { OrthoSmilePanel } from './dentistry/ortho-smile-panel';
 import { OrthoSmilePhoto } from './dentistry/ortho-smile-photo';
+import { PhysioTreatmentPlan } from './physio/physio-treatment-plan';
 import { OrthoFaceProportions } from './dentistry/ortho-face-proportions';
 import { OrthoMovementPlan } from './dentistry/ortho-movement-plan';
 import { OrthoArchAnalysis } from './dentistry/ortho-arch-analysis';
@@ -339,6 +340,7 @@ function emptyContent(): ClinicalContent {
     OrthoExamPanel,
     OrthoSmilePanel,
     OrthoSmilePhoto,
+    PhysioTreatmentPlan,
     OrthoFaceProportions,
     OrthoMovementPlan,
     OrthoArchAnalysis,

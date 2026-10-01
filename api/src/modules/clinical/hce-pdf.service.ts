@@ -37,6 +37,7 @@ import {
   ORTHO_ELASTIC_LABELS,
   ORTHO_PLAN_PHASE_LABELS,
 } from './dentistry-labels';
+import { num } from '../billing/treatment-plan-items';
 
 type EncounterPdfRow = Encounter & {
   patient: Patient;
@@ -395,6 +396,19 @@ export class HcePdfService {
           theme.title,
           band,
         ),
+        this.section(
+          'Frecuencia, duración y sesiones',
+          [
+            physio.frequency && `Frecuencia: ${physio.frequency}`,
+            physio.estimatedDuration && `Duración estimada: ${physio.estimatedDuration}`,
+            physio.sessionCount && `N.º de sesiones: ${physio.sessionCount}`,
+          ]
+            .filter(Boolean)
+            .join(' · '),
+          theme.title,
+          band,
+        ),
+        this.physioPlanTable(physio.treatmentPlan, theme.title),
         this.section(
           'Impresión diagnóstica',
           assessment.impressionNarrative as string,
@@ -1914,6 +1928,46 @@ export class HcePdfService {
       ),
     );
     return sections;
+  }
+
+  /** Plan de tratamiento de fisioterapia: procedimiento CUPS, sesiones y valores. */
+  private physioPlanTable(raw: unknown, titleColor: string): Content {
+    const rows = (Array.isArray(raw) ? raw : []).filter(
+      (r): r is Record<string, unknown> => !!r && typeof r === 'object' && !!(String(r.description ?? '').trim() || String(r.cupsCode ?? '').trim()),
+    );
+    if (!rows.length) return { text: '' };
+    const n = (v: unknown) => Math.max(0, num(v));
+    const money = (v: number) => (v ? `$${Math.round(v).toLocaleString('es-CO')}` : '');
+    const status: Record<string, string> = { PENDIENTE: 'Pendiente', EN_TRATAMIENTO: 'En tratamiento', TERMINADO: 'Terminado', CANCELADO: 'Cancelado' };
+    const net = (r: Record<string, unknown>) => (n(r.sessions) || 1) * n(r.unitValue) * (1 - Math.min(100, n(r.discountPct)) / 100);
+    const total = rows.filter((r) => r.status !== 'CANCELADO').reduce((s, r) => s + net(r), 0);
+    const cell = (text: string, bold = false) => ({ text: text || '—', fontSize: 8.5, bold });
+    return {
+      unbreakable: rows.length <= 15,
+      stack: [
+        this.bandTitle('Plan de tratamiento', titleColor),
+        {
+          table: {
+            widths: ['10%', '*', '9%', '13%', '13%', '13%'],
+            headerRows: 1,
+            body: [
+              ['CUPS', 'Procedimiento', 'Sesiones', 'Valor sesión', 'Neto', 'Estado'].map((h) => cell(h, true)),
+              ...rows.map((r) => [
+                cell(String(r.cupsCode ?? '')),
+                cell([r.description, r.notes].map((v) => String(v ?? '').trim()).filter(Boolean).join(' — ')),
+                cell(String(n(r.sessions) || 1)),
+                cell(money(n(r.unitValue))),
+                cell(money(net(r)) + (n(r.discountPct) ? ` (−${n(r.discountPct)} %)` : '')),
+                cell(status[String(r.status)] || 'Pendiente'),
+              ]),
+              [cell(''), cell('Total del plan (sin cancelados)', true), cell(''), cell(''), cell(money(total), true), cell('')],
+            ],
+          },
+          layout: 'lightHorizontalLines',
+          margin: [0, 0, 0, 6],
+        },
+      ],
+    };
   }
 
   private bandTitle(title: string, titleColor: string): Content {

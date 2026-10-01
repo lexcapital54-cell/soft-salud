@@ -7,6 +7,7 @@ import {
   dentalPlanItems,
   orthoBudgetItems,
   orthoFinancing,
+  physioPlanItems,
 } from './treatment-plan-items';
 
 type Json = Record<string, unknown>;
@@ -20,7 +21,7 @@ export interface PlanItemBalance extends BillablePlanItem {
 }
 
 /**
- * Cruce entre el plan de tratamiento de la historia (odontología y ortodoncia) y los recibos
+ * Cruce entre el plan de tratamiento de la historia (odontología, ortodoncia y fisioterapia) y los recibos
  * de caja: cada línea de recibo puede abonar a un procedimiento o concepto del presupuesto.
  */
 @Injectable()
@@ -56,9 +57,10 @@ export class BillingPlanService {
     const withPaid = await this.attachPaid(this.prisma, clinicId, patientId, items.list);
 
     const sum = (rows: PlanItemBalance[], k: 'net' | 'paid' | 'balance') => rows.reduce((s, r) => s + r[k], 0);
-    const plan = withPaid.filter((i) => i.source === 'PLAN');
+    const plan = withPaid.filter((i) => i.source === 'PLAN' || i.source === 'PHYSIO');
     const ortho = withPaid.filter((i) => i.source === 'ORTHO');
     const isOrtho = encounter?.specialtySnapshot === 'ORTHODONTICS';
+    const isPhysio = encounter?.specialtySnapshot === 'PHYSIOTHERAPY';
 
     return {
       patient: {
@@ -74,8 +76,8 @@ export class BillingPlanService {
       record: encounter
         ? {
             encounterId: encounter.id,
-            code: isOrtho ? 'HC-ORT-001' : 'HC-ODO-001',
-            specialty: isOrtho ? 'Ortodoncia' : 'Odontología',
+            code: isPhysio ? 'HC-FT-001' : isOrtho ? 'HC-ORT-001' : 'HC-ODO-001',
+            specialty: isPhysio ? 'Fisioterapia' : isOrtho ? 'Ortodoncia' : 'Odontología',
             signed: !!encounter.clinicalRecord?.signedAt,
             includesOrtho: ortho.length > 0,
           }
@@ -135,14 +137,15 @@ export class BillingPlanService {
         clinicalRecord: { select: { content: true, signedAt: true } },
       },
     });
-    const dentistry = obj(obj(encounter?.clinicalRecord?.content).dentistry);
+    const content = obj(encounter?.clinicalRecord?.content);
+    const dentistry = obj(content.dentistry);
     const tracking = await tx.orthoTracking.findUnique({ where: { patientId }, select: { clinicId: true, data: true } });
     const liveBudget = tracking && tracking.clinicId === clinicId ? obj(obj(tracking.data).orthoBudget) : null;
     const orthoBudget = liveBudget && Object.keys(liveBudget).length ? liveBudget : obj(dentistry.orthoBudget);
     return {
       encounter,
       orthoBudget,
-      list: [...dentalPlanItems(dentistry), ...orthoBudgetItems(orthoBudget)],
+      list: [...dentalPlanItems(dentistry), ...orthoBudgetItems(orthoBudget), ...physioPlanItems(obj(content.physiotherapy))],
     };
   }
 

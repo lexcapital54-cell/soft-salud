@@ -1,0 +1,317 @@
+.ftp {
+  display: grid;
+  gap: 10px;
+  container-type: inline-size;
+
+  label,
+  .sess,
+  .total {
+    display: grid;
+    gap: 3px;
+    color: #4b6468;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+
+  input {
+    width: 100%;
+    min-width: 0;
+    padding: 7px 9px;
+    border: 1px solid #cfdcdf;
+    border-radius: 8px;
+    background: #fff;
+    color: #0f2f36;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 400;
+
+    &:focus {
+      outline: none;
+      border-color: #0d7377;
+      box-shadow: 0 0 0 3px rgba(13, 115, 119, 0.12);
+    }
+
+    &[readonly] {
+      background: #f6f9fa;
+    }
+  }
+}
+
+.ftp-sum {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  span {
+    padding: 4px 10px;
+    border-radius: 99px;
+    background: #eef6f6;
+    color: #1f4e55;
+    font-size: 12px;
+  }
+
+  .net {
+    margin-left: auto;
+    background: #0d7377;
+    color: #fff;
+    font-weight: 700;
+  }
+}
+
+.ftp-hint {
+  margin: 0;
+  padding: 7px 10px;
+  border-left: 3px solid #f59e0b;
+  border-radius: 6px;
+  background: #fffbeb;
+  color: #8a5a00;
+  font-size: 12px;
+}
+
+.ftp-row {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #dbe7ea;
+  border-left: 4px solid #f5b301;
+  border-radius: 12px;
+  background: #fbfdfd;
+  transition:
+    border-color 0.2s,
+    opacity 0.2s;
+
+  &[data-status='EN_TRATAMIENTO'] {
+    border-left-color: #1e63d6;
+  }
+  &[data-status='TERMINADO'] {
+    border-left-color: #16a34a;
+  }
+  &[data-status='CANCELADO'] {
+    border-left-color: #94a3b8;
+    opacity: 0.65;
+
+    .total b {
+      text-decoration: line-through;
+    }
+  }
+}
+
+.ftp-main {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(0, 2fr);
+  gap: 8px;
+}
+
+.cups {
+  position: relative;
+}
+
+.ftp-sugg {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  width: min(480px, 90cqw);
+  max-height: 260px;
+  overflow: auto;
+  margin: 4px 0 0;
+  padding: 4px;
+  border: 1px solid #cfdcdf;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(15, 47, 54, 0.15);
+  list-style: none;
+
+  button {
+    display: block;
+    width: 100%;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: #0f2f36;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 400;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: #eef6f6;
+    }
+
+    b {
+      color: #0d7377;
+    }
+  }
+}
+
+.ftp-nums {
+  display: grid;
+  grid-template-columns: auto minmax(110px, 1fr) 80px minmax(110px, 1fr);
+  gap: 8px;
+  align-items: end;
+}
+
+.stepper {
+  display: flex;
+  align-items: stretch;
+
+  input {
+    width: 56px;
+    border-radius: 0;
+    text-align: center;
+  }
+
+  button {
+    width: 30px;
+    border: 1px solid #cfdcdf;
+    background: #f3f7f8;
+    color: #0d7377;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:first-child {
+      border-right: 0;
+      border-radius: 8px 0 0 8px;
+    }
+    &:last-child {
+      border-left: 0;
+      border-radius: 0 8px 8px 0;
+    }
+    &:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+  }
+}
+
+.total {
+  justify-items: end;
+
+  b {
+    color: #0d7377;
+    font-size: 15px;
+  }
+}
+
+.ftp-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+
+  .notes {
+    flex: 1 1 200px;
+  }
+}
+
+.status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  button {
+    padding: 4px 10px;
+    border: 1px solid #cfdcdf;
+    border-radius: 99px;
+    background: #fff;
+    color: #4b6468;
+    font-size: 12px;
+    cursor: pointer;
+
+    &.on {
+      color: #fff;
+      border-color: transparent;
+    }
+    &.on[data-k='PENDIENTE'] {
+      background: #d99a00;
+    }
+    &.on[data-k='EN_TRATAMIENTO'] {
+      background: #1e63d6;
+    }
+    &.on[data-k='TERMINADO'] {
+      background: #16a34a;
+    }
+    &.on[data-k='CANCELADO'] {
+      background: #64748b;
+    }
+    &:disabled:not(.on) {
+      opacity: 0.6;
+      cursor: default;
+    }
+  }
+}
+
+.del {
+  padding: 4px 10px;
+  border: 1px solid #f1c0bb;
+  border-radius: 99px;
+  background: #fff;
+  color: #b42318;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ftp-empty {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed #cfdcdf;
+  border-radius: 12px;
+  color: #6a8085;
+  font-size: 12.5px;
+}
+
+.ftp-add {
+  justify-self: start;
+  padding: 7px 14px;
+  border: 1px dashed #0d7377;
+  border-radius: 99px;
+  background: #f0fbfa;
+  color: #0d7377;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ftp-totals {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 16px;
+  justify-self: end;
+  min-width: min(320px, 100%);
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f3f7f8;
+  font-size: 13px;
+
+  dt {
+    color: #4b6468;
+  }
+  dd {
+    margin: 0;
+    text-align: right;
+  }
+  .strong {
+    color: #003d4c;
+    font-weight: 700;
+    font-size: 14px;
+  }
+}
+
+.ftp-note {
+  margin: 0;
+  color: #6a8085;
+  font-size: 12px;
+}
+
+@container (max-width: 620px) {
+  .ftp-main,
+  .ftp-nums {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ftp-main .desc {
+    grid-column: 1 / -1;
+  }
+}

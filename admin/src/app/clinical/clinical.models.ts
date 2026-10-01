@@ -107,6 +107,20 @@ export interface SoapContent {
   plan: string;
 }
 
+export type PhysioPlanStatus = 'PENDIENTE' | 'EN_TRATAMIENTO' | 'TERMINADO' | 'CANCELADO';
+
+/** Fila del plan de tratamiento de fisioterapia; el id enlaza los abonos de los recibos de caja. */
+export interface PhysioPlanRow {
+  id: string;
+  cupsCode: string;
+  description: string;
+  sessions: string;
+  unitValue: string;
+  discountPct: string;
+  status: PhysioPlanStatus;
+  notes: string;
+}
+
 export interface PhysiotherapyContent {
   antecedentsDetail: {
     personal: string;
@@ -131,6 +145,7 @@ export interface PhysiotherapyContent {
   frequency: string;
   estimatedDuration: string;
   sessionCount: string;
+  treatmentPlan?: PhysioPlanRow[];
   closure: {
     closedAt: string;
     caseStatus: string;

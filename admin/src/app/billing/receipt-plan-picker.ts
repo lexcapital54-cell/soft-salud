@@ -11,7 +11,7 @@ export interface PlanReceiptLine {
   planItemKey: string;
 }
 
-/** Carga el plan de tratamiento de la historia (odontología y ortodoncia) para cobrarlo en el recibo. */
+/** Carga el plan de tratamiento de la historia (odontología, ortodoncia y fisioterapia) para cobrarlo en el recibo. */
 @Component({
   selector: 'app-receipt-plan-picker',
   imports: [FormsModule, CurrencyPipe],
@@ -36,7 +36,7 @@ export interface PlanReceiptLine {
 
       @if (!d.plan.items.length && !d.ortho.items.length) {
         <p class="muted">
-          {{ d.record ? 'La historia no tiene procedimientos con valor en el plan de tratamiento ni presupuesto de ortodoncia.' : 'El paciente aún no tiene historia clínica.' }}
+          {{ d.record ? 'La historia no tiene procedimientos con valor en el plan de tratamiento' + (d.record.specialty === 'Fisioterapia' ? '.' : ' ni presupuesto de ortodoncia.') : 'El paciente aún no tiene historia clínica.' }}
           Use la línea manual de abajo.
         </p>
       }
