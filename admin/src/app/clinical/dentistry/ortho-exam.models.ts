@@ -125,7 +125,13 @@ export function normalizeOrthoExam(raw: Partial<OrthoExamData> | undefined): Ort
 
 // ── Cálculos (orientativos; el profesional confirma) ──
 
-const num = (v: string) => {
+/** Rangos de referencia orientativos usados por los cálculos y las escalas visuales. */
+export const REST_EXPOSURE_REF: [number, number] = [2, 4];
+export const GINGIVAL_SMILE_LIMIT = 3;
+export const THIRD_PCT_REF: [number, number] = [30, 37];
+export const FACIAL_INDEX_LIMITS: [number, number] = [85, 90];
+
+export const num = (v: string) => {
   const s = String(v ?? '').trim();
   const n = Number(s.replace(',', '.'));
   return s && Number.isFinite(n) ? n : null;
@@ -158,8 +164,8 @@ export function facialIndex(p: OrthoExamData['proportions']) {
   const w = num(p.facialWidth);
   if (!h || !w) return null;
   const idx = Math.round((h / w) * 1000) / 10;
-  if (idx < 85) return { idx, name: 'Euriprosopo (cara ancha)', facialType: 'Braquifacial' };
-  if (idx < 90) return { idx, name: 'Mesoprosopo (cara media)', facialType: 'Mesofacial' };
+  if (idx < FACIAL_INDEX_LIMITS[0]) return { idx, name: 'Euriprosopo (cara ancha)', facialType: 'Braquifacial' };
+  if (idx < FACIAL_INDEX_LIMITS[1]) return { idx, name: 'Mesoprosopo (cara media)', facialType: 'Mesofacial' };
   return { idx, name: 'Leptoprosopo (cara larga)', facialType: 'Dolicofacial' };
 }
 
@@ -167,12 +173,13 @@ export function smileHints(s: OrthoExamData['smile']): Hint[] {
   const out: Hint[] = [];
   const rest = num(s.restExposure);
   if (rest !== null) {
-    if (rest < 1) out.push({ text: `Exposición incisiva en reposo ${rest} mm: disminuida (referencia 2–4 mm, se reduce con la edad).`, tone: 'warn' });
-    else if (rest > 4) out.push({ text: `Exposición incisiva en reposo ${rest} mm: aumentada (referencia 2–4 mm).`, tone: 'warn' });
+    const [lo, hi] = REST_EXPOSURE_REF;
+    if (rest < lo - 1) out.push({ text: `Exposición incisiva en reposo ${rest} mm: disminuida (referencia ${lo}–${hi} mm, se reduce con la edad).`, tone: 'warn' });
+    else if (rest > hi) out.push({ text: `Exposición incisiva en reposo ${rest} mm: aumentada (referencia ${lo}–${hi} mm).`, tone: 'warn' });
     else out.push({ text: `Exposición incisiva en reposo ${rest} mm: dentro de la referencia.`, tone: 'ok' });
   }
   const g = num(s.gingivalExposure);
-  if (g !== null && g > 3) out.push({ text: `Exposición gingival de ${g} mm al sonreír: sonrisa gingival (más de 3 mm).`, tone: 'warn' });
+  if (g !== null && g > GINGIVAL_SMILE_LIMIT) out.push({ text: `Exposición gingival de ${g} mm al sonreír: sonrisa gingival (más de ${GINGIVAL_SMILE_LIMIT} mm).`, tone: 'warn' });
   return out;
 }
 

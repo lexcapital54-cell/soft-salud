@@ -194,3 +194,11 @@ label.checkbox-inline input {
     grid-column: span 6 !important;
   }
 }
+
+/* Sonrisa y proporciones faciales lado a lado cuando hay espacio. */
+.smile-face-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}

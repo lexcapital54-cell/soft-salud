@@ -2656,13 +2656,16 @@
                   />
                   <h4 class="odo-sub">Sonrisa y proporciones faciales</h4>
                   @defer (on viewport) {
-                    <app-ortho-exam-panel part="smile" [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                    <div class="smile-face-grid">
+                      <app-ortho-smile-panel [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                      <app-ortho-face-proportions [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                    </div>
                   } @placeholder {
                     <p class="muted small">Cargando análisis de sonrisa…</p>
                   }
                   <h4 class="odo-sub">Examen funcional</h4>
                   @defer (on viewport) {
-                    <app-ortho-exam-panel part="functional" [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                    <app-ortho-exam-panel [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
                   } @placeholder {
                     <p class="muted small">Cargando examen funcional…</p>
                   }
