@@ -53,6 +53,9 @@
 
 /* Al saltar desde el menú, el título de la sección no queda tapado por la barra fija. */
 [id^='odo-'],
+[id^='ft-'],
+#cie-section,
+#cups-section,
 #odontograma,
 #hce-section-3,
 #consent-section,

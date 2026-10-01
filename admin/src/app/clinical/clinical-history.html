@@ -1107,6 +1107,39 @@
           }
         }
 
+        @if (isPhysiotherapyClinic()) {
+          <nav class="odo-nav" aria-label="Módulos de la historia clínica">
+            <strong>Historia clínica de fisioterapia</strong>
+            @let ftMods = physioModules();
+            @let ftProg = odoProgress(ftMods);
+            <span class="odo-specialty">
+              Fisioterapia · HC-FT-001
+              @if (ftProg.total) {
+                · <b title="Módulos esenciales completos (orientativo, no bloquea la firma)">{{ ftProg.done }}/{{ ftProg.total }} completos</b>
+              }
+              @if (autosaveLabel()) {
+                · <span [style.color]="autosaveStatus() === 'error' ? '#dc2626' : autosaveStatus() === 'saved' ? '#16a34a' : '#b45309'">{{ autosaveLabel() }}</span>
+              }
+            </span>
+            <div class="odo-nav-mods">
+              @for (m of ftMods; track m.id) {
+                <button
+                  type="button"
+                  [class.on]="activeOdo() === m.id"
+                  [attr.aria-current]="activeOdo() === m.id ? 'location' : null"
+                  (click)="scrollToOdo(m.id)"
+                  [title]="m.status ? m.label + ': ' + m.status.hint : m.label"
+                >
+                  <span>{{ m.n }}</span>{{ m.label }}
+                  @if (m.dot) {
+                    <i aria-hidden="true" [style]="m.dot"></i>
+                  }
+                </button>
+              }
+            </div>
+          </nav>
+        }
+
         <section
           class="block"
           id="odo-identificacion"
@@ -1378,6 +1411,7 @@
         @if (!isLocked() || showInitialHistory()) {
         <section
           class="block attendance-meta"
+          id="ft-atencion"
           (input)="onClinicalFormInput($event)"
           (change)="onClinicalFormInput($event)"
         >
@@ -1668,7 +1702,7 @@
                     ></textarea>
                 </label>
 
-                <h4>Evaluación fisioterapéutica</h4>
+                <h4 id="ft-evaluacion">Evaluación fisioterapéutica</h4>
                 <label>
                   Diagnóstico fisioterapéutico
                   <textarea
@@ -1805,7 +1839,7 @@
                 </table>
                 </div>
 
-                <h4>Diagnóstico fisioterapéutico (codificación)</h4>
+                <h4 id="ft-diagnostico">Diagnóstico fisioterapéutico (codificación)</h4>
                 <div class="ft-grid-2">
                   <label>
                     Código
@@ -1834,7 +1868,7 @@
                     ></textarea>
                 </label>
 
-                <h4>Plan terapéutico</h4>
+                <h4 id="ft-plan">Plan terapéutico</h4>
                 <label>
                   Objetivos del tratamiento
                   <textarea
@@ -1880,7 +1914,7 @@
                   </label>
                 </div>
 
-                <h4>Plan de tratamiento y valores</h4>
+                <h4 id="ft-plan-valores">Plan de tratamiento y valores</h4>
                 @defer (on viewport) {
                   <app-physio-treatment-plan [data]="physio()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
                 } @placeholder {
@@ -1894,7 +1928,7 @@
                   }
                 }
 
-                <h4>Cierre de historia (opcional)</h4>
+                <h4 id="ft-cierre">Cierre de historia (opcional)</h4>
                 <div class="ft-grid-3">
                   <label>
                     Fecha de cierre

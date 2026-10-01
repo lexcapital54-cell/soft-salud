@@ -15,6 +15,7 @@ import { OrthoExamPanel } from './dentistry/ortho-exam-panel';
 import { OrthoSmilePanel } from './dentistry/ortho-smile-panel';
 import { OrthoSmilePhoto } from './dentistry/ortho-smile-photo';
 import { PhysioTreatmentPlan } from './physio/physio-treatment-plan';
+import { PHYSIO_MODULES, physioModuleStatus } from './physio/physio-nav';
 import { OrthoFaceProportions } from './dentistry/ortho-face-proportions';
 import { OrthoMovementPlan } from './dentistry/ortho-movement-plan';
 import { OrthoArchAnalysis } from './dentistry/ortho-arch-analysis';
@@ -1232,6 +1233,23 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /** Módulos de la historia de fisioterapia (menú superior) con su estado orientativo. */
+  physioModules() {
+    const ft = this.physio();
+    const ctx = {
+      patient: this.patientForm,
+      motive: this.content.careMinimum?.motive || '',
+      evolutions: this.evolutions().length,
+      consents: this.consents,
+      attachments: this.attachments().length,
+      diagnoses: this.diagnoses.filter((d) => d.cieCode?.trim()).length,
+    };
+    return PHYSIO_MODULES.map((m, i) => {
+      const status = physioModuleStatus(m.id, ft, this.content.careMinimum?.presentIllness || '', ctx);
+      return { ...m, n: i + 1, status, dot: status ? moduleDotStyle(status.state) : '' };
+    });
+  }
+
   odoProgress(mods: Array<{ status: ModuleStatus | null }>) {
     const required = mods.filter((m) => m.status && m.status.state !== 'optional');
     return { done: required.filter((m) => m.status!.state === 'done').length, total: required.length };
@@ -1265,7 +1283,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   @HostListener('window:scroll')
   onOdoScroll() {
-    if (this.odoSpyFrame || !this.isDentistryClinic()) return;
+    if (this.odoSpyFrame || !(this.isDentistryClinic() || this.isPhysiotherapyClinic())) return;
     this.odoSpyFrame = requestAnimationFrame(() => {
       this.odoSpyFrame = 0;
       this.updateOdoSpy();
@@ -1273,7 +1291,8 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private updateOdoSpy() {
-    const current = currentSection(this.odoModuleList().map((m) => m.id));
+    const ids = this.isPhysiotherapyClinic() ? PHYSIO_MODULES.map((m) => m.id) : this.odoModuleList().map((m) => m.id);
+    const current = currentSection(ids);
     if (current !== this.activeOdo()) {
       this.activeOdo.set(current);
       queueMicrotask(() => revealActiveChip(document.querySelector('.odo-nav-mods')));
