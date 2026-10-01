@@ -1,4 +1,5 @@
 import { Component, computed, input, output, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { CephPoint, DentistryContent } from './dentistry.models';
 import { FacialPhotoOption } from './ortho-facial-analysis';
 import { OrthoSmileHud, SmileLayer } from './ortho-smile-hud';
@@ -8,7 +9,7 @@ import { muscleGuides, teethAnalysis } from './ortho-smile-teeth.models';
 /** Análisis de sonrisa sobre la fotografía: líneas medias, comisuras, plano bicomisural y proporción de dientes anteriores. */
 @Component({
   selector: 'app-ortho-smile-photo',
-  imports: [OrthoSmileHud],
+  imports: [OrthoSmileHud, NgTemplateOutlet],
   templateUrl: './ortho-smile-photo.html',
   styleUrl: './ortho-smile-photo.scss',
 })
@@ -17,6 +18,9 @@ export class OrthoSmilePhoto {
   readonly photos = input<FacialPhotoOption[]>([]);
   readonly disabled = input(false);
   readonly changed = output<void>();
+  /** Subida al espacio «Extraoral · Sonrisa» de Fotos y radiografías; la hace la historia clínica. */
+  readonly uploading = input(false);
+  readonly upload = output<Event>();
 
   readonly landmarks = SMILE_LANDMARKS;
   readonly min = Math.min;
@@ -42,9 +46,13 @@ export class OrthoSmilePhoto {
   readonly pts = computed(() => this.trace().points as Partial<Record<SmileLandmark['key'], CephPoint>>, { equal: () => false });
   readonly stale = computed(() => {
     const id = this.trace().attachmentId;
-    return !!id && !this.photos().some((p) => p.id === id);
+    return !!id && this.placedCount() > 0 && !this.photos().some((p) => p.id === id);
   });
   readonly current = computed((): FacialPhotoOption | null => this.photos().find((p) => p.id === this.trace().attachmentId) ?? this.photos()[0] ?? null);
+  readonly hasSmilePhoto = computed(() => {
+    const id = this.data().photos['extraSmile']?.attachmentId;
+    return !!id && this.photos().some((p) => p.id === id);
+  });
   readonly placedCount = computed(() => this.landmarks.filter((l) => !!this.pts()[l.key]).length);
   readonly active = computed(() => this.pick() ?? this.landmarks.find((l) => !this.pts()[l.key])?.key ?? null);
   readonly activeLandmark = computed(() => this.landmarks.find((l) => l.key === this.active()) ?? null);
@@ -135,6 +143,11 @@ export class OrthoSmilePhoto {
     this.selTooth.set(null);
     this.size.set(null);
     this.commit();
+  }
+
+  confirmReplace(event: Event) {
+    const traced = this.trace().attachmentId === this.data().photos['extraSmile']?.attachmentId && this.placedCount() > 0;
+    if (traced && !confirm('La foto de sonrisa actual tiene puntos marcados. Al reemplazarla deberá reiniciar el análisis. ¿Continuar?')) event.preventDefault();
   }
 
   setRef(v: string) {

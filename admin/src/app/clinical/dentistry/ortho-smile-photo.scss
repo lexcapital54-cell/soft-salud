@@ -60,9 +60,37 @@ $warn: #fbbf24;
   font-size: 12px;
 }
 
+.spa-upload {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  padding: 4px 12px;
+  border: 1px dashed $teal;
+  border-radius: 99px;
+  background: rgba(45, 212, 191, 0.12);
+  color: #ecfeff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &.busy {
+    opacity: 0.6;
+    cursor: progress;
+  }
+}
+
+.spa-empty .spa-upload {
+  margin: 8px 0 0;
+}
+
+.spa-empty p {
+  margin: 0;
+}
+
 .spa-photos {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
 
   button {

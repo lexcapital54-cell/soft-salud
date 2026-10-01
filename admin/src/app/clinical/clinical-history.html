@@ -2664,7 +2664,7 @@
                     <p class="muted small">Cargando análisis de sonrisa…</p>
                   }
                   @defer (on viewport) {
-                    <app-ortho-smile-photo [data]="dental()" [photos]="smilePhotoOptions()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                    <app-ortho-smile-photo [data]="dental()" [photos]="smilePhotoOptions()" [disabled]="clinicalFormDisabled()" [uploading]="dentalPhotoUploading() === 'extraSmile'" (changed)="onClinicalFieldChange()" (upload)="uploadDentalPhoto('extraSmile', 'Sonrisa', 'Extraoral', $event)" />
                   } @placeholder {
                     <p class="muted small">Cargando análisis fotográfico de sonrisa…</p>
                   }

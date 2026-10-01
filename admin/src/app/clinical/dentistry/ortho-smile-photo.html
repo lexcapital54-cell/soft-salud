@@ -8,13 +8,25 @@
     <h5>Análisis de sonrisa interactivo</h5>
     <span class="spa-badge">{{ th.segments.length }}/6 dientes</span>
   </header>
+  <ng-template #uploadBtn>
+    @if (!disabled()) {
+      <label class="spa-upload" [class.busy]="uploading()">
+        <input type="file" accept="image/*" hidden [disabled]="uploading()" (click)="confirmReplace($event)" (change)="upload.emit($event)" />
+        {{ uploading() ? 'Subiendo foto…' : hasSmilePhoto() ? 'Reemplazar foto de sonrisa' : 'Subir foto de sonrisa' }}
+      </label>
+    }
+  </ng-template>
   @if (!photos().length) {
-    <p class="spa-empty">Cargue la fotografía de «Sonrisa» (o la frontal) en la sección de Fotografías para marcar la línea media, las comisuras y los dientes anteriores.</p>
+    <div class="spa-empty">
+      <p>Suba la fotografía de sonrisa (extraoral, de frente y sonriendo) para marcar la línea media, las comisuras y los dientes anteriores. Queda guardada en «Fotos y radiografías».</p>
+      <ng-container [ngTemplateOutlet]="uploadBtn" />
+    </div>
   } @else {
     <div class="spa-photos">
       @for (ph of photos(); track ph.id) {
         <button type="button" [class.on]="ph.id === current()?.id" [disabled]="disabled()" (click)="selectPhoto(ph)">{{ ph.label }}</button>
       }
+      <ng-container [ngTemplateOutlet]="uploadBtn" />
     </div>
     <div class="spa-main">
       <div class="spa-stage">
