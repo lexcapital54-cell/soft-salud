@@ -41,6 +41,13 @@
     .error { color: #8a1f1f; }
     .ok { color: #0d5c5f; }
     .hidden { display: none; }
+    .detail {
+      margin-top: 14px; border: 1px solid #cfe3e4; border-left: 4px solid var(--brand);
+      border-radius: 14px; padding: 12px 14px; background: #f6fbfb; font-size: .9rem;
+    }
+    .detail h2 { margin: 0 0 6px; font-size: 1rem; }
+    .detail h3 { margin: 10px 0 4px; font-size: .9rem; color: var(--brand); }
+    .detail ul { margin: 0; padding-left: 18px; }
   </style>
 </head>
 <body>
@@ -51,6 +58,7 @@
       <h1 id="title">Cargando…</h1>
       <p class="meta" id="meta"></p>
       <div class="doc" id="doc"></div>
+      <div class="detail hidden" id="detail"></div>
       <p class="meta" style="margin-top:14px">Dibuje su firma abajo con el dedo o el mouse:</p>
       <div class="pad-wrap"><canvas id="pad" width="680" height="180"></canvas></div>
       <div class="actions">
@@ -152,6 +160,27 @@
         }
       };
 
+      function renderDetail(sections) {
+        var box = document.getElementById('detail');
+        if (!sections.length) return;
+        var title = document.createElement('h2');
+        title.textContent = 'Detalle del procedimiento';
+        box.appendChild(title);
+        sections.forEach(function (section) {
+          var h = document.createElement('h3');
+          h.textContent = section.title;
+          var ul = document.createElement('ul');
+          (section.items || []).forEach(function (item) {
+            var li = document.createElement('li');
+            li.textContent = item;
+            ul.appendChild(li);
+          });
+          box.appendChild(h);
+          box.appendChild(ul);
+        });
+        box.classList.remove('hidden');
+      }
+
       async function load() {
         if (!token) {
           setMsg('Enlace incompleto. Solicite uno nuevo a su profesional.', true);
@@ -167,6 +196,7 @@
             data.clinicName + ' · ' + data.patientName +
             ' · Caduca: ' + new Date(data.expiresAt).toLocaleString('es-CO');
           document.getElementById('doc').innerHTML = data.template.bodyHtml || '';
+          renderDetail(data.procedureSummary || []);
           fitCanvas();
         } catch (err) {
           setMsg(err.message || 'No se pudo cargar el documento', true);

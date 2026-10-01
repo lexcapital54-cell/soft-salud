@@ -1894,14 +1894,17 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     const encId = this.encounter()?.id;
     const rows = this.consentSigner?.signed() || [];
     const match = rows.find(
-      (r) => r.template?.code === code && (!encId || !r.encounterId || r.encounterId === encId),
+      (r) =>
+        r.template?.code === code &&
+        r.status !== 'REVOCADO' &&
+        (!encId || !r.encounterId || r.encounterId === encId),
     );
     return match?.signedAt || null;
   }
 
   orthoSignedConsents(): SignedConsentInfo[] {
     return (this.consentSigner?.signed() || [])
-      .filter((r) => r.template?.code)
+      .filter((r) => r.template?.code && r.status !== 'REVOCADO')
       .map((r) => ({ code: r.template!.code, signedAt: r.signedAt, version: r.template?.version ?? null, signer: r.signerName || '' }));
   }
 

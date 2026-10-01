@@ -1,4 +1,5 @@
 import { ClinicSpecialty, PrismaClient } from '@prisma/client';
+import { seedCiConsents } from '../../src/modules/clinical/consent-ci/ci-consent.seed';
 
 type ConsentSeed = {
   code: string;
@@ -561,6 +562,7 @@ export async function seedConsents(prisma: PrismaClient) {
       upserted += 1;
     }
   }
+  upserted += await seedCiConsents(prisma);
 
   return { templates: upserted, version: 1 };
 }

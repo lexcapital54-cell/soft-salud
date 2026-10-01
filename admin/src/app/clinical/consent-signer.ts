@@ -11,6 +11,7 @@ import {
   input,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -19,12 +20,15 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import SignaturePad from 'signature_pad';
 import { ClinicalApiService } from './clinical-api.service';
-import { ConsentTemplate, PatientConsentRecord } from './consent.models';
+import { ConsentCiDetails } from './consent-ci/consent-ci-details';
+import { ciProgress, emptyCiDetails, isCiSpec } from './consent-ci/consent-ci.logic';
+import { ConsentRevokeDialog } from './consent-ci/consent-revoke-dialog';
+import { CiConsentDetails, ConsentTemplate, PatientConsentRecord } from './consent.models';
 import { DOCUMENT_TYPES } from './document-types';
 
 @Component({
   selector: 'app-consent-signer',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, ConsentCiDetails, ConsentRevokeDialog],
   templateUrl: './consent-signer.html',
   styleUrl: './consent-signer.scss',
 })
@@ -111,6 +115,22 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
   readonly selected = computed(
     () => this.templates().find((t) => t.id === this.selectedId()) ?? null,
   );
+
+  @ViewChild(ConsentRevokeDialog)
+  private revokeDialog?: ConsentRevokeDialog;
+  readonly revokeTarget = signal<PatientConsentRecord | null>(null);
+
+  /** Plantilla CI estructurada (CI-OD-001 / CI-ORT-002 / CI-CIR-003). */
+  readonly ciSpec = computed(() => {
+    const body = this.selected()?.bodyJson;
+    return isCiSpec(body) ? body : null;
+  });
+  readonly ciDetails = signal<CiConsentDetails | null>(null);
+  readonly ciMissing = computed(() => {
+    const spec = this.ciSpec();
+    const details = this.ciDetails();
+    return spec && details ? ciProgress(spec, details).missing : [];
+  });
 
   /** Firma que ya quedó sellada en un consentimiento (presencial o por WhatsApp). */
   private readonly sealedSignature = signal<string | null>(null);
@@ -224,6 +244,54 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
       if (!this.ready) return;
       setTimeout(() => this.initPads(), 0);
     });
+
+    effect(() => {
+      const spec = this.ciSpec();
+      const current = untracked(this.ciDetails);
+      if (!spec) {
+        if (current) this.ciDetails.set(null);
+        return;
+      }
+      if (current?.code !== spec.code) this.ciDetails.set(emptyCiDetails(spec));
+    });
+  }
+
+  /** Bloquea el sellado de un CI sin detalle completo y lleva al formulario. */
+  private ciBlocked(): boolean {
+    const missing = this.ciMissing();
+    if (!this.ciSpec() || !missing.length) return false;
+    this.error.set(`Complete el detalle del ${this.ciSpec()!.code}: ${missing.join(' · ')}.`);
+    document
+      .getElementById('consent-ci-details')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return true;
+  }
+
+  startRevoke(consent: PatientConsentRecord) {
+    this.revokeTarget.set(consent);
+    setTimeout(() => this.revokeDialog?.open(consent.signerName || this.signerName));
+  }
+
+  async onRevoked(result: PatientConsentRecord) {
+    this.message.set(
+      result.message || 'Consentimiento revocado. Se generó el PDF sellado de la revocatoria.',
+    );
+    this.revokeTarget.set(null);
+    const pid = this.patientId();
+    if (pid) await this.loadSigned(pid);
+    this.flagsChanged.emit();
+  }
+
+  async openRevocationPdf(id: string) {
+    this.error.set('');
+    try {
+      const blob = await firstValueFrom(this.api.downloadConsentRevocationPdf(id));
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      this.error.set('No se pudo abrir el PDF de la revocatoria.');
+    }
   }
 
   /** Pinta en el lienzo de la Dra la firma hecha en el panel Ley 527. */
@@ -419,6 +487,7 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
       this.error.set('Seleccione la plantilla legal a firmar.');
       return;
     }
+    if (this.ciBlocked()) return;
     this.remoteInviteBusy.set(true);
     try {
       const res = await firstValueFrom(
@@ -426,6 +495,7 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
           patientId,
           encounterId,
           templateId: template.id,
+          procedureDetails: this.ciDetails() ?? undefined,
         }),
       );
       this.remoteInviteId.set(res.id);
@@ -554,6 +624,7 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
       this.error.set('Seleccione una plantilla legal.');
       return false;
     }
+    if (this.ciBlocked()) return false;
     const signatureBase64 = this.currentPatientSignature();
     if (!signatureBase64) {
       this.error.set(
@@ -586,8 +657,11 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
           signerDocument: this.signerDocument.trim() || undefined,
           signatureBase64,
           professionalSignatureBase64,
+          procedureDetails: this.ciDetails() ?? undefined,
         }),
       );
+      const spec = this.ciSpec();
+      if (spec) this.ciDetails.set(emptyCiDetails(spec));
 
       this.message.set(
         result.message || 'Documento aceptado, firmado y sellado como PDF inalterable.',

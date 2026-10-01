@@ -589,6 +589,9 @@ export const ORTHO_HABITS: CheckItem[] = [
 
 /** Consentimientos que se pueden exigir en la atención (código de plantilla → etiqueta). */
 export const DENTAL_CONSENT_OPTIONS: CheckItem[] = [
+  { key: 'CI-OD-001', label: 'CI-OD-001 · Odontología general y diagnóstico' },
+  { key: 'CI-ORT-002', label: 'CI-ORT-002 · Ortodoncia y ortopedia maxilar' },
+  { key: 'CI-CIR-003', label: 'CI-CIR-003 · Cirugía oral y extracciones' },
   { key: 'ODO_INFORMED', label: 'Tratamiento odontológico general' },
   { key: 'ODO_EXTRACTION', label: 'Extracción dental' },
   { key: 'ODO_ORAL_SURGERY', label: 'Cirugía oral' },
@@ -609,6 +612,9 @@ export const DENTAL_CONSENT_OPTIONS: CheckItem[] = [
 
 /** Deben coincidir con las plantillas sembradas para cada especialidad (seedConsents). */
 export const ORTHO_CONSENT_KEYS = new Set([
+  'CI-OD-001',
+  'CI-ORT-002',
+  'CI-CIR-003',
   'ODO_ORTHODONTICS',
   'ORT_RETENTION',
   'ORT_ALIGNERS',

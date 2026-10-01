@@ -855,6 +855,19 @@ model PatientConsent {
   contentHash        String?           @map("content_hash") @db.VarChar(128)
   immutableAt        DateTime?         @map("immutable_at") @db.Timestamptz(6)
   createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  /// ACEPTADO | REVOCADO (PENDIENTE_FIRMA vive en RemoteConsentInvite).
+  status                      String    @default("ACEPTADO") @db.VarChar(20)
+  /// Detalle estructurado de los CI (dientes FDI, opciones, riesgos aceptados).
+  procedureDetails            Json?     @map("procedure_details")
+  professionalSignatureBase64 String?   @map("professional_signature_base64")
+  revokedAt                   DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revocationReason            String?   @map("revocation_reason")
+  revocationSignerName        String?   @map("revocation_signer_name") @db.VarChar(160)
+  revocationSignatureBase64   String?   @map("revocation_signature_base64")
+  revocationIp                String?   @map("revocation_ip") @db.VarChar(60)
+  revocationUserAgent         String?   @map("revocation_user_agent")
+  revocationHash              String?   @map("revocation_hash") @db.VarChar(128)
+  revocationPdfStorageKey     String?   @map("revocation_pdf_storage_key")
 
   @@index([patientId, templateId])
   @@index([encounterId])
@@ -884,6 +897,8 @@ model RemoteConsentInvite {
   expiresAt       DateTime        @map("expires_at") @db.Timestamptz(6)
   usedAt          DateTime?       @map("used_at") @db.Timestamptz(6)
   patientConsentId String?        @map("patient_consent_id") @db.Uuid
+  /// Detalle CI diligenciado por la profesional antes de enviar el enlace.
+  procedureDetails Json?          @map("procedure_details")
   createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([clinicId, status])

@@ -4,10 +4,14 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ClinicSpecialty, ConsentSignerRole, Prisma } from '@prisma/client';
 import { User } from '../../users/user.entity';
 import { PrismaService } from '../../prisma/prisma.module';
+import { seedCiConsents } from './consent-ci/ci-consent.seed';
+import { CiConsentDetails, isCiConsentSpec } from './consent-ci/ci-consent.types';
+import { ciDetailsSummary, validateCiDetails } from './consent-ci/ci-consent.validation';
 import { fillConsentPlaceholders } from './consent-placeholders';
 import { ConsentPdfService } from './consent-pdf.service';
 import { CreatePatientConsentDto } from './dto/consent.dto';
@@ -15,13 +19,47 @@ import { CreatePatientConsentDto } from './dto/consent.dto';
 const MINOR_DOCUMENT_TYPES = new Set(['TI', 'RC', 'CN', 'MS']);
 
 @Injectable()
-export class ConsentsService {
+export class ConsentsService implements OnModuleInit {
   private readonly logger = new Logger(ConsentsService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly consentPdf: ConsentPdfService,
   ) {}
+
+  async onModuleInit() {
+    try {
+      await seedCiConsents(this.prisma);
+    } catch (error) {
+      this.logger.warn(
+        `No se pudieron aprovisionar las plantillas CI: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * Si la plantilla es un CI estructurado, exige y normaliza el detalle;
+   * en otras plantillas el detalle se ignora.
+   */
+  resolveCiDetails(
+    template: { bodyJson: Prisma.JsonValue | null },
+    raw: unknown,
+  ): CiConsentDetails | null {
+    const spec = template.bodyJson;
+    if (!isCiConsentSpec(spec)) return null;
+    if (!raw) {
+      throw new BadRequestException(
+        `Diligencie el detalle del procedimiento del ${spec.code} (dientes, opciones y riesgos) antes de firmar.`,
+      );
+    }
+    const result = validateCiDetails(spec, raw);
+    if (!result.ok) {
+      throw new BadRequestException(result.errors.join(' '));
+    }
+    return result.details;
+  }
 
   private requireClinicId(user: User) {
     if (!user.clinicId) {
@@ -58,6 +96,7 @@ export class ConsentsService {
         version: true,
         specialty: true,
         bodyHtml: true,
+        bodyJson: true,
         updatedAt: true,
       },
     });
@@ -129,6 +168,17 @@ export class ConsentsService {
     };
   }
 
+  private patientAge(birthDate: Date | null): number | null {
+    if (!birthDate) return null;
+    const birth = new Date(birthDate);
+    if (Number.isNaN(birth.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age -= 1;
+    return age >= 0 ? age : null;
+  }
+
   private patientIsMinor(patient: {
     birthDate: Date | null;
     documentType: string | null;
@@ -183,6 +233,8 @@ export class ConsentsService {
     }
 
     const template = await this.getTemplate(user, dto.templateId);
+    const ciDetails = this.resolveCiDetails(template, dto.procedureDetails);
+    const ciSpec = isCiConsentSpec(template.bodyJson) ? template.bodyJson : null;
 
     let professionalName = user.fullName?.trim() || '';
     let professionalCard = user.professionalCard?.trim() || '';
@@ -312,6 +364,11 @@ export class ConsentsService {
         pdfStorageKey: null,
         contentHash: null,
         immutableAt: null,
+        status: 'ACEPTADO',
+        procedureDetails: ciDetails
+          ? (ciDetails as unknown as Prisma.InputJsonValue)
+          : Prisma.DbNull,
+        professionalSignatureBase64: dto.professionalSignatureBase64 ?? null,
       },
       include: {
         template: {
@@ -328,6 +385,17 @@ export class ConsentsService {
         clinicName: clinic.name,
         clinicAddress: clinic.address,
         clinicPhone: clinic.phone,
+        clinicNit: clinic.nit,
+        clinicHabilitationCode: clinic.habilitationCode,
+        patientAge: this.patientAge(patient.birthDate),
+        patientPhone: patient.phone,
+        patientEmail: patient.email,
+        patientCity: patient.city,
+        guardianRelationship: isMinor ? patient.guardianRelationship : null,
+        professionalRole: ciSpec?.professionalRole ?? null,
+        procedureSummary:
+          ciSpec && ciDetails ? ciDetailsSummary(ciSpec, ciDetails) : [],
+        procedureDetails: ciDetails,
         templateCode: template.code,
         templateTitle: template.title,
         templateVersion: template.version,

@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'crypto';
-import { createWriteStream, existsSync, mkdirSync } from 'fs';
-import * as fs from 'fs/promises';
+import { createWriteStream, mkdirSync } from 'fs';
 import * as path from 'path';
 // pdfmake CJS — tipado laxo por incompatibilidad ESM/CJS de @types/pdfmake
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -12,36 +11,15 @@ const PdfPrinter = require('pdfmake') as new (fonts: Record<string, unknown>) =>
     end: () => void;
   };
 };
-import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
-import { ConsentSignerRole } from '@prisma/client';
+import type { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { ClinicalStorageService } from './clinical-storage.service';
+import { ConsentPdfInput, buildConsentDocument } from './consent-pdf.document';
+import {
+  ConsentRevocationPdfInput,
+  buildRevocationDocument,
+} from './consent-revocation.document';
 
-export type ConsentPdfInput = {
-  consentId: string;
-  clinicId: string;
-  clinicName: string;
-  clinicAddress?: string | null;
-  clinicPhone?: string | null;
-  templateCode: string;
-  templateTitle: string;
-  templateVersion: number;
-  /** HTML ya diligenciado (placeholders rellenados) que el paciente aceptó. */
-  bodyHtml: string;
-  patientName: string;
-  patientDocument: string;
-  patientDocumentType: string;
-  signerName: string;
-  signerDocument: string;
-  signatureBase64: string;
-  signedAt: Date;
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  encounterId?: string | null;
-  professionalName?: string | null;
-  professionalCard?: string | null;
-  professionalSignatureBase64?: string | null;
-  signerRole?: ConsentSignerRole | string | null;
-};
+export type { ConsentPdfInput } from './consent-pdf.document';
 
 export type ConsentPdfResult = {
   pdfStorageKey: string;
@@ -49,6 +27,14 @@ export type ConsentPdfResult = {
   contentHash: string;
   immutableAt: Date;
 };
+
+function sha256(parts: string[]) {
+  return createHash('sha256').update(parts.join('|')).digest('hex');
+}
+
+function asDataUrl(value: string) {
+  return value.startsWith('data:') ? value : `data:image/png;base64,${value}`;
+}
 
 @Injectable()
 export class ConsentPdfService {
@@ -82,340 +68,68 @@ export class ConsentPdfService {
   }
 
   async seal(input: ConsentPdfInput): Promise<ConsentPdfResult> {
-    const relativeKey = path.join(
-      'consents',
-      input.clinicId,
-      `${input.consentId}.pdf`,
-    );
-    const absolutePath = this.resolveAbsolutePath(relativeKey);
-    mkdirSync(path.dirname(absolutePath), { recursive: true });
-
-    const bodyBlocks = this.htmlToPdfContent(input.bodyHtml);
-    const signatureDataUrl = input.signatureBase64.startsWith('data:')
-      ? input.signatureBase64
-      : `data:image/png;base64,${input.signatureBase64}`;
-
-    const signedAtIso = input.signedAt.toISOString();
-    const signedAtLocal = input.signedAt.toLocaleString('es-CO', {
-      timeZone: 'America/Bogota',
-      dateStyle: 'full',
-      timeStyle: 'medium',
-    });
-
-    const hashPayload = [
+    const signature = asDataUrl(input.signatureBase64);
+    const contentHash = sha256([
       input.consentId,
       input.templateCode,
       String(input.templateVersion),
       input.bodyHtml,
+      JSON.stringify(input.procedureDetails ?? null),
       input.signerName,
       input.signerDocument,
-      signatureDataUrl.slice(0, 128),
-      (input.professionalSignatureBase64 || '').slice(0, 128),
-      signedAtIso,
+      signature,
+      input.professionalSignatureBase64 || '',
+      input.signedAt.toISOString(),
       input.ipAddress || '',
-    ].join('|');
-    const contentHash = createHash('sha256').update(hashPayload).digest('hex');
+      input.userAgent || '',
+    ]);
+    const docDefinition = buildConsentDocument(
+      { ...input, signatureBase64: signature },
+      contentHash,
+    );
+    const key = await this.writeAndPersist(
+      docDefinition,
+      path.join('consents', input.clinicId, `${input.consentId}.pdf`),
+    );
+    return { ...key, contentHash, immutableAt: new Date() };
+  }
 
-    const signerRoleLabel =
-      input.signerRole === ConsentSignerRole.LEGAL_GUARDIAN
-        ? 'Acudiente / representante legal'
-        : input.signerRole === ConsentSignerRole.ASSENT
-          ? 'Asentimiento del menor'
-          : 'Paciente';
-    const primarySignatureLabel =
-      input.signerRole === ConsentSignerRole.LEGAL_GUARDIAN
-        ? 'Firma acudiente / representante legal'
-        : 'Firma paciente';
+  /** PDF independiente de revocatoria: el PDF original sellado no se modifica. */
+  async sealRevocation(
+    clinicId: string,
+    input: ConsentRevocationPdfInput,
+  ): Promise<ConsentPdfResult> {
+    const signature = asDataUrl(input.signatureBase64);
+    const contentHash = sha256([
+      input.consentId,
+      input.originalHash || '',
+      input.reason,
+      input.signerName,
+      signature,
+      input.revokedAt.toISOString(),
+      input.ipAddress || '',
+      input.userAgent || '',
+    ]);
+    const docDefinition = buildRevocationDocument(
+      { ...input, signatureBase64: signature },
+      contentHash,
+    );
+    const key = await this.writeAndPersist(
+      docDefinition,
+      path.join('consents', clinicId, `${input.consentId}-revocatoria.pdf`),
+    );
+    return { ...key, contentHash, immutableAt: new Date() };
+  }
 
-    const docDefinition: TDocumentDefinitions = {
-      pageMargins: [48, 56, 48, 56],
-      defaultStyle: {
-        font: 'Helvetica',
-        fontSize: 10,
-        lineHeight: 1.35,
-        color: '#1f2937',
-      },
-      content: [
-        {
-          columns: [
-            {
-              width: '*',
-              stack: [
-                {
-                  text: 'HABILISALUD',
-                  style: 'brand',
-                },
-                {
-                  text: input.clinicName,
-                  style: 'clinicName',
-                },
-                {
-                  text: [input.clinicAddress, input.clinicPhone]
-                    .filter(Boolean)
-                    .join(' · '),
-                  style: 'muted',
-                  margin: [0, 2, 0, 0],
-                },
-              ],
-            },
-            {
-              width: 'auto',
-              alignment: 'right',
-              stack: [
-                { text: 'DOCUMENTO SELLADO', style: 'sealBadge' },
-                { text: `Código ${input.templateCode}`, style: 'muted' },
-                { text: `Versión ${input.templateVersion}`, style: 'muted' },
-              ],
-            },
-          ],
-        },
-        {
-          canvas: [
-            {
-              type: 'line',
-              x1: 0,
-              y1: 0,
-              x2: 500,
-              y2: 0,
-              lineWidth: 1,
-              lineColor: '#0D7377',
-            },
-          ],
-          margin: [0, 12, 0, 16],
-        },
-        { text: input.templateTitle, style: 'title' },
-        {
-          text: 'Datos del paciente y firmante',
-          style: 'section',
-          margin: [0, 14, 0, 6],
-        },
-        {
-          table: {
-            widths: ['35%', '65%'],
-            body: [
-              ['Paciente', input.patientName],
-              [
-                'Documento paciente',
-                `${input.patientDocumentType} ${input.patientDocument}`,
-              ],
-              ['Firmante', input.signerName],
-              ['Rol del firmante', signerRoleLabel],
-              ['Documento firmante', input.signerDocument],
-              [
-                'Profesional tratante',
-                input.professionalName
-                  ? `${input.professionalName}${
-                      input.professionalCard
-                        ? ` · TP ${input.professionalCard}`
-                        : ''
-                    }`
-                  : 'N/A',
-              ],
-              ['Atención (encounter)', input.encounterId || 'N/A'],
-            ],
-          },
-          layout: {
-            hLineColor: () => '#e5e7eb',
-            vLineColor: () => '#e5e7eb',
-            paddingLeft: () => 6,
-            paddingRight: () => 6,
-            paddingTop: () => 4,
-            paddingBottom: () => 4,
-          },
-          margin: [0, 0, 0, 12],
-        },
-        {
-          text: 'Texto legal aceptado',
-          style: 'section',
-          margin: [0, 4, 0, 8],
-        },
-        ...bodyBlocks,
-        {
-          text: 'Firmas',
-          style: 'section',
-          margin: [0, 18, 0, 8],
-        },
-        {
-          columns: [
-            {
-              width: '*',
-              stack: [
-                {
-                  text: primarySignatureLabel,
-                  style: 'muted',
-                  margin: [0, 0, 0, 6],
-                },
-                {
-                  image: signatureDataUrl,
-                  width: 200,
-                  height: 80,
-                  margin: [0, 0, 0, 6],
-                },
-                {
-                  canvas: [
-                    {
-                      type: 'line',
-                      x1: 0,
-                      y1: 0,
-                      x2: 200,
-                      y2: 0,
-                      lineWidth: 0.8,
-                      lineColor: '#9ca3af',
-                    },
-                  ],
-                },
-                {
-                  text: `${input.signerName} · Doc. ${input.signerDocument}`,
-                  style: 'muted',
-                  margin: [0, 4, 0, 0],
-                },
-              ],
-            },
-            {
-              width: '*',
-              stack: [
-                {
-                  text: 'Firma Dra',
-                  style: 'muted',
-                  margin: [0, 0, 0, 6],
-                },
-                ...(input.professionalSignatureBase64
-                  ? ([
-                      {
-                        image: input.professionalSignatureBase64.startsWith(
-                          'data:',
-                        )
-                          ? input.professionalSignatureBase64
-                          : `data:image/png;base64,${input.professionalSignatureBase64}`,
-                        width: 200,
-                        height: 80,
-                        margin: [0, 0, 0, 6],
-                      },
-                      {
-                        canvas: [
-                          {
-                            type: 'line',
-                            x1: 0,
-                            y1: 0,
-                            x2: 200,
-                            y2: 0,
-                            lineWidth: 0.8,
-                            lineColor: '#9ca3af',
-                          },
-                        ],
-                      },
-                    ] as Content[])
-                  : ([
-                      {
-                        text: '(Sin firma profesional en este sello)',
-                        style: 'muted',
-                        margin: [0, 28, 0, 12],
-                      },
-                    ] as Content[])),
-                {
-                  text: input.professionalName
-                    ? `${input.professionalName}${
-                        input.professionalCard
-                          ? ` · TP ${input.professionalCard}`
-                          : ''
-                      }`
-                    : 'Profesional tratante',
-                  style: 'muted',
-                  margin: [0, 4, 0, 0],
-                },
-              ],
-            },
-          ],
-          columnGap: 24,
-        },
-        {
-          text: 'Sello de tiempo y trazabilidad',
-          style: 'section',
-          margin: [0, 18, 0, 6],
-        },
-        {
-          ul: [
-            `Fecha/hora (America/Bogota): ${signedAtLocal}`,
-            `Timestamp UTC: ${signedAtIso}`,
-            `IP de firma: ${input.ipAddress || 'no registrada'}`,
-            `User-Agent: ${(input.userAgent || 'no registrado').slice(0, 160)}`,
-            `Hash SHA-256 del contenido: ${contentHash}`,
-            `ID consentimiento: ${input.consentId}`,
-          ],
-          style: 'muted',
-        },
-        {
-          text:
-            'Documento generado por HABILISALUD. Una vez sellado, el PDF se considera evidencia inalterable del consentimiento informado / autorización de datos. Conservación según normativa clínica vigente.',
-          style: 'footerNote',
-          margin: [0, 20, 0, 0],
-        },
-      ],
-      styles: {
-        brand: {
-          fontSize: 16,
-          bold: true,
-          color: '#003D4C',
-          characterSpacing: 0.4,
-        },
-        clinicName: {
-          fontSize: 11,
-          color: '#0D7377',
-          margin: [0, 2, 0, 0],
-        },
-        sealBadge: {
-          fontSize: 9,
-          bold: true,
-          color: '#003D4C',
-          characterSpacing: 0.6,
-        },
-        title: {
-          fontSize: 13,
-          bold: true,
-          color: '#003D4C',
-          alignment: 'center',
-          margin: [0, 0, 0, 4],
-        },
-        section: {
-          fontSize: 11,
-          bold: true,
-          color: '#0D7377',
-        },
-        muted: {
-          fontSize: 9,
-          color: '#6b7280',
-        },
-        footerNote: {
-          fontSize: 8,
-          color: '#6b7280',
-          italics: true,
-        },
-        body: {
-          fontSize: 10,
-          alignment: 'justify',
-          margin: [0, 0, 0, 6],
-        },
-        heading: {
-          fontSize: 11,
-          bold: true,
-          color: '#003D4C',
-          margin: [0, 8, 0, 4],
-        },
-      },
-    };
-
+  private async writeAndPersist(docDefinition: TDocumentDefinitions, relativeKey: string) {
+    const absolutePath = this.resolveAbsolutePath(relativeKey);
+    mkdirSync(path.dirname(absolutePath), { recursive: true });
     await this.writePdf(docDefinition, absolutePath);
     const pdfStorageKey = relativeKey.replace(/\\/g, '/');
     // Fuente de verdad en Postgres (además del espejo en disco).
     await this.storage.persistExisting(pdfStorageKey, 'application/pdf');
     this.logger.log(`PDF sellado y guardado en BD: ${pdfStorageKey}`);
-
-    return {
-      pdfStorageKey,
-      absolutePath,
-      contentHash,
-      immutableAt: new Date(),
-    };
+    return { pdfStorageKey, absolutePath };
   }
 
   private writePdf(
@@ -438,32 +152,5 @@ export class ConsentPdfService {
 
   async readPdfBuffer(storageKey: string): Promise<Buffer> {
     return this.storage.readBuffer(storageKey);
-  }
-
-  /** Convierte HTML simple de plantillas a bloques pdfmake. */
-  private htmlToPdfContent(html: string): Content[] {
-    const normalized = html
-      .replace(/<\/(p|div|h1|h2|h3|li|tr)>/gi, '\n')
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/?(ul|ol|table|section|thead|tbody)>/gi, '\n')
-      .replace(/<li[^>]*>/gi, '• ')
-      .replace(/<h[1-3][^>]*>/gi, '§ ')
-      .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
-
-    const lines = normalized.split('\n').map((l) => l.trim()).filter(Boolean);
-    return lines.map((line) => {
-      if (line.startsWith('§ ')) {
-        return { text: line.replace(/^§\s*/, ''), style: 'heading' };
-      }
-      return { text: line, style: 'body' };
-    });
   }
 }

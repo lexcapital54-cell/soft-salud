@@ -1,0 +1,188 @@
+@let s = spec();
+@let d = details();
+@let p = progress();
+<section class="ci" id="consent-ci-details" [class.done]="!p.missing.length">
+  <header class="ci-head">
+    <div>
+      <p class="ci-eyebrow">{{ s.code }} · {{ s.professionalRole }}</p>
+      <h4>Detalle del procedimiento</h4>
+      <p class="ci-sub">Se imprime en el PDF sellado y forma parte del consentimiento.</p>
+    </div>
+    <div class="ci-meter" [attr.aria-label]="'Avance ' + percent() + '%'">
+      <strong>{{ p.done }}/{{ p.total }}</strong>
+      <span class="ci-bar"><span [style.width.%]="percent()"></span></span>
+      <small>{{ p.missing.length ? 'Pendiente' : 'Completo' }}</small>
+    </div>
+  </header>
+
+  @if (p.missing.length) {
+    <p class="ci-missing">Falta: {{ p.missing.join(' · ') }}</p>
+  }
+
+  <div class="ci-block">
+    <div class="ci-block-head">
+      <h5>
+        {{ s.teethLabel }}
+        @if (s.teeth === 'required') {
+          <span class="req">*</span>
+        }
+      </h5>
+      <div class="ci-tools">
+        <button type="button" class="chip-btn" (click)="addThirdMolars()" [disabled]="disabled()">
+          + Terceros molares
+        </button>
+        <button type="button" class="chip-btn" (click)="showPrimary.set(!showPrimary())">
+          {{ showPrimary() ? 'Ocultar temporales' : 'Dentición temporal' }}
+        </button>
+        @if (d.teeth.length) {
+          <button type="button" class="chip-btn ghost" (click)="clearTeeth()" [disabled]="disabled()">
+            Limpiar
+          </button>
+        }
+      </div>
+    </div>
+    <div class="fdi">
+      @for (row of permanentRows; track $index) {
+        <div class="fdi-row">
+          @for (t of row; track t) {
+            <button
+              type="button"
+              class="tooth"
+              [class.on]="hasTooth(t)"
+              [class.mid]="t % 10 === 1 && (t < 20 || (t > 40 && t < 50))"
+              [attr.aria-pressed]="hasTooth(t)"
+              [disabled]="disabled()"
+              (click)="toggleTooth(t)"
+            >
+              {{ t }}
+            </button>
+          }
+        </div>
+      }
+      @if (showPrimary()) {
+        @for (row of primaryRows; track $index) {
+          <div class="fdi-row primary">
+            @for (t of row; track t) {
+              <button
+                type="button"
+                class="tooth"
+                [class.on]="hasTooth(t)"
+                [class.mid]="t % 10 === 1 && (t < 60 || (t > 80))"
+                [attr.aria-pressed]="hasTooth(t)"
+                [disabled]="disabled()"
+                (click)="toggleTooth(t)"
+              >
+                {{ t }}
+              </button>
+            }
+          </div>
+        }
+      }
+    </div>
+    <p class="ci-hint">
+      @if (d.teeth.length) {
+        Seleccionados: <strong>{{ d.teeth.join(', ') }}</strong>
+      } @else {
+        Toque los dientes en el esquema (nomenclatura FDI).
+      }
+    </p>
+  </div>
+
+  @for (group of s.options; track group.key) {
+    <div class="ci-block">
+      <h5>
+        {{ group.label }}
+        @if (group.required) {
+          <span class="req">*</span>
+        }
+        <small class="ci-mode">{{ group.multiple ? 'varias opciones' : 'una opción' }}</small>
+      </h5>
+      @if (group.hint) {
+        <p class="ci-hint">{{ group.hint }}</p>
+      }
+      <div class="chips">
+        @for (c of group.choices; track c.value) {
+          <button
+            type="button"
+            class="chip"
+            [class.on]="picked(group, c.value)"
+            [class.radio]="!group.multiple"
+            [attr.aria-pressed]="picked(group, c.value)"
+            [disabled]="disabled()"
+            (click)="pick(group, c.value)"
+          >
+            {{ c.label }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="ci-block">
+    <h5>
+      Riesgos específicos explicados al paciente <span class="req">*</span>
+      <small class="ci-mode">{{ risksDone() }}/{{ s.risks.length }}</small>
+    </h5>
+    <p class="ci-hint">Explique cada riesgo y márquelo cuando el paciente lo haya entendido.</p>
+    <ul class="risks">
+      @for (r of s.risks; track r.key) {
+        <li [class.on]="riskAccepted(r.key)">
+          <label class="risk-check">
+            <input
+              type="checkbox"
+              [checked]="riskAccepted(r.key)"
+              [disabled]="disabled()"
+              (change)="toggleRisk(r.key)"
+            />
+            <span>{{ r.label }}</span>
+          </label>
+          <button
+            type="button"
+            class="risk-more"
+            [attr.aria-expanded]="openRisk() === r.key"
+            (click)="toggleRiskDetail(r.key)"
+          >
+            {{ openRisk() === r.key ? 'Ocultar' : 'Qué es' }}
+          </button>
+          @if (openRisk() === r.key) {
+            <p class="risk-detail">{{ r.detail }}</p>
+          }
+        </li>
+      }
+    </ul>
+  </div>
+
+  <div class="ci-block">
+    <h5>Declaraciones del paciente <span class="req">*</span></h5>
+    <ul class="decls">
+      @for (x of s.declarations; track x.key) {
+        <li [class.on]="declarationAccepted(x.key)">
+          <label>
+            <input
+              type="checkbox"
+              [checked]="declarationAccepted(x.key)"
+              [disabled]="disabled()"
+              (change)="toggleDeclaration(x.key)"
+            />
+            <span>
+              <strong>{{ x.label }}</strong>
+              <small>{{ x.detail }}</small>
+            </span>
+          </label>
+        </li>
+      }
+    </ul>
+  </div>
+
+  <label class="ci-notes">
+    Observaciones del profesional (opcional)
+    <textarea
+      rows="2"
+      maxlength="2000"
+      [value]="d.notes"
+      [disabled]="disabled()"
+      placeholder="Aclaraciones del caso, alternativas discutidas, indicaciones particulares…"
+      (input)="setNotes($any($event.target).value)"
+    ></textarea>
+  </label>
+</section>

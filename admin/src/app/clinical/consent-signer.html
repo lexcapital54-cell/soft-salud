@@ -82,6 +82,17 @@
     </label>
   </div>
 
+  @if (ciSpec(); as spec) {
+    @if (ciDetails(); as details) {
+      <app-consent-ci-details
+        [spec]="spec"
+        [details]="details"
+        (detailsChange)="ciDetails.set($event)"
+        [disabled]="submitting()"
+      />
+    }
+  }
+
   <div class="pads-highlight">
     <h4 class="pads-title">Firmas obligatorias</h4>
     <div class="pads-grid" id="patient-signature-pad">
@@ -241,11 +252,19 @@
       <h4>Consentimientos firmados en esta atención / paciente</h4>
       <ul>
         @for (s of signed(); track s.id) {
-          <li>
+          <li [class.revoked]="s.status === 'REVOCADO'">
             <strong>{{ s.template?.code || 'DOC' }}</strong>
             — {{ s.template?.title || 'Plantilla' }}
+            @if (s.status === 'REVOCADO') {
+              <span class="pill revoked-pill">Revocado {{ s.revokedAt | date: 'short' }}</span>
+            } @else {
+              <span class="pill accepted-pill">Aceptado</span>
+            }
             @if (s.signerRole === 'LEGAL_GUARDIAN') {
               <span class="pill minor">Acudiente</span>
+            }
+            @if (s.procedureDetails?.teeth?.length) {
+              <span class="muted">· Dientes {{ s.procedureDetails!.teeth.join(', ') }}</span>
             }
             <span class="muted">
               · {{ s.signedAt | date: 'short' }}
@@ -258,9 +277,22 @@
             @if (s.pdfStorageKey) {
               <button type="button" class="linkish" (click)="openPdf(s.id)">Ver PDF</button>
             }
+            @if (s.revocationPdfStorageKey) {
+              <button type="button" class="linkish" (click)="openRevocationPdf(s.id)">
+                PDF revocatoria
+              </button>
+            } @else if (s.status !== 'REVOCADO' && s.pdfStorageKey) {
+              <button type="button" class="linkish danger" (click)="startRevoke(s)">Revocar</button>
+            }
           </li>
         }
       </ul>
     </div>
   }
+
+  <app-consent-revoke-dialog
+    [consent]="revokeTarget()"
+    (revoked)="onRevoked($event)"
+    (closed)="revokeTarget.set(null)"
+  />
 </section>

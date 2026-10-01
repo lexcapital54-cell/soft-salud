@@ -797,6 +797,7 @@ export class AppointmentsService {
         clinicId,
         patientId: { in: ids },
         template: { code: 'HABEAS_DATA' },
+        status: { not: 'REVOCADO' },
       },
       select: { patientId: true },
     });

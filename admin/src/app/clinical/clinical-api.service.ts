@@ -20,7 +20,7 @@ import {
   SivigilaCaseRow,
   SivigilaSummary,
 } from './clinical.models';
-import { ConsentTemplate, PatientConsentRecord } from './consent.models';
+import { CiConsentDetails, ConsentTemplate, PatientConsentRecord } from './consent.models';
 import { OrthoControl, OrthoHistoryEntry } from './dentistry/ortho-controls';
 import { API } from '../api.config';
 
@@ -384,12 +384,26 @@ export class ClinicalApiService {
     signerDocument?: string;
     signatureBase64: string;
     professionalSignatureBase64?: string;
+    procedureDetails?: CiConsentDetails;
   }) {
     return this.http.post<PatientConsentRecord>(`${API}/patient-consents`, body);
   }
 
   downloadPatientConsentPdf(id: string) {
     return this.http.get(`${API}/patient-consents/${id}/pdf`, {
+      responseType: 'blob',
+    });
+  }
+
+  revokePatientConsent(
+    id: string,
+    body: { reason: string; signerName?: string; signatureBase64: string },
+  ) {
+    return this.http.post<PatientConsentRecord>(`${API}/patient-consents/${id}/revoke`, body);
+  }
+
+  downloadConsentRevocationPdf(id: string) {
+    return this.http.get(`${API}/patient-consents/${id}/revocation-pdf`, {
       responseType: 'blob',
     });
   }
@@ -401,6 +415,7 @@ export class ClinicalApiService {
     encounterId: string;
     emailOverride?: string;
     phoneOverride?: string;
+    procedureDetails?: CiConsentDetails;
   }) {
     return this.http.post<{
       id: string;

@@ -6,6 +6,7 @@ import { CatalogsController } from './catalogs.controller';
 import { CatalogsService } from './catalogs.service';
 import { ClinicalStorageService } from './clinical-storage.service';
 import { ConsentPdfService } from './consent-pdf.service';
+import { ConsentRevocationService } from './consent-revocation.service';
 import { ConsentsController } from './consents.controller';
 import { ConsentsService } from './consents.service';
 import { EncountersController } from './encounters.controller';
@@ -49,6 +50,7 @@ import { OrthoTrackingService } from './ortho-tracking.service';
     FormTemplatesService,
     ConsentsService,
     ConsentPdfService,
+    ConsentRevocationService,
     ClinicalStorageService,
     ProfessionalSignatureService,
     RdaExportService,

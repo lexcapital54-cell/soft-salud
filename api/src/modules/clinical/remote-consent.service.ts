@@ -6,11 +6,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CareModality } from '@prisma/client';
+import { CareModality, Prisma } from '@prisma/client';
 import { UserRole } from '../../common/enums';
 import { User } from '../../users/user.entity';
 import { PrismaService } from '../../prisma/prisma.module';
 import { EmailSmtpProvider } from '../notifications/notification-providers';
+import { CiConsentDetails, isCiConsentSpec } from './consent-ci/ci-consent.types';
+import { ciDetailsSummary } from './consent-ci/ci-consent.validation';
 import { ConsentsService } from './consents.service';
 import { CreatePatientConsentDto } from './dto/consent.dto';
 
@@ -160,6 +162,7 @@ export class RemoteConsentService {
       encounterId?: string;
       emailOverride?: string;
       phoneOverride?: string;
+      procedureDetails?: Record<string, unknown>;
     },
   ) {
     const clinicId = this.requireClinicId(user);
@@ -171,6 +174,7 @@ export class RemoteConsentService {
     if (!patient) throw new NotFoundException('Paciente no encontrado');
 
     const template = await this.consents.getTemplate(user, dto.templateId);
+    const ciDetails = this.consents.resolveCiDetails(template, dto.procedureDetails);
 
     if (dto.encounterId) {
       const encounter = await this.prisma.encounter.findFirst({
@@ -233,6 +237,9 @@ export class RemoteConsentService {
         sentToPhone: phone.display,
         status: 'PENDING',
         expiresAt,
+        procedureDetails: ciDetails
+          ? (ciDetails as unknown as Prisma.InputJsonValue)
+          : Prisma.DbNull,
       },
     });
 
@@ -359,7 +366,14 @@ export class RemoteConsentService {
       this.prisma.patient.findUnique({ where: { id: invite.patientId } }),
       this.prisma.consentTemplate.findUnique({
         where: { id: invite.templateId },
-        select: { id: true, code: true, title: true, bodyHtml: true, version: true },
+        select: {
+          id: true,
+          code: true,
+          title: true,
+          bodyHtml: true,
+          bodyJson: true,
+          version: true,
+        },
       }),
       this.prisma.clinic.findUnique({
         where: { id: invite.clinicId },
@@ -381,6 +395,13 @@ export class RemoteConsentService {
         bodyHtml: template.bodyHtml,
         version: template.version,
       },
+      procedureSummary:
+        isCiConsentSpec(template.bodyJson) && invite.procedureDetails
+          ? ciDetailsSummary(
+              template.bodyJson,
+              invite.procedureDetails as unknown as CiConsentDetails,
+            )
+          : [],
       patientName,
       clinicName: clinic?.name || 'Consultorio',
       sentToEmail: invite.sentToEmail,
@@ -429,6 +450,8 @@ export class RemoteConsentService {
       signatureBase64: dto.signatureBase64,
       professionalSignatureBase64:
         inviter.professionalSignatureBase64 || undefined,
+      procedureDetails:
+        (invite.procedureDetails as Record<string, unknown> | null) ?? undefined,
     };
 
     const sealed = await this.consents.sign(professionalUser, signDto, meta);

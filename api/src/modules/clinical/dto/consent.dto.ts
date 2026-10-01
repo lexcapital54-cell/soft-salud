@@ -2,6 +2,7 @@ import { ConsentSignerRole } from '@prisma/client';
 import {
   IsEmail,
   IsEnum,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -47,6 +48,27 @@ export class CreatePatientConsentDto {
   @IsString()
   @MinLength(32)
   professionalSignatureBase64?: string;
+
+  /** Detalle CI (dientes, opciones, riesgos); se valida contra la plantilla. */
+  @IsOptional()
+  @IsObject()
+  procedureDetails?: Record<string, unknown>;
+}
+
+export class RevokePatientConsentDto {
+  @IsString()
+  @MinLength(5)
+  @MaxLength(2000)
+  reason: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  signerName?: string;
+
+  @IsString()
+  @MinLength(32)
+  signatureBase64: string;
 }
 
 export class SendRemoteConsentInviteDto {
@@ -67,6 +89,10 @@ export class SendRemoteConsentInviteDto {
   @IsOptional()
   @IsString()
   phoneOverride?: string;
+
+  @IsOptional()
+  @IsObject()
+  procedureDetails?: Record<string, unknown>;
 }
 
 export class PublicRemoteSignDto {
