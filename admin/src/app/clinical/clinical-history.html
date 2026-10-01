@@ -2663,6 +2663,11 @@
                   } @placeholder {
                     <p class="muted small">Cargando análisis de sonrisa…</p>
                   }
+                  @defer (on viewport) {
+                    <app-ortho-smile-photo [data]="dental()" [photos]="smilePhotoOptions()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                  } @placeholder {
+                    <p class="muted small">Cargando análisis fotográfico de sonrisa…</p>
+                  }
                   <h4 class="odo-sub">Examen funcional</h4>
                   @defer (on viewport) {
                     <app-ortho-exam-panel [data]="dental()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />

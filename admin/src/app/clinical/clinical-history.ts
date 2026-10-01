@@ -13,6 +13,7 @@ import { OrthoCaseDashboard } from './dentistry/ortho-case-dashboard';
 import { OrthoCaseIntake } from './dentistry/ortho-case-intake';
 import { OrthoExamPanel } from './dentistry/ortho-exam-panel';
 import { OrthoSmilePanel } from './dentistry/ortho-smile-panel';
+import { OrthoSmilePhoto } from './dentistry/ortho-smile-photo';
 import { OrthoFaceProportions } from './dentistry/ortho-face-proportions';
 import { OrthoMovementPlan } from './dentistry/ortho-movement-plan';
 import { OrthoArchAnalysis } from './dentistry/ortho-arch-analysis';
@@ -337,6 +338,7 @@ function emptyContent(): ClinicalContent {
     OrthoCaseIntake,
     OrthoExamPanel,
     OrthoSmilePanel,
+    OrthoSmilePhoto,
     OrthoFaceProportions,
     OrthoMovementPlan,
     OrthoArchAnalysis,
@@ -712,12 +714,19 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Análisis facial sobre fotografía ──
   facialPhotoOptions(kind: 'frontal' | 'profile'): FacialPhotoOption[] {
-    const slots = kind === 'frontal' ? ['extraFrontal', 'extraFrontalRest', 'extraSmile'] : ['extraProfileRight', 'extraProfileLeft', 'extraProfileRest'];
+    return this.photoOptions(kind === 'frontal' ? ['extraFrontal', 'extraFrontalRest', 'extraSmile'] : ['extraProfileRight', 'extraProfileLeft', 'extraProfileRest']);
+  }
+
+  smilePhotoOptions(): FacialPhotoOption[] {
+    return this.photoOptions(['extraSmile', 'extraFrontal', 'intraFrontal']);
+  }
+
+  private photoOptions(slots: string[]): FacialPhotoOption[] {
     return slots.flatMap((key) => {
       const photo = this.dental().photos[key];
       if (!photo?.attachmentId) return [];
       const slot = PHOTO_SLOTS.find((s) => s.key === key);
-      return [{ id: photo.attachmentId, label: `Extraoral · ${slot?.label ?? key}`, url: this.attachmentUrl(photo.attachmentId) }];
+      return [{ id: photo.attachmentId, label: `${slot?.group ?? 'Extraoral'} · ${slot?.label ?? key}`, url: this.attachmentUrl(photo.attachmentId) }];
     });
   }
 

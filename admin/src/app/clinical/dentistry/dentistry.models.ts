@@ -278,17 +278,21 @@ export interface FacialTrace {
   attachmentId: string;
   points: Partial<Record<string, CephPoint>>;
   tracedAt: string;
+  /** Milímetros reales de una distancia de referencia (en sonrisa: entre comisuras) para convertir a mm. */
+  refMm?: number;
 }
 
 export interface FacialTracing {
   frontal: FacialTrace;
   profile: FacialTrace;
+  smile: FacialTrace;
 }
 
 export function emptyFacialTracing(): FacialTracing {
   return {
     frontal: { attachmentId: '', points: {}, tracedAt: '' },
     profile: { attachmentId: '', points: {}, tracedAt: '' },
+    smile: { attachmentId: '', points: {}, tracedAt: '' },
   };
 }
 
@@ -959,6 +963,11 @@ export function normalizeDentistry(raw?: Partial<DentistryContent> | null): Dent
           ...emptyFacialTracing().profile,
           ...(ortho.facialTracing?.profile || {}),
           points: { ...(ortho.facialTracing?.profile?.points || {}) },
+        },
+        smile: {
+          ...emptyFacialTracing().smile,
+          ...(ortho.facialTracing?.smile || {}),
+          points: { ...(ortho.facialTracing?.smile?.points || {}) },
         },
       },
       habits: {},

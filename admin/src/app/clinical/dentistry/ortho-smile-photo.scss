@@ -1,0 +1,280 @@
+.spa {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  container-type: inline-size;
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  h5 {
+    margin: 0;
+    font-size: 13px;
+    color: #123b60;
+  }
+}
+
+.spa-badge {
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: #eef6fc;
+  color: #12609a;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.spa-empty {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.spa-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  button {
+    padding: 4px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 99px;
+    background: #fff;
+    color: #334155;
+    font-size: 12px;
+    cursor: pointer;
+
+    &.on {
+      border-color: #0f4c81;
+      background: #0f4c81;
+      color: #fff;
+    }
+  }
+}
+
+.spa-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(240px, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+@container (max-width: 680px) {
+  .spa-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.spa-stage {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  background: #0f172a;
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    user-select: none;
+  }
+}
+
+.spa-ov {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+
+  &.placing {
+    cursor: crosshair;
+  }
+
+  line {
+    pointer-events: none;
+  }
+}
+
+.g-ref {
+  stroke: rgba(226, 232, 240, 0.7);
+}
+
+.g-com {
+  stroke: #22d3ee;
+}
+
+.g-md {
+  stroke: #f472b6;
+}
+
+.g-mf {
+  stroke: #a5f3fc;
+}
+
+.pt {
+  cursor: grab;
+
+  .hit {
+    fill: transparent;
+    stroke: none;
+  }
+
+  circle:not(.hit) {
+    fill: #f472b6;
+    stroke: #fff;
+  }
+
+  text {
+    fill: #fff;
+    stroke: rgba(15, 23, 42, 0.85);
+    paint-order: stroke;
+    font-weight: 700;
+    pointer-events: none;
+  }
+
+  &.on circle:not(.hit) {
+    fill: #fde047;
+  }
+}
+
+.spa-side {
+  display: grid;
+  gap: 8px;
+}
+
+.spa-steps {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #334155;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+
+    b {
+      display: grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      font-size: 11px;
+    }
+
+    small {
+      margin-left: auto;
+      color: #94a3b8;
+    }
+
+    &.done b {
+      background: #16a34a;
+      color: #fff;
+    }
+
+    &.on {
+      border-color: #0f4c81;
+      box-shadow: 0 0 0 2px rgba(15, 76, 129, 0.15);
+    }
+  }
+}
+
+.spa-help {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 3px solid #0f4c81;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 12px;
+}
+
+.spa-cal {
+  display: grid;
+  gap: 2px;
+  font-size: 11px;
+  color: #475569;
+
+  input {
+    padding: 6px 8px;
+  }
+}
+
+.spa-metric {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  padding: 7px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 12px;
+
+  span {
+    color: #334155;
+  }
+
+  b {
+    color: #0f4c81;
+  }
+
+  small {
+    grid-column: 1 / -1;
+    color: #64748b;
+  }
+
+  &[data-tone='out'] {
+    border-color: #fcd34d;
+    background: #fffbeb;
+
+    b {
+      color: #b45309;
+    }
+  }
+}
+
+.spa-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  button {
+    padding: 5px 10px;
+    border-radius: 99px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .apply {
+    border: 1px dashed #0f4c81;
+    background: #f4f8fb;
+    color: #0f4c81;
+  }
+
+  .ghost {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #475569;
+  }
+}
