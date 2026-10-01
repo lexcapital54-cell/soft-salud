@@ -31,8 +31,8 @@ import { num } from './ortho-exam.models';
       </div>
       <div class="mg-ticks">
         <span>{{ min() }}</span>
-        @if (ref(); as r) {
-          <span class="mg-ref-txt">ref. {{ r[0] }}–{{ r[1] }}</span>
+        @if (refText()) {
+          <span class="mg-ref-txt">ref. {{ refText() }}</span>
         }
         <span>{{ max() }}</span>
       </div>
@@ -65,12 +65,17 @@ export class OrthoMmGauge {
   readonly max = input(10);
   readonly stepSize = input(0.5);
   readonly placeholder = input('');
-  /** Rango normal [desde, hasta]; sin rango solo se muestra el marcador. */
+  /** Rango normal [desde, hasta] (hasta = Infinity si no tiene tope); sin rango solo se muestra el marcador. */
   readonly ref = input<[number, number] | null>(null);
   readonly disabled = input(false);
   readonly valueChange = output<string>();
 
   readonly n = computed(() => num(this.value()));
+  readonly refText = computed(() => {
+    const r = this.ref();
+    if (!r) return '';
+    return Number.isFinite(r[1]) ? `${r[0]}–${r[1]}` : `≥ ${r[0]}`;
+  });
   readonly tone = computed(() => {
     const n = this.n();
     const r = this.ref();

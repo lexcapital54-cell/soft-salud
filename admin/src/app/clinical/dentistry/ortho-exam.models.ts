@@ -130,6 +130,8 @@ export const REST_EXPOSURE_REF: [number, number] = [2, 4];
 export const GINGIVAL_SMILE_LIMIT = 3;
 export const THIRD_PCT_REF: [number, number] = [30, 37];
 export const FACIAL_INDEX_LIMITS: [number, number] = [85, 90];
+export const MAX_OPENING_REF: [number, number] = [40, 55];
+export const EXCURSION_MIN = 7;
 
 export const num = (v: string) => {
   const s = String(v ?? '').trim();
@@ -194,8 +196,9 @@ export function functionalHints(f: OrthoExamData['functional']): Hint[] {
   const out: Hint[] = [];
   const open = num(f.maxOpening);
   if (open !== null) {
-    if (open < 40) out.push({ text: `Apertura máxima ${open} mm: limitada (referencia 40–55 mm).`, tone: 'danger' });
-    else if (open > 55) out.push({ text: `Apertura máxima ${open} mm: aumentada, valore hipermovilidad.`, tone: 'warn' });
+    const [lo, hi] = MAX_OPENING_REF;
+    if (open < lo) out.push({ text: `Apertura máxima ${open} mm: limitada (referencia ${lo}–${hi} mm).`, tone: 'danger' });
+    else if (open > hi) out.push({ text: `Apertura máxima ${open} mm: aumentada, valore hipermovilidad.`, tone: 'warn' });
     else out.push({ text: `Apertura máxima ${open} mm: normal.`, tone: 'ok' });
   }
   for (const [label, v] of [
@@ -204,7 +207,7 @@ export function functionalHints(f: OrthoExamData['functional']): Hint[] {
     ['Protrusión', f.protrusion],
   ] as const) {
     const n = num(v);
-    if (n !== null && n < 7) out.push({ text: `${label} ${n} mm: reducida (referencia ≥ 7 mm).`, tone: 'warn' });
+    if (n !== null && n < EXCURSION_MIN) out.push({ text: `${label} ${n} mm: reducida (referencia ≥ ${EXCURSION_MIN} mm).`, tone: 'warn' });
   }
   const r = num(f.lateralRight);
   const l = num(f.lateralLeft);
