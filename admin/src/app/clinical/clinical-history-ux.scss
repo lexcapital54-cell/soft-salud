@@ -205,3 +205,47 @@ label.checkbox-inline input {
   gap: 12px;
   margin-top: 8px;
 }
+
+/* Nombres de los campos más visibles y texto más nítido en todas las historias. */
+:host {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+label {
+  color: var(--hce-title, #003d4c);
+  font-weight: 600;
+  letter-spacing: 0.005em;
+}
+label:has(> input[type='checkbox']),
+label:has(> input[type='radio']) {
+  color: #1f2937;
+  font-weight: 500;
+}
+input,
+select,
+textarea {
+  font-weight: 400;
+  color: #111827;
+  border-color: #cbd5e1;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--hce-accent, #0d7377);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--hce-accent, #0d7377) 18%, transparent);
+}
+input[readonly],
+textarea[readonly] {
+  background: #f8fafc;
+}
+.block h4 {
+  color: var(--hce-title, #003d4c);
+  font-weight: 650;
+}
