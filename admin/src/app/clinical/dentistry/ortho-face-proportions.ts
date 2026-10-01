@@ -2,7 +2,8 @@ import { Component, input, output, signal } from '@angular/core';
 import { DentistryContent } from './dentistry.models';
 import { FACIAL_INDEX_LIMITS, THIRD_PCT_REF, facialIndex, thirdsAnalysis } from './ortho-exam.models';
 import { OrthoMmGauge } from './ortho-mm-gauge';
-import { faceHalfWidth, faceThirds } from './ortho-smile-art';
+import { EAR, FACE_OUTLINE, MIRROR, faceFeatures } from './ortho-face-outline';
+import { faceThirds, faceWidthScale } from './ortho-smile-art';
 
 type ThirdKey = 'upperThird' | 'middleThird' | 'lowerThird';
 type MmKey = ThirdKey | 'facialHeight' | 'facialWidth';
@@ -18,37 +19,41 @@ const INDEX_SCALE: [number, number] = [75, 100];
     @let th = thirds();
     @let zones = zonesFor(th);
     @let fi = index();
-    @let hw = halfWidth(fi?.idx ?? null);
+    @let sx = widthScale(fi?.idx ?? null);
     <section class="fp">
       <h5>Proporciones faciales</h5>
       <div class="fp-body">
-        <svg class="fp-face" viewBox="0 0 220 228" role="img" aria-label="Tercios faciales">
-          <defs>
-            <clipPath id="fp-oval"><ellipse cx="100" cy="106" [attr.rx]="hw" ry="100" /></clipPath>
-          </defs>
-          <ellipse cx="100" cy="106" [attr.rx]="hw" ry="100" class="fp-skin" />
-          <g clip-path="url(#fp-oval)">
-            <path [attr.d]="'M0,0 H220 V' + (zones[0].y + 6) + ' Q100,' + (zones[0].y - 6) + ' 0,' + (zones[0].y + 6) + ' Z'" class="fp-hair" />
-            @for (z of zones; track z.key) {
-              <rect x="0" [attr.y]="z.y" width="220" [attr.height]="z.h" class="fp-zone" [attr.data-key]="z.key"
-                [class.off]="z.off" [class.hot]="hover() === z.key" (mouseenter)="hover.set(z.key)" (mouseleave)="hover.set(null)" (click)="focus(z.key)" />
-            }
-          </g>
-          <ellipse cx="100" cy="106" [attr.rx]="hw" ry="100" class="fp-outline" />
-          @let mid = zones[1];
-          @let low = zones[2];
-          <path [attr.d]="'M' + (100 - hw * 0.62) + ',' + (mid.y + 4) + ' q' + hw * 0.22 + ',-6 ' + hw * 0.4 + ',0 M' + (100 + hw * 0.22) + ',' + (mid.y + 4) + ' q' + hw * 0.18 + ',-6 ' + hw * 0.4 + ',0'" class="fp-feat" />
-          <ellipse [attr.cx]="100 - hw * 0.42" [attr.cy]="mid.y + mid.h * 0.22" rx="8" ry="3.5" class="fp-eye" />
-          <ellipse [attr.cx]="100 + hw * 0.42" [attr.cy]="mid.y + mid.h * 0.22" rx="8" ry="3.5" class="fp-eye" />
-          <path [attr.d]="'M100,' + (mid.y + 10) + ' L94,' + (low.y - 3) + ' Q100,' + (low.y + 1) + ' 106,' + (low.y - 3)" class="fp-feat" />
-          <path [attr.d]="'M' + (100 - hw * 0.34) + ',' + (low.y + low.h * 0.32) + ' Q100,' + (low.y + low.h * 0.32 + 7) + ' ' + (100 + hw * 0.34) + ',' + (low.y + low.h * 0.32)" class="fp-feat lips" />
+        <svg class="fp-face" viewBox="0 0 224 222" role="img" aria-label="Tercios faciales">
+          @let me = zones[2].y + zones[2].h;
+          @let ft = features(zones[1].y, zones[2].y, me);
           @for (z of zones; track z.key) {
-            <line x1="14" [attr.y1]="z.y" x2="186" [attr.y2]="z.y" class="fp-line" [class.dash]="z.pct === null" />
-            <text x="190" [attr.y]="z.y + z.h / 2 + 4" class="fp-pct" [class.off]="z.off">{{ z.pct !== null ? z.pct + ' %' : '—' }}</text>
+            <rect x="26" [attr.y]="z.y" width="150" [attr.height]="z.h" class="fp-band" [class.off]="z.off" [class.hot]="hover() === z.key"
+              (mouseenter)="hover.set(z.key)" (mouseleave)="hover.set(null)" (click)="focus(z.key)" />
           }
-          <line x1="14" [attr.y1]="zones[2].y + zones[2].h" x2="186" [attr.y2]="zones[2].y + zones[2].h" class="fp-line" [class.dash]="zones[2].pct === null" />
+          <g [attr.transform]="'translate(100 0) scale(' + sx + ' 1) translate(-100 0)'" class="fp-art">
+            <path [attr.d]="outline" class="fp-outline" />
+            <path [attr.d]="ear" class="fp-ear" />
+            <path [attr.d]="ear" [attr.transform]="mirror" class="fp-ear" />
+            <path [attr.d]="'M60,' + (zones[0].y + 9) + ' Q100,' + (zones[0].y - 7) + ' 140,' + (zones[0].y + 9)" class="fp-hairline" />
+            <path [attr.d]="ft.brows" class="fp-feat" />
+            <path [attr.d]="ft.eyes" class="fp-feat" />
+            <circle cx="77" [attr.cy]="ft.irisY" r="2.4" class="fp-iris" />
+            <circle cx="123" [attr.cy]="ft.irisY" r="2.4" class="fp-iris" />
+            <path [attr.d]="ft.nose" class="fp-feat" />
+            <path [attr.d]="ft.lips" class="fp-feat lips" />
+          </g>
+          <line x1="100" [attr.y1]="zones[0].y - 8" x2="100" [attr.y2]="me + 6" class="fp-axis" />
           @for (m of landmarks(zones); track m.t) {
-            <text x="4" [attr.y]="m.y + 3" class="fp-mark">{{ m.t }}</text>
+            <line x1="26" [attr.y1]="m.y" x2="176" [attr.y2]="m.y" class="fp-line" [class.dash]="zones[0].pct === null" />
+            <circle cx="100" [attr.cy]="m.y" r="1.8" class="fp-pt" />
+            <text x="22" [attr.y]="m.y + 2.5" text-anchor="end" class="fp-mark">{{ m.t }}</text>
+          }
+          <line x1="188" [attr.y1]="zones[0].y" x2="188" [attr.y2]="me" class="fp-dim" />
+          @for (m of landmarks(zones); track m.t) {
+            <line x1="184" [attr.y1]="m.y" x2="192" [attr.y2]="m.y" class="fp-dim" />
+          }
+          @for (z of zones; track z.key) {
+            <text x="196" [attr.y]="z.y + z.h / 2 + 3" class="fp-pct" [class.off]="z.off">{{ z.pct !== null ? z.pct + '%' : '—' }}</text>
           }
         </svg>
         <div class="fp-inputs">
@@ -98,34 +103,37 @@ const INDEX_SCALE: [number, number] = [75, 100];
     .fp h5 { margin: 0; font-size: 13px; color: #123b60; }
     .fp-body { display: grid; grid-template-columns: minmax(170px, 0.9fr) minmax(200px, 1.1fr); gap: 12px; align-items: center; }
     @container (max-width: 440px) { .fp-body { grid-template-columns: 1fr; } }
-    .fp-face { width: 100%; max-width: 260px; justify-self: center; }
-    .fp-skin { fill: #fbe9dd; }
-    .fp-hair { fill: #6b4a3a; pointer-events: none; }
-    .fp-outline { fill: none; stroke: #c99a82; stroke-width: 1.5; }
-    .fp-zone { fill: #12609a; opacity: 0.07; cursor: pointer; transition: opacity 0.15s, fill 0.15s; }
-    .fp-zone[data-key='middle'] { opacity: 0.13; }
-    .fp-zone.off { fill: #f59e0b; opacity: 0.28; }
-    .fp-zone.hot { opacity: 0.35; }
-    .fp-feat { fill: none; stroke: #8a5a48; stroke-width: 1.6; stroke-linecap: round; pointer-events: none; }
-    .fp-feat.lips { stroke: #c45a6c; stroke-width: 2.2; }
-    .fp-eye { fill: #5b4034; pointer-events: none; }
-    .fp-line { stroke: #12609a; stroke-width: 1; }
-    .fp-line.dash { stroke-dasharray: 4 3; stroke: #94a3b8; }
-    .fp-pct { font-size: 11px; font-weight: 700; fill: #12609a; }
+    .fp-face { width: 100%; max-width: 270px; justify-self: center; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
+    .fp-band { fill: transparent; cursor: pointer; transition: fill 0.15s; }
+    .fp-band.off { fill: rgba(245, 158, 11, 0.08); }
+    .fp-band.hot { fill: rgba(18, 96, 154, 0.08); }
+    .fp-art { pointer-events: none; transition: transform 0.25s; }
+    .fp-outline { fill: #fbf4ef; stroke: #475569; stroke-width: 1; stroke-linejoin: round; }
+    .fp-ear { fill: #fbf4ef; stroke: #475569; stroke-width: 0.9; }
+    .fp-hairline { fill: none; stroke: #94a3b8; stroke-width: 0.8; stroke-dasharray: 2 2; }
+    .fp-feat { fill: none; stroke: #64748b; stroke-width: 0.9; stroke-linecap: round; stroke-linejoin: round; }
+    .fp-feat.lips { stroke: #8f5158; }
+    .fp-iris { fill: none; stroke: #64748b; stroke-width: 0.8; }
+    .fp-axis { stroke: #0f4c81; stroke-width: 0.6; stroke-dasharray: 6 2 1 2; }
+    .fp-line { stroke: #0f4c81; stroke-width: 0.7; }
+    .fp-line.dash { stroke: #94a3b8; stroke-dasharray: 3 2; }
+    .fp-pt { fill: #0f4c81; }
+    .fp-dim { stroke: #334155; stroke-width: 0.8; }
+    .fp-pct { font-size: 9px; font-weight: 700; fill: #0f4c81; }
     .fp-pct.off { fill: #b45309; }
-    .fp-mark { font-size: 8px; fill: #64748b; }
+    .fp-mark { font-size: 7.5px; font-weight: 600; letter-spacing: 0.04em; fill: #475569; }
     .fp-inputs { display: grid; gap: 6px; }
     .fp-inputs > div { border-radius: 12px; transition: box-shadow 0.15s; }
     .fp-inputs > div.hot { box-shadow: 0 0 0 2px #7dd3fc; }
     .fp-ref { margin: 0; font-size: 11px; color: #64748b; }
     .fp-index { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
-    .fp-scale { position: relative; display: flex; height: 22px; border-radius: 99px; overflow: visible; font-size: 10px; font-weight: 600; }
-    .fp-scale .seg { display: grid; place-items: center; flex: none; color: #fff; white-space: nowrap; overflow: hidden; }
-    .fp-scale .seg:nth-child(1) { background: #0ea5e9; border-radius: 99px 0 0 99px; }
-    .fp-scale .seg:nth-child(2) { background: #14b8a6; }
-    .fp-scale .seg:nth-child(3) { flex: 1; background: #8b5cf6; border-radius: 0 99px 99px 0; }
+    .fp-scale { position: relative; display: flex; height: 22px; margin-top: 14px; overflow: visible; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; }
+    .fp-scale .seg { display: grid; place-items: center; flex: none; white-space: nowrap; overflow: hidden; border: 1px solid #cbd5e1; }
+    .fp-scale .seg:nth-child(1) { background: #f0f9ff; color: #075985; border-radius: 6px 0 0 6px; }
+    .fp-scale .seg:nth-child(2) { background: #f0fdfa; color: #115e59; border-left: 0; border-right: 0; }
+    .fp-scale .seg:nth-child(3) { flex: 1; background: #f5f3ff; color: #5b21b6; border-radius: 0 6px 6px 0; }
     .fp-scale.empty .seg { opacity: 0.45; }
-    .fp-scale i { position: absolute; top: -4px; bottom: -4px; width: 4px; border-radius: 2px; background: #0f172a; box-shadow: 0 0 0 2px #fff; transform: translateX(-50%); transition: left 0.2s; }
+    .fp-scale i { position: absolute; top: -5px; bottom: -5px; width: 2px; background: #0f4c81; box-shadow: 0 0 0 2px #fff; transform: translateX(-50%); transition: left 0.2s; }
     .fp-scale i::after { content: attr(data-idx); position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 10px; color: #0f172a; font-style: normal; }
     .fp-hint { margin: 0; padding: 5px 8px; border-radius: 8px; font-size: 12px; }
     .fp-hint[data-tone='ok'] { background: #f0fdf4; color: #166534; }
@@ -140,6 +148,9 @@ export class OrthoFaceProportions {
 
   readonly hover = signal<'upper' | 'middle' | 'lower' | null>(null);
   readonly thirdRef = THIRD_PCT_REF;
+  readonly outline = FACE_OUTLINE;
+  readonly ear = EAR;
+  readonly mirror = MIRROR;
   readonly indexLimits = FACIAL_INDEX_LIMITS;
   readonly thirdRows: Array<{ key: ThirdKey; label: string }> = [
     { key: 'upperThird', label: 'Tercio superior' },
@@ -152,15 +163,19 @@ export class OrthoFaceProportions {
   }
 
   zonesFor(th: ReturnType<typeof thirdsAnalysis>) {
-    return faceThirds(th);
+    return faceThirds(th, 40, 168);
+  }
+
+  features(g: number, sn: number, me: number) {
+    return faceFeatures(g, sn, me);
   }
 
   index() {
     return facialIndex(this.data().orthoExam.proportions);
   }
 
-  halfWidth(idx: number | null) {
-    return faceHalfWidth(idx);
+  widthScale(idx: number | null) {
+    return faceWidthScale(idx);
   }
 
   landmarks(zones: ReturnType<typeof faceThirds>) {

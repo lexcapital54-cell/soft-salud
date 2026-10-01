@@ -22,11 +22,19 @@ type MmKey = 'restExposure' | 'smileExposure' | 'gingivalExposure';
       </header>
       <div class="sp-body">
         <figure class="sp-fig" [class.preview]="!!preview()">
-          <svg viewBox="16 6 208 112" role="img" [attr.aria-label]="caption()">
+          <svg viewBox="16 4 208 116" role="img" [attr.aria-label]="caption()">
             <defs>
               <clipPath id="sp-mouth"><path [attr.d]="art.mouth" /></clipPath>
+              <linearGradient id="sp-enamel" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#efe8da" />
+                <stop offset="0.35" stop-color="#fffdf8" />
+                <stop offset="1" stop-color="#f6f1e7" />
+              </linearGradient>
+              <pattern id="sp-grid" width="8" height="8" patternUnits="userSpaceOnUse">
+                <path d="M8,0 L0,0 0,8" fill="none" stroke="#edf1f6" stroke-width="0.6" />
+              </pattern>
             </defs>
-            <rect x="0" y="0" width="240" height="130" rx="14" class="sp-skin" />
+            <rect x="16" y="4" width="208" height="116" fill="url(#sp-grid)" />
             <g clip-path="url(#sp-mouth)">
               <rect x="0" y="0" width="240" height="130" class="sp-inside" />
               <g class="sp-arch" [attr.transform]="'rotate(' + art.tilt + ' 120 70)'">
@@ -38,14 +46,23 @@ type MmKey = 'restExposure' | 'smileExposure' | 'gingivalExposure';
             </g>
             <path [attr.d]="art.upperLip" class="sp-lip" />
             <path [attr.d]="art.lowerLip" class="sp-lip low" />
+            <line x1="120" [attr.y1]="art.midline.y1" x2="120" [attr.y2]="art.midline.y2" class="sp-mid" />
+            <path [attr.d]="art.arcLine" [attr.transform]="'rotate(' + art.tilt + ' 120 70)'" class="sp-arc" />
             @if (art.tilt) {
-              <line x1="44" y1="80" x2="196" y2="80" class="sp-ref" />
+              <line x1="40" y1="80" x2="200" y2="80" class="sp-ref" />
               <line [attr.x1]="art.occlusal.x1" [attr.y1]="art.occlusal.y1" [attr.x2]="art.occlusal.x2" [attr.y2]="art.occlusal.y2"
                 [attr.transform]="'rotate(' + art.tilt + ' 120 70)'" class="sp-plane" />
             }
-            <text x="22" y="112" class="sp-side">Der.</text>
-            <text x="218" y="112" text-anchor="end" class="sp-side">Izq.</text>
+            <text x="21" y="115" class="sp-side">DER</text>
+            <text x="219" y="115" text-anchor="end" class="sp-side">IZQ</text>
           </svg>
+          <div class="sp-legend">
+            <span><i class="mid"></i>Línea media</span>
+            <span><i class="arc"></i>Arco incisal</span>
+            @if (art.tilt) {
+              <span><i class="plane"></i>Plano oclusal</span>
+            }
+          </div>
           <figcaption>{{ caption() }}</figcaption>
         </figure>
         <div class="sp-groups">
@@ -88,20 +105,25 @@ type MmKey = 'restExposure' | 'smileExposure' | 'gingivalExposure';
       .sp-groups { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
     }
     .sp-fig { margin: 0; display: grid; gap: 4px; }
-    .sp-fig svg { width: 100%; max-width: 360px; justify-self: center; border-radius: 14px; box-shadow: inset 0 0 0 1px #f1d5c4; transition: box-shadow 0.15s; }
-    .sp-fig.preview svg { box-shadow: 0 0 0 2px #7dd3fc; }
-    .sp-fig figcaption { font-size: 11px; color: #64748b; text-align: center; min-height: 15px; }
-    .sp-skin { fill: #f8e3d4; }
-    .sp-inside { fill: #4a1a24; }
-    .sp-gum { fill: #e9a0aa; transition: fill 0.2s; }
-    .sp-gum.hl { fill: #f07d8f; }
-    .sp-tooth { fill: #fffdf6; stroke: #d9d2c4; stroke-width: 1; }
-    .sp-arch { transition: transform 0.25s; }
-    .sp-lip { fill: #c45a6c; stroke: #a94657; stroke-width: 0.8; transition: d 0.25s; }
-    .sp-lip.low { fill: #d27382; }
-    .sp-ref { stroke: #94a3b8; stroke-width: 1; stroke-dasharray: 3 3; }
-    .sp-plane { stroke: #d97706; stroke-width: 1.5; stroke-dasharray: 5 3; }
-    .sp-side { font-size: 9px; fill: #9a6b55; }
+    .sp-fig svg { width: 100%; max-width: 360px; justify-self: center; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; transition: border-color 0.15s, box-shadow 0.15s; }
+    .sp-fig.preview svg { border-color: #7dd3fc; box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.25); }
+    .sp-fig figcaption { font-size: 11px; color: #475569; text-align: center; min-height: 15px; }
+    .sp-inside { fill: #2b161a; }
+    .sp-gum { fill: #e7b0b7; stroke: #c48a93; stroke-width: 0.6; transition: fill 0.2s; }
+    .sp-gum.hl { fill: #e2919d; }
+    .sp-tooth { fill: url(#sp-enamel); stroke: #a8a29e; stroke-width: 0.6; stroke-linejoin: round; }
+    .sp-lip { fill: #ecccc8; stroke: #8f5158; stroke-width: 0.8; stroke-linejoin: round; }
+    .sp-lip.low { fill: #e6bdb9; }
+    .sp-mid { stroke: #0f4c81; stroke-width: 0.7; stroke-dasharray: 6 2 1 2; }
+    .sp-arc { fill: none; stroke: #2563eb; stroke-width: 1; stroke-dasharray: 1.5 2; stroke-linecap: round; }
+    .sp-ref { stroke: #94a3b8; stroke-width: 0.7; stroke-dasharray: 3 3; }
+    .sp-plane { stroke: #d97706; stroke-width: 1; stroke-dasharray: 5 3; }
+    .sp-side { font-size: 6.5px; letter-spacing: 0.08em; fill: #64748b; font-weight: 600; }
+    .sp-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; font-size: 10px; color: #64748b; }
+    .sp-legend span { display: inline-flex; align-items: center; gap: 4px; }
+    .sp-legend i { display: inline-block; width: 16px; border-top: 1.5px dashed #0f4c81; }
+    .sp-legend i.arc { border-top: 1.5px dotted #2563eb; }
+    .sp-legend i.plane { border-top-color: #d97706; }
     .sp-groups { display: grid; gap: 8px; align-items: start; }
     .sp-group { display: grid; gap: 4px; align-content: start; font-size: 11px; font-weight: 600; color: #475569; }
     .sp-chips { display: flex; flex-wrap: wrap; align-items: center; align-content: flex-start; gap: 6px; }

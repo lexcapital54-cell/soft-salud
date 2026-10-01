@@ -4,13 +4,16 @@ import { GINGIVAL_SMILE_LIMIT, OrthoExamData, THIRD_PCT_REF, num } from './ortho
 
 const CX = 120;
 const GUM_MARGIN = 44;
-const TEETH = [
-  { w: 18, len: 40 },
-  { w: 20, len: 37 },
-  { w: 26, len: 44 },
-  { w: 26, len: 44 },
-  { w: 20, len: 37 },
-  { w: 18, len: 40 },
+/** Premolar, canino, lateral y central de cada hemiarcada (ancho y largo de corona ilustrativos). */
+const TEETH: Array<{ w: number; len: number; cusp: boolean }> = [
+  { w: 14, len: 31, cusp: true },
+  { w: 17, len: 40, cusp: true },
+  { w: 19, len: 36, cusp: false },
+  { w: 25, len: 44, cusp: false },
+  { w: 25, len: 44, cusp: false },
+  { w: 19, len: 36, cusp: false },
+  { w: 17, len: 40, cusp: true },
+  { w: 14, len: 31, cusp: true },
 ];
 
 export interface SmileArt {
@@ -19,6 +22,8 @@ export interface SmileArt {
   mouth: string;
   upperLip: string;
   lowerLip: string;
+  arcLine: string;
+  midline: { y1: number; y2: number };
   occlusal: { x1: number; y1: number; x2: number; y2: number };
   tilt: number;
   gumShown: boolean;
@@ -26,23 +31,31 @@ export interface SmileArt {
 
 export function smileArt(s: OrthoExamData['smile']): SmileArt {
   const half = TEETH.reduce((a, t) => a + t.w, 0) / 2;
+  const span = half - TEETH[0].w;
   let x = CX - half;
   const edgeOffset = (t: number) => {
+    const k = Math.min(1, t * t);
     if (s.smileArc === 'Plano') return 0;
-    if (s.smileArc === 'Invertido') return -8 * (1 - t * t);
-    return 8 * (1 - t * t);
+    if (s.smileArc === 'Invertido') return -7 * (1 - k);
+    return 7 * (1 - k);
   };
+  const edges: Array<[number, number]> = [];
   const teeth = TEETH.map((tooth) => {
     const mid = x + tooth.w / 2;
-    const t = (mid - CX) / half;
-    const edge = GUM_MARGIN + tooth.len - 8 + edgeOffset(t);
-    const r = 5;
-    const x0 = x + 1;
-    const x1 = x + tooth.w - 1;
-    const d = `M${x0},${GUM_MARGIN + 5} Q${mid},${GUM_MARGIN - 5} ${x1},${GUM_MARGIN + 5} L${x1},${edge - r} Q${x1},${edge} ${x1 - r},${edge} L${x0 + r},${edge} Q${x0},${edge} ${x0},${edge - r} Z`;
+    const edge = GUM_MARGIN + tooth.len - 8 + edgeOffset((mid - CX) / span);
+    const x0 = x + 0.8;
+    const x1 = x + tooth.w - 0.8;
+    const neck = 1.2;
+    const top = `M${x0 + neck},${GUM_MARGIN + 4} Q${mid},${GUM_MARGIN - 5} ${x1 - neck},${GUM_MARGIN + 4}`;
+    const tip = tooth.cusp
+      ? ` L${x1},${edge - 6} Q${x1 - 1},${edge - 2} ${mid + 1.5},${edge} Q${mid},${edge + 0.8} ${mid - 1.5},${edge} Q${x0 + 1},${edge - 2} ${x0},${edge - 6}`
+      : ` L${x1},${edge - 4} Q${x1},${edge} ${x1 - 4},${edge} L${x0 + 4},${edge} Q${x0},${edge} ${x0},${edge - 4}`;
     x += tooth.w;
-    return { d, x: mid };
+    edges.push([mid, edge]);
+    return { d: `${top}${tip} Z`, x: mid };
   });
+  const arc = edges.slice(1, -1);
+  const arcLine = 'M' + arc.map(([ex, ey]) => `${ex},${ey}`).join(' L');
 
   const g = num(s.gingivalExposure);
   const gumPx = g !== null && g > 0 ? Math.min(18, 3 + g * 2.5) : 10;
@@ -54,8 +67,11 @@ export function smileArt(s: OrthoExamData['smile']): SmileArt {
   const lowerY = GUM_MARGIN + 46;
   const lowerC = { x: CX, y: 2 * lowerY - (lc.y + rc.y) / 2 };
   const upperEdge = `M${lc.x},${lc.y} Q${upperC.x},${upperC.y} ${rc.x},${rc.y}`;
-  const upperLip = `${upperEdge} Q${CX},${upperC.y - 30} ${lc.x},${lc.y} Z`;
-  const lowerLip = `M${lc.x},${lc.y} Q${lowerC.x},${lowerC.y} ${rc.x},${rc.y} Q${CX},${lowerC.y + 36} ${lc.x},${lc.y} Z`;
+  const bow = Math.min(lc.y, rc.y) - 30;
+  const upperLip =
+    `${upperEdge} C${rc.x - 22},${rc.y - 14} ${CX + 34},${bow - 2} ${CX + 11},${bow} ` +
+    `Q${CX},${bow + 5} ${CX - 11},${bow} C${CX - 34},${bow - 2} ${lc.x + 22},${lc.y - 14} ${lc.x},${lc.y} Z`;
+  const lowerLip = `M${lc.x},${lc.y} Q${lowerC.x},${lowerC.y} ${rc.x},${rc.y} C${rc.x - 30},${lowerC.y - 6} ${CX + 40},${lowerY + 22} ${CX},${lowerY + 22} C${CX - 40},${lowerY + 22} ${lc.x + 30},${lowerC.y - 6} ${lc.x},${lc.y} Z`;
   const mouth = `${upperEdge} Q${lowerC.x},${lowerC.y} ${lc.x},${lc.y} Z`;
   const tilt = s.occlusalCant === 'Inclinado a la derecha' ? -4 : s.occlusalCant === 'Inclinado a la izquierda' ? 4 : 0;
   const plane = GUM_MARGIN + 36;
@@ -65,7 +81,9 @@ export function smileArt(s: OrthoExamData['smile']): SmileArt {
     mouth,
     upperLip,
     lowerLip,
-    occlusal: { x1: 44, y1: plane, x2: 196, y2: plane },
+    arcLine,
+    midline: { y1: bow - 6, y2: lowerY + 26 },
+    occlusal: { x1: 40, y1: plane, x2: 200, y2: plane },
     tilt,
     gumShown: s.smileLine === 'Alta' || (g !== null && g > GINGIVAL_SMILE_LIMIT),
   };
@@ -100,8 +118,8 @@ export function faceThirds(pcts: { upper: number | null; middle: number | null; 
   });
 }
 
-/** Semiancho del óvalo facial según el índice (más ancho en caras euriprosopas). */
-export function faceHalfWidth(idx: number | null) {
-  if (idx === null) return 56;
-  return Math.max(44, Math.min(70, 56 * (88 / idx)));
+/** Escala horizontal del contorno según el índice facial (más ancho en caras euriprosopas). */
+export function faceWidthScale(idx: number | null) {
+  if (idx === null) return 1;
+  return Math.max(0.86, Math.min(1.14, 88 / idx));
 }
