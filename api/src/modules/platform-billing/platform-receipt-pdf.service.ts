@@ -331,17 +331,11 @@ export class PlatformReceiptPdfService {
         margin: [MARGIN, 8, MARGIN, 0],
         stack: [
           {
-            columns: [
-              { width: 'auto', text: 'Tu salud, nuestra prioridad', italics: true, color: TEAL, fontSize: 13 },
-              {
-                width: '*',
-                text: 'Manizales, Caldas   |   +57 312 663 9980   |   servicioalcliente@habilisalud.com',
-                alignment: 'right',
-                fontSize: 9,
-                color: INK,
-                margin: [0, 3, 0, 0],
-              },
-            ],
+            text: 'Manizales, Caldas   |   +57 312 663 9980   |   servicioalcliente@habilisalud.com',
+            alignment: 'center',
+            fontSize: 9,
+            color: INK,
+            margin: [0, 3, 0, 0],
           },
           {
             text: 'Documento interno de cobro de plataforma · No es factura electrónica DIAN',
