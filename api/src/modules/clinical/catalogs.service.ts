@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ClinicSpecialty } from '@prisma/client';
+import { ClinicSpecialty, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.module';
 import { PSYCHOLOGY_CUPS_CATALOG } from './psychology-cups.catalog';
 import { PHYSIOTHERAPY_CIE_CATALOG } from './physiotherapy-cie.catalog';
@@ -21,6 +21,28 @@ function isOrthoScope(specialty?: ClinicSpecialty | string | null, scope?: strin
   const spec = (specialty || '').toUpperCase();
   if (spec === ClinicSpecialty.ORTHODONTICS) return true;
   return spec === ClinicSpecialty.DENTISTRY && (scope || '').toUpperCase() === ClinicSpecialty.ORTHODONTICS;
+}
+
+/** Capítulos CIE-10 que completan el catálogo de psicología (salud mental, factores psicosociales, autolesión). */
+const PSYCHOLOGY_CIE_PREFIXES = ['F', 'Z', 'R4', 'T74', 'X6', 'X7', 'X80', 'X81', 'X82', 'X83', 'X84', 'Y0'];
+
+/** «f411», «F41.1», «f4» → prefijo de código con el punto en su lugar («F41.1», «F4»); null si no parece un código. */
+function cieCodePrefix(query: string): string | null {
+  const raw = query.replace(/[\s.]/g, '').toUpperCase();
+  if (!/^[A-Z]\d{0,2}([\dX])?$/.test(raw) || (raw.length === 1 && query.trim().length > 1)) return null;
+  return raw.length > 3 ? `${raw.slice(0, 3)}.${raw.slice(3)}` : raw;
+}
+
+/** Filtro de cie_codes: por inicio de código si escribe un código, o por todas las palabras (parciales) de la descripción. */
+function cieCodeWhere(query: string | undefined, prefixes?: string[]): Prisma.CieCodeWhereInput {
+  const scope: Prisma.CieCodeWhereInput = prefixes ? { OR: prefixes.map((p) => ({ code: { startsWith: p } })) } : {};
+  if (!query) return { isActive: true, ...scope };
+  const prefix = cieCodePrefix(query);
+  const words = query.split(/\s+/).filter(Boolean);
+  const match: Prisma.CieCodeWhereInput = prefix
+    ? { OR: [{ code: { startsWith: prefix, mode: 'insensitive' } }, { code: { startsWith: prefix.replace('.', ''), mode: 'insensitive' } }] }
+    : { AND: words.map((w) => ({ description: { contains: w, mode: 'insensitive' as const } })) };
+  return { isActive: true, AND: [scope, match] };
 }
 
 const ORTHO_CIE_CODES = new Set(ORTHO_CIE_CATALOG.flatMap((g) => g.items.map((i) => i.code)));
@@ -124,13 +146,7 @@ export class CatalogsService {
       if (fromStatic.length >= take || !query) return fromStatic;
       const used = new Set(fromStatic.map((m) => m.code.toUpperCase()));
       const fromCie = await this.prisma.cieCode.findMany({
-        where: {
-          isActive: true,
-          OR: [
-            { code: { contains: query, mode: 'insensitive' } },
-            { description: { contains: query, mode: 'insensitive' } },
-          ],
-        },
+        where: cieCodeWhere(query),
         take: take + used.size,
         orderBy: { code: 'asc' },
       });
@@ -149,14 +165,16 @@ export class CatalogsService {
       return fromStatic;
     }
 
-    const catalogWhere = {
+    const prefix = query ? cieCodePrefix(query) : null;
+    const catalogWhere: Prisma.DiagnosisCatalogWhereInput = {
       isActive: true,
       ...(query
         ? {
             OR: [
+              ...(prefix ? [{ cie10Code: { startsWith: prefix, mode: 'insensitive' as const } }] : []),
               { cie10Code: { contains: query, mode: 'insensitive' as const } },
               { cie11Code: { contains: query, mode: 'insensitive' as const } },
-              { description: { contains: query, mode: 'insensitive' as const } },
+              { AND: query.split(/\s+/).map((w) => ({ description: { contains: w, mode: 'insensitive' as const } })) },
             ],
           }
         : {}),
@@ -188,25 +206,16 @@ export class CatalogsService {
       return mapped;
     }
 
-    // Psicología: no mezclar CIE generales (p. ej. matriz de fisioterapia).
-    if (spec === ClinicSpecialty.PSYCHOLOGY || spec === 'PSYCHOLOGY') {
+    // Psicología: sin consulta solo su catálogo; al buscar, el resto del CIE-10 de salud mental (no la matriz de fisioterapia).
+    const isPsych = spec === ClinicSpecialty.PSYCHOLOGY || spec === 'PSYCHOLOGY';
+    if (isPsych && !query) {
       return mapped;
     }
 
     const remaining = take - mapped.length;
     const usedCodes = new Set(mapped.map((m) => m.code.toUpperCase()));
     const fromCie = await this.prisma.cieCode.findMany({
-      where: {
-        isActive: true,
-        ...(query
-          ? {
-              OR: [
-                { code: { contains: query, mode: 'insensitive' } },
-                { description: { contains: query, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
-      },
+      where: cieCodeWhere(query, isPsych ? PSYCHOLOGY_CIE_PREFIXES : undefined),
       take: remaining + usedCodes.size,
       orderBy: { code: 'asc' },
     });
@@ -218,7 +227,7 @@ export class CatalogsService {
         code: row.code,
         description: row.description,
         cie11Code: '',
-        category: 'ADULTOS',
+        category: isPsych ? 'CIE-10' : 'ADULTOS',
         source: 'CIE' as const,
       });
       if (mapped.length >= take) break;
@@ -342,10 +351,12 @@ export class CatalogsService {
     keepOrder = false,
   ): T[] {
     const q = query ? this.fold(query) : '';
-    const qCode = q.replace(/\./g, '');
+    const qCode = q.replace(/[\s.]/g, '');
+    const words = q.split(/\s+/).filter(Boolean);
     const matches = rows.filter((row) => {
       if (!q) return true;
-      return this.fold(row.code).includes(qCode) || this.fold(row.description).includes(q);
+      const desc = this.fold(row.description);
+      return this.fold(row.code).replace(/\./g, '').includes(qCode) || words.every((w) => desc.includes(w));
     });
     return (keepOrder ? matches : matches.sort((a, b) => a.code.localeCompare(b.code))).slice(0, take);
   }

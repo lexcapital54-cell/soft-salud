@@ -1917,7 +1917,7 @@
 
                 <h4 id="ft-plan-valores">Plan de tratamiento y valores</h4>
                 @defer (on viewport) {
-                  <app-physio-treatment-plan [data]="physio()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                  <app-physio-treatment-plan [data]="physio()" [procedures]="procedures" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
                 } @placeholder {
                   <p class="muted small">Cargando plan de tratamiento…</p>
                 }
@@ -3861,6 +3861,7 @@
                 @defer (on viewport) {
                   <app-physio-treatment-plan
                     [data]="ps"
+                    [procedures]="procedures"
                     [disabled]="clinicalFormDisabled()"
                     descriptionPlaceholder="Ej.: Psicoterapia individual"
                     notesPlaceholder="Observación (modalidad, enfoque…)"

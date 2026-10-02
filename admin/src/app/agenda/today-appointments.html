@@ -424,6 +424,7 @@
       <div class="switch">
         <button type="button" [class.active]="rangeMode() === 'day'" (click)="setRange('day')">Día</button>
         <button type="button" [class.active]="rangeMode() === 'week'" (click)="setRange('week')">Semana</button>
+        <button type="button" [class.active]="rangeMode() === 'month'" (click)="setRange('month')">Mes</button>
       </div>
       <div class="switch">
         <button type="button" [class.active]="viewMode() === 'grid'" (click)="setView('grid')">Rejilla</button>
@@ -452,7 +453,7 @@
   <div class="counters">
     <div class="counter">
       <span class="counter-value">{{ counters().total }}</span>
-      <span class="counter-label">Citas del día</span>
+      <span class="counter-label">{{ rangeMode() === 'month' ? 'Citas del mes' : rangeMode() === 'week' ? 'Citas de la semana' : 'Citas del día' }}</span>
     </div>
     <div class="counter">
       <span class="counter-value">{{ counters().inWaiting }}</span>
@@ -477,7 +478,17 @@
   @if (viewMode() === 'grid') {
     <div class="agenda-layout">
       <div class="card grid-card">
-        @if (columns().length) {
+        @if (rangeMode() === 'month') {
+          <app-agenda-month
+            [date]="date()"
+            [appointments]="appointments()"
+            [selectedId]="selected()?.id ?? null"
+            [canBook]="canManage()"
+            (openDay)="openMonthDay($event)"
+            (book)="bookOnDay($event)"
+            (select)="selectAppointment($event)"
+          />
+        } @else if (columns().length) {
           <div class="grid-scroll">
             <div class="grid-board" [style.--cols]="columns().length">
               <div class="grid-corner"></div>
@@ -571,7 +582,7 @@
       </div>
 
       <aside class="card day-panel">
-        <h3>{{ rangeMode() === 'week' ? 'Citas de la semana' : 'Citas del día' }}</h3>
+        <h3>{{ rangeMode() === 'month' ? 'Citas del mes' : rangeMode() === 'week' ? 'Citas de la semana' : 'Citas del día' }}</h3>
 
         @if (selected(); as appt) {
           <div class="panel-detail" [class.block-detail]="isBlock(appt)">

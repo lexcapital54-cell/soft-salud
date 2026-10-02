@@ -13,6 +13,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { UnsavedWorkService } from '../unsaved-work.service';
 import { AgendaApiService } from './agenda-api.service';
+import { AgendaMonth, monthGridRange, shiftMonth } from './agenda-month';
 import { ClinicSwitcher } from '../clinic-switcher';
 import {
   AgendaCell,
@@ -102,7 +103,7 @@ function buildTimeOptions(fromMinutes: number, toMinutes: number) {
 
 @Component({
   selector: 'app-today-appointments',
-  imports: [FormsModule, RouterLink, DatePipe, ClinicSwitcher],
+  imports: [FormsModule, RouterLink, DatePipe, ClinicSwitcher, AgendaMonth],
   templateUrl: './today-appointments.html',
   styleUrl: './today-appointments.scss',
 })
@@ -153,7 +154,7 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
 
   // Rejilla horaria
   readonly viewMode = signal<'grid' | 'list'>('grid');
-  readonly rangeMode = signal<'day' | 'week'>('day');
+  readonly rangeMode = signal<'day' | 'week' | 'month'>('day');
   readonly selected = signal<TodayAppointment | null>(null);
   readonly slots = buildSlots();
 
@@ -259,6 +260,9 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
         month: 'long',
         year: 'numeric',
       });
+    }
+    if (this.rangeMode() === 'month') {
+      return parseDateKey(this.date()).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
     }
     const days = this.weekDays();
     const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
@@ -476,7 +480,7 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
     this.viewMode.set(mode);
   }
 
-  setRange(mode: 'day' | 'week') {
+  setRange(mode: 'day' | 'week' | 'month') {
     if (this.rangeMode() === mode) return;
     this.rangeMode.set(mode);
     this.selected.set(null);
@@ -492,8 +496,29 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
 
   /** Retrocede o avanza un día o una semana según la vista activa. */
   shiftPeriod(direction: -1 | 1) {
+    if (this.rangeMode() === 'month') {
+      this.setDate(shiftMonth(this.date(), direction));
+      return;
+    }
     const step = this.rangeMode() === 'week' ? 7 : 1;
     this.setDate(addDays(this.date(), direction * step));
+  }
+
+  /** Desde el mes: clic en un día abre ese día en la vista Día. */
+  openMonthDay(key: string) {
+    this.rangeMode.set('day');
+    this.setDate(key);
+  }
+
+  /** Desde el mes: «+» en un día abre el agendamiento para esa fecha. */
+  bookOnDay(key: string) {
+    if (!this.canManage()) return;
+    this.bookingForm = {
+      ...this.emptyBookingForm(),
+      professionalId: this.defaultProfessionalId() || this.bookingForm.professionalId,
+    };
+    this.bookingDate.set(key);
+    this.openBooking();
   }
 
   goToday() {
@@ -889,14 +914,18 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
   refresh() {
     this.loading.set(true);
     this.error.set('');
-    const week = this.rangeMode() === 'week' ? this.weekDays() : null;
+    const mode = this.rangeMode();
+    const span =
+      mode === 'week'
+        ? { from: this.weekDays()[0].key, to: this.weekDays()[6].key }
+        : mode === 'month'
+          ? (({ first, last }) => ({ from: first, to: last }))(monthGridRange(this.date()))
+          : null;
     this.api
       .listToday({
         q: this.q.trim() || undefined,
         status: this.statusFilter || undefined,
-        ...(week
-          ? { from: week[0].key, to: week[6].key }
-          : { date: this.date() }),
+        ...(span ?? { date: this.date() }),
       })
       .subscribe({
         next: (rows) => {

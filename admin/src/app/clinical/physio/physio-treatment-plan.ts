@@ -1,7 +1,7 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { ClinicalApiService } from '../clinical-api.service';
-import { CatalogCode, PhysioPlanRow, PhysioPlanStatus, SessionPlanHost } from '../clinical.models';
+import { CatalogCode, PhysioPlanRow, PhysioPlanStatus, ProcedureRow, SessionPlanHost } from '../clinical.models';
 import { PHYSIO_PLAN_STATUSES, ensurePlanRows, newPlanRow, planNum, planTotals, rowNet, rowSessions } from './physio-plan.models';
 
 /**
@@ -33,7 +33,14 @@ import { PHYSIO_PLAN_STATUSES, ensurePlanRows, newPlanRow, planNum, planTotals, 
               @if (cupsRow() === i && cupsResults().length) {
                 <ul class="ftp-sugg">
                   @for (c of cupsResults(); track c.code) {
-                    <li><button type="button" (mousedown)="pickCups(r, c)"><b>{{ c.code }}</b> {{ c.description }}</button></li>
+                    <li>
+                      <button type="button" (mousedown)="pickCups(r, c)">
+                        <b>{{ c.code }}</b> {{ c.description }}
+                        @if (c.category === 'Procedimientos') {
+                          <em class="tag">En procedimientos</em>
+                        }
+                      </button>
+                    </li>
                   }
                 </ul>
               }
@@ -83,6 +90,20 @@ import { PHYSIO_PLAN_STATUSES, ensurePlanRows, newPlanRow, planNum, planTotals, 
         <p class="ftp-empty">Sin procedimientos. Agregue los procedimientos del plan con sus sesiones y valor para cobrarlos en Caja.</p>
       }
       @if (!disabled()) {
+        @let fromProcs = procedureSuggestions();
+        @if (fromProcs.length) {
+          <div class="ftp-from">
+            <span>CUPS registrados en Procedimientos:</span>
+            @for (p of fromProcs; track p.cupsCode) {
+              <button type="button" (click)="addFromProcedure(p)" [title]="'Agregar al plan: ' + p.cupsCode + ' ' + p.description">
+                + <b>{{ p.cupsCode }}</b> {{ p.description }}
+              </button>
+            }
+            @if (fromProcs.length > 1) {
+              <button type="button" class="all" (click)="addAllFromProcedures()">Agregar todos</button>
+            }
+          </div>
+        }
         <button type="button" class="ftp-add" (click)="add()">+ Agregar procedimiento</button>
       }
       @if (t.count) {
@@ -109,6 +130,8 @@ export class PhysioTreatmentPlan {
   readonly disabled = input(false);
   readonly descriptionPlaceholder = input('Ej.: Terapia física integral');
   readonly notesPlaceholder = input('Observación (zona, modalidad…)');
+  /** CUPS de la sección Procedimientos de la misma historia: se ofrecen para el plan y como primeras sugerencias. */
+  readonly procedures = input<ProcedureRow[]>([]);
   readonly changed = output<void>();
 
   readonly statuses = PHYSIO_PLAN_STATUSES;
@@ -159,10 +182,37 @@ export class PhysioTreatmentPlan {
   }
 
   add() {
-    const rows = this.rows();
-    const planned = Math.floor(planNum(this.data().sessionCount));
-    rows.push(newPlanRow(!rows.length && planned > 0 ? String(planned) : ''));
+    this.rows().push(this.blankRow());
     this.touch();
+  }
+
+  private blankRow() {
+    const planned = Math.floor(planNum(this.data().sessionCount));
+    return newPlanRow(!this.rows().length && planned > 0 ? String(planned) : '');
+  }
+
+  /** CUPS de Procedimientos que aún no están en el plan (sin repetir). */
+  procedureSuggestions(): ProcedureRow[] {
+    const inPlan = new Set(this.rows().map((r) => r.cupsCode.trim().toUpperCase()).filter(Boolean));
+    const seen = new Set<string>();
+    return this.procedures().filter((p) => {
+      const code = (p.cupsCode || '').trim().toUpperCase();
+      if (!code || inPlan.has(code) || seen.has(code)) return false;
+      seen.add(code);
+      return true;
+    });
+  }
+
+  addFromProcedure(p: ProcedureRow) {
+    const row = this.blankRow();
+    row.cupsCode = p.cupsCode.trim();
+    row.description = (p.description || '').trim();
+    this.rows().push(row);
+    this.touch();
+  }
+
+  addAllFromProcedures() {
+    for (const p of this.procedureSuggestions()) this.addFromProcedure(p);
   }
 
   remove(i: number) {
@@ -187,10 +237,15 @@ export class PhysioTreatmentPlan {
     }
     clearTimeout(this.timer);
     this.timer = setTimeout(() => {
+      const q = value.trim().toLowerCase();
+      const fromProcs: CatalogCode[] = this.procedures()
+        .filter((p) => p.cupsCode?.trim() && (!q || `${p.cupsCode} ${p.description}`.toLowerCase().includes(q)))
+        .map((p) => ({ id: `proc-${p.cupsCode}`, code: p.cupsCode.trim(), description: p.description, category: 'Procedimientos' }));
       this.api.searchCups(value.trim()).subscribe({
         next: (rows) => {
+          const seen = new Set(fromProcs.map((c) => c.code.toUpperCase()));
           this.cupsRow.set(i);
-          this.cupsResults.set(rows.slice(0, 8));
+          this.cupsResults.set([...fromProcs, ...rows.filter((c) => !seen.has(c.code.toUpperCase()))].slice(0, 8));
         },
         error: () => this.cupsResults.set([]),
       });
