@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
 import { ClinicalApiService } from '../clinical/clinical-api.service';
 import { ClinicSwitcher } from '../clinic-switcher';
+import { ClinicLogoSettings } from './clinic-logo-settings';
 import { API, WEBSITE_URL } from '../api.config';
 
 type StaffRow = {
@@ -32,7 +33,7 @@ type DirectoryClinic = {
 
 @Component({
   selector: 'app-clinic-settings',
-  imports: [FormsModule, ClinicSwitcher],
+  imports: [FormsModule, ClinicSwitcher, ClinicLogoSettings],
   templateUrl: './clinic-settings.html',
   styleUrl: './clinic-settings.scss',
 })
@@ -44,6 +45,7 @@ export class ClinicSettings {
   readonly websiteUrl = WEBSITE_URL;
   readonly user = this.auth.user;
   readonly canManageAccess = this.auth.canManageClinicAccess;
+  readonly isClinicAdmin = this.auth.isClinicAdmin;
   readonly savingRips = signal(false);
   readonly savingReps = signal(false);
   readonly message = signal('');

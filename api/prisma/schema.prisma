@@ -359,6 +359,7 @@ model Clinic {
   userClinicAccess     UserClinicAccess[]
   remoteConsentInvites RemoteConsentInvite[]
   platformReceipts     PlatformReceipt[]
+  logos                ClinicLogo[]
 
   @@map("clinics")
 }
@@ -1456,4 +1457,22 @@ model StoredFile {
 
   @@index([createdAt])
   @@map("stored_files")
+}
+
+enum ClinicLogoKind {
+  HOME
+  HC
+}
+
+/// Logo propio del consultorio. Tabla aparte de Clinic: copiar o replicar un consultorio no lo arrastra.
+model ClinicLogo {
+  clinicId  String         @map("clinic_id") @db.Uuid
+  kind      ClinicLogoKind
+  mimeType  String         @map("mime_type") @db.VarChar(40)
+  data      Bytes
+  updatedAt DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  clinic    Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@id([clinicId, kind])
+  @@map("clinic_logos")
 }

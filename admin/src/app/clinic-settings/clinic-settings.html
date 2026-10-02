@@ -9,6 +9,10 @@
     <app-clinic-switcher (switched)="onClinicSwitched()" />
   </header>
 
+  @if (isClinicAdmin()) {
+    <app-clinic-logo-settings />
+  }
+
   @if (canManageAccess()) {
   <div class="card">
     <p class="eyebrow">Operación multi-sede</p>

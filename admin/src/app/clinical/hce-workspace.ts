@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../auth.service';
 import { WEBSITE_URL } from '../api.config';
-import { clinicLogoCandidates } from '../clinic-logo';
+import { clinicLogoUrl } from '../clinic-logo';
 import { ClinicalHistory } from './clinical-history';
 import { ClinicSwitcher } from '../clinic-switcher';
 import { HceWorkspaceService } from './hce-workspace.service';
@@ -30,9 +30,9 @@ export class HceWorkspace implements OnInit, OnDestroy {
 
   readonly websiteUrl = WEBSITE_URL;
   readonly user = this.auth.user;
-  readonly logoAttempt = linkedSignal({ source: () => this.user()?.clinicId, computation: () => 0 });
-  readonly clinicLogo = computed(
-    () => clinicLogoCandidates(this.user()?.clinicId)[this.logoAttempt()] ?? null,
+  readonly logoFailed = linkedSignal({ source: () => this.user()?.clinicId, computation: () => false });
+  readonly clinicLogo = computed(() =>
+    this.logoFailed() ? null : clinicLogoUrl(this.user()?.clinicId, 'hc'),
   );
   readonly canWrite = this.auth.canWriteClinical;
   readonly tabs = this.workspace.tabs;

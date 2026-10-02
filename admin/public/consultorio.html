@@ -414,7 +414,7 @@
         var logo = document.getElementById('clinicLogo');
         logo.onload = function () { logo.hidden = false; };
         logo.alt = user.clinicName || 'Logo del consultorio';
-        logo.src = '/clinic-logos/' + encodeURIComponent(user.clinicId) + '.jpg?v=2';
+        logo.src = '/api/public/clinic-logo/' + encodeURIComponent(user.clinicId) + '/home';
       }
 
       if (user.specialty === 'PSYCHOLOGY') {

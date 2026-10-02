@@ -50,13 +50,7 @@
   width: auto;
   object-fit: contain;
   border-radius: 14px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
-}
-
-.clinic-logo.is-png {
-  height: 110px;
-  border-radius: 0;
-  box-shadow: none;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.18));
 }
 
 @media (max-width: 900px) {

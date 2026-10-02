@@ -143,7 +143,7 @@ export class HceExportService {
     const buffer = await this.pdf.buildPdfBuffer(
       encounter as never,
       {
-        id: encounter.clinicId,
+        logo: await this.clinicLogoDataUrl(encounter.clinicId),
         name: clinic?.name ?? 'Consultorio',
         address: clinic?.address,
         phone: clinic?.phone,
@@ -155,6 +155,13 @@ export class HceExportService {
       buffer,
       fileName: this.pdf.suggestedFileName(encounter as never),
     };
+  }
+
+  /** Logo de historia clínica del consultorio; si no tiene, el del panel de inicio. */
+  private async clinicLogoDataUrl(clinicId: string): Promise<string | null> {
+    const rows = await this.prisma.clinicLogo.findMany({ where: { clinicId } });
+    const row = rows.find((r) => r.kind === 'HC') ?? rows.find((r) => r.kind === 'HOME');
+    return row ? `data:${row.mimeType};base64,${Buffer.from(row.data).toString('base64')}` : null;
   }
 
   /** Epicrisis de cierre del tratamiento de ortodoncia (resumen automático + firmas). */

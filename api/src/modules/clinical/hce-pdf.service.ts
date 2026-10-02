@@ -80,8 +80,9 @@ export type PatientSignatureInfo = {
 };
 
 type ClinicInfo = {
-  id?: string | null;
   name: string;
+  /** Logo del consultorio como data URL (PNG/JPG), o null para el membrete estándar. */
+  logo?: string | null;
   address?: string | null;
   phone?: string | null;
   specialty?: ClinicSpecialty | string | null;
@@ -154,7 +155,6 @@ export class HcePdfService {
   private readonly logger = new Logger(HcePdfService.name);
   private readonly printer: InstanceType<typeof PdfPrinter>;
   private membreteCache: { left: string } | null = null;
-  private readonly logoCache = new Map<string, string | null>();
 
   constructor() {
     this.printer = new PdfPrinter({
@@ -183,7 +183,7 @@ export class HcePdfService {
       specialty,
       images,
       patientSignature ?? null,
-      this.loadClinicLogo(clinic.id),
+      clinic.logo ?? null,
     );
     return this.renderBuffer(doc);
   }
@@ -223,34 +223,6 @@ export class HcePdfService {
       left: `data:image/png;base64,${fs.readFileSync(leftPath).toString('base64')}`,
     };
     return this.membreteCache;
-  }
-
-  /**
-   * Logo propio del consultorio en `assets/clinic-logos/`: primero `<clinicId>-hc.png`
-   * (exclusivo de la historia clínica) y si no existe `<clinicId>.jpg` (logo general).
-   */
-  private loadClinicLogo(clinicId?: string | null): string | null {
-    if (!clinicId || !/^[\w-]+$/.test(clinicId)) return null;
-    if (this.logoCache.has(clinicId)) return this.logoCache.get(clinicId) ?? null;
-    const dirs = [
-      path.join(process.cwd(), 'assets', 'clinic-logos'),
-      path.join(process.cwd(), 'api', 'assets', 'clinic-logos'),
-      path.join(__dirname, '..', '..', '..', 'assets', 'clinic-logos'),
-    ];
-    const variants: Array<[string, string]> = [
-      [`${clinicId}-hc.png`, 'image/png'],
-      [`${clinicId}.jpg`, 'image/jpeg'],
-    ];
-    let logo: string | null = null;
-    for (const [file, mime] of variants) {
-      const found = dirs.map((d) => path.join(d, file)).find((p) => fs.existsSync(p));
-      if (found) {
-        logo = `data:${mime};base64,${fs.readFileSync(found).toString('base64')}`;
-        break;
-      }
-    }
-    this.logoCache.set(clinicId, logo);
-    return logo;
   }
 
   private tryAsset(fileName: string) {

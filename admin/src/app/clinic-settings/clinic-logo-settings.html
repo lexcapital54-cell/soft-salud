@@ -1,0 +1,54 @@
+<div class="card logo-card">
+  <p class="eyebrow">Identidad del consultorio</p>
+  <h2>Logo del consultorio</h2>
+  <p class="lead">
+    Cada consultorio carga su propio logo. No se copia al replicar o crear otro consultorio.
+    Formatos PNG o JPG, máximo 2 MB; el PNG con fondo transparente se ve mejor.
+  </p>
+
+  <div class="logo-grid">
+    @for (slot of slots; track slot.id) {
+      @let draft = pending()[slot.id];
+      @let current = currentUrl(slot.id);
+      <section class="logo-slot" [class.has-draft]="!!draft">
+        <h3>{{ slot.title }}</h3>
+        <p class="muted small">{{ slot.help }}</p>
+
+        <label class="logo-preview" [title]="'Elegir imagen para ' + slot.title">
+          @if (draft) {
+            <img [src]="draft.preview" alt="Vista previa del nuevo logo" />
+            <span class="tag">Vista previa · sin guardar</span>
+          } @else if (current) {
+            <img [src]="current" [alt]="slot.title" />
+          } @else {
+            <span class="empty">
+              {{ slot.id === 'hc' && status().home ? 'Usa el logo del panel de inicio' : 'Sin logo' }}
+              <small>Haga clic para elegir una imagen</small>
+            </span>
+          }
+          <input type="file" accept="image/png,image/jpeg" (change)="onPick(slot.id, $event)" />
+        </label>
+
+        <div class="logo-actions">
+          @if (draft) {
+            <button type="button" class="primary" [disabled]="busy() === slot.id" (click)="save(slot.id)">
+              {{ busy() === slot.id ? 'Guardando…' : 'Guardar logo' }}
+            </button>
+            <button type="button" class="ghost" (click)="discard(slot.id)">Cancelar</button>
+          } @else if (current) {
+            <button type="button" class="ghost danger" [disabled]="busy() === slot.id" (click)="remove(slot.id)">
+              Quitar logo
+            </button>
+          }
+        </div>
+      </section>
+    }
+  </div>
+
+  @if (message()) {
+    <p class="ok">{{ message() }}</p>
+  }
+  @if (error()) {
+    <p class="err">{{ error() }}</p>
+  }
+</div>
