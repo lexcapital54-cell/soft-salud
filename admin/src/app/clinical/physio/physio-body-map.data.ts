@@ -84,12 +84,26 @@ function smoothClosed(pts: Pt[]): string {
 
 /** Mitad izquierda (de la pantalla) del contorno, del cuello a la entrepierna. */
 const HALF_OUTLINE: Pt[] = [
-  [93, 46], [92, 57], [82, 63], [69, 66], [61, 72], [56, 83], [54, 98], [51, 114], [49, 130],
-  [45, 148], [43, 166], [45, 181], [41, 191], [40, 203], [44, 213], [52, 213], [57, 202], [57, 189],
-  [59, 179], [61, 161], [63, 144], [65, 129], [67, 112], [69, 98], [74, 93], [78, 106], [80, 124],
-  [78, 146], [76, 164], [77, 190], [79, 222], [82, 252], [82, 268], [79, 292], [82, 318], [85, 341],
-  [81, 354], [79, 363], [86, 368], [96, 367], [97, 356], [94, 341], [95, 318], [96, 292], [96, 266],
-  [97, 240], [98, 206], [100, 192],
+  // cuello, trapecio y deltoides
+  [94, 46], [93, 56], [88, 60], [80, 63], [71, 65], [64, 68], [59, 74], [56, 82],
+  // brazo (bíceps / tríceps) y codo
+  [54, 92], [53, 104], [51, 116], [50, 126], [49, 133],
+  // antebrazo y muñeca
+  [47, 142], [45, 154], [44, 168], [45, 179], [45, 184],
+  // mano
+  [42, 190], [40, 198], [40, 206], [42, 212], [46, 216], [51, 215], [55, 210], [57, 202], [57, 192], [57, 186],
+  // cara interna del antebrazo y del brazo hasta la axila
+  [58, 176], [60, 160], [62, 146], [64, 134], [66, 120], [67, 108], [68, 99], [71, 94], [75, 96],
+  // tronco: dorsal, cintura y cadera
+  [77, 104], [78, 116], [80, 128], [80, 138], [78, 150], [76, 162], [76, 174],
+  // muslo, rodilla, pantorrilla y tobillo
+  [77, 190], [78, 206], [80, 226], [81, 242], [83, 252], [83, 262], [82, 270], [80, 282], [79, 294],
+  [81, 308], [83, 322], [85, 338], [85, 346],
+  // pie
+  [82, 353], [79, 360], [79, 365], [84, 368], [92, 368], [97, 366], [97, 358], [95, 350],
+  // cara interna de la pierna hasta la entrepierna
+  [94, 342], [94, 326], [95, 308], [97, 292], [96, 278], [96, 266], [97, 256], [97, 240], [98, 220],
+  [99, 204], [100, 194],
 ];
 
 export const BODY_OUTLINE = smoothClosed([
@@ -97,28 +111,83 @@ export const BODY_OUTLINE = smoothClosed([
   ...HALF_OUTLINE.slice(0, -1).reverse().map(([x, y]): Pt => [200 - x, y]),
 ]);
 
-export const BODY_HEAD = { cx: 100, cy: 28, rx: 16, ry: 21 };
+/** Cabeza con mandíbula y mentón. */
+export const BODY_HEAD = 'M100 6 C111.5 6 117 15 117 27 C117 37 112.5 44.5 106 48 L94 48 C87.5 44.5 83 37 83 27 C83 15 88.5 6 100 6 Z';
+export const BODY_EARS = [
+  { cx: 82.6, cy: 28, rx: 2, ry: 4.2 },
+  { cx: 117.4, cy: 28, rx: 2, ry: 4.2 },
+];
 
-const both = (d: string, m: string) => [d, m];
+/** Refleja un trazo con comandos absolutos M/L/Q/C respecto al eje del cuerpo (x = 100). */
+function mirrorPath(d: string): string {
+  let i = 0;
+  return d.replace(/-?\d+(\.\d+)?/g, (n) => (i++ % 2 === 0 ? String(+(200 - +n).toFixed(1)) : n));
+}
+
+const both = (...paths: string[]) => paths.flatMap((d) => [d, mirrorPath(d)]);
+
+const FINGERS = both('M44.5 207 L45.5 214', 'M48.5 208 L49.5 215.5', 'M52.5 207.5 L53 213.5', 'M56.5 196 Q54 200 55 206');
+
+export interface BodyDetails {
+  /** Contornos musculares (trazo fino). */
+  lines: string[];
+  /** Puntos de referencia: ombligo, hoyuelos lumbares… */
+  dots: Array<{ cx: number; cy: number; r: number }>;
+  /** Columna vertebral punteada (solo vista posterior). */
+  spine?: string;
+}
 
 /** Trazos anatómicos de referencia (no cliqueables). */
-export const BODY_DETAILS: Record<BodyView, string[]> = {
-  ant: [
-    ...both('M86 67 Q93 71 99 69', 'M114 67 Q107 71 101 69'),
-    ...both('M80 97 Q90 104 99 99', 'M120 97 Q110 104 101 99'),
-    'M100 102 L100 150',
-    'M98.6 140 a1.4 1.4 0 1 0 2.8 0 a1.4 1.4 0 1 0 -2.8 0',
-    ...both('M81 160 Q91 172 99 184', 'M119 160 Q109 172 101 184'),
-    ...both('M85 256 Q90 262 95 256', 'M115 256 Q110 262 105 256'),
-  ],
-  post: [
-    'M100 54 L100 160',
-    ...both('M84 80 Q80 94 88 104', 'M116 80 Q120 94 112 104'),
-    ...both('M84 150 Q92 147 99 152', 'M116 150 Q108 147 101 152'),
-    'M100 162 L100 186',
-    ...both('M80 186 Q90 191 99 187', 'M120 186 Q110 191 101 187'),
-    ...both('M84 266 Q90 270 96 266', 'M116 266 Q110 270 104 266'),
-  ],
+export const BODY_DETAILS: Record<BodyView, BodyDetails> = {
+  ant: {
+    lines: [
+      ...both(
+        'M95 50 Q96 58 98.5 65', // esternocleidomastoideo
+        'M86.5 66 Q93 69.5 99 68', // clavícula
+        'M66 70 Q71 80 69 92', // deltoides
+        'M77 82 Q84 100 99 98', // pectoral
+        'M57 92 Q61.5 104 59.5 118', // bíceps
+        'M52 145 Q54 160 50.5 176', // antebrazo
+        'M90 104 Q88.5 126 92 150', // recto abdominal
+        'M91 113 Q95.5 114.5 99 113.5', // abdominales
+        'M91 125 Q95.5 126.5 99 125.5',
+        'M92 137 Q96 138 99 137.5',
+        'M80.5 158 Q90 171 99 186', // ingle
+        'M84 196 Q86 222 89 246', // cuádriceps
+        'M95.5 212 Q93 234 91 248', // vasto medial
+        'M86 256.5 Q90 250.5 94 256.5 Q90 263 86 256.5', // rótula
+        'M90.5 276 Q88 302 90 336', // tibia
+      ),
+      'M100 100 L100 150', // línea alba
+      ...FINGERS,
+    ],
+    dots: [{ cx: 100, cy: 143, r: 1.2 }],
+  },
+  post: {
+    lines: [
+      ...both(
+        'M93 54 Q90 60 86 64', // trapecio superior
+        'M86 66 Q95 84 100 104', // trapecio inferior
+        'M83 79 Q90 80 92.5 83 Q91.5 96 88 104 Q81 94 83 79', // escápula
+        'M56.5 88 Q60.5 101 58.5 116', // tríceps
+        'M77.5 104 Q86 121 92.5 137', // dorsal ancho
+        'M78.5 166 Q88 160 99 166', // glúteo superior
+        'M80 188 Q90 193.5 99 189', // pliegue glúteo
+        'M89 198 Q88 222 89.5 246', // isquiotibiales
+        'M84 262 Q90 266.5 96 262', // hueco poplíteo
+        'M83.5 276 Q81.5 293 88.5 307', // gemelo externo
+        'M95.5 276 Q97.5 293 90.5 307', // gemelo interno
+        'M90 318 L90.5 341', // tendón de Aquiles
+      ),
+      'M100 162 L100 188', // pliegue interglúteo
+      ...FINGERS,
+    ],
+    dots: [
+      { cx: 95.5, cy: 151, r: 0.9 },
+      { cx: 104.5, cy: 151, r: 0.9 },
+    ],
+    spine: 'M100 52 L100 158',
+  },
 };
 
 export interface BodyLabel {

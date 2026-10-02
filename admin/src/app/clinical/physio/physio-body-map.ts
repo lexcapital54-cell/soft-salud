@@ -1,6 +1,6 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { PhysiotherapyContent } from '../clinical.models';
-import { BODY_DETAILS, BODY_HEAD, BODY_LABELS, BODY_OUTLINE, BODY_ZONES, BodyView, BodyZone, zoneLabel } from './physio-body-map.data';
+import { BODY_DETAILS, BODY_EARS, BODY_HEAD, BODY_LABELS, BODY_OUTLINE, BODY_ZONES, BodyView, BodyZone, zoneLabel } from './physio-body-map.data';
 import { ensureIntake } from './physio-intake.models';
 
 let bodyMapSeq = 0;
@@ -18,18 +18,32 @@ let bodyMapSeq = 0;
             <svg [attr.viewBox]="view.box" role="group" [attr.aria-label]="'Mapa corporal, ' + view.label">
               <defs>
                 <linearGradient [attr.id]="uid + view.key + '-skin'" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0" stop-color="#e9eff6" />
+                  <stop offset="0" stop-color="#d3deeb" />
+                  <stop offset=".3" stop-color="#eef3f9" />
                   <stop offset=".5" stop-color="#ffffff" />
-                  <stop offset="1" stop-color="#e9eff6" />
+                  <stop offset=".7" stop-color="#eef3f9" />
+                  <stop offset="1" stop-color="#d3deeb" />
                 </linearGradient>
+                <radialGradient [attr.id]="uid + view.key + '-gold'" cx=".5" cy=".45" r=".65">
+                  <stop offset="0" stop-color="#f3d77e" stop-opacity=".95" />
+                  <stop offset=".6" stop-color="#d9b043" stop-opacity=".85" />
+                  <stop offset="1" stop-color="#b8891b" stop-opacity=".75" />
+                </radialGradient>
+                <filter [attr.id]="uid + view.key + '-shadow'" x="-20%" y="-10%" width="140%" height="120%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="2.2" flood-color="#1b365d" flood-opacity=".18" />
+                </filter>
                 <clipPath [attr.id]="uid + view.key + '-clip'">
                   <path [attr.d]="outline" />
-                  <ellipse [attr.cx]="head.cx" [attr.cy]="head.cy" [attr.rx]="head.rx" [attr.ry]="head.ry" />
+                  <path [attr.d]="head" />
                 </clipPath>
               </defs>
-              <g class="bm-figure" [attr.fill]="ref(view.key, 'skin')">
+              <ellipse class="bm-ground" cx="100" cy="370" rx="34" ry="4" />
+              <g class="bm-figure" [attr.fill]="ref(view.key, 'skin')" [attr.filter]="ref(view.key, 'shadow')">
                 <path [attr.d]="outline" />
-                <ellipse [attr.cx]="head.cx" [attr.cy]="head.cy" [attr.rx]="head.rx" [attr.ry]="head.ry" />
+                <path [attr.d]="head" />
+                @for (ear of ears; track ear.cx) {
+                  <ellipse [attr.cx]="ear.cx" [attr.cy]="ear.cy" [attr.rx]="ear.rx" [attr.ry]="ear.ry" />
+                }
               </g>
               <g [attr.clip-path]="ref(view.key, 'clip')">
               @for (zone of zones[view.key]; track zone.id) {
@@ -42,6 +56,7 @@ let bodyMapSeq = 0;
                   role="button"
                   [attr.aria-pressed]="on"
                   [attr.aria-label]="zone.label"
+                  [style.fill]="on ? ref(view.key, 'gold') : null"
                   (click)="toggle(zone)"
                   (keydown.enter)="toggle(zone)"
                   (keydown.space)="$event.preventDefault(); toggle(zone)"
@@ -60,21 +75,31 @@ let bodyMapSeq = 0;
               }
               </g>
               <g class="bm-lines">
-                <path [attr.d]="outline" class="bm-outline" />
-                <ellipse class="bm-outline" [attr.cx]="head.cx" [attr.cy]="head.cy" [attr.rx]="head.rx" [attr.ry]="head.ry" />
-                @for (d of details[view.key]; track $index) {
+                @for (d of details[view.key].lines; track $index) {
                   <path [attr.d]="d" class="bm-detail" />
+                }
+                @for (dot of details[view.key].dots; track $index) {
+                  <circle class="bm-dot" [attr.cx]="dot.cx" [attr.cy]="dot.cy" [attr.r]="dot.r" />
+                }
+                @if (details[view.key].spine; as spine) {
+                  <path [attr.d]="spine" class="bm-spine" />
+                }
+                <path [attr.d]="outline" class="bm-outline" />
+                <path [attr.d]="head" [attr.fill]="ref(view.key, 'skin')" />
+                <path [attr.d]="head" class="bm-outline" />
+                @for (ear of ears; track ear.cx) {
+                  <ellipse class="bm-outline" [attr.cx]="ear.cx" [attr.cy]="ear.cy" [attr.rx]="ear.rx" [attr.ry]="ear.ry" />
                 }
               </g>
               <g class="bm-labels">
                 @for (l of labels[view.key]; track l.text) {
                   <line [attr.x1]="l.ax" [attr.y1]="l.ay" [attr.x2]="view.key === 'ant' ? -14 : 214" [attr.y2]="l.ly" />
-                  <circle [attr.cx]="l.ax" [attr.cy]="l.ay" r="1.6" />
+                  <circle [attr.cx]="l.ax" [attr.cy]="l.ay" r="1.5" />
                   <text [attr.x]="view.key === 'ant' ? -17 : 217" [attr.y]="l.ly + 3" [attr.text-anchor]="view.key === 'ant' ? 'end' : 'start'">{{ l.text }}</text>
                 }
               </g>
-              <text class="bm-side" x="22" y="376">{{ view.key === 'ant' ? 'Der.' : 'Izq.' }}</text>
-              <text class="bm-side" x="178" y="376" text-anchor="end">{{ view.key === 'ant' ? 'Izq.' : 'Der.' }}</text>
+              <text class="bm-side" x="22" y="380">{{ view.key === 'ant' ? 'Der.' : 'Izq.' }}</text>
+              <text class="bm-side" x="178" y="380" text-anchor="end">{{ view.key === 'ant' ? 'Izq.' : 'Der.' }}</text>
             </svg>
           </figure>
         }
@@ -113,12 +138,12 @@ let bodyMapSeq = 0;
   `,
   styles: `
     .bm-views { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .bm-view { margin: 0; padding: 12px 8px 6px; border: 1px solid #dbe3ee; border-radius: 16px; background: #fff; text-align: center; box-shadow: 0 1px 2px rgba(27, 54, 93, .06); }
-    figcaption { font-weight: 700; color: #1b365d; font-size: .9rem; letter-spacing: .02em; margin-bottom: 2px; }
+    .bm-view { margin: 0; padding: 14px 8px 8px; border: 1px solid #dfe6ef; border-radius: 18px; text-align: center; background: radial-gradient(ellipse 60% 55% at 50% 45%, #f2f6fb 0%, #fff 70%); box-shadow: 0 1px 2px rgba(27, 54, 93, .05), 0 8px 24px -12px rgba(27, 54, 93, .18); }
+    figcaption { display: inline-block; font-weight: 700; color: #1b365d; font-size: .82rem; letter-spacing: .12em; text-transform: uppercase; padding-bottom: 4px; margin-bottom: 4px; border-bottom: 2px solid #c59b27; }
     svg { width: 100%; max-width: 320px; height: auto; touch-action: manipulation; overflow: visible; }
     .bm-figure path, .bm-figure ellipse { stroke: none; }
-    .bm-outline { fill: none; stroke: #5d7390; stroke-width: 1.1; stroke-linejoin: round; }
-    .bm-detail { fill: none; stroke: #9fb0c4; stroke-width: .8; stroke-linecap: round; }
+    .bm-outline { fill: none; stroke: #48607f; stroke-width: 1; stroke-linejoin: round; }
+    .bm-detail { fill: none; stroke: #a7b6c8; stroke-width: .7; stroke-linecap: round; }
     .bm-lines, .bm-labels { pointer-events: none; }
     .bm-labels line { stroke: #8296ad; stroke-width: .6; }
     .bm-labels circle { fill: #1b365d; }
@@ -129,8 +154,12 @@ let bodyMapSeq = 0;
     .bm-zone:not(.locked):hover ellipse, .bm-zone:not(.locked):hover rect,
     .bm-zone:focus-visible ellipse, .bm-zone:focus-visible rect { fill: rgba(27, 54, 93, .14); }
     .bm-zone:focus { outline: none; }
-    .bm-zone.on ellipse, .bm-zone.on rect { fill: rgba(197, 155, 39, .72); }
-    .bm-zone.on:not(.locked):hover ellipse, .bm-zone.on:not(.locked):hover rect { fill: rgba(197, 155, 39, .9); }
+    .bm-zone.on ellipse, .bm-zone.on rect { fill: inherit; animation: bm-pop .3s ease-out; }
+    .bm-zone.on:not(.locked):hover { filter: brightness(1.08) saturate(1.1); }
+    @keyframes bm-pop { from { opacity: 0; } to { opacity: 1; } }
+    .bm-ground { fill: rgba(27, 54, 93, .1); }
+    .bm-dot { fill: #9aabbf; }
+    .bm-spine { fill: none; stroke: #9aabbf; stroke-width: 1.3; stroke-linecap: round; stroke-dasharray: .1 3.6; }
     .bm-hint { margin: 10px 0 4px; min-height: 1.2em; color: #1b365d; font-size: .85rem; text-align: center; }
     .bm-hint span { color: #c59b27; margin-right: 4px; }
     .bm-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0 10px; }
@@ -141,7 +170,7 @@ let bodyMapSeq = 0;
     .bm-notes { display: block; }
     .bm-notes textarea { width: 100%; }
     @media (max-width: 520px) { .bm-views { gap: 6px; } .bm-view { padding: 6px; } }
-    @media print { .bm-zone.on ellipse, .bm-zone.on rect { fill: rgba(197, 155, 39, .72) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .bm-clear, .bm-chip button { display: none; } }
+    @media print { svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .bm-view { box-shadow: none; } .bm-clear, .bm-chip button { display: none; } }
   `,
 })
 export class PhysioBodyMap {
@@ -156,12 +185,13 @@ export class PhysioBodyMap {
   readonly zones = BODY_ZONES;
   readonly outline = BODY_OUTLINE;
   readonly head = BODY_HEAD;
+  readonly ears = BODY_EARS;
   readonly details = BODY_DETAILS;
   readonly labels = BODY_LABELS;
   readonly uid = `bm${++bodyMapSeq}-`;
 
   /** URL absoluta: con `<base href>` un `url(#id)` relativo no resuelve en Safari/Firefox. */
-  ref(view: BodyView, kind: 'skin' | 'clip') {
+  ref(view: BodyView, kind: 'skin' | 'clip' | 'gold' | 'shadow') {
     return `url(${location.pathname}${location.search}#${this.uid}${view}-${kind})`;
   }
   readonly hover = signal('');
