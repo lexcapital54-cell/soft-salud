@@ -4259,6 +4259,11 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     return !this.encounter() && !this.selectedPatientId;
   }
 
+  /** Consultar el catálogo no modifica la historia: se permite aun sin paciente seleccionado. */
+  cieSearchDisabled(): boolean {
+    return !this.canWrite();
+  }
+
   cupsFieldsDisabled(): boolean {
     return this.cieFieldsDisabled();
   }
@@ -4635,6 +4640,10 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   addDiagnosis(item: CatalogCode) {
+    if (this.cieFieldsDisabled()) {
+      this.error.set(`Para agregar ${item.code} seleccione primero un paciente arriba.`);
+      return;
+    }
     this.diagnoses = [
       ...this.diagnoses,
       { cieCode: item.code, description: item.description, type: 'IMPRESSION' },

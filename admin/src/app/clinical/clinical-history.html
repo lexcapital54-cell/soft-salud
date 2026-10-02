@@ -3824,7 +3824,9 @@
               {{ hceSectionNumber('cie') }}Diagnósticos (CIE-10)
             </h3>
             @if (!encounter() && !selectedPatientId) {
-              <p class="banner tip">Seleccione un paciente arriba para ver y editar los CIE-10.</p>
+              <p class="banner tip">
+                Puede buscar códigos ya mismo; para agregarlos a la historia seleccione un paciente arriba.
+              </p>
             } @else if (isLocked()) {
               <p class="muted small">
                 La historia ya está sellada; aquí puede completar los códigos CIE-10. La fecha de
@@ -3854,7 +3856,7 @@
                   (keydown.arrowup)="moveCieActive(-1, $event)"
                   (keydown.escape)="cieOpen.set(false)"
                   autocomplete="off"
-                  [disabled]="cieFieldsDisabled()"
+                  [disabled]="cieSearchDisabled()"
                 />
                 <button
                   type="button"
