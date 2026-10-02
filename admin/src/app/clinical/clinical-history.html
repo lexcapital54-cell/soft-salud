@@ -4913,7 +4913,11 @@
                 : 'RIPS OFF — consulta particular (RDA activo)'
             }}
           </p>
-          <a routerLink="/consultorio/configuracion">Configurar RIPS →</a>
+          @if (isClinicAdmin()) {
+            <a routerLink="/consultorio/configuracion">Configurar RIPS →</a>
+          } @else {
+            <p class="muted small">Lo habilita el administrador del consultorio.</p>
+          }
         </section>
       </aside>
     </div>

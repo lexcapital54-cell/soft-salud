@@ -388,6 +388,7 @@ function emptyContent(): ClinicalContent {
 export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   private readonly api = inject(ClinicalApiService);
   private readonly auth = inject(AuthService);
+  readonly isClinicAdmin = this.auth.isClinicAdmin;
   private readonly autosave = inject(ClinicalAutosaveService);
   readonly orthoTracking = inject(OrthoTrackingService);
   private readonly localDrafts = inject(HceLocalDraftService);
