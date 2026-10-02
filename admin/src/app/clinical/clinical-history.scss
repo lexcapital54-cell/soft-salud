@@ -1436,8 +1436,9 @@ td {
   line-height: 1.35;
 }
 
-.suggest button:hover {
-  background: #f3fafa;
+.suggest button:hover,
+.suggest button.active {
+  background: #e3f4f3;
 }
 
 .linkish {

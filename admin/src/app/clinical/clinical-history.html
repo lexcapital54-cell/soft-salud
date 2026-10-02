@@ -3832,8 +3832,9 @@
               </p>
             } @else {
               <p class="muted small catalog-hint">
-                Escriba el código o descripción, o pase el mouse sobre el campo para ver el catálogo
-                configurado.
+                Busque con palabras clave (ej. «ansiedad», «depresion», «TDAH», «estres postraum») o con
+                el inicio del código (ej. «F41», «f411»). No importan tildes ni mayúsculas; use ↑ ↓ y Enter
+                para elegir.
               </p>
             }
             <div
@@ -3845,10 +3846,13 @@
             >
               <div class="catalog-input-row">
                 <input
-                  placeholder="Código CIE-10 o descripción…"
+                  placeholder="Palabra clave, sigla o inicio del código (ej. ansiedad, TDAH, F41)…"
                   [(ngModel)]="cieQuery"
                   (ngModelChange)="onCieQueryChange()"
                   (keydown.enter)="commitCieFromInput($event)"
+                  (keydown.arrowdown)="moveCieActive(1, $event)"
+                  (keydown.arrowup)="moveCieActive(-1, $event)"
+                  (keydown.escape)="cieOpen.set(false)"
                   autocomplete="off"
                   [disabled]="cieFieldsDisabled()"
                 />
@@ -3864,9 +3868,9 @@
               </div>
               @if (cieOpen() && cieResults().length) {
                 <ul class="suggest" (mousedown)="$event.preventDefault()">
-                  @for (item of cieResults(); track item.id) {
+                  @for (item of cieResults(); track item.id; let i = $index) {
                     <li>
-                      <button type="button" (click)="addDiagnosis(item)">
+                      <button type="button" [class.active]="cieActive() === i" (mouseenter)="cieActive.set(i)" (click)="addDiagnosis(item)">
                         <strong>{{ item.code }}</strong>
                         @if (item.cie11Code) {
                           <span class="muted"> / {{ item.cie11Code }}</span>
@@ -3879,6 +3883,10 @@
                     </li>
                   }
                 </ul>
+              } @else if (cieOpen() && cieQuery.trim().length > 1 && !cieSearching()) {
+                <p class="muted small cie-empty">
+                  Sin resultados para «{{ cieQuery.trim() }}». Pruebe con otra palabra o solo las primeras letras del código.
+                </p>
               }
             </div>
             <table>
@@ -3897,7 +3905,7 @@
                       <input
                         class="code-cell"
                         [(ngModel)]="d.cieCode"
-                        placeholder="Ej. F41.1"
+                        placeholder="Código o palabra"
                         [disabled]="cieFieldsDisabled()"
                         (focus)="openCieForRow($index)"
                         (ngModelChange)="onDiagnosisCodeChange($index)"

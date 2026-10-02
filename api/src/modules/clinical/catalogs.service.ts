@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ClinicSpecialty, Prisma } from '@prisma/client';
+import { ClinicSpecialty } from '@prisma/client';
+import { IndexedCie, indexCie, rankCie } from './cie-search';
 import { PrismaService } from '../../prisma/prisma.module';
 import { PSYCHOLOGY_CUPS_CATALOG } from './psychology-cups.catalog';
 import { PHYSIOTHERAPY_CIE_CATALOG } from './physiotherapy-cie.catalog';
@@ -26,27 +27,50 @@ function isOrthoScope(specialty?: ClinicSpecialty | string | null, scope?: strin
 /** Capítulos CIE-10 que completan el catálogo de psicología (salud mental, factores psicosociales, autolesión). */
 const PSYCHOLOGY_CIE_PREFIXES = ['F', 'Z', 'R4', 'T74', 'X6', 'X7', 'X80', 'X81', 'X82', 'X83', 'X84', 'Y0'];
 
-/** «f411», «F41.1», «f4» → prefijo de código con el punto en su lugar («F41.1», «F4»); null si no parece un código. */
-function cieCodePrefix(query: string): string | null {
-  const raw = query.replace(/[\s.]/g, '').toUpperCase();
-  if (!/^[A-Z]\d{0,2}([\dX])?$/.test(raw) || (raw.length === 1 && query.trim().length > 1)) return null;
-  return raw.length > 3 ? `${raw.slice(0, 3)}.${raw.slice(3)}` : raw;
-}
-
-/** Filtro de cie_codes: por inicio de código si escribe un código, o por todas las palabras (parciales) de la descripción. */
-function cieCodeWhere(query: string | undefined, prefixes?: string[]): Prisma.CieCodeWhereInput {
-  const scope: Prisma.CieCodeWhereInput = prefixes ? { OR: prefixes.map((p) => ({ code: { startsWith: p } })) } : {};
-  if (!query) return { isActive: true, ...scope };
-  const prefix = cieCodePrefix(query);
-  const words = query.split(/\s+/).filter(Boolean);
-  const match: Prisma.CieCodeWhereInput = prefix
-    ? { OR: [{ code: { startsWith: prefix, mode: 'insensitive' } }, { code: { startsWith: prefix.replace('.', ''), mode: 'insensitive' } }] }
-    : { AND: words.map((w) => ({ description: { contains: w, mode: 'insensitive' as const } })) };
-  return { isActive: true, AND: [scope, match] };
-}
-
 const ORTHO_CIE_CODES = new Set(ORTHO_CIE_CATALOG.flatMap((g) => g.items.map((i) => i.code)));
 const ORTHO_CUPS_CODES = new Set(ORTHO_CUPS_CATALOG.flatMap((s) => s.items.map((i) => i.code)));
+
+const CATALOG_TTL_MS = 10 * 60_000;
+
+export interface CieRow {
+  id: string;
+  code: string;
+  description: string;
+  cie11Code: string;
+  category: string;
+  source: 'DIAGNOSIS_CATALOG' | 'CIE';
+}
+
+const PHYSIO_CIE_INDEX = indexCie(
+  PHYSIOTHERAPY_CIE_CATALOG.map((row) => ({
+    id: `cie-ft-${row.code}`,
+    code: row.code,
+    description: row.description,
+    cie11Code: '',
+    category: row.category || 'FISIOTERAPIA',
+    source: 'CIE' as const,
+  })),
+);
+const ORTHO_CIE_INDEX = indexCie(
+  orthoCieRows().map((row) => ({
+    id: `cie-orto-${row.key}`,
+    code: row.code,
+    description: row.description,
+    cie11Code: '',
+    category: row.category,
+    source: 'CIE' as const,
+  })),
+);
+const dentalCieRow = (row: { code: string; description: string; category?: string }) => ({
+  id: `cie-odo-${row.code}`,
+  code: row.code,
+  description: row.description,
+  cie11Code: '',
+  category: row.category || 'ODONTOLOGÍA',
+  source: 'CIE' as const,
+});
+const DENTAL_CIE_INDEX = indexCie(DENTISTRY_CIE_CATALOG.map(dentalCieRow));
+const DENTAL_CIE_INDEX_NO_ORTHO = indexCie(DENTISTRY_CIE_CATALOG.filter((row) => !ORTHO_CIE_CODES.has(row.code)).map(dentalCieRow));
 
 @Injectable()
 export class CatalogsService {
@@ -98,142 +122,62 @@ export class CatalogsService {
     const ortho = isOrthoScope(specialty, scope);
 
     if (spec === ClinicSpecialty.PHYSIOTHERAPY || spec === 'PHYSIOTHERAPY') {
-      return this.filterStatic(
-        PHYSIOTHERAPY_CIE_CATALOG.map((row) => ({
-          id: `cie-ft-${row.code}`,
-          code: row.code,
-          description: row.description,
-          cie11Code: '',
-          category: row.category || 'FISIOTERAPIA',
-          source: 'CIE' as const,
-        })),
-        query,
-        take,
-      );
+      return rankCie(PHYSIO_CIE_INDEX, query, take);
     }
 
     if (spec === ClinicSpecialty.DENTISTRY) {
-      const orthoRows = ortho
-        ? this.filterStatic(
-            orthoCieRows().map((row) => ({
-              id: `cie-orto-${row.key}`,
-              code: row.code,
-              description: row.description,
-              cie11Code: '',
-              category: row.category,
-              source: 'CIE' as const,
-            })),
-            query,
-            take,
-            true,
-          )
-        : [];
+      const orthoRows = ortho ? rankCie(ORTHO_CIE_INDEX, query, take) : [];
       const fromStatic = [
         ...orthoRows,
-        ...this.filterStatic(
-          DENTISTRY_CIE_CATALOG.filter((row) => !ortho || !ORTHO_CIE_CODES.has(row.code)).map((row) => ({
-            id: `cie-odo-${row.code}`,
-            code: row.code,
-            description: row.description,
-            cie11Code: '',
-            category: row.category || 'ODONTOLOGÍA',
-            source: 'CIE' as const,
-          })),
-          query,
-          take,
-        ),
+        ...rankCie(ortho ? DENTAL_CIE_INDEX_NO_ORTHO : DENTAL_CIE_INDEX, query, take),
       ].slice(0, take);
       if (fromStatic.length >= take || !query) return fromStatic;
-      const used = new Set(fromStatic.map((m) => m.code.toUpperCase()));
-      const fromCie = await this.prisma.cieCode.findMany({
-        where: cieCodeWhere(query),
-        take: take + used.size,
-        orderBy: { code: 'asc' },
-      });
-      for (const row of fromCie) {
-        if (used.has(row.code.toUpperCase())) continue;
-        fromStatic.push({
-          id: row.id,
-          code: row.code,
-          description: row.description,
-          cie11Code: '',
-          category: 'CIE-10',
-          source: 'CIE' as const,
-        });
-        if (fromStatic.length >= take) break;
-      }
-      return fromStatic;
+      return this.fillFromCie(fromStatic, query, take, 'CIE-10');
     }
 
-    const prefix = query ? cieCodePrefix(query) : null;
-    const catalogWhere: Prisma.DiagnosisCatalogWhereInput = {
-      isActive: true,
-      ...(query
-        ? {
-            OR: [
-              ...(prefix ? [{ cie10Code: { startsWith: prefix, mode: 'insensitive' as const } }] : []),
-              { cie10Code: { contains: query, mode: 'insensitive' as const } },
-              { cie11Code: { contains: query, mode: 'insensitive' as const } },
-              { AND: query.split(/\s+/).map((w) => ({ description: { contains: w, mode: 'insensitive' as const } })) },
-            ],
-          }
-        : {}),
-    };
+    const isPsych = spec === ClinicSpecialty.PSYCHOLOGY || spec === 'PSYCHOLOGY';
+    const catalog = rankCie(await this.diagnosisCatalogIndex(), query, take);
+    // Psicología: sin consulta solo su catálogo; al buscar, el resto del CIE-10 de salud mental (no la matriz de fisioterapia).
+    if (catalog.length >= take || (isPsych && !query)) return catalog;
+    return this.fillFromCie(catalog, query, take, isPsych ? 'CIE-10' : 'ADULTOS', isPsych ? PSYCHOLOGY_CIE_PREFIXES : undefined);
+  }
 
-    const fromCatalog = await this.prisma.diagnosisCatalog.findMany({
-      where: catalogWhere,
-      take,
+  private cieCache: { at: number; rows: IndexedCie<CieRow>[] } | null = null;
+  private catalogCache: { at: number; rows: IndexedCie<CieRow>[] } | null = null;
+
+  /** Tabla CIE-10 completa en memoria (≈12 mil filas) para buscar sin tildes y por relevancia. */
+  private async cieIndex() {
+    if (this.cieCache && Date.now() - this.cieCache.at < CATALOG_TTL_MS) return this.cieCache.rows;
+    const rows = await this.prisma.cieCode.findMany({ where: { isActive: true }, select: { id: true, code: true, description: true } });
+    this.cieCache = {
+      at: Date.now(),
+      rows: indexCie(rows.map((r) => ({ id: r.id, code: r.code, description: r.description, cie11Code: '', category: 'CIE-10', source: 'CIE' as const }))),
+    };
+    return this.cieCache.rows;
+  }
+
+  private async diagnosisCatalogIndex() {
+    if (this.catalogCache && Date.now() - this.catalogCache.at < CATALOG_TTL_MS) return this.catalogCache.rows;
+    const rows = await this.prisma.diagnosisCatalog.findMany({
+      where: { isActive: true },
       orderBy: [{ category: 'asc' }, { cie10Code: 'asc' }],
     });
+    this.catalogCache = {
+      at: Date.now(),
+      rows: indexCie(
+        rows.map((r) => ({ id: r.id, code: r.cie10Code, description: r.description, cie11Code: r.cie11Code, category: r.category, source: 'DIAGNOSIS_CATALOG' as const })),
+      ).map((r) => ({ ...r, _desc: `${r._desc} ${(r.cie11Code || '').toLowerCase()}` })),
+    };
+    return this.catalogCache.rows;
+  }
 
-    const mapped: Array<{
-      id: string;
-      code: string;
-      description: string;
-      cie11Code: string;
-      category: string;
-      source: 'DIAGNOSIS_CATALOG' | 'CIE';
-    }> = fromCatalog.map((row) => ({
-      id: row.id,
-      code: row.cie10Code,
-      description: row.description,
-      cie11Code: row.cie11Code,
-      category: row.category,
-      source: 'DIAGNOSIS_CATALOG' as const,
-    }));
-
-    if (mapped.length >= take) {
-      return mapped;
-    }
-
-    // Psicología: sin consulta solo su catálogo; al buscar, el resto del CIE-10 de salud mental (no la matriz de fisioterapia).
-    const isPsych = spec === ClinicSpecialty.PSYCHOLOGY || spec === 'PSYCHOLOGY';
-    if (isPsych && !query) {
-      return mapped;
-    }
-
-    const remaining = take - mapped.length;
-    const usedCodes = new Set(mapped.map((m) => m.code.toUpperCase()));
-    const fromCie = await this.prisma.cieCode.findMany({
-      where: cieCodeWhere(query, isPsych ? PSYCHOLOGY_CIE_PREFIXES : undefined),
-      take: remaining + usedCodes.size,
-      orderBy: { code: 'asc' },
-    });
-
-    for (const row of fromCie) {
-      if (usedCodes.has(row.code.toUpperCase())) continue;
-      mapped.push({
-        id: row.id,
-        code: row.code,
-        description: row.description,
-        cie11Code: '',
-        category: isPsych ? 'CIE-10' : 'ADULTOS',
-        source: 'CIE' as const,
-      });
-      if (mapped.length >= take) break;
-    }
-
-    return mapped;
+  /** Completa los resultados con el CIE-10 general (opcionalmente solo ciertos capítulos), sin repetir códigos. */
+  private async fillFromCie(base: CieRow[], query: string | undefined, take: number, category: string, prefixes?: string[]) {
+    const used = new Set(base.map((m) => m.code.toUpperCase()));
+    const pool = (await this.cieIndex()).filter(
+      (r) => !used.has(r.code.toUpperCase()) && (!prefixes || prefixes.some((p) => r.code.startsWith(p))),
+    );
+    return [...base, ...rankCie(pool, query, take - base.length).map((r) => ({ ...r, category }))];
   }
 
   async searchCups(q?: string, take = 20, specialty?: ClinicSpecialty | string | null, scope?: string | null) {

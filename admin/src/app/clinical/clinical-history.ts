@@ -2440,6 +2440,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   private readonly resizeHandler = () => this.fitSignaturePad();
 
   readonly cieResults = signal<CatalogCode[]>([]);
+  /** Resultado resaltado con ↑ ↓ en el buscador CIE-10 (−1 = ninguno). */
+  readonly cieActive = signal(-1);
+  readonly cieSearching = signal(false);
   readonly cupsResults = signal<CatalogCode[]>([]);
   readonly cieOpen = signal(false);
   readonly cupsOpen = signal(false);
@@ -4399,14 +4402,36 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   searchCie() {
+    this.cieSearching.set(true);
     this.api.searchCie(this.cieQuery.trim()).subscribe({
-      next: (rows) => this.cieResults.set(rows),
-      error: () => this.cieResults.set([]),
+      next: (rows) => {
+        this.cieResults.set(rows);
+        this.cieActive.set(this.cieQuery.trim() && rows.length ? 0 : -1);
+        this.cieSearching.set(false);
+      },
+      error: () => {
+        this.cieResults.set([]);
+        this.cieSearching.set(false);
+      },
     });
+  }
+
+  moveCieActive(step: 1 | -1, event: Event) {
+    const total = this.cieResults().length;
+    if (!total) return;
+    event.preventDefault();
+    this.cieOpen.set(true);
+    this.cieActive.update((i) => (i + step + total) % total);
+    queueMicrotask(() => document.querySelector('#cie-section .suggest button.active')?.scrollIntoView({ block: 'nearest' }));
   }
 
   commitCieFromInput(event?: Event) {
     event?.preventDefault();
+    const highlighted = this.cieOpen() ? this.cieResults()[this.cieActive()] : undefined;
+    if (highlighted) {
+      this.addDiagnosis(highlighted);
+      return;
+    }
     const code = this.cieQuery.trim();
     if (!code) return;
     const exact = this.cieResults().find((r) => r.code.toUpperCase() === code.toUpperCase());
