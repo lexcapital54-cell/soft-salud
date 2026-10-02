@@ -21,7 +21,7 @@ export interface BillingPatientRef {
 
 export interface PlanItemBalance {
   key: string;
-  source: 'PLAN' | 'ORTHO' | 'PHYSIO';
+  source: 'PLAN' | 'ORTHO' | 'PHYSIO' | 'PSYCH';
   label: string;
   detail: string;
   cupsCode: string | null;

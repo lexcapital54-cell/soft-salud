@@ -422,6 +422,7 @@ export class HcePdfService {
       const care = (content.careMinimum || {}) as Record<string, unknown>;
       const mental = (content.mentalExam || {}) as Record<string, string>;
       const assessment = (content.assessment || {}) as Record<string, unknown>;
+      const psych = (content.psychology || {}) as Record<string, unknown>;
       body.push(
         this.section('Motivo de consulta', care.motive as string, theme.title),
         this.section(
@@ -453,6 +454,25 @@ export class HcePdfService {
             : '',
           theme.title,
         ),
+        this.section(
+          'Objetivos terapéuticos',
+          psych.therapeuticObjectives as string,
+          theme.title,
+        ),
+        this.section(
+          'Enfoque, modalidad y sesiones',
+          [
+            psych.approach && `Enfoque: ${psych.approach}`,
+            psych.modality && `Modalidad: ${psych.modality}`,
+            psych.frequency && `Frecuencia: ${psych.frequency}`,
+            psych.estimatedDuration && `Duración estimada: ${psych.estimatedDuration}`,
+            psych.sessionCount && `N.º de sesiones: ${psych.sessionCount}`,
+          ]
+            .filter(Boolean)
+            .join(' · '),
+          theme.title,
+        ),
+        this.physioPlanTable(psych.treatmentPlan, theme.title),
       );
     }
 

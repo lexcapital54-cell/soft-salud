@@ -36,7 +36,7 @@ export interface PlanReceiptLine {
 
       @if (!d.plan.items.length && !d.ortho.items.length) {
         <p class="muted">
-          {{ d.record ? 'La historia no tiene procedimientos con valor en el plan de tratamiento' + (d.record.specialty === 'Fisioterapia' ? '.' : ' ni presupuesto de ortodoncia.') : 'El paciente aún no tiene historia clínica.' }}
+          {{ d.record ? 'La historia no tiene procedimientos con valor en el plan de tratamiento' + (d.record.specialty === 'Fisioterapia' || d.record.specialty === 'Psicología' ? '.' : ' ni presupuesto de ortodoncia.') : 'El paciente aún no tiene historia clínica.' }}
           Use la línea manual de abajo.
         </p>
       }

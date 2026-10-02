@@ -1,10 +1,13 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { ClinicalApiService } from '../clinical-api.service';
-import { CatalogCode, PhysioPlanRow, PhysioPlanStatus, PhysiotherapyContent } from '../clinical.models';
+import { CatalogCode, PhysioPlanRow, PhysioPlanStatus, SessionPlanHost } from '../clinical.models';
 import { PHYSIO_PLAN_STATUSES, ensurePlanRows, newPlanRow, planNum, planTotals, rowNet, rowSessions } from './physio-plan.models';
 
-/** Plan de tratamiento de fisioterapia con valores: cada procedimiento puede abonarse desde los recibos de caja. */
+/**
+ * Plan de tratamiento por sesiones con valores (fisioterapia y psicología): cada
+ * procedimiento puede abonarse desde los recibos de caja.
+ */
 @Component({
   selector: 'app-physio-treatment-plan',
   imports: [CurrencyPipe],
@@ -37,7 +40,7 @@ import { PHYSIO_PLAN_STATUSES, ensurePlanRows, newPlanRow, planNum, planTotals, 
             </label>
             <label class="desc">
               Procedimiento
-              <input [value]="r.description" [readOnly]="disabled()" placeholder="Ej.: Terapia física integral" (input)="set(r, 'description', $any($event.target).value)" />
+              <input [value]="r.description" [readOnly]="disabled()" [placeholder]="descriptionPlaceholder()" (input)="set(r, 'description', $any($event.target).value)" />
             </label>
           </div>
           <div class="ftp-nums">
@@ -70,7 +73,7 @@ import { PHYSIO_PLAN_STATUSES, ensurePlanRows, newPlanRow, planNum, planTotals, 
                 </button>
               }
             </div>
-            <input class="notes" [value]="r.notes" [readOnly]="disabled()" placeholder="Observación (zona, modalidad…)" (input)="set(r, 'notes', $any($event.target).value)" />
+            <input class="notes" [value]="r.notes" [readOnly]="disabled()" [placeholder]="notesPlaceholder()" (input)="set(r, 'notes', $any($event.target).value)" />
             @if (!disabled()) {
               <button type="button" class="del" (click)="remove(i)" aria-label="Quitar procedimiento">Quitar</button>
             }
@@ -102,8 +105,10 @@ import { PHYSIO_PLAN_STATUSES, ensurePlanRows, newPlanRow, planNum, planTotals, 
 export class PhysioTreatmentPlan {
   private readonly api = inject(ClinicalApiService);
 
-  readonly data = input.required<PhysiotherapyContent>();
+  readonly data = input.required<SessionPlanHost>();
   readonly disabled = input(false);
+  readonly descriptionPlaceholder = input('Ej.: Terapia física integral');
+  readonly notesPlaceholder = input('Observación (zona, modalidad…)');
   readonly changed = output<void>();
 
   readonly statuses = PHYSIO_PLAN_STATUSES;

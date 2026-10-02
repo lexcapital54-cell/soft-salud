@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 
 type Json = Record<string, unknown>;
 
-export type PlanSource = 'PLAN' | 'ORTHO' | 'PHYSIO';
+export type PlanSource = 'PLAN' | 'ORTHO' | 'PHYSIO' | 'PSYCH';
 
 export interface BillablePlanItem {
   key: string;
@@ -126,15 +126,24 @@ export function orthoBudgetItems(orthoBudget: Json): BillablePlanItem[] {
 
 /** Plan de tratamiento de fisioterapia: procedimiento CUPS × sesiones (cada fila trae id estable). */
 export function physioPlanItems(physio: Json): BillablePlanItem[] {
-  return arr(physio.treatmentPlan)
+  return sessionPlanItems(physio.treatmentPlan, 'PHYSIO');
+}
+
+/** Plan de tratamiento de psicología: misma estructura procedimiento × sesiones. */
+export function psychPlanItems(psychology: Json): BillablePlanItem[] {
+  return sessionPlanItems(psychology.treatmentPlan, 'PSYCH');
+}
+
+function sessionPlanItems(rows: unknown, source: 'PHYSIO' | 'PSYCH'): BillablePlanItem[] {
+  return arr(rows)
     .filter((r) => text(r.id) && text(r.status) !== 'CANCELADO' && (text(r.description) || text(r.cupsCode)))
     .map((r) => {
       const sessions = qty(r.sessions);
       const unit = num(r.unitValue);
       const d = pct(r.discountPct);
       return {
-        key: `PHYSIO:${text(r.id)}`,
-        source: 'PHYSIO' as const,
+        key: `${source}:${text(r.id)}`,
+        source,
         label: text(r.description) || text(r.cupsCode),
         detail: [`${sessions} sesi${sessions === 1 ? 'ón' : 'ones'}`, text(r.notes)].filter(Boolean).join(' · '),
         cupsCode: text(r.cupsCode) || null,

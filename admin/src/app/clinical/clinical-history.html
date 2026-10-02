@@ -1107,13 +1107,14 @@
           }
         }
 
-        @if (isPhysiotherapyClinic()) {
+        @if (isPhysiotherapyClinic() || isPsychologyClinic()) {
+          @let isFt = isPhysiotherapyClinic();
           <nav class="odo-nav" aria-label="Módulos de la historia clínica">
-            <strong>Historia clínica de fisioterapia</strong>
-            @let ftMods = physioModules();
+            <strong>{{ isFt ? 'Historia clínica de fisioterapia' : 'Historia clínica de psicología' }}</strong>
+            @let ftMods = isFt ? physioModules() : psychModules();
             @let ftProg = odoProgress(ftMods);
             <span class="odo-specialty">
-              Fisioterapia · HC-FT-001
+              {{ isFt ? 'Fisioterapia · HC-FT-001' : 'Psicología · HC-PSI' }}
               @if (ftProg.total) {
                 · <b title="Módulos esenciales completos (orientativo, no bloquea la firma)">{{ ftProg.done }}/{{ ftProg.total }} completos</b>
               }
@@ -3714,7 +3715,7 @@
                   </div>
                 </label>
 
-                <h4>Examen mental</h4>
+                <h4 id="ps-examen-mental">Examen mental</h4>
                 <p class="muted small">
                   Incluya aquí, si aplica, valoración de riesgo (ideación suicida, heteroagresividad
                   u otras alertas). Ya no hay un bloque separado de «riesgo suicida».
@@ -3746,7 +3747,7 @@
                   </div>
                 </label>
 
-                <label>
+                <label id="ps-impresion">
                   Impresión diagnóstica (narrativa)
                   <div class="dictation-row">
                     <textarea
@@ -3773,6 +3774,108 @@
                 </label>
 
                 <!-- Riesgo suicida integrado en examen mental (ya no bloque aparte). -->
+              </section>
+            }
+            @if (isPsychologyClinic()) {
+              @let ps = psych();
+              <section class="block" id="ps-plan-section">
+                <h4 id="ps-plan">Plan terapéutico</h4>
+                <label>
+                  Objetivos terapéuticos
+                  <textarea
+                    rows="3"
+                    [(ngModel)]="ps.therapeuticObjectives"
+                    [readonly]="clinicalFormDisabled()"
+                    (ngModelChange)="onClinicalFieldChange()"
+                    placeholder="Ej.: Disminuir sintomatología ansiosa, fortalecer estrategias de afrontamiento…"
+                  ></textarea>
+                </label>
+                <label>
+                  Plan de manejo (uno por línea, se incluye en el RDA)
+                  <textarea
+                    rows="3"
+                    [(ngModel)]="managementPlanText"
+                    [readonly]="clinicalFormDisabled()"
+                    (ngModelChange)="onClinicalFieldChange()"
+                    placeholder="Psicoeducación&#10;Técnicas de relajación&#10;Reestructuración cognitiva"
+                  ></textarea>
+                </label>
+                <div class="ft-grid-3">
+                  <label>
+                    Enfoque terapéutico
+                    <input
+                      [(ngModel)]="ps.approach"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                      placeholder="Cognitivo-conductual, sistémico…"
+                      list="ps-approach-list"
+                    />
+                  </label>
+                  <label>
+                    Modalidad
+                    <select [(ngModel)]="ps.modality" [disabled]="clinicalFormDisabled()" (ngModelChange)="onClinicalFieldChange()">
+                      <option value="">—</option>
+                      <option>Individual</option>
+                      <option>Pareja</option>
+                      <option>Familiar</option>
+                      <option>Grupal</option>
+                    </select>
+                  </label>
+                  <label>
+                    Frecuencia
+                    <input
+                      [(ngModel)]="ps.frequency"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                      placeholder="Semanal, quincenal…"
+                    />
+                  </label>
+                  <label>
+                    Duración estimada
+                    <input
+                      [(ngModel)]="ps.estimatedDuration"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                      placeholder="Ej.: 3 meses"
+                    />
+                  </label>
+                  <label>
+                    N.º de sesiones
+                    <input
+                      [(ngModel)]="ps.sessionCount"
+                      [readonly]="clinicalFormDisabled()"
+                      (ngModelChange)="onClinicalFieldChange()"
+                    />
+                  </label>
+                </div>
+                <datalist id="ps-approach-list">
+                  <option value="Cognitivo-conductual"></option>
+                  <option value="Sistémico"></option>
+                  <option value="Psicodinámico"></option>
+                  <option value="Humanista"></option>
+                  <option value="Terapia de aceptación y compromiso (ACT)"></option>
+                  <option value="Terapia dialéctico-conductual (DBT)"></option>
+                </datalist>
+
+                <h4 id="ps-plan-valores">Plan de tratamiento y valores</h4>
+                @defer (on viewport) {
+                  <app-physio-treatment-plan
+                    [data]="ps"
+                    [disabled]="clinicalFormDisabled()"
+                    descriptionPlaceholder="Ej.: Psicoterapia individual"
+                    notesPlaceholder="Observación (modalidad, enfoque…)"
+                    (changed)="onClinicalFieldChange()"
+                  />
+                } @placeholder {
+                  <p class="muted small">Cargando plan de tratamiento…</p>
+                }
+                @if (canWrite() && encounter()?.patient?.id) {
+                  @defer (on viewport) {
+                    <app-plan-payments source="PLAN" [patientId]="encounter()!.patient.id" [patientName]="consentPatientName()" />
+                  } @placeholder {
+                    <p class="muted small">Cargando pagos en caja…</p>
+                  }
+                }
               </section>
             }
           }
@@ -4131,6 +4234,7 @@
 
         @if (!isSoap() && (!isAuditor() || !content._redacted)) {
           <section
+            id="ps-rda"
             class="block rda-info"
             (input)="onClinicalFormInput($event)"
             (change)="onClinicalFormInput($event)"

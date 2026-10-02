@@ -8,6 +8,7 @@ import {
   orthoBudgetItems,
   orthoFinancing,
   physioPlanItems,
+  psychPlanItems,
 } from './treatment-plan-items';
 
 type Json = Record<string, unknown>;
@@ -15,13 +16,20 @@ type Tx = Prisma.TransactionClient | PrismaService;
 
 const obj = (v: unknown): Json => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Json) : {});
 
+const RECORD_BY_SPECIALTY: Record<string, { code: string; specialty: string }> = {
+  DENTISTRY: { code: 'HC-ODO-001', specialty: 'Odontología' },
+  ORTHODONTICS: { code: 'HC-ORT-001', specialty: 'Ortodoncia' },
+  PHYSIOTHERAPY: { code: 'HC-FT-001', specialty: 'Fisioterapia' },
+  PSYCHOLOGY: { code: 'HC-PSI', specialty: 'Psicología' },
+};
+
 export interface PlanItemBalance extends BillablePlanItem {
   paid: number;
   balance: number;
 }
 
 /**
- * Cruce entre el plan de tratamiento de la historia (odontología, ortodoncia y fisioterapia) y los recibos
+ * Cruce entre el plan de tratamiento de la historia (odontología, ortodoncia, fisioterapia y psicología) y los recibos
  * de caja: cada línea de recibo puede abonar a un procedimiento o concepto del presupuesto.
  */
 @Injectable()
@@ -57,10 +65,9 @@ export class BillingPlanService {
     const withPaid = await this.attachPaid(this.prisma, clinicId, patientId, items.list);
 
     const sum = (rows: PlanItemBalance[], k: 'net' | 'paid' | 'balance') => rows.reduce((s, r) => s + r[k], 0);
-    const plan = withPaid.filter((i) => i.source === 'PLAN' || i.source === 'PHYSIO');
+    const plan = withPaid.filter((i) => i.source !== 'ORTHO');
     const ortho = withPaid.filter((i) => i.source === 'ORTHO');
-    const isOrtho = encounter?.specialtySnapshot === 'ORTHODONTICS';
-    const isPhysio = encounter?.specialtySnapshot === 'PHYSIOTHERAPY';
+    const record = RECORD_BY_SPECIALTY[encounter?.specialtySnapshot ?? ''] ?? RECORD_BY_SPECIALTY.DENTISTRY;
 
     return {
       patient: {
@@ -76,8 +83,8 @@ export class BillingPlanService {
       record: encounter
         ? {
             encounterId: encounter.id,
-            code: isPhysio ? 'HC-FT-001' : isOrtho ? 'HC-ORT-001' : 'HC-ODO-001',
-            specialty: isPhysio ? 'Fisioterapia' : isOrtho ? 'Ortodoncia' : 'Odontología',
+            code: record.code,
+            specialty: record.specialty,
             signed: !!encounter.clinicalRecord?.signedAt,
             includesOrtho: ortho.length > 0,
           }
@@ -145,7 +152,12 @@ export class BillingPlanService {
     return {
       encounter,
       orthoBudget,
-      list: [...dentalPlanItems(dentistry), ...orthoBudgetItems(orthoBudget), ...physioPlanItems(obj(content.physiotherapy))],
+      list: [
+        ...dentalPlanItems(dentistry),
+        ...orthoBudgetItems(orthoBudget),
+        ...physioPlanItems(obj(content.physiotherapy)),
+        ...psychPlanItems(obj(content.psychology)),
+      ],
     };
   }
 

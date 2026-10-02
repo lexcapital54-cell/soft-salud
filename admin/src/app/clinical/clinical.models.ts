@@ -153,6 +153,21 @@ export interface PhysiotherapyContent {
   };
 }
 
+/** Plan de sesiones (fisioterapia, psicología): filas procedimiento × sesiones cobrables en caja. */
+export interface SessionPlanHost {
+  sessionCount: string;
+  treatmentPlan?: PhysioPlanRow[];
+}
+
+/** Plan terapéutico y valores de la historia de psicología (HC-PSI). */
+export interface PsychologyContent extends SessionPlanHost {
+  therapeuticObjectives: string;
+  approach: string;
+  modality: string;
+  frequency: string;
+  estimatedDuration: string;
+}
+
 export interface ClinicalContent {
   profile?: 'FULL' | 'SOAP' | 'PHYSIOTHERAPY' | 'DENTISTRY' | string;
   soap?: SoapContent;
@@ -194,6 +209,7 @@ export interface ClinicalContent {
   risks: { suicideRisk: string; notes: string };
   /** Bloques específicos de HC-FT-001 (fisioterapia). */
   physiotherapy?: PhysiotherapyContent;
+  psychology?: PsychologyContent;
   /** Bloques específicos de HC-ODO-001 (odontología / ortodoncia). */
   dentistry?: DentistryContent;
   rdaMeta: {

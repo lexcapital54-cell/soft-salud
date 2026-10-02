@@ -16,6 +16,7 @@ import { OrthoSmilePanel } from './dentistry/ortho-smile-panel';
 import { OrthoSmilePhoto } from './dentistry/ortho-smile-photo';
 import { PhysioTreatmentPlan } from './physio/physio-treatment-plan';
 import { PHYSIO_MODULES, physioModuleStatus } from './physio/physio-nav';
+import { psychModuleList, psychModuleStatus } from './psychology/psych-nav';
 import { OrthoFaceProportions } from './dentistry/ortho-face-proportions';
 import { OrthoMovementPlan } from './dentistry/ortho-movement-plan';
 import { OrthoArchAnalysis } from './dentistry/ortho-arch-analysis';
@@ -181,6 +182,7 @@ import {
   OrthoControlCatalog,
   Patient,
   PhysiotherapyContent,
+  PsychologyContent,
   ProcedureRow,
   SoapContent,
 } from './clinical.models';
@@ -1250,6 +1252,28 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  private psychModuleIds() {
+    return psychModuleList({ soap: this.isSoap(), locked: this.isLocked() });
+  }
+
+  /** Módulos de la historia de psicología (menú superior) con su estado orientativo. */
+  psychModules() {
+    const ctx = {
+      patient: this.patientForm,
+      motive: this.content.careMinimum?.motive || '',
+      evolutions: this.evolutions().length,
+      consents: this.consents,
+      attachments: this.attachments().length,
+      diagnoses: this.diagnoses.filter((d) => d.cieCode?.trim()).length,
+      soap: this.isSoap(),
+    };
+    const psych = this.psych();
+    return this.psychModuleIds().map((m, i) => {
+      const status = psychModuleStatus(m.id, this.content, psych, this.managementPlanText, ctx);
+      return { ...m, n: i + 1, status, dot: status ? moduleDotStyle(status.state) : '' };
+    });
+  }
+
   odoProgress(mods: Array<{ status: ModuleStatus | null }>) {
     const required = mods.filter((m) => m.status && m.status.state !== 'optional');
     return { done: required.filter((m) => m.status!.state === 'done').length, total: required.length };
@@ -1283,7 +1307,11 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   @HostListener('window:scroll')
   onOdoScroll() {
-    if (this.odoSpyFrame || !(this.isDentistryClinic() || this.isPhysiotherapyClinic())) return;
+    if (
+      this.odoSpyFrame ||
+      !(this.isDentistryClinic() || this.isPhysiotherapyClinic() || this.isPsychologyClinic())
+    )
+      return;
     this.odoSpyFrame = requestAnimationFrame(() => {
       this.odoSpyFrame = 0;
       this.updateOdoSpy();
@@ -1291,7 +1319,11 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private updateOdoSpy() {
-    const ids = this.isPhysiotherapyClinic() ? PHYSIO_MODULES.map((m) => m.id) : this.odoModuleList().map((m) => m.id);
+    const ids = this.isPhysiotherapyClinic()
+      ? PHYSIO_MODULES.map((m) => m.id)
+      : this.isPsychologyClinic()
+        ? this.psychModuleIds().map((m) => m.id)
+        : this.odoModuleList().map((m) => m.id);
     const current = currentSection(ids);
     if (current !== this.activeOdo()) {
       this.activeOdo.set(current);
@@ -2278,6 +2310,22 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       this.content.physiotherapy = emptyPhysiotherapy();
     }
     return this.content.physiotherapy;
+  }
+
+  /** Plan terapéutico y valores de psicología (se crea al primer uso). */
+  psych(): PsychologyContent {
+    if (!this.content.psychology) {
+      this.content.psychology = {
+        therapeuticObjectives: '',
+        approach: '',
+        modality: '',
+        frequency: '',
+        estimatedDuration: '',
+        sessionCount: '',
+        treatmentPlan: [],
+      };
+    }
+    return this.content.psychology;
   }
 
   readonly ftSystemKeys: Array<{ key: string; label: string }> = [
