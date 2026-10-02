@@ -154,7 +154,7 @@
                       <span class="muted"> · {{ r.billingRange }}</span>
                     }
                   </td>
-                  <td>{{ r.planLabel }}</td>
+                  <td>{{ r.planSnapshot || r.planLabel }}</td>
                   <td>{{ r.amount | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
                   <td>
                     <span class="pill" [attr.data-status]="r.status">{{ r.statusLabel }}</span>
@@ -199,7 +199,7 @@
         <div class="grid">
           <label>
             Consultorio
-            <select [(ngModel)]="form.clinicId">
+            <select [(ngModel)]="form.clinicId" (ngModelChange)="onClinicChange()">
               <option value="">— Seleccione —</option>
               @for (c of clinics(); track c.id) {
                 <option [value]="c.id">{{ c.name }}</option>
@@ -216,10 +216,17 @@
           </label>
           <label>
             Documentación
-            <select [(ngModel)]="form.plan" (ngModelChange)="onKindOrPlanChange()">
+            <select
+              [(ngModel)]="form.plan"
+              [disabled]="!!selectedClinic()?.dashboardType"
+              (ngModelChange)="onKindOrPlanChange()"
+            >
               <option value="WITHOUT_DOCS">Sin documentación</option>
               <option value="WITH_DOCS">Con documentación</option>
             </select>
+            @if (selectedClinic()?.dashboardType) {
+              <small class="muted">Según el plan que tiene hoy el consultorio.</small>
+            }
           </label>
           @if (form.kind === 'MONTHLY_HOSTING') {
             <label>

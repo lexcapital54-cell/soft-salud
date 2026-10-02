@@ -29,6 +29,7 @@ import {
   periodLabel,
 } from './billing-period';
 import { PlatformReceiptPdfService } from './platform-receipt-pdf.service';
+import { receiptPayer } from './receipt-payer';
 import { EmailSmtpProvider } from '../notifications/notification-providers';
 
 const KIND_LABEL: Record<PlatformChargeKind, string> = {
@@ -174,9 +175,12 @@ export class PlatformBillingService {
       }
     }
 
+    const payer = await receiptPayer(this.prisma, dto.clinicId);
+    const plan = payer.dashboardType ? planFromDashboard(payer.dashboardType) : dto.plan;
+
     const description =
       dto.description?.trim() ||
-      `${KIND_LABEL[dto.kind]} — ${PLAN_LABEL[dto.plan]}${
+      `${KIND_LABEL[dto.kind]} — ${PLAN_LABEL[plan]}${
         periodMonth ? ` (${periodLabel(periodMonth)})` : ''
       }`;
 
@@ -193,8 +197,13 @@ export class PlatformBillingService {
         number,
         clinicId: dto.clinicId,
         kind: dto.kind,
-        plan: dto.plan,
+        plan,
         description,
+        payerName: payer.payerName,
+        payerDocument: payer.payerDocument,
+        payerPhone: payer.payerPhone,
+        payerEmail: payer.payerEmail,
+        planLabel: payer.planLabel,
         amount: new Prisma.Decimal(amount),
         method: dto.method ?? PaymentMethod.TRANSFER,
         status,
@@ -737,19 +746,25 @@ export class PlatformBillingService {
       },
     });
     if (!row) throw new NotFoundException('Recibo no encontrado');
+    // Recibos anteriores a la captura de datos: se completan con los datos actuales.
+    const live = row.payerName ? null : await receiptPayer(this.prisma, row.clinicId);
     const buffer = await this.pdfService.build({
       number: row.number,
+      issuedAt: row.createdAt,
       paidAt: row.paidAt,
       pending: row.status === PlatformReceiptStatus.PENDING,
       clinicName: row.clinic.name,
+      payerName: row.payerName ?? live?.payerName ?? null,
+      payerDocument: row.payerDocument ?? live?.payerDocument ?? null,
+      payerPhone: row.payerPhone ?? live?.payerPhone ?? null,
+      payerEmail: row.payerEmail ?? live?.payerEmail ?? null,
       kindLabel: KIND_LABEL[row.kind],
-      planLabel: PLAN_LABEL[row.plan],
+      planLabel: row.planLabel ?? live?.planLabel ?? PLAN_LABEL[row.plan],
       description: row.description,
       amount: money(row.amount),
-      method: METHOD_LABEL[row.method],
-      periodLabel: row.periodMonth
-        ? `${periodLabel(row.periodMonth)} (${billingRange(row.periodMonth).label})`
-        : null,
+      method: row.method,
+      methodLabel: METHOD_LABEL[row.method],
+      periodLabel: row.periodMonth ? billingRange(row.periodMonth).label : null,
       notes: row.notes,
       createdByName: row.createdBy?.fullName,
     });
@@ -848,6 +863,8 @@ export class PlatformBillingService {
     paidAt: Date | null;
     periodMonth: Date | null;
     notes: string | null;
+    planLabel?: string | null;
+    payerName?: string | null;
     createdAt: Date;
     clinic?: {
       id: string;
@@ -866,6 +883,8 @@ export class PlatformBillingService {
       kindLabel: KIND_LABEL[r.kind],
       plan: r.plan,
       planLabel: PLAN_LABEL[r.plan],
+      planSnapshot: r.planLabel ?? null,
+      payerName: r.payerName ?? null,
       description: r.description,
       amount: money(r.amount),
       currency: r.currency,

@@ -42,6 +42,8 @@ export interface PlatformReceipt {
   kindLabel: string;
   plan: PlatformPlanVariant;
   planLabel: string;
+  planSnapshot: string | null;
+  payerName: string | null;
   description: string;
   amount: number;
   currency: string;

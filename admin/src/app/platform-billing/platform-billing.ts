@@ -220,6 +220,15 @@ export class PlatformBillingPage implements OnInit {
     if (suggested != null) this.form.amount = suggested;
   }
 
+  selectedClinic() {
+    return this.clinics().find((c) => c.id === this.form.clinicId) ?? null;
+  }
+
+  onClinicChange() {
+    const type = this.selectedClinic()?.dashboardType;
+    if (type) this.form.plan = type === 'CLINICAL_HISTORY_WITH_DOCS' ? 'WITH_DOCS' : 'WITHOUT_DOCS';
+  }
+
   onKindOrPlanChange() {
     // El SUPER_ADMIN define el monto; no se sobrescribe al cambiar concepto/plan.
   }

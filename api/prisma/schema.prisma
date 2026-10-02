@@ -1192,6 +1192,13 @@ model PlatformReceipt {
   /// Mes de servicio para arrendamiento (YYYY-MM-01).
   periodMonth DateTime?           @map("period_month") @db.Date
   notes       String?
+  /// Admin y datos del consultorio a la fecha del cobro (para el recibo).
+  payerName     String?           @map("payer_name") @db.VarChar(160)
+  payerDocument String?           @map("payer_document") @db.VarChar(40)
+  payerPhone    String?           @map("payer_phone") @db.VarChar(40)
+  payerEmail    String?           @map("payer_email") @db.VarChar(180)
+  /// Plan del consultorio a la fecha del cobro.
+  planLabel     String?           @map("plan_label") @db.VarChar(160)
   createdById String?             @map("created_by_id") @db.Uuid
   createdBy   User?               @relation("PlatformReceiptCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
