@@ -2,12 +2,21 @@
   <header class="ws-topbar">
     <div class="ws-left">
       <a href="/consultorio.html">← Consultorio</a>
-      <a
-        class="brand"
-        [href]="websiteUrl"
-        (click)="goHome(); $event.preventDefault()"
-        >HABILISALUD</a
-      >
+      @if (clinicLogo(); as logo) {
+        <img
+          class="clinic-logo"
+          [src]="logo"
+          [alt]="user()?.clinicName || 'Logo del consultorio'"
+          (error)="logoFailed.set(true)"
+        />
+      } @else {
+        <a
+          class="brand"
+          [href]="websiteUrl"
+          (click)="goHome(); $event.preventDefault()"
+          >HABILISALUD</a
+        >
+      }
       <strong class="ws-title">Historia clínica</strong>
     </div>
     <div class="ws-actions">

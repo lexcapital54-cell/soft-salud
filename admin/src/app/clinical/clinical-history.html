@@ -9,7 +9,14 @@
   <header class="topbar">
     <div class="topbar-left">
       <a href="/consultorio.html">← Consultorio</a>
-      @if (isPsychologyClinic()) {
+      @if (clinicLogo(); as logo) {
+        <img
+          class="clinic-logo"
+          [src]="logo"
+          [alt]="user()?.clinicName || 'Logo del consultorio'"
+          (error)="logoFailed.set(true)"
+        />
+      } @else if (isPsychologyClinic()) {
         <img
           class="brand-logo-brain"
           src="/logo-dulcemente-brain.png"

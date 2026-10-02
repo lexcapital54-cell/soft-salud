@@ -1,8 +1,9 @@
-import { Component, OnDestroy, OnInit, QueryList, ViewChildren, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, QueryList, ViewChildren, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../auth.service';
 import { WEBSITE_URL } from '../api.config';
+import { clinicLogoUrl } from '../clinic-logo';
 import { ClinicalHistory } from './clinical-history';
 import { ClinicSwitcher } from '../clinic-switcher';
 import { HceWorkspaceService } from './hce-workspace.service';
@@ -29,6 +30,8 @@ export class HceWorkspace implements OnInit, OnDestroy {
 
   readonly websiteUrl = WEBSITE_URL;
   readonly user = this.auth.user;
+  readonly logoFailed = signal(false);
+  readonly clinicLogo = computed(() => (this.logoFailed() ? null : clinicLogoUrl(this.user()?.clinicId)));
   readonly canWrite = this.auth.canWriteClinical;
   readonly tabs = this.workspace.tabs;
   readonly activeKey = this.workspace.activeKey;

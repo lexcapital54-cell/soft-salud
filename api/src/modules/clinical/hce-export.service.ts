@@ -143,6 +143,7 @@ export class HceExportService {
     const buffer = await this.pdf.buildPdfBuffer(
       encounter as never,
       {
+        id: encounter.clinicId,
         name: clinic?.name ?? 'Consultorio',
         address: clinic?.address,
         phone: clinic?.phone,

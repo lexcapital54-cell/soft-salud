@@ -80,6 +80,7 @@ export type PatientSignatureInfo = {
 };
 
 type ClinicInfo = {
+  id?: string | null;
   name: string;
   address?: string | null;
   phone?: string | null;
@@ -153,6 +154,7 @@ export class HcePdfService {
   private readonly logger = new Logger(HcePdfService.name);
   private readonly printer: InstanceType<typeof PdfPrinter>;
   private membreteCache: { left: string } | null = null;
+  private readonly logoCache = new Map<string, string | null>();
 
   constructor() {
     this.printer = new PdfPrinter({
@@ -181,6 +183,7 @@ export class HcePdfService {
       specialty,
       images,
       patientSignature ?? null,
+      this.loadClinicLogo(clinic.id),
     );
     return this.renderBuffer(doc);
   }
@@ -222,6 +225,22 @@ export class HcePdfService {
     return this.membreteCache;
   }
 
+  /** Logo propio del consultorio: `assets/clinic-logos/<clinicId>.jpg`. */
+  private loadClinicLogo(clinicId?: string | null): string | null {
+    if (!clinicId || !/^[\w-]+$/.test(clinicId)) return null;
+    if (this.logoCache.has(clinicId)) return this.logoCache.get(clinicId) ?? null;
+    const found = [
+      path.join(process.cwd(), 'assets', 'clinic-logos', `${clinicId}.jpg`),
+      path.join(process.cwd(), 'api', 'assets', 'clinic-logos', `${clinicId}.jpg`),
+      path.join(__dirname, '..', '..', '..', 'assets', 'clinic-logos', `${clinicId}.jpg`),
+    ].find((p) => fs.existsSync(p));
+    const logo = found
+      ? `data:image/jpeg;base64,${fs.readFileSync(found).toString('base64')}`
+      : null;
+    this.logoCache.set(clinicId, logo);
+    return logo;
+  }
+
   private tryAsset(fileName: string) {
     const candidates = [
       path.join(process.cwd(), 'assets', 'hce-membrete', fileName),
@@ -253,6 +272,7 @@ export class HcePdfService {
     specialty: ClinicSpecialty | string,
     images: { left: string } | null,
     patientSignature: PatientSignatureInfo | null,
+    clinicLogo: string | null = null,
   ): TDocumentDefinitions {
     const theme = this.themeFor(specialty);
     const isPsychology = specialty === ClinicSpecialty.PSYCHOLOGY;
@@ -668,8 +688,24 @@ export class HcePdfService {
     const professionalName =
       String(signature.professionalName || '').trim() ||
       encounter.professional.fullName;
-    const header: TDocumentDefinitions['header'] =
-      isPsychology && images
+    const header: TDocumentDefinitions['header'] = clinicLogo
+      ? () =>
+          ({
+            columns: [
+              { image: 'clinicLogo', fit: [210, 70], width: 'auto' },
+              {
+                stack: [
+                  { text: professionalName, fontSize: 10, bold: true, color: theme.title },
+                  { text: specialtyLabel, style: 'muted', color: theme.accent },
+                ],
+                alignment: 'right',
+                width: '*',
+                margin: [0, 22, 0, 0],
+              },
+            ],
+            margin: [52, 12, 52, 0],
+          }) as Content
+      : isPsychology && images
         ? () =>
             ({
               columns: [
@@ -752,7 +788,7 @@ export class HcePdfService {
 
     return {
       pageSize: 'LETTER',
-      pageMargins: [52, isPsychology ? 96 : 72, 52, 68],
+      pageMargins: [52, clinicLogo ? 106 : isPsychology ? 96 : 72, 52, 68],
       defaultStyle: {
         font: 'Helvetica',
         fontSize: 10,
@@ -760,11 +796,10 @@ export class HcePdfService {
         color: theme.body,
         alignment: 'justify',
       },
-      images: images
-        ? {
-            membreteLeft: images.left,
-          }
-        : {},
+      images: {
+        ...(images ? { membreteLeft: images.left } : {}),
+        ...(clinicLogo ? { clinicLogo } : {}),
+      },
       header,
       footer: (currentPage: number, pageCount: number) => ({
         columns: [

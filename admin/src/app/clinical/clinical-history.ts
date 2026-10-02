@@ -168,6 +168,7 @@ import {
 import { PatientConsentRecord } from './consent.models';
 import { DOCUMENT_TYPES } from './document-types';
 import { WEBSITE_URL } from '../api.config';
+import { clinicLogoUrl } from '../clinic-logo';
 import {
   CatalogCode,
   ClinicalAttachment,
@@ -426,6 +427,8 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   readonly user = this.auth.user;
   readonly canWrite = this.auth.canWriteClinical;
+  readonly logoFailed = signal(false);
+  readonly clinicLogo = computed(() => (this.logoFailed() ? null : clinicLogoUrl(this.user()?.clinicId)));
   readonly isAuditor = this.auth.isAuditor;
 
   /** Consultorio de fisioterapia (HC-FT-001). */
