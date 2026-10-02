@@ -55,10 +55,6 @@ const LABELS: Record<string, string> = {
   SEMANAL: 'Semanal',
   INTERMITENTE: 'Intermitente',
   MENSUAL: 'Mensual',
-  REDES: 'Redes sociales',
-  RECOMENDACION: 'Recomendación',
-  CONVENIO_EPS: 'Convenio EPS',
-  WEB: 'Página web',
 };
 
 const rec = (v: unknown): Rec => (v && typeof v === 'object' ? (v as Rec) : {});
@@ -112,14 +108,14 @@ export function physioIntakeSections(physio: Rec): {
     group('Alergias', all.noRefers, [all.hasAllergies === true && 'Sí'], s(detail.allergic)),
     ...(
       [
-        ['Personales', detail.personal],
-        ['Farmacológicos', detail.pharmacological],
-        ['Familiares', detail.family],
-        ['Gineco-obstétricos', detail.obgyn],
-        ['Ocupacionales', detail.occupational],
-        ['Otros', detail.others],
-      ] as Array<[string, unknown]>
-    ).map(([k, v]) => (s(v) ? `${k}: ${s(v)}` : '')),
+        ['Farmacológicos', 'pharmacological'],
+        ['Familiares', 'family'],
+        ['Personales', 'personal'],
+        ['Ocupacionales', 'occupational'],
+        ['Gineco-obstétricos', 'obgyn'],
+        ['Otros', 'others'],
+      ] as Array<[string, string]>
+    ).map(([title, key]) => group(title, list(ant.noRefersOther).includes(key), [], s(detail[key]))),
   ]
     .filter(Boolean)
     .join('\n');
@@ -142,13 +138,7 @@ export function physioIntakeSections(physio: Rec): {
   const zones = [list(intake.zones).map(physioZoneLabel).join(', '), s(intake.zonesNotes)].filter(Boolean).join('\n');
   const therapies = [...list(intake.therapies).map((k) => THERAPY_NAMES[k] ?? k), s(intake.therapiesOther)].filter(Boolean).join(', ');
 
-  const source = s(intake.referralSource);
-  const header = [
-    source && `¿Cómo llegó a la consulta?: ${source === 'OTRO' ? `Otro${s(intake.referralOther) ? ` (${s(intake.referralOther)})` : ''}` : LABELS[source] ?? source}`,
-    s(intake.assessmentDate) && `Fecha de valoración: ${s(intake.assessmentDate)}`,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const header = s(intake.assessmentDate) ? `Fecha de valoración: ${s(intake.assessmentDate)}` : '';
 
   return { header, antecedents, zones, assessment, therapies };
 }

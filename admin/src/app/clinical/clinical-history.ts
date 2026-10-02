@@ -2384,24 +2384,6 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     { value: '5/5', label: '5/5 — Fuerza normal' },
   ];
 
-  readonly ftAntecedentKeys: Array<{ key: keyof PhysiotherapyContent['antecedentsDetail']; label: string }> = [
-    { key: 'personal', label: 'Personales' },
-    { key: 'pathological', label: 'Patológicos' },
-    { key: 'surgical', label: 'Quirúrgicos' },
-    { key: 'allergic', label: 'Alérgicos' },
-    { key: 'pharmacological', label: 'Farmacológicos' },
-    { key: 'family', label: 'Familiares' },
-    { key: 'obgyn', label: 'Gineco-obstétricos' },
-    { key: 'traumatic', label: 'Traumáticos' },
-    { key: 'occupational', label: 'Ocupacionales' },
-    { key: 'others', label: 'Otros' },
-  ];
-
-  /** Los antecedentes con casillas (patológicos, quirúrgicos, traumáticos, alérgicos) van en su propio bloque. */
-  readonly ftOtherAntecedentKeys = this.ftAntecedentKeys.filter(
-    (a) => !['pathological', 'surgical', 'traumatic', 'allergic'].includes(a.key),
-  );
-
   readonly loading = signal(false);
   readonly saving = signal(false);
   /** Aviso flotante discreto (p. ej. «Error al guardar»); no bloquea la edición. */

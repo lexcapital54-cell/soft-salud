@@ -19,6 +19,7 @@ describe('physioIntakeSections', () => {
           surgical: { noRefers: true },
           traumatic: { fractures: true },
           allergies: { noRefers: true },
+          noRefersOther: ['occupational'],
         },
         zones: ['ant:hombro_der', 'post:lumbar'],
         zonesNotes: 'Irradia a glúteo',
@@ -31,13 +32,14 @@ describe('physioIntakeSections', () => {
         painFrequency: 'DIARIO',
       },
     });
-    expect(out.header).toBe('¿Cómo llegó a la consulta?: Recomendación · Fecha de valoración: 2026-10-02');
+    expect(out.header).toBe('Fecha de valoración: 2026-10-02');
     expect(out.antecedents.split('\n')).toEqual([
       'Patológicos: Diabetes, Asma',
       'Quirúrgicos: No refiere',
       'Traumáticos: Fracturas',
       'Alergias: No refiere',
       'Familiares: Madre con artritis',
+      'Ocupacionales: No refiere',
     ]);
     expect(out.zones).toBe('Hombro derecho (anterior), Región lumbar (posterior)\nIrradia a glúteo');
     expect(out.assessment.split('\n')).toEqual([

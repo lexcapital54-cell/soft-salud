@@ -1,10 +1,10 @@
 import { PhysiotherapyContent } from '../clinical.models';
 import { zoneLabel } from './physio-body-map.data';
 import {
+  OTHER_ANTECEDENTS,
   PAIN_FREQUENCIES,
   POSTURE_OPTIONS,
   RANGE_OPTIONS,
-  REFERRAL_SOURCES,
   STRENGTH_OPTIONS,
   normalizeIntake,
   painBand,
@@ -31,6 +31,7 @@ export function physioIntakeSummary(ft: PhysiotherapyContent): Array<{ label: st
     ['Quirúrgicos', group(a.surgical.noRefers, a.surgical.date ? [`Fecha ${a.surgical.date}`] : [], d.surgical)],
     ['Traumáticos', group(a.traumatic.noRefers, [a.traumatic.fractures && 'Fracturas', a.traumatic.sprains && 'Esguinces'].filter((x): x is string => !!x), d.traumatic)],
     ['Alergias', group(a.allergies.noRefers, a.allergies.hasAllergies ? ['Sí'] : [], d.allergic)],
+    ...OTHER_ANTECEDENTS.map((o) => [o.label, group(a.noRefersOther.includes(o.key), [], d[o.key])]),
   ]
     .filter(([, v]) => v)
     .map(([k, v]) => `${k}: ${v}`)
@@ -49,10 +50,8 @@ export function physioIntakeSummary(ft: PhysiotherapyContent): Array<{ label: st
 
   const therapies = [...i.therapies.map(therapyLabel), i.therapiesOther.trim()].filter(Boolean).join(', ');
   const zones = [i.zones.map(zoneLabel).join(', '), i.zonesNotes.trim()].filter(Boolean).join('\n');
-  const referral = i.referralSource === 'OTRO' ? `Otro: ${i.referralOther}` : labelOf(REFERRAL_SOURCES, i.referralSource);
 
   return [
-    { label: '¿Cómo llegó a la consulta?', value: referral },
     { label: 'Fecha de valoración', value: i.assessmentDate },
     { label: 'Antecedentes', value: antecedents },
     { label: 'Zonas a tratar', value: zones },

@@ -6,6 +6,17 @@ export type PostureState = '' | 'NORMAL' | 'ALTERADA';
 export type RangeState = '' | 'COMPLETO' | 'LIMITADO';
 export type StrengthState = '' | 'CONSERVADA' | 'DISMINUIDA';
 export type PainFrequency = '' | 'DIARIO' | 'SEMANAL' | 'INTERMITENTE' | 'MENSUAL';
+export type OtherAntecedentKey = 'personal' | 'pharmacological' | 'family' | 'obgyn' | 'occupational' | 'others';
+
+/** Antecedentes de solo texto, en el orden en que se muestran. */
+export const OTHER_ANTECEDENTS: Array<{ key: OtherAntecedentKey; label: string; placeholder: string }> = [
+  { key: 'pharmacological', label: 'Farmacológicos', placeholder: 'Medicamentos actuales, dosis…' },
+  { key: 'family', label: 'Familiares', placeholder: 'Enfermedades en la familia…' },
+  { key: 'personal', label: 'Personales', placeholder: 'Hábitos, actividad física, sueño…' },
+  { key: 'occupational', label: 'Ocupacionales', placeholder: 'Oficio, posturas, carga física…' },
+  { key: 'obgyn', label: 'Gineco-obstétricos', placeholder: 'G P C A, FUM, embarazo actual…' },
+  { key: 'others', label: 'Otros', placeholder: 'Otros antecedentes relevantes…' },
+];
 
 export interface PhysioIntake {
   referralSource: ReferralSource;
@@ -16,6 +27,8 @@ export interface PhysioIntake {
     surgical: { noRefers: boolean; date: string };
     traumatic: { noRefers: boolean; fractures: boolean; sprains: boolean };
     allergies: { noRefers: boolean; hasAllergies: boolean };
+    /** Categorías de solo texto marcadas como "No refiere". */
+    noRefersOther: OtherAntecedentKey[];
   };
   /** Zonas marcadas en el mapa corporal: `ant:hombro_der`, `post:lumbar`… */
   zones: string[];
@@ -117,6 +130,7 @@ export function normalizeIntake(raw: unknown): PhysioIntake {
       surgical: { noRefers: bool(sur.noRefers), date: /^\d{4}-\d{2}-\d{2}$/.test(sur.date ?? '') ? sur.date : '' },
       traumatic: { noRefers: bool(tra.noRefers), fractures: bool(tra.fractures), sprains: bool(tra.sprains) },
       allergies: { noRefers: bool(all.noRefers), hasAllergies: bool(all.hasAllergies) },
+      noRefersOther: strList(a['noRefersOther'], (s) => OTHER_ANTECEDENTS.some((o) => o.key === s)) as OtherAntecedentKey[],
     },
     zones: strList(r['zones'], (s) => /^(ant|post):[a-z_]+$/.test(s)),
     zonesNotes: str(r['zonesNotes']),

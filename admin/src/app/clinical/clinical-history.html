@@ -1656,19 +1656,6 @@
 
                 <h4 class="ft-head"><app-physio-icon name="history" badge />Antecedentes</h4>
                 <app-physio-antecedents [data]="physio()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
-                <div class="ft-grid-2 ft-antecedents-more">
-                  @for (item of ftOtherAntecedentKeys; track item.key) {
-                    <label>
-                      {{ item.label }}
-                      <textarea
-                          rows="2"
-                          [(ngModel)]="physio().antecedentsDetail[item.key]"
-                          [readonly]="clinicalFormDisabled()"
-                          (ngModelChange)="onClinicalFieldChange()"
-                        ></textarea>
-                    </label>
-                  }
-                </div>
 
                 <h4 class="ft-head"><app-physio-icon name="systems" badge />Revisión por sistemas</h4>
                 <table class="ft-check-table">
