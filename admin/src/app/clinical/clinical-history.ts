@@ -393,7 +393,7 @@ function emptyContent(): ClinicalContent {
   ],
   providers: [ClinicalAutosaveService, OrthoTrackingService],
   templateUrl: './clinical-history.html',
-  styleUrls: ['./clinical-history.scss', './clinical-history-ux.scss'],
+  styleUrls: ['./clinical-history.scss', './clinical-history-ux.scss', './clinical-history-physio.scss'],
   host: {
     '[class.embedded]': 'embedded()',
   },

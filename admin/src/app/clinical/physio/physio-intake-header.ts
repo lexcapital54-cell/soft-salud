@@ -26,7 +26,7 @@ function todayIso() {
   `,
   styles: `
     .ih { display: grid; grid-template-columns: minmax(200px, 280px); gap: 10px; margin-bottom: 10px; }
-    label { display: block; font-size: .9rem; }
+    label { display: block; font-size: .86rem; font-weight: 600; color: #1b365d; }
     input { width: 100%; }
     .ih-date { display: flex; gap: 6px; }
     .ih-date button { border: 1px solid #1b365d; background: #fff; color: #1b365d; border-radius: 8px; padding: 0 10px; cursor: pointer; font: inherit; font-size: .85rem; }

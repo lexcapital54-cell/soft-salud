@@ -1,0 +1,222 @@
+/* Acabado premium de la historia de fisioterapia: azul marino + dorado. */
+.hce-page.specialty-physiotherapy {
+  --ft-navy: #1b365d;
+  --ft-navy-2: #24477a;
+  --ft-gold: #c59b27;
+  --ft-line: #dbe3ee;
+  --ft-soft: #f6f8fb;
+  --hce-accent: #1b365d;
+  background:
+    radial-gradient(1200px 380px at 50% -120px, #e6edf6 0%, transparent 70%),
+    linear-gradient(180deg, #f3f6fa 0%, #ffffff 320px);
+
+  .topbar-left a,
+  .brand {
+    color: var(--ft-navy) !important;
+  }
+
+  /* Bloques y encabezados */
+  .block,
+  .control-mode {
+    border: 1px solid var(--ft-line);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow:
+      0 1px 2px rgba(27, 54, 93, 0.04),
+      0 14px 34px -20px rgba(27, 54, 93, 0.28);
+  }
+
+  .block > h3,
+  .cie-block > h3,
+  .cups-block > h3,
+  .block .section3-head,
+  .control-mode .control-mode-head {
+    background: linear-gradient(120deg, var(--ft-navy) 0%, var(--ft-navy-2) 100%);
+    border-bottom: 2px solid var(--ft-gold);
+    border-radius: 17px 17px 0 0;
+    letter-spacing: 0.01em;
+  }
+
+  .block h4,
+  .control-new-title {
+    color: var(--ft-navy);
+  }
+
+  .cie-block,
+  .cups-block {
+    border-color: var(--ft-line);
+    background: var(--ft-soft);
+    border-radius: 16px;
+  }
+
+  .ft-hce {
+    border-color: var(--ft-line);
+  }
+
+  .ft-valoracion-block {
+    border: 1px solid #e8d9ad;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #fffdf6 0%, #ffffff 100%);
+  }
+
+  /* Etiquetas */
+  label {
+    color: var(--ft-navy);
+    font-weight: 600;
+    font-size: 0.86rem;
+    letter-spacing: 0.01em;
+  }
+
+  /* Campos (también dentro de los componentes de fisioterapia) */
+  ::ng-deep {
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']),
+    select,
+    textarea {
+      border: 1px solid #d5deea;
+      border-radius: 10px;
+      background-color: #fbfcfe;
+      padding: 9px 12px;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 400;
+      color: #1f2d3d;
+      box-shadow: inset 0 1px 2px rgba(27, 54, 93, 0.04);
+      transition:
+        border-color 0.15s,
+        box-shadow 0.15s,
+        background-color 0.15s;
+
+      &:hover:not(:disabled):not([readonly]) {
+        border-color: #b4c3d6;
+      }
+
+      &:focus {
+        outline: none;
+        border-color: var(--ft-navy);
+        background-color: #fff;
+        box-shadow: 0 0 0 3px rgba(27, 54, 93, 0.12);
+      }
+
+      &[readonly],
+      &:disabled {
+        background-color: #f3f6f9;
+        color: #4f6480;
+      }
+
+      &::placeholder {
+        color: #9aabbf;
+      }
+    }
+
+    select {
+      appearance: none;
+      padding-right: 34px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%231b365d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+
+    input[type='checkbox'],
+    input[type='radio'] {
+      accent-color: var(--ft-navy);
+      width: 17px;
+      height: 17px;
+    }
+  }
+
+  /* Revisión por sistemas */
+  .ft-check-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--ft-line);
+    border-radius: 12px;
+    overflow: hidden;
+
+    th,
+    td {
+      border-color: #e6ecf3;
+    }
+
+    th {
+      background: var(--ft-navy);
+      color: #fff;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    tbody tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    tbody tr:hover td {
+      background: #f1f5fa;
+    }
+  }
+
+  /* Botones */
+  button.primary,
+  .save-bar button.primary,
+  .photo-btn-primary,
+  .anexo-btn-pick {
+    background: linear-gradient(120deg, var(--ft-navy) 0%, var(--ft-navy-2) 100%);
+    border-color: var(--ft-navy);
+    color: #fff;
+    box-shadow: 0 8px 18px -10px rgba(27, 54, 93, 0.7);
+  }
+
+  button.ghost,
+  .save-bar button.ghost,
+  button.logout,
+  .photo-btn-secondary,
+  .anexo-btn {
+    background: #fff;
+    border-color: #c9d5e2;
+    color: var(--ft-navy);
+
+    &:hover:not(:disabled) {
+      border-color: var(--ft-navy);
+    }
+  }
+
+  button.linkish {
+    color: var(--ft-navy);
+  }
+
+  /* Barra de guardado, autoguardado y tarjetas laterales */
+  .save-bar {
+    border-color: var(--ft-line);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 -8px 24px -16px rgba(27, 54, 93, 0.3);
+  }
+
+  .save-bar-info strong {
+    color: var(--ft-navy);
+  }
+
+  .autosave-chip {
+    border-color: #e6cf8f;
+    background: #fbf4e0;
+    color: #6f5410;
+
+    &.pending {
+      border-color: var(--ft-line);
+      background: var(--ft-soft);
+      color: var(--ft-navy);
+    }
+  }
+
+  .side-card {
+    border-color: var(--ft-line);
+    border-radius: 16px;
+
+    h3 {
+      color: var(--ft-navy);
+    }
+  }
+
+  &.embedded-page {
+    background: transparent;
+    border-left: 4px solid var(--ft-gold);
+  }
+}
