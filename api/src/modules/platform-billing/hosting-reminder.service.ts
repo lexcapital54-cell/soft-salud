@@ -49,7 +49,7 @@ export class HostingReminderService {
       const receipt = await this.pendingReceipt(clinic.id, periodMonth);
       const daysLeft = HOSTING_PAYMENT_DAYS - today.day;
       const emails = await this.billing.notifyClinicAdmins(clinic.id, clinic.name, {
-        subject: `Recordatorio: mensualidad HabiliSALUD ${today.periodKey} — ${clinic.name}`,
+        subject: `SUSCRIPCIÓN PRÓXIMA A VENCER — HabiliSALUD ${today.periodKey} — ${clinic.name}`,
         body: [
           `Estimado(a) administrador(a) de ${clinic.name},`,
           '',

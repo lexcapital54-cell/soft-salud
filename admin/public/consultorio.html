@@ -642,7 +642,7 @@
             panel.className = 'hosting-panel' + (overdue ? ' overdue' : '');
             document.getElementById('hostingTitle').textContent = overdue
               ? 'Mensualidad vencida'
-              : 'Recordatorio: pague la mensualidad';
+              : 'SUSCRIPCIÓN PRÓXIMA A VENCER';
             var amount = d.amount != null
               ? ' por ' + Number(d.amount).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
               : '';
