@@ -191,8 +191,8 @@ export class ClinicSettings {
         this.auth.refreshMe().subscribe({ error: () => undefined });
         this.message.set(
           this.ripsEnabled
-            ? 'Módulo RIPS activado para todos los profesionales del consultorio. La HCE pedirá Finalidad, Causa externa, CIE-10 y CUPS.'
-            : 'Módulo RIPS desactivado para todos los profesionales del consultorio. El RDA se sigue generando al firmar.',
+            ? 'Módulo RIPS activado. La HCE pedirá Finalidad, Causa externa, CIE-10 y CUPS.'
+            : 'Módulo RIPS desactivado. Consulta particular: el RDA se sigue generando al firmar.',
         );
         this.savingRips.set(false);
       },

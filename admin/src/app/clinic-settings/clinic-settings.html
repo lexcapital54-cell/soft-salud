@@ -153,16 +153,6 @@
     </button>
   </div>
 
-  @if (!isClinicAdmin()) {
-  <div class="card">
-    <p class="eyebrow">Facturación y interoperabilidad</p>
-    <h2>Módulo RIPS (Res. 2275 de 2023)</h2>
-    <p class="lead">
-      RIPS está <strong>{{ ripsEnabled ? 'activado' : 'desactivado' }}</strong> para su consulta.
-      Lo habilita o deshabilita el administrador del consultorio.
-    </p>
-  </div>
-  } @else {
   <div class="card">
     <p class="eyebrow">Facturación y interoperabilidad</p>
     <h2>Módulo RIPS (Res. 2275 de 2023)</h2>
@@ -215,5 +205,4 @@
       {{ savingRips() ? 'Guardando…' : 'Guardar configuración RIPS' }}
     </button>
   </div>
-  }
 </section>

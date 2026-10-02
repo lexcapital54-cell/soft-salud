@@ -331,7 +331,6 @@
       <p>
         Active el módulo solo si factura a EPS (Res. 2275). Si la consulta es
         particular, déjelo apagado. El RDA clínico se genera siempre al firmar la HCE.
-        Lo que guarde aquí aplica a todos los profesionales del consultorio.
       </p>
       <div class="toggle-row">
         <span class="status" id="ripsStatus">Cargando…</span>
@@ -751,8 +750,8 @@
               localStorage.setItem('habilisalud_user', JSON.stringify(user));
               showMsg(
                 data.ripsEnabled
-                  ? 'Guardado: RIPS activado para todos los profesionales del consultorio. La HCE pedirá Finalidad, Causa externa, CIE-10 y CUPS.'
-                  : 'Guardado: RIPS desactivado para todos los profesionales del consultorio. El RDA se sigue generando al firmar.',
+                  ? 'Guardado: RIPS activado. La HCE pedirá Finalidad, Causa externa, CIE-10 y CUPS.'
+                  : 'Guardado: RIPS desactivado. El RDA se sigue generando al firmar.',
                 true,
               );
             })

@@ -227,38 +227,24 @@ export class EncountersController {
     };
   }
 
-  /**
-   * Solo el administrador decide si el consultorio factura a EPS: el valor se
-   * aplica a él y a todos los profesionales con acceso a la sede.
-   */
   @Put('me/rips-settings')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
   async saveRipsSettings(
     @Req() req: { user: User },
     @Body() dto: UpdateRipsSettingsDto,
   ) {
-    const clinicId = req.user.clinicId;
-    const result = clinicId
-      ? await this.prisma.user.updateMany({
-          where: {
-            role: { in: [UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL] },
-            OR: [{ id: req.user.id }, { clinicId }, { clinicAccess: { some: { clinicId } } }],
-          },
-          data: { ripsEnabled: dto.ripsEnabled },
-        })
-      : await this.prisma.user.updateMany({
-          where: { id: req.user.id },
-          data: { ripsEnabled: dto.ripsEnabled },
-        });
+    await this.prisma.user.update({
+      where: { id: req.user.id },
+      data: { ripsEnabled: dto.ripsEnabled },
+    });
     req.user.ripsEnabled = dto.ripsEnabled;
     return {
       ripsEnabled: dto.ripsEnabled,
-      usersUpdated: result.count,
     };
   }
 
   @Post('me/rips-settings')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
   saveRipsSettingsViaPost(
     @Req() req: { user: User },
     @Body() dto: UpdateRipsSettingsDto,
