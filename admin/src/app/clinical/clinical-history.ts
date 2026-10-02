@@ -53,8 +53,10 @@ import {
   input,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HceWorkspaceService } from './hce-workspace.service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   Observable,
@@ -389,6 +391,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   private readonly localDrafts = inject(HceLocalDraftService);
   private readonly unsaved = inject(UnsavedWorkService);
   private readonly router = inject(Router);
+  private readonly workspace = inject(HceWorkspaceService);
   private readonly route = inject(ActivatedRoute);
 
   /** Evita reaplicar borrador local justo después de un guardado exitoso al servidor. */
@@ -3110,6 +3113,12 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   constructor() {
     effect(() => {
+      const req = this.workspace.sessionDateRequest();
+      const patientId = this.encounter()?.patient?.id;
+      if (!req || !patientId || req.patientId !== patientId) return;
+      untracked(() => this.applySessionDate(req.at));
+    });
+    effect(() => {
       const active = this.isActiveTab();
       if (active) {
         queueMicrotask(() => this.retryPendingSync());
@@ -5168,6 +5177,18 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
    * Psicología: si la historia ya está firmada y aún no tiene notas de evolución,
    * la primera nota se fecha por defecto el día en que se creó la atención.
    */
+  /** Cita de la agenda sin nota: la evolución queda con la fecha y hora de esa cita. */
+  private applySessionDate(at: string) {
+    this.workspace.sessionDateRequest.set(null);
+    const when = new Date(at);
+    if (Number.isNaN(when.getTime()) || !this.isLocked()) return;
+    this.evolutionAttentionDate = this.toLocalInputValue(when);
+    this.message.set(
+      `Nota de evolución de la cita del ${when.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}: la fecha de atención ya quedó con la fecha de la cita.`,
+    );
+    queueMicrotask(() => this.scrollToEvolutions());
+  }
+
   private pendingEvolutionDefaultDate(enc: Encounter): string {
     const record = enc.clinicalRecord;
     if (!this.isPsychologyClinic() || !record || record.status === 'DRAFT') return '';

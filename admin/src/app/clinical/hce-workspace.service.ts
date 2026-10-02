@@ -22,6 +22,12 @@ function nextTabKey() {
 export class HceWorkspaceService {
   readonly tabs = signal<HceTab[]>([]);
   readonly activeKey = signal<string | null>(null);
+  /** Desde la agenda: fecha de la cita cuya nota de evolución falta (la toma la HC de ese paciente). */
+  readonly sessionDateRequest = signal<{ patientId: string; at: string } | null>(null);
+
+  requestSessionDate(patientId: string, at: string) {
+    this.sessionDateRequest.set({ patientId, at });
+  }
 
   ensureBlankTab() {
     if (this.tabs().length) return this.activeKey();

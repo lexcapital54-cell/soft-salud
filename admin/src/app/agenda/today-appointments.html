@@ -525,7 +525,8 @@
                         class="slot-appt"
                         [attr.data-status]="appt.status"
                         [class.block]="isBlock(appt)"
-                        [class.pending-hc]="!!appt.clinicalPending"
+                        [class.pending-hc]="appt.clinicalOverdue"
+                        [class.documented]="appt.clinicalDocumented"
                         [class.selected]="selected()?.id === appt.id"
                         [attr.title]="appt.clinicalPending"
                         (click)="selectAppointment(appt)"
@@ -616,7 +617,9 @@
                 <span class="status-badge profile-missing">Ficha por completar</span>
               }
               @if (appt.clinicalPending) {
-                <span class="status-badge hc-pending">{{ appt.clinicalPending }}</span>
+                <span class="status-badge hc-pending" [class.overdue]="appt.clinicalOverdue">{{ appt.clinicalPending }}</span>
+              } @else if (appt.clinicalDocumented) {
+                <span class="status-badge hc-done">Sesión documentada</span>
               }
             </div>
             @if (appt.blockReason) {
@@ -647,9 +650,9 @@
                 <a
                   class="linkish"
                   routerLink="/consultorio/historia-clinica"
-                  [queryParams]="{ patientId: appt.patient.id }"
+                  [queryParams]="hcQuery(appt)"
                 >
-                  {{ appt.clinicalPending ? 'Diligenciar HC' : 'Abrir HC' }}
+                  {{ hcLinkLabel(appt) }}
                 </a>
               }
               @if (canManage()) {
@@ -684,7 +687,8 @@
                 type="button"
                 [class.active]="selected()?.id === appt.id"
                 [class.block-item]="isBlock(appt)"
-                [class.pending-hc]="!!appt.clinicalPending"
+                [class.pending-hc]="appt.clinicalOverdue"
+                        [class.documented]="appt.clinicalDocumented"
                 (click)="selectAppointment(appt)"
               >
                 <span class="panel-time">
@@ -714,7 +718,8 @@
         class="appointment"
         [class.busy]="busyId() === appt.id"
         [class.block-card]="isBlock(appt)"
-        [class.pending-hc]="!!appt.clinicalPending"
+        [class.pending-hc]="appt.clinicalOverdue"
+                        [class.documented]="appt.clinicalDocumented"
       >
         <div class="time-col">
           <strong>{{ appt.startsAt | date: 'HH:mm' }}</strong>
@@ -777,7 +782,9 @@
               <span class="status-badge profile-missing">Ficha por completar</span>
             }
             @if (appt.clinicalPending) {
-              <span class="status-badge hc-pending">{{ appt.clinicalPending }}</span>
+              <span class="status-badge hc-pending" [class.overdue]="appt.clinicalOverdue">{{ appt.clinicalPending }}</span>
+            } @else if (appt.clinicalDocumented) {
+              <span class="status-badge hc-done">Sesión documentada</span>
             }
           </div>
         </div>
@@ -803,13 +810,13 @@
             </a>
           }
 
-          @if (!isBlock(appt) && appt.encounterId && appt.patient && !isReceptionist()) {
+          @if (!isBlock(appt) && (appt.encounterId || appt.clinicalPending) && appt.patient && !isReceptionist()) {
             <a
               class="linkish"
               routerLink="/consultorio/historia-clinica"
-              [queryParams]="{ patientId: appt.patient.id }"
+              [queryParams]="hcQuery(appt)"
             >
-              Abrir HC
+              {{ hcLinkLabel(appt) }}
             </a>
           }
 

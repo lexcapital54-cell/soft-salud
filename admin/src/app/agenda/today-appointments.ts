@@ -688,6 +688,19 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
     return fullDay ? `${day} · jornada completa` : `${day} · ${from}–${to}`;
   }
 
+  /** Enlace a la HC; si falta la nota de la sesión, lleva la fecha y hora de la cita para la evolución. */
+  hcQuery(appt: TodayAppointment) {
+    const patientId = appt.patient?.id ?? '';
+    return appt.clinicalPending === 'Falta nota de evolución de la sesión'
+      ? { patientId, fechaSesion: appt.startsAt }
+      : { patientId };
+  }
+
+  hcLinkLabel(appt: TodayAppointment) {
+    if (appt.clinicalPending === 'Falta nota de evolución de la sesión') return 'Registrar nota de evolución';
+    return appt.clinicalPending ? 'Diligenciar HC' : 'Abrir HC';
+  }
+
   appointmentTitle(appt: TodayAppointment) {
     if (this.isBlock(appt)) {
       return appt.blockReason?.trim() || 'Bloqueo de agenda';

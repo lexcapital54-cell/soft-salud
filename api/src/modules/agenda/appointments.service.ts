@@ -50,6 +50,12 @@ const DEFAULT_DURATION_MINUTES = 40;
 /** Ventana para reagendar el hueco que deja una cancelación. */
 export const CANCELLATION_REOPEN_MINUTES = 15;
 
+/** Sesión de una cita pasada o de hoy: qué falta documentar (null = documentada) y si ya venció el día. */
+interface ClinicalSessionState {
+  pending: string | null;
+  overdue: boolean;
+}
+
 /** Estados en los que la cita todavía admite cambios de fecha, profesional o modalidad. */
 const EDITABLE_STATUSES: AppointmentStatus[] = ['SCHEDULED', 'CONFIRMED'];
 
@@ -165,15 +171,16 @@ export class AppointmentsService {
   }
 
   /**
-   * Psicología: citas de hoy o anteriores cuya sesión aún no está documentada.
-   * La primera sesión queda cubierta al cerrar la HC; las siguientes, con una
-   * nota de evolución cuya fecha de atención caiga el mismo día de la cita.
+   * Citas de hoy o anteriores y si su sesión ya quedó documentada (todas las especialidades).
+   * La primera sesión queda cubierta al cerrar la HC; las siguientes, con una nota de
+   * evolución cuya fecha de atención caiga el mismo día de la cita. Las de días
+   * anteriores sin documentar quedan vencidas (rojo en la agenda).
    */
   private async clinicalPendingByAppointment(
     clinicId: string,
     rows: { id: string; eventType: AppointmentEventType; status: AppointmentStatus; startsAt: Date; patientId: string | null }[],
-  ): Promise<Map<string, string>> {
-    const out = new Map<string, string>();
+  ): Promise<Map<string, ClinicalSessionState>> {
+    const out = new Map<string, ClinicalSessionState>();
     const today = this.bogotaDateKey();
     const candidates = rows.filter(
       (r) =>
@@ -184,12 +191,6 @@ export class AppointmentsService {
         this.bogotaDateKey(r.startsAt) <= today,
     );
     if (!candidates.length) return out;
-
-    const clinic = await this.prisma.clinic.findUnique({
-      where: { id: clinicId },
-      select: { specialty: true },
-    });
-    if (clinic?.specialty !== ClinicSpecialty.PSYCHOLOGY) return out;
 
     const encounters = await this.prisma.encounter.findMany({
       where: {
@@ -210,27 +211,36 @@ export class AppointmentsService {
       },
     });
     const historyByPatient = new Map<string, (typeof encounters)[number]>();
+    /** Días con sesión documentada por paciente: apertura de cada HC y fecha de atención de cada evolución. */
+    const sessionDays = new Map<string, Set<string>>();
     for (const enc of encounters) {
       if (!historyByPatient.has(enc.patientId)) historyByPatient.set(enc.patientId, enc);
+      const days = sessionDays.get(enc.patientId) ?? new Set<string>();
+      if (enc.clinicalRecord?.status !== 'DRAFT') days.add(this.bogotaDateKey(enc.createdAt));
+      for (const ev of enc.clinicalRecord?.evolutions ?? []) {
+        days.add(this.bogotaDateKey(ev.clinicalAttentionDate ?? ev.signedAt));
+      }
+      sessionDays.set(enc.patientId, days);
     }
 
     for (const appt of candidates) {
+      const day = this.bogotaDateKey(appt.startsAt);
+      const overdue = day < today;
       const history = historyByPatient.get(appt.patientId as string);
       const record = history?.clinicalRecord;
       if (!history || !record) {
-        out.set(appt.id, 'Historia clínica sin diligenciar');
+        out.set(appt.id, { pending: 'Historia clínica sin diligenciar', overdue });
         continue;
       }
       if (record.status === 'DRAFT') {
-        out.set(appt.id, 'Historia clínica abierta sin cerrar');
+        out.set(appt.id, { pending: 'Historia clínica abierta sin cerrar', overdue });
         continue;
       }
-      const day = this.bogotaDateKey(appt.startsAt);
-      if (day <= this.bogotaDateKey(history.createdAt)) continue;
-      const documented = record.evolutions.some(
-        (ev) => this.bogotaDateKey(ev.clinicalAttentionDate ?? ev.signedAt) === day,
-      );
-      if (!documented) out.set(appt.id, 'Falta nota de evolución de la sesión');
+      if (day < this.bogotaDateKey(history.createdAt) || sessionDays.get(appt.patientId as string)?.has(day)) {
+        out.set(appt.id, { pending: null, overdue: false });
+        continue;
+      }
+      out.set(appt.id, { pending: 'Falta nota de evolución de la sesión', overdue });
     }
     return out;
   }
@@ -880,7 +890,7 @@ export class AppointmentsService {
   private serialize(
     row: AppointmentWithRelations,
     habeasByPatient: Map<string, boolean>,
-    clinicalPending: Map<string, string> = new Map(),
+    clinicalPending: Map<string, ClinicalSessionState> = new Map(),
   ) {
     if (row.eventType === AppointmentEventType.BLOQUEO) {
       return {
@@ -909,6 +919,8 @@ export class AppointmentsService {
         patient: null,
         habeasDataSigned: false,
         clinicalPending: null,
+        clinicalOverdue: false,
+        clinicalDocumented: false,
         admission: null,
         allowedTransitions:
           row.status === AppointmentStatus.SCHEDULED
@@ -973,7 +985,9 @@ export class AppointmentsService {
         profileComplete: missingProfileFields(patient).length === 0,
       },
       habeasDataSigned: habeasByPatient.get(row.patientId) ?? false,
-      clinicalPending: clinicalPending.get(row.id) ?? null,
+      clinicalPending: clinicalPending.get(row.id)?.pending ?? null,
+      clinicalOverdue: !!clinicalPending.get(row.id)?.pending && !!clinicalPending.get(row.id)?.overdue,
+      clinicalDocumented: clinicalPending.has(row.id) && !clinicalPending.get(row.id)?.pending,
       admission: row.admission,
       allowedTransitions: ALLOWED_TRANSITIONS[row.status] ?? [],
     };

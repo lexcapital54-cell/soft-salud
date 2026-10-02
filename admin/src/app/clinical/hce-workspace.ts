@@ -38,6 +38,8 @@ export class HceWorkspace implements OnInit, OnDestroy {
     this.sub = this.route.queryParamMap.subscribe((params) => {
       const encounterId = params.get('encounterId');
       const patientId = params.get('patientId');
+      const sessionAt = params.get('fechaSesion');
+      if (patientId && sessionAt) this.workspace.requestSessionDate(patientId, sessionAt);
       if (encounterId) {
         this.workspace.openEncounter(encounterId, patientId);
       } else if (patientId) {

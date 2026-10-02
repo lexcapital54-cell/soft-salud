@@ -408,8 +408,19 @@ select {
 }
 
 .hc-pending {
+  background: #fff4dc;
+  color: #8a5a00;
+}
+
+.hc-pending.overdue {
   background: #c62828;
   color: #fff;
+}
+
+.hc-done {
+  background: #fff;
+  color: #1d6b41;
+  box-shadow: inset 0 0 0 1px #b9dcc6;
 }
 
 .actions-col {
@@ -1416,4 +1427,17 @@ button.full {
     border-left: none;
     border-top: 1px solid #e4ecec;
   }
+}
+
+/* Sesión ya documentada (HC o nota de evolución del día de la cita): tarjeta blanca. */
+.slot-appt.documented,
+.appointment.documented,
+.panel-list button.documented {
+  background: #fff;
+  border-left-color: #b9c8cb;
+  box-shadow: inset 0 0 0 1px #e1e9eb;
+}
+
+.slot-appt.documented.selected {
+  box-shadow: 0 0 0 2px rgba(0, 61, 76, 0.35);
 }

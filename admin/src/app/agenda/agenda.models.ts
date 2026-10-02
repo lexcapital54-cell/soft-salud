@@ -77,6 +77,10 @@ export interface TodayAppointment {
   habeasDataSigned: boolean;
   /** Psicología: motivo por el que la sesión sigue sin documentar; null si está al día. */
   clinicalPending: string | null;
+  /** Cita de un día anterior sin documentar: roja en la agenda. */
+  clinicalOverdue: boolean;
+  /** Sesión ya documentada (HC o nota de evolución del día de la cita): blanca. */
+  clinicalDocumented: boolean;
   admission: AppointmentAdmission | null;
   allowedTransitions: AppointmentStatus[];
 }

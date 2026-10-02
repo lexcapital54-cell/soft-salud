@@ -60,9 +60,10 @@ export function shiftMonth(anchor: string, delta: number) {
               class="am-chip"
               [attr.data-status]="a.status"
               [class.block]="a.eventType === 'BLOQUEO'"
-              [class.pending-hc]="!!a.clinicalPending"
+              [class.pending-hc]="a.clinicalOverdue"
+              [class.documented]="a.clinicalDocumented"
               [class.selected]="selectedId() === a.id"
-              [title]="(a.startsAt | date: 'HH:mm') + ' · ' + title(a) + ' · ' + a.professional.fullName"
+              [title]="(a.startsAt | date: 'HH:mm') + ' · ' + title(a) + ' · ' + a.professional.fullName + (a.clinicalPending ? ' · ' + a.clinicalPending : '')"
               (click)="select.emit(a)"
             >
               <b>{{ a.startsAt | date: 'HH:mm' }}</b> {{ title(a) }}
