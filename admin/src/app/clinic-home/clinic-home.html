@@ -8,7 +8,6 @@
         <p class="session-name">{{ user()?.fullName }}</p>
         <p class="session-email">{{ user()?.email }}</p>
       </div>
-      <a class="header-link" routerLink="/consultorio/configuracion">Configuración RIPS</a>
       <button type="button" (click)="logout()">Cerrar sesión</button>
     </div>
   </header>
@@ -20,17 +19,6 @@
       Especialidad:
       {{ user()?.specialty ? labels[user()!.specialty!] : 'Sin asignar' }}
     </p>
-
-    <div class="modules modules-rips">
-      <a class="module module-link module-settings" routerLink="/consultorio/configuracion">
-        <h2>Configuración RIPS</h2>
-        <p>
-          Active o desactive el módulo RIPS (facturación EPS). Si la consulta es
-          particular, déjelo apagado. El RDA clínico siempre se genera al firmar.
-        </p>
-        <span class="cta">Abrir configuración →</span>
-      </a>
-    </div>
 
     @if (hasDashboard()) {
       <p class="dashboard-type">

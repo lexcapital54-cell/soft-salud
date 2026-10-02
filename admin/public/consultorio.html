@@ -326,24 +326,6 @@
       y programar citas. Si una doctora bloquea el día o una franja, verá el aviso en Agenda.
     </p>
 
-    <section class="rips-panel" id="ripsPanel" hidden>
-      <h2>Configuración RIPS</h2>
-      <p>
-        Active el módulo solo si factura a EPS (Res. 2275). Si la consulta es
-        particular, déjelo apagado. El RDA clínico se genera siempre al firmar la HCE.
-        Lo que guarde aquí aplica a todos los profesionales del consultorio.
-      </p>
-      <div class="toggle-row">
-        <span class="status" id="ripsStatus">Cargando…</span>
-        <label class="switch" title="Activar o desactivar RIPS">
-          <input type="checkbox" id="ripsToggle" />
-          <span class="slider"></span>
-        </label>
-      </div>
-      <button type="button" class="btn btn-primary" id="ripsSave">Guardar configuración</button>
-      <p class="msg" id="ripsMsg" hidden></p>
-    </section>
-
     <section class="hosting-panel" id="hostingPanel" role="status" hidden>
       <h2 id="hostingTitle">Mensualidad HabiliSALUD</h2>
       <p id="hostingMsg">—</p>
@@ -480,29 +462,6 @@
       if (!canWriteClinical) {
         var pdfMod = document.getElementById('hcePdf');
         if (pdfMod) pdfMod.hidden = true;
-      }
-
-      document.getElementById('ripsPanel').hidden = user.role !== 'ADMIN';
-
-      var toggle = document.getElementById('ripsToggle');
-      var statusEl = document.getElementById('ripsStatus');
-      var msg = document.getElementById('ripsMsg');
-      var saveBtn = document.getElementById('ripsSave');
-
-      function setStatus(on) {
-        statusEl.textContent = on
-          ? 'RIPS activado (facturación EPS)'
-          : 'RIPS desactivado (consulta particular)';
-      }
-
-      // Mostrar de inmediato el valor de sesión (no esperar red).
-      toggle.checked = !!user.ripsEnabled;
-      setStatus(!!user.ripsEnabled);
-
-      function showMsg(text, ok) {
-        msg.hidden = false;
-        msg.className = 'msg ' + (ok ? 'ok' : 'err');
-        msg.textContent = text;
       }
 
       function authHeaders() {
@@ -717,52 +676,17 @@
       loadSedes();
 
       if (!isSecretaria) {
+        // RIPS lo activa HABILISALUD; aquí solo se sincroniza la sesión para la HCE.
         fetch('/api/me/rips-settings', { headers: authHeaders(), cache: 'no-store' })
           .then(function (r) {
             if (!r.ok) throw new Error('No se pudo cargar RIPS');
             return r.json();
           })
           .then(function (data) {
-            toggle.checked = !!data.ripsEnabled;
-            setStatus(!!data.ripsEnabled);
             user.ripsEnabled = !!data.ripsEnabled;
             localStorage.setItem('habilisalud_user', JSON.stringify(user));
           })
-          .catch(function () { /* ya mostramos valor de sesión */ });
-
-        saveBtn.addEventListener('click', function () {
-          saveBtn.disabled = true;
-          msg.hidden = true;
-          var enabled = !!toggle.checked;
-          fetch('/api/me/rips-settings', {
-            method: 'POST',
-            headers: authHeaders(),
-            cache: 'no-store',
-            body: JSON.stringify({ ripsEnabled: enabled }),
-          })
-            .then(function (r) {
-              if (!r.ok) throw new Error('No se pudo guardar');
-              return r.json();
-            })
-            .then(function (data) {
-              toggle.checked = !!data.ripsEnabled;
-              setStatus(!!data.ripsEnabled);
-              user.ripsEnabled = !!data.ripsEnabled;
-              localStorage.setItem('habilisalud_user', JSON.stringify(user));
-              showMsg(
-                data.ripsEnabled
-                  ? 'Guardado: RIPS activado para todos los profesionales del consultorio. La HCE pedirá Finalidad, Causa externa, CIE-10 y CUPS.'
-                  : 'Guardado: RIPS desactivado para todos los profesionales del consultorio. El RDA se sigue generando al firmar.',
-                true,
-              );
-            })
-            .catch(function () {
-              showMsg('No se pudo guardar la configuración RIPS.', false);
-            })
-            .finally(function () {
-              saveBtn.disabled = false;
-            });
-        });
+          .catch(function () { /* se conserva el valor de sesión */ });
       }
 
       document.getElementById('logout').addEventListener('click', function () {

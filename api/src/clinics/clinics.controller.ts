@@ -8,6 +8,7 @@ import { CreateClinicDto } from './dto/create-clinic.dto';
 import { CreateDashboardDto } from './dto/create-dashboard.dto';
 import { DeleteClinicDto } from './dto/delete-clinic.dto';
 import { UpdateClinicDto } from './dto/update-clinic.dto';
+import { UpdateRipsSettingsDto } from '../modules/clinical/dto/clinical.dto';
 
 @Controller('clinics')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -68,6 +69,12 @@ export class ClinicsController {
     @Req() req: { user?: { id?: string; email?: string } },
   ) {
     return this.clinicsService.remove(id, body?.confirmName, body?.confirmPin, req.user);
+  }
+
+  /** RIPS (Res. 2275, facturación EPS) por sede: solo el superadmin lo activa. */
+  @Post(':id/rips')
+  setRips(@Param('id') id: string, @Body() dto: UpdateRipsSettingsDto) {
+    return this.clinicsService.setRips(id, dto.ripsEnabled);
   }
 
   @Patch(':id')

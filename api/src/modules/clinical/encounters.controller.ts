@@ -10,6 +10,7 @@ import {
   Req,
   UseGuards,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
@@ -27,7 +28,6 @@ import {
   UpdateProceduresDto,
   UpdateProfessionalSignatureDto,
   UpdateRepsSettingsDto,
-  UpdateRipsSettingsDto,
 } from './dto/clinical.dto';
 import { EncountersService } from './encounters.service';
 import { ProfessionalSignatureService } from './professional-signature.service';
@@ -227,43 +227,17 @@ export class EncountersController {
     };
   }
 
-  /**
-   * Solo el administrador decide si el consultorio factura a EPS: el valor se
-   * aplica a él y a todos los profesionales con acceso a la sede.
-   */
+  /** RIPS por sede lo activa solo HABILISALUD (POST /clinics/:id/rips); el consultorio no puede cambiarlo. */
   @Put('me/rips-settings')
-  @Roles(UserRole.ADMIN)
-  async saveRipsSettings(
-    @Req() req: { user: User },
-    @Body() dto: UpdateRipsSettingsDto,
-  ) {
-    const clinicId = req.user.clinicId;
-    const result = clinicId
-      ? await this.prisma.user.updateMany({
-          where: {
-            role: { in: [UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL] },
-            OR: [{ id: req.user.id }, { clinicId }, { clinicAccess: { some: { clinicId } } }],
-          },
-          data: { ripsEnabled: dto.ripsEnabled },
-        })
-      : await this.prisma.user.updateMany({
-          where: { id: req.user.id },
-          data: { ripsEnabled: dto.ripsEnabled },
-        });
-    req.user.ripsEnabled = dto.ripsEnabled;
-    return {
-      ripsEnabled: dto.ripsEnabled,
-      usersUpdated: result.count,
-    };
+  @Roles(UserRole.SUPER_ADMIN)
+  saveRipsSettings() {
+    throw new ForbiddenException('RIPS lo habilita HABILISALUD desde el panel de administración.');
   }
 
   @Post('me/rips-settings')
-  @Roles(UserRole.ADMIN)
-  saveRipsSettingsViaPost(
-    @Req() req: { user: User },
-    @Body() dto: UpdateRipsSettingsDto,
-  ) {
-    return this.saveRipsSettings(req, dto);
+  @Roles(UserRole.SUPER_ADMIN)
+  saveRipsSettingsViaPost() {
+    return this.saveRipsSettings();
   }
 
   /**

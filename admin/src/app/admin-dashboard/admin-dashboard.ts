@@ -193,6 +193,30 @@ export class AdminDashboard {
     });
   }
 
+  toggleClinicRips(clinic: Clinic) {
+    const next = !clinic.ripsEnabled;
+    const question = next
+      ? `¿Activar RIPS para «${clinic.name}»? La HCE de todos sus profesionales pedirá Finalidad, Causa externa, CIE-10 y CUPS.`
+      : `¿Desactivar RIPS para «${clinic.name}»? El RDA clínico se sigue generando al firmar.`;
+    if (!window.confirm(question)) return;
+    this.busyClinicId.set(clinic.id);
+    this.api.setClinicRips(clinic.id, next).subscribe({
+      next: (res) => {
+        this.busyClinicId.set(null);
+        this.error.set('');
+        this.message.set(
+          `RIPS ${next ? 'activado' : 'desactivado'} en «${clinic.name}» (${res.usersUpdated} usuario(s)).`,
+        );
+        this.refresh();
+      },
+      error: (err) => {
+        this.busyClinicId.set(null);
+        this.message.set('');
+        this.error.set(this.readError(err, 'No se pudo cambiar RIPS del consultorio.'));
+      },
+    });
+  }
+
   deleteClinic(clinic: Clinic) {
     this.busyClinicId.set(clinic.id);
     this.api.clinicDeletionCheck(clinic.id).subscribe({

@@ -160,6 +160,7 @@
               <th>Admins</th>
               <th>Dashboard</th>
               <th>Estado</th>
+              <th>RIPS</th>
               <th>Acción</th>
             </tr>
           </thead>
@@ -171,6 +172,7 @@
                 <td>{{ clinic.admins?.length || 0 }}</td>
                 <td>{{ dashboardLabel(clinic.dashboardType) }}</td>
                 <td>{{ clinic.isActive ? 'Activo' : 'Inactivo' }}</td>
+                <td>{{ clinic.ripsEnabled ? 'Activo' : 'Inactivo' }}</td>
                 <td class="actions">
                   <div class="menu-wrap">
                     <a
@@ -222,6 +224,14 @@
                         </button>
                       </div>
                     }
+                    <button
+                      type="button"
+                      class="action-btn"
+                      [disabled]="busyClinicId() === clinic.id"
+                      (click)="toggleClinicRips(clinic)"
+                    >
+                      {{ clinic.ripsEnabled ? 'Desactivar RIPS' : 'Activar RIPS' }}
+                    </button>
                     @if (clinic.hasClinicalData || !clinic.isActive) {
                       <button
                         type="button"

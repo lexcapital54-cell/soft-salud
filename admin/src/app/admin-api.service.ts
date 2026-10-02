@@ -68,6 +68,13 @@ export class AdminApiService {
     return this.http.post<Clinic>(`${API}/clinics/${clinicId}/update`, { isActive });
   }
 
+  setClinicRips(clinicId: string, ripsEnabled: boolean) {
+    return this.http.post<{ clinicId: string; ripsEnabled: boolean; usersUpdated: number }>(
+      `${API}/clinics/${clinicId}/rips`,
+      { ripsEnabled },
+    );
+  }
+
   listClinicAdmins() {
     return this.http.get<ClinicAdmin[]>(`${API}/users`);
   }

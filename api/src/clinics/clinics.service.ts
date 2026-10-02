@@ -40,11 +40,40 @@ export class ClinicsService {
       relations: { admins: true },
       order: { createdAt: 'DESC' },
     });
-    const withData = await this.clinicIdsWithClinicalData();
+    const [withData, withRips] = await Promise.all([this.clinicIdsWithClinicalData(), this.clinicIdsWithRips()]);
     return clinics.map((clinic) => ({
       ...this.toPublicClinic(clinic),
       hasClinicalData: withData.has(clinic.id),
+      ripsEnabled: withRips.has(clinic.id),
     }));
+  }
+
+  /** Sedes cuyos profesionales tienen RIPS (facturación EPS) activado. */
+  private async clinicIdsWithRips() {
+    const users = await this.prisma.user.findMany({
+      where: { ripsEnabled: true, clinicId: { not: null }, role: { in: [UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL] } },
+      select: { clinicId: true },
+    });
+    return new Set(users.map((u) => u.clinicId as string));
+  }
+
+  /**
+   * Solo HABILISALUD decide si una sede factura a EPS: el valor se aplica al
+   * administrador y a todos los profesionales con acceso a la sede.
+   */
+  async setRips(id: string, ripsEnabled: boolean) {
+    const clinic = await this.clinicsRepository.findOne({ where: { id } });
+    if (!clinic) {
+      throw new NotFoundException('El consultorio no existe');
+    }
+    const result = await this.prisma.user.updateMany({
+      where: {
+        role: { in: [UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL] },
+        OR: [{ clinicId: id }, { clinicAccess: { some: { clinicId: id } } }],
+      },
+      data: { ripsEnabled },
+    });
+    return { clinicId: id, ripsEnabled, usersUpdated: result.count };
   }
 
   /** Sedes con datos que obligan a conservarlas (solo se pueden desactivar). */

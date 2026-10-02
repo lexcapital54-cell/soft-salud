@@ -77,6 +77,7 @@ export interface Clinic {
   admins?: ClinicAdmin[];
   /** Tiene pacientes, historias u otros registros: solo se puede desactivar. */
   hasClinicalData?: boolean;
+  ripsEnabled?: boolean;
   createdAt: string;
 }
 

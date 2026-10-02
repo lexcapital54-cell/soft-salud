@@ -46,15 +46,11 @@ export class ClinicSettings {
   readonly user = this.auth.user;
   readonly canManageAccess = this.auth.canManageClinicAccess;
   readonly isClinicAdmin = this.auth.isClinicAdmin;
-  readonly savingRips = signal(false);
   readonly savingReps = signal(false);
-  readonly message = signal('');
-  readonly error = signal('');
   readonly repsMessage = signal('');
   readonly repsError = signal('');
   readonly repsStatus = signal('');
   readonly repsAlertLevel = signal<'info' | 'urgent' | 'warn' | 'ok' | ''>('');
-  ripsEnabled = false;
   repsExpirationDate = '';
 
   readonly staff = signal<StaffRow[]>([]);
@@ -67,14 +63,7 @@ export class ClinicSettings {
   linkClinicId = '';
 
   constructor() {
-    this.ripsEnabled = this.user()?.ripsEnabled === true;
     this.repsExpirationDate = this.user()?.repsExpirationDate?.slice(0, 10) || '';
-    this.clinical.getRipsSettings().subscribe({
-      next: (res) => {
-        this.ripsEnabled = res.ripsEnabled;
-      },
-      error: () => undefined,
-    });
     this.clinical.getRepsSettings().subscribe({
       next: (res) => this.applyRepsResponse(res),
       error: () => undefined,
@@ -178,31 +167,6 @@ export class ClinicSettings {
             err?.error?.message || 'No se pudo vincular la sede.',
           ),
       });
-  }
-
-  saveRips() {
-    this.savingRips.set(true);
-    this.message.set('');
-    this.error.set('');
-    this.clinical.saveRipsSettings(this.ripsEnabled).subscribe({
-      next: (res) => {
-        this.ripsEnabled = res.ripsEnabled;
-        this.auth.patchSessionUser({ ripsEnabled: res.ripsEnabled });
-        this.auth.refreshMe().subscribe({ error: () => undefined });
-        this.message.set(
-          this.ripsEnabled
-            ? 'Módulo RIPS activado para todos los profesionales del consultorio. La HCE pedirá Finalidad, Causa externa, CIE-10 y CUPS.'
-            : 'Módulo RIPS desactivado para todos los profesionales del consultorio. El RDA se sigue generando al firmar.',
-        );
-        this.savingRips.set(false);
-      },
-      error: (err) => {
-        this.error.set(
-          err?.error?.message || 'No se pudo guardar la configuración RIPS.',
-        );
-        this.savingRips.set(false);
-      },
-    });
   }
 
   saveReps() {
