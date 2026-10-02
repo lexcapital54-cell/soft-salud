@@ -18,6 +18,18 @@ body {
   min-height: 100%;
 }
 
+/*
+ * Una lista desplegable abierta (CIE-10, CUPS) debe quedar por encima de las
+ * secciones siguientes de la historia; también se abre al pasar el mouse, sin foco.
+ */
+.block:has(.suggest, .odo-suggest, .ftp-sugg),
+.search-row:has(.suggest),
+.odo-suggest-cell:has(.odo-suggest),
+.cups:has(.ftp-sugg) {
+  position: relative;
+  z-index: 60;
+}
+
 body {
   font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   color: var(--ink);
