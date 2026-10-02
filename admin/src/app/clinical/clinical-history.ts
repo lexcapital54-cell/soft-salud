@@ -15,6 +15,12 @@ import { OrthoExamPanel } from './dentistry/ortho-exam-panel';
 import { OrthoSmilePanel } from './dentistry/ortho-smile-panel';
 import { OrthoSmilePhoto } from './dentistry/ortho-smile-photo';
 import { PhysioTreatmentPlan } from './physio/physio-treatment-plan';
+import { PhysioAntecedents } from './physio/physio-antecedents';
+import { PhysioBodyMap } from './physio/physio-body-map';
+import { PhysioIntakeHeader } from './physio/physio-intake-header';
+import { PhysioQuickAssessment } from './physio/physio-quick-assessment';
+import { PhysioTherapies } from './physio/physio-therapies';
+import { physioIntakeSummary } from './physio/physio-intake.summary';
 import { PHYSIO_MODULES, physioModuleStatus } from './physio/physio-nav';
 import { psychModuleList, psychModuleStatus } from './psychology/psych-nav';
 import { OrthoFaceProportions } from './dentistry/ortho-face-proportions';
@@ -348,6 +354,11 @@ function emptyContent(): ClinicalContent {
     OrthoSmilePanel,
     OrthoSmilePhoto,
     PhysioTreatmentPlan,
+    PhysioAntecedents,
+    PhysioBodyMap,
+    PhysioIntakeHeader,
+    PhysioQuickAssessment,
+    PhysioTherapies,
     OrthoFaceProportions,
     OrthoMovementPlan,
     OrthoArchAnalysis,
@@ -2262,6 +2273,11 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     return !this.isPhysiotherapyClinic() && !this.isDentistryClinic();
   }
 
+  /** Zonas, terapias, valoración rápida y antecedentes con casillas (solo FT, vista sellada). */
+  ftIntakeSummary() {
+    return this.isPhysiotherapyClinic() ? physioIntakeSummary(this.physio()) : [];
+  }
+
   /** Filas legibles de valoración funcional (solo FT). */
   ftFunctionalSummaryRows(): Array<{ label: string; value: string }> {
     if (!this.isPhysiotherapyClinic()) return [];
@@ -2276,7 +2292,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     const pain = (fa['pain'] || '').trim();
     if (pain) {
       rows.push({
-        label: 'Dolor (EVA 1–10)',
+        label: 'Dolor (EVA 0–10)',
         value: /^\d+$/.test(pain) ? `${pain} / 10` : statusLabel(pain),
       });
     }
@@ -2356,9 +2372,6 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     { key: 'otherFunctions', label: 'Otras funciones' },
   ];
 
-  /** Solo FT: EVA verbal-numérica 1–10 (dolor). */
-  readonly ftPainScale = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
   /** Solo FT: escala de Daniels (fuerza muscular). */
   readonly ftDanielsScale: Array<{ value: string; label: string }> = [
     { value: '0/5', label: '0/5 — Sin contracción' },
@@ -2381,6 +2394,11 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     { key: 'occupational', label: 'Ocupacionales' },
     { key: 'others', label: 'Otros' },
   ];
+
+  /** Los antecedentes con casillas (patológicos, quirúrgicos, traumáticos, alérgicos) van en su propio bloque. */
+  readonly ftOtherAntecedentKeys = this.ftAntecedentKeys.filter(
+    (a) => !['pathological', 'surgical', 'traumatic', 'allergic'].includes(a.key),
+  );
 
   readonly loading = signal(false);
   readonly saving = signal(false);

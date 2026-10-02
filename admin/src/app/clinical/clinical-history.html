@@ -878,6 +878,12 @@
                   <p>{{ content.careMinimum.presentIllness }}</p>
                 </div>
               }
+              @for (row of ftIntakeSummary(); track row.label) {
+                <div class="sealed-field">
+                  <strong>{{ row.label }}</strong>
+                  <p>{{ row.value }}</p>
+                </div>
+              }
               @if (physio().physioDiagnosis) {
                 <div class="sealed-field">
                   <strong>Diagnóstico fisioterapéutico</strong>
@@ -1621,11 +1627,13 @@
                   <div>
                     <h3>3. Historia clínica de fisioterapia (HC-FT-001)</h3>
                     <p class="muted small">
-                      Evaluación y plan terapéutico. En valoración: dolor EVA 1–10, fuerza Daniels
-                      (o texto libre), tono y movilidad (goniometría) abiertos.
+                      Evaluación y plan terapéutico. Marque zonas en el mapa corporal, el dolor en la
+                      escala EVA 0–10 y las terapias a aplicar; fuerza Daniels, tono y goniometría siguen abiertos.
                     </p>
                   </div>
                 </div>
+
+                <app-physio-intake-header [data]="physio()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
 
                 <label>
                   Motivo de consulta
@@ -1647,8 +1655,9 @@
                 </label>
 
                 <h4>Antecedentes</h4>
-                <div class="ft-grid-2">
-                  @for (item of ftAntecedentKeys; track item.key) {
+                <app-physio-antecedents [data]="physio()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+                <div class="ft-grid-2 ft-antecedents-more">
+                  @for (item of ftOtherAntecedentKeys; track item.key) {
                     <label>
                       {{ item.label }}
                       <textarea
@@ -1710,6 +1719,9 @@
                     ></textarea>
                 </label>
 
+                <h4 id="ft-zonas">Zonas a tratar</h4>
+                <app-physio-body-map [data]="physio()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+
                 <h4 id="ft-evaluacion">Evaluación fisioterapéutica</h4>
                 <label>
                   Diagnóstico fisioterapéutico
@@ -1731,25 +1743,14 @@
                 </label>
 
                 <div class="ft-valoracion-block" id="ft-valoracion-funcional">
+                <h4>Valoración fisioterapéutica</h4>
+                <app-physio-quick-assessment [data]="physio()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
+
                 <h4>Valoración por sistemas y funciones</h4>
                 <p class="muted small ft-valoracion-hint">
-                  Dolor = EVA 1–10 · Fuerza = Daniels (o texto libre) · Tono y movilidad = texto libre
-                  (goniometría).
+                  Fuerza = Daniels (o texto libre) · Tono y movilidad = texto libre (goniometría).
                 </p>
                 <div class="ft-grid-2 ft-func-open">
-                  <label>
-                    Dolor — escala verbal numérica (EVA 1–10)
-                    <select
-                      [(ngModel)]="physio().functionalAssessment['pain']"
-                      [disabled]="clinicalFormDisabled()"
-                      (ngModelChange)="onClinicalFieldChange()"
-                    >
-                      <option value="">Sin registrar</option>
-                      @for (n of ftPainScale; track n) {
-                        <option [value]="'' + n">{{ n }} / 10</option>
-                      }
-                    </select>
-                  </label>
                   <label>
                     Fuerza muscular — escala Daniels
                     <select
@@ -1875,6 +1876,9 @@
                       (ngModelChange)="onClinicalFieldChange()"
                     ></textarea>
                 </label>
+
+                <h4 id="ft-terapias">Terapias a aplicar</h4>
+                <app-physio-therapies [data]="physio()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
 
                 <h4 id="ft-plan">Plan terapéutico</h4>
                 <label>

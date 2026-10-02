@@ -6,9 +6,11 @@ export const PHYSIO_MODULES = [
   { id: 'odo-identificacion', label: 'Identificación' },
   { id: 'ft-atencion', label: 'Datos de la atención' },
   { id: 'hce-section-3', label: 'Motivo y antecedentes' },
+  { id: 'ft-zonas', label: 'Zonas a tratar' },
   { id: 'ft-evaluacion', label: 'Evaluación' },
   { id: 'ft-valoracion-funcional', label: 'Valoración funcional' },
   { id: 'ft-diagnostico', label: 'Diagnóstico' },
+  { id: 'ft-terapias', label: 'Terapias' },
   { id: 'ft-plan', label: 'Plan terapéutico' },
   { id: 'ft-plan-valores', label: 'Plan y valores' },
   { id: 'ft-cierre', label: 'Cierre del caso' },
@@ -39,13 +41,23 @@ export function physioModuleStatus(id: string, ft: PhysiotherapyContent, present
       return ratio([p.firstName, p.lastName, p.documentNumber, p.birthDate].filter(filled).length, 4, 'datos básicos (nombre, apellido, documento, nacimiento)');
     }
     case 'hce-section-3': {
-      const antecedents = Object.values(ft.antecedentsDetail ?? {}).some(filled);
+      const checks = Object.values(ft.intake?.antecedents ?? {}).some((g) => Object.values(g).some(filled));
+      const antecedents = checks || Object.values(ft.antecedentsDetail ?? {}).some(filled);
       return ratio([ctx.motive, presentIllness, antecedents].filter(filled).length, 3, 'datos (motivo, enfermedad actual, antecedentes)');
+    }
+    case 'ft-zonas': {
+      const n = ft.intake?.zones?.length ?? 0;
+      return n ? { state: 'done', hint: `${n} zona(s) marcada(s)` } : { state: 'empty', hint: 'Sin zonas marcadas en el mapa corporal' };
+    }
+    case 'ft-terapias': {
+      const n = (ft.intake?.therapies?.length ?? 0) + (ft.intake?.therapiesOther?.trim() ? 1 : 0);
+      return n ? { state: 'done', hint: `${n} terapia(s)` } : { state: 'empty', hint: 'Sin terapias seleccionadas' };
     }
     case 'ft-evaluacion':
       return ratio([ft.physioDiagnosis, ft.findings].filter(filled).length, 2, 'datos (diagnóstico fisioterapéutico, hallazgos)');
     case 'ft-valoracion-funcional': {
-      const n = FUNCTIONS.filter((k) => filled(ft.functionalAssessment?.[k])).length;
+      const quick = [ft.intake?.posture, ft.intake?.rangeOfMotion].filter(filled).length;
+      const n = FUNCTIONS.filter((k) => filled(ft.functionalAssessment?.[k])).length + quick;
       return ratio(Math.min(n, FUNCTIONS_ENOUGH), FUNCTIONS_ENOUGH, 'funciones valoradas');
     }
     case 'ft-diagnostico':

@@ -1,4 +1,5 @@
 import type { DentistryContent } from './dentistry/dentistry.models';
+import type { PhysioIntake } from './physio/physio-intake.models';
 
 export type CareModality = 'IN_PERSON' | 'VIRTUAL';
 export type DiagnosisType = 'PRINCIPAL' | 'RELATED' | 'IMPRESSION';
@@ -151,6 +152,8 @@ export interface PhysiotherapyContent {
     caseStatus: string;
     treatmentResult: string;
   };
+  /** Mapa corporal, terapias, valoración rápida y antecedentes con casillas. */
+  intake?: PhysioIntake;
 }
 
 /** Plan de sesiones (fisioterapia, psicología): filas procedimiento × sesiones cobrables en caja. */

@@ -38,6 +38,7 @@ import {
   ORTHO_PLAN_PHASE_LABELS,
 } from './dentistry-labels';
 import { num } from '../billing/treatment-plan-items';
+import { physioIntakeSections } from './physio-intake.pdf';
 
 type EncounterPdfRow = Encounter & {
   patient: Patient;
@@ -368,7 +369,9 @@ export class HcePdfService {
       const physio = (content.physiotherapy || {}) as Record<string, unknown>;
       const assessment = (content.assessment || {}) as Record<string, unknown>;
       const band = { banded: true as const };
+      const intake = physioIntakeSections(physio);
       body.push(
+        this.section('Datos de la valoración', intake.header, theme.title, band),
         this.section(
           'Motivo de consulta',
           care.motive as string,
@@ -381,6 +384,8 @@ export class HcePdfService {
           theme.title,
           band,
         ),
+        this.section('Antecedentes', intake.antecedents, theme.title, band),
+        this.section('Zonas a tratar', intake.zones, theme.title, band),
         this.section(
           'Diagnóstico fisioterapéutico',
           physio.physioDiagnosis as string,
@@ -388,6 +393,8 @@ export class HcePdfService {
           band,
         ),
         this.section('Hallazgos', physio.findings as string, theme.title, band),
+        this.section('Valoración fisioterapéutica', intake.assessment, theme.title, band),
+        this.section('Terapias a aplicar', intake.therapies, theme.title, band),
         this.section(
           'Objetivos del tratamiento',
           physio.treatmentObjectives as string,
