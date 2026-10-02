@@ -1199,6 +1199,8 @@ model PlatformReceipt {
   payerEmail    String?           @map("payer_email") @db.VarChar(180)
   /// Plan del consultorio a la fecha del cobro.
   planLabel     String?           @map("plan_label") @db.VarChar(160)
+  /// Copia del PDF pagado archivada para el consultorio (stored_files).
+  pdfStorageKey String?           @map("pdf_storage_key")
   createdById String?             @map("created_by_id") @db.Uuid
   createdBy   User?               @relation("PlatformReceiptCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)

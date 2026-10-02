@@ -28,7 +28,6 @@ export type PlatformReceiptPdfInput = {
   methodLabel: string;
   periodLabel?: string | null;
   notes?: string | null;
-  createdByName?: string | null;
 };
 
 const NAVY = '#0b4f8a';
@@ -54,6 +53,7 @@ export class PlatformReceiptPdfService {
     },
   });
   private logo: string | null | undefined;
+  private stamp: string | null | undefined;
 
   async build(input: PlatformReceiptPdfInput): Promise<Buffer> {
     const money = (n: number) =>
@@ -67,6 +67,7 @@ export class PlatformReceiptPdfService {
       });
     const title = input.pending ? 'CUENTA DE COBRO' : 'RECIBO DE CAJA';
     const logo = this.loadLogo();
+    const stamp = input.pending ? null : this.loadStamp();
     const concept = [
       input.kindLabel,
       input.periodLabel ? `Periodo ${input.periodLabel}` : null,
@@ -279,13 +280,16 @@ export class PlatformReceiptPdfService {
             {
               width: 260,
               stack: [
-                { text: 'Recibí conforme:', margin: [0, 18, 0, 34] },
+                { text: 'Recibí conforme:', margin: [0, 4, 0, 0] },
+                stamp
+                  ? { image: stamp, width: 92, alignment: 'center', margin: [0, -4, 0, -6] }
+                  : { text: ' ', margin: [0, 0, 0, 34] },
                 { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 260, y2: 0, lineColor: INK, lineWidth: 0.8 }] },
                 {
-                  text: paid && input.createdByName ? `${input.createdByName} · HabiliSALUD` : 'Firma y nombre',
+                  text: paid ? 'HabiliSALUD' : 'Firma y nombre',
                   fontSize: 8,
                   color: MUTED,
-                  margin: [0, 4, 0, 0],
+                  margin: [0, 8, 0, 0],
                   alignment: 'center',
                 },
               ],
@@ -352,15 +356,25 @@ export class PlatformReceiptPdfService {
   }
 
   private loadLogo(): string | null {
-    if (this.logo !== undefined) return this.logo;
-    const candidates = [
-      path.join(process.cwd(), 'assets', 'platform', 'habilisalud-logo.jpg'),
-      path.join(process.cwd(), 'api', 'assets', 'platform', 'habilisalud-logo.jpg'),
-    ];
-    const found = candidates.find((p) => fs.existsSync(p));
-    this.logo = found ? `data:image/jpeg;base64,${fs.readFileSync(found).toString('base64')}` : null;
-    if (!found) this.logger.warn('No se encontró el logo de HabiliSALUD para el recibo');
+    if (this.logo === undefined) this.logo = this.asset('habilisalud-logo.jpg', 'image/jpeg');
     return this.logo;
+  }
+
+  private loadStamp(): string | null {
+    if (this.stamp === undefined) this.stamp = this.asset('sello-pago.png', 'image/png');
+    return this.stamp;
+  }
+
+  private asset(fileName: string, mime: string): string | null {
+    const found = [
+      path.join(process.cwd(), 'assets', 'platform', fileName),
+      path.join(process.cwd(), 'api', 'assets', 'platform', fileName),
+    ].find((p) => fs.existsSync(p));
+    if (!found) {
+      this.logger.warn(`No se encontró ${fileName} para el recibo`);
+      return null;
+    }
+    return `data:${mime};base64,${fs.readFileSync(found).toString('base64')}`;
   }
 
   private render(doc: TDocumentDefinitions): Promise<Buffer> {

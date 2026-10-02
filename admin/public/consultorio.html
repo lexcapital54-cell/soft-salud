@@ -100,6 +100,13 @@
       min-width: 22px; height: 22px; padding: 0 6px; margin-left: 6px;
       border-radius: 999px; background: #c45c00; color: #fff; font-size: 12px; font-weight: 600;
     }
+    .receipts-folder { margin: 0 0 18px; padding: 14px 18px; border-radius: 12px; border: 1px solid #cfe0ea; background: #f7fbfd; }
+    .receipts-folder h2 { margin: 0 0 4px; font-size: 1.05rem; color: #003d4c; }
+    .receipts-folder p { margin: 0 0 10px; color: #4a6670; font-size: .9rem; }
+    .receipts-folder ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .receipts-folder li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #dbe8ee; border-radius: 10px; background: #fff; }
+    .receipts-folder li small { display: block; color: #6a8085; }
+    .receipts-folder button { border: 1px solid #0d7377; background: #fff; color: #0d7377; border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; }
     .hosting-panel {
       margin: 0 0 18px; padding: 14px 18px; border-radius: 12px;
       border: 1px solid #e8c4a8; background: #fff8f0;
@@ -338,6 +345,12 @@
       <p id="hostingMsg">—</p>
     </section>
 
+    <section class="receipts-folder" id="receiptsFolder" hidden>
+      <h2>📁 Recibos HabiliSALUD</h2>
+      <p>Cada vez que se registra un pago, aquí queda una copia del recibo de caja.</p>
+      <ul id="receiptsList"></ul>
+    </section>
+
     <section class="reps-panel" id="repsPanel" hidden>
       <h2 id="repsTitle">Registro REPS</h2>
       <p id="repsMsg">—</p>
@@ -380,6 +393,11 @@
         <h2>Gestión documental</h2>
         <p>Documentación, evidencias y requisitos de habilitación alineados a la normativa vigente.</p>
         <span class="cta">Ver módulo →</span>
+      </a>
+      <a class="module" id="platformReceipts" href="#recibos-habilisalud" hidden>
+        <h2>📁 Recibos HabiliSALUD</h2>
+        <p>Copia de los recibos de pago de la mensualidad y del alta de su consultorio.</p>
+        <span class="cta">Abrir carpeta →</span>
       </a>
       <a class="module" id="billing" href="/consultorio/recibos" hidden>
         <h2>Recibos de caja</h2>
@@ -540,6 +558,68 @@
         }
       }
 
+      function setupReceiptsFolder() {
+        if (user.role !== 'ADMIN') return;
+        var card = document.getElementById('platformReceipts');
+        var folder = document.getElementById('receiptsFolder');
+        var list = document.getElementById('receiptsList');
+        card.hidden = false;
+        var money = function (n) {
+          return Number(n).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+        };
+        function render(rows) {
+          if (!rows.length) {
+            list.innerHTML = '<li>Aún no hay recibos pagados.</li>';
+            return;
+          }
+          list.innerHTML = '';
+          rows.forEach(function (r) {
+            var li = document.createElement('li');
+            var info = document.createElement('div');
+            var title = document.createElement('strong');
+            title.textContent = r.number + ' · ' + money(r.amount);
+            var detail = document.createElement('small');
+            detail.textContent = r.kindLabel + (r.billingRange ? ' · ' + r.billingRange : '') +
+              (r.paidAt ? ' · pagado el ' + new Date(r.paidAt).toLocaleDateString('es-CO') : '');
+            info.appendChild(title);
+            info.appendChild(detail);
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = 'Ver PDF';
+            btn.addEventListener('click', function () { openReceipt(r.id, btn); });
+            li.appendChild(info);
+            li.appendChild(btn);
+            list.appendChild(li);
+          });
+        }
+        function openReceipt(id, btn) {
+          var win = window.open('', '_blank');
+          btn.disabled = true;
+          fetch('/api/me/platform-receipts/' + encodeURIComponent(id) + '/pdf', { headers: { Authorization: 'Bearer ' + token } })
+            .then(function (r) { if (!r.ok) throw new Error(); return r.blob(); })
+            .then(function (blob) {
+              var href = URL.createObjectURL(blob);
+              if (win) win.location.href = href; else window.location.href = href;
+            })
+            .catch(function () {
+              if (win) win.close();
+              alert('No se pudo abrir el recibo. Intente de nuevo.');
+            })
+            .finally(function () { btn.disabled = false; });
+        }
+        card.addEventListener('click', function (event) {
+          event.preventDefault();
+          folder.hidden = !folder.hidden;
+          if (folder.hidden) return;
+          list.innerHTML = '<li>Cargando…</li>';
+          fetch('/api/me/platform-receipts', { headers: authHeaders(), cache: 'no-store' })
+            .then(function (r) { return r.ok ? r.json() : []; })
+            .then(render)
+            .catch(function () { list.innerHTML = '<li>No se pudieron cargar los recibos.</li>'; });
+          folder.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+
       function loadHostingReminder() {
         if (user.role !== 'ADMIN') return;
         fetch('/api/me/hosting-reminder', { headers: authHeaders(), cache: 'no-store' })
@@ -623,6 +703,7 @@
       loadOpenHce();
       loadReps();
       loadHostingReminder();
+      setupReceiptsFolder();
       loadSedes();
 
       if (!isSecretaria) {

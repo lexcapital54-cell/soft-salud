@@ -28,40 +28,15 @@ import {
   parsePeriodMonth,
   periodLabel,
 } from './billing-period';
-import { PlatformReceiptPdfService } from './platform-receipt-pdf.service';
 import { receiptPayer } from './receipt-payer';
+import { KIND_LABEL, METHOD_LABEL, PLAN_LABEL, STATUS_LABEL } from './billing-labels';
+import { PlatformReceiptArchiveService } from './platform-receipt-archive.service';
 import { EmailSmtpProvider } from '../notifications/notification-providers';
-
-const KIND_LABEL: Record<PlatformChargeKind, string> = {
-  CLINIC_SETUP: 'Alta / creación de consultorio',
-  MONTHLY_HOSTING: 'Arrendamiento mensual del servidor',
-  OTHER: 'Otro cobro',
-};
-
-const PLAN_LABEL: Record<PlatformPlanVariant, string> = {
-  WITHOUT_DOCS: 'Sin documentación',
-  WITH_DOCS: 'Con documentación',
-};
-
-const STATUS_LABEL: Record<PlatformReceiptStatus, string> = {
-  PAID: 'Pagado',
-  PENDING: 'Pendiente',
-};
 
 const RECEIPT_INCLUDE = {
   clinic: { select: { id: true, name: true, specialty: true, dashboardType: true } },
   createdBy: { select: { id: true, fullName: true } },
 } as const;
-
-const METHOD_LABEL: Record<PaymentMethod, string> = {
-  CASH: 'Efectivo',
-  TRANSFER: 'Transferencia',
-  CARD: 'Tarjeta',
-  PSE: 'PSE',
-  NEQUI: 'Nequi',
-  DAVIPLATA: 'Daviplata',
-  OTHER: 'Otro',
-};
 
 function money(n: Prisma.Decimal | number | string) {
   return Number(n);
@@ -77,8 +52,8 @@ function planFromDashboard(type: DashboardType | null | undefined): PlatformPlan
 export class PlatformBillingService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly pdfService: PlatformReceiptPdfService,
     private readonly email: EmailSmtpProvider,
+    private readonly archive: PlatformReceiptArchiveService,
   ) {}
 
   private assertSuperAdmin(user: User) {
@@ -225,6 +200,7 @@ export class PlatformBillingService {
         number,
       );
     }
+    if (status === PlatformReceiptStatus.PAID) await this.archive.archive(row.id);
 
     return this.mapReceipt(row);
   }
@@ -252,6 +228,7 @@ export class PlatformBillingService {
         row.number,
       );
     }
+    await this.archive.archive(row.id);
     return this.mapReceipt(row);
   }
 
@@ -738,37 +715,7 @@ export class PlatformBillingService {
 
   async receiptPdf(user: User, id: string) {
     this.assertSuperAdmin(user);
-    const row = await this.prisma.platformReceipt.findUnique({
-      where: { id },
-      include: {
-        clinic: { select: { name: true } },
-        createdBy: { select: { fullName: true } },
-      },
-    });
-    if (!row) throw new NotFoundException('Recibo no encontrado');
-    // Recibos anteriores a la captura de datos: se completan con los datos actuales.
-    const live = row.payerName ? null : await receiptPayer(this.prisma, row.clinicId);
-    const buffer = await this.pdfService.build({
-      number: row.number,
-      issuedAt: row.createdAt,
-      paidAt: row.paidAt,
-      pending: row.status === PlatformReceiptStatus.PENDING,
-      clinicName: row.clinic.name,
-      payerName: row.payerName ?? live?.payerName ?? null,
-      payerDocument: row.payerDocument ?? live?.payerDocument ?? null,
-      payerPhone: row.payerPhone ?? live?.payerPhone ?? null,
-      payerEmail: row.payerEmail ?? live?.payerEmail ?? null,
-      kindLabel: KIND_LABEL[row.kind],
-      planLabel: row.planLabel ?? live?.planLabel ?? PLAN_LABEL[row.plan],
-      description: row.description,
-      amount: money(row.amount),
-      method: row.method,
-      methodLabel: METHOD_LABEL[row.method],
-      periodLabel: row.periodMonth ? billingRange(row.periodMonth).label : null,
-      notes: row.notes,
-      createdByName: row.createdBy?.fullName,
-    });
-    return { buffer, filename: `${row.number}.pdf` };
+    return this.archive.build(id);
   }
 
   suggestedPlan(dashboardType: DashboardType | null | undefined): PlatformPlanVariant {

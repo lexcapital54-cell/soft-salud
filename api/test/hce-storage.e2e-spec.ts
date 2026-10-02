@@ -108,6 +108,7 @@ describe('Almacenamiento de la historia clínica (base de pruebas)', () => {
   let patientId = '';
   let encounterId = '';
   let templateIds: string[] = [];
+  let saToken = '';
 
   const auth = () => ({ Authorization: `Bearer ${proToken}` });
 
@@ -137,7 +138,8 @@ describe('Almacenamiento de la historia clínica (base de pruebas)', () => {
       .post('/api/auth/login')
       .send({ email: process.env.SUPERADMIN_EMAIL, password: process.env.SUPERADMIN_PASSWORD })
       .expect(201);
-    const saAuth = { Authorization: `Bearer ${sa.body.accessToken}` };
+    saToken = sa.body.accessToken;
+    const saAuth = { Authorization: `Bearer ${saToken}` };
 
     const clinic = await http
       .post('/api/clinics')
@@ -376,6 +378,35 @@ describe('Almacenamiento de la historia clínica (base de pruebas)', () => {
     );
     const enc = await prisma.encounter.findUnique({ where: { id: encounterId } });
     check('Historia sellada', 'encounters.status', enc?.status, 'FINISHED');
+  });
+
+  it('al registrar el pago queda una copia del recibo en la carpeta del consultorio', async () => {
+    const sa = { Authorization: `Bearer ${saToken}` };
+    const created = await http
+      .post('/api/platform-billing/receipts')
+      .set(sa)
+      .send({ clinicId, kind: 'MONTHLY_HOSTING', plan: 'WITH_DOCS', amount: 150000, periodMonth: '2026-10', status: 'PENDING' })
+      .expect(201);
+    let row = await prisma.platformReceipt.findUnique({ where: { id: created.body.id } });
+    check('Recibos HabiliSALUD', 'cobro pendiente sin copia archivada', row?.pdfStorageKey ?? null, null);
+
+    const adminLogin = await http.post('/api/auth/login').send({ email: 'admin@hce-test.local', password: 'AdminTest123!' }).expect(201);
+    const admin = { Authorization: `Bearer ${adminLogin.body.accessToken}` };
+    const before = await http.get('/api/me/platform-receipts').set(admin).expect(200);
+    check('Recibos HabiliSALUD', 'carpeta vacía mientras está pendiente', before.body.length, 0);
+
+    await http.post(`/api/platform-billing/receipts/${created.body.id}/mark-paid`).set(sa).send({}).expect(201);
+    row = await prisma.platformReceipt.findUnique({ where: { id: created.body.id } });
+    check('Recibos HabiliSALUD', 'platform_receipts.status', row?.status, 'PAID');
+    check('Recibos HabiliSALUD', 'platform_receipts.pdf_storage_key', row?.pdfStorageKey, `platform-receipts/${clinicId}/${row?.number}.pdf`);
+    const stored = await prisma.storedFile.findUnique({ where: { storageKey: row!.pdfStorageKey! } });
+    check('Recibos HabiliSALUD', 'stored_files: copia PDF guardada', stored ? Buffer.from(stored.data).subarray(0, 4).toString() : null, '%PDF');
+
+    const folder = await http.get('/api/me/platform-receipts').set(admin).expect(200);
+    check('Recibos HabiliSALUD', 'carpeta del consultorio muestra el recibo', folder.body.map((r: { number: string }) => r.number), [row?.number]);
+    const pdf = await http.get(`/api/me/platform-receipts/${created.body.id}/pdf`).set(admin).buffer(true).expect(200);
+    check('Recibos HabiliSALUD', 'el consultorio descarga su copia', (pdf.body as Buffer).subarray(0, 4).toString(), '%PDF');
+    await http.get('/api/me/platform-receipts').set(auth()).expect(403);
   });
 
   describe('enlace de la consulta virtual', () => {
