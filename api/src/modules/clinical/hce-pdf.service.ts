@@ -225,18 +225,30 @@ export class HcePdfService {
     return this.membreteCache;
   }
 
-  /** Logo propio del consultorio: `assets/clinic-logos/<clinicId>.jpg`. */
+  /**
+   * Logo propio del consultorio en `assets/clinic-logos/`: primero `<clinicId>-hc.png`
+   * (exclusivo de la historia clínica) y si no existe `<clinicId>.jpg` (logo general).
+   */
   private loadClinicLogo(clinicId?: string | null): string | null {
     if (!clinicId || !/^[\w-]+$/.test(clinicId)) return null;
     if (this.logoCache.has(clinicId)) return this.logoCache.get(clinicId) ?? null;
-    const found = [
-      path.join(process.cwd(), 'assets', 'clinic-logos', `${clinicId}.jpg`),
-      path.join(process.cwd(), 'api', 'assets', 'clinic-logos', `${clinicId}.jpg`),
-      path.join(__dirname, '..', '..', '..', 'assets', 'clinic-logos', `${clinicId}.jpg`),
-    ].find((p) => fs.existsSync(p));
-    const logo = found
-      ? `data:image/jpeg;base64,${fs.readFileSync(found).toString('base64')}`
-      : null;
+    const dirs = [
+      path.join(process.cwd(), 'assets', 'clinic-logos'),
+      path.join(process.cwd(), 'api', 'assets', 'clinic-logos'),
+      path.join(__dirname, '..', '..', '..', 'assets', 'clinic-logos'),
+    ];
+    const variants: Array<[string, string]> = [
+      [`${clinicId}-hc.png`, 'image/png'],
+      [`${clinicId}.jpg`, 'image/jpeg'],
+    ];
+    let logo: string | null = null;
+    for (const [file, mime] of variants) {
+      const found = dirs.map((d) => path.join(d, file)).find((p) => fs.existsSync(p));
+      if (found) {
+        logo = `data:${mime};base64,${fs.readFileSync(found).toString('base64')}`;
+        break;
+      }
+    }
     this.logoCache.set(clinicId, logo);
     return logo;
   }
@@ -692,7 +704,7 @@ export class HcePdfService {
       ? () =>
           ({
             image: 'clinicLogo',
-            fit: [140, 92],
+            fit: [240, 80],
             alignment: 'center',
             margin: [52, 10, 52, 0],
           }) as Content

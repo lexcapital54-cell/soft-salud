@@ -14,7 +14,8 @@
           class="clinic-logo"
           [src]="logo"
           [alt]="user()?.clinicName || 'Logo del consultorio'"
-          (error)="logoFailed.set(true)"
+          [class.is-png]="logo.includes('.png')"
+          (error)="logoAttempt.set(logoAttempt() + 1)"
         />
       } @else if (isPsychologyClinic()) {
         <img
