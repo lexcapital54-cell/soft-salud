@@ -53,6 +53,40 @@
           </button>
         </div>
 
+        @if (replicatedTargets().length) {
+          <section class="assign-panel replicated-logos">
+            <div class="assign-head">
+              <div>
+                <h2>Logos de los consultorios replicados</h2>
+                <p class="muted small">
+                  Los logos no se copian al replicar: cada consultorio carga el suyo.
+                </p>
+              </div>
+              <button type="button" class="ghost" (click)="replicatedTargets.set([]); logoTargetId.set(null)">
+                Cerrar
+              </button>
+            </div>
+            <ul class="replicated-list">
+              @for (t of replicatedTargets(); track t.clinicId) {
+                <li>
+                  <span>{{ t.clinicName }}</span>
+                  <button
+                    type="button"
+                    [class.primary]="logoTargetId() !== t.clinicId"
+                    [class.ghost]="logoTargetId() === t.clinicId"
+                    (click)="logoTargetId.set(logoTargetId() === t.clinicId ? null : t.clinicId)"
+                  >
+                    {{ logoTargetId() === t.clinicId ? 'Ocultar' : 'Cargar logo' }}
+                  </button>
+                </li>
+                @if (logoTargetId() === t.clinicId) {
+                  <app-clinic-logo-settings [targetClinicId]="t.clinicId" [targetClinicName]="t.clinicName" />
+                }
+              }
+            </ul>
+          </section>
+        }
+
         @if (masterPackOpen()) {
           <section class="assign-panel master-pack-panel">
             <div class="assign-head">

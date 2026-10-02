@@ -92,6 +92,12 @@
           </label>
           <button type="submit">Crear consultorio</button>
         </form>
+        @if (createdClinic(); as created) {
+          <div class="created-logo">
+            <app-clinic-logo-settings [targetClinicId]="created.id" [targetClinicName]="created.name" />
+            <button type="button" class="action-btn" (click)="createdClinic.set(null)">Listo</button>
+          </div>
+        }
       </article>
 
       <article class="card">

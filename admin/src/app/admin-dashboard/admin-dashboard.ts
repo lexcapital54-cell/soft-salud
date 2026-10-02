@@ -125,6 +125,8 @@ export class AdminDashboard {
   }
 
   readonly logoClinicId = signal<string | null>(null);
+  /** Consultorio recién creado: se ofrece cargar su logo de inmediato. */
+  readonly createdClinic = signal<{ id: string; name: string } | null>(null);
 
   toggleLogo(id: string) {
     this.logoClinicId.update((cur) => (cur === id ? null : id));
@@ -321,6 +323,7 @@ export class AdminDashboard {
             : 'Consultorio creado. Ahora puede crear un usuario admin.',
         );
         this.error.set('');
+        this.createdClinic.set({ id: clinic.id, name: clinic.name });
         this.clinicForm.reset({
           name: '',
           specialty: 'MEDICINE',

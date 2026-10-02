@@ -1413,3 +1413,22 @@ h1 {
   background: #fff3cd;
   color: #856404;
 }
+
+.replicated-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    border: 1px solid #d7e3e8;
+    border-radius: 10px;
+    background: #fff;
+  }
+}

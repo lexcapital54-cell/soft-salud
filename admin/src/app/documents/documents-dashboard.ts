@@ -16,6 +16,7 @@ import { AdminApiService } from '../admin-api.service';
 import { AuthService } from '../auth.service';
 import { ClinicalApiService } from '../clinical/clinical-api.service';
 import { Clinic, ClinicSpecialty, DashboardType, SPECIALTY_LABELS } from '../models';
+import { ClinicLogoSettings } from '../clinic-settings/clinic-logo-settings';
 import { DocumentsApiService } from './documents-api.service';
 import {
   ComplianceStatus,
@@ -55,7 +56,7 @@ function describeError(error: unknown): string {
 
 @Component({
   selector: 'app-documents-dashboard',
-  imports: [RouterLink, FormsModule, DatePipe],
+  imports: [RouterLink, FormsModule, DatePipe, ClinicLogoSettings],
   templateUrl: './documents-dashboard.html',
   styleUrl: './documents-dashboard.scss',
 })
@@ -582,6 +583,9 @@ export class DocumentsDashboard {
     });
   }
 
+  readonly replicatedTargets = signal<Array<{ clinicId: string; clinicName: string }>>([]);
+  readonly logoTargetId = signal<string | null>(null);
+
   replicateToSameSpecialty() {
     if (!this.canManage() || !this.selectedClinicId()) return;
     if (
@@ -600,6 +604,8 @@ export class DocumentsDashboard {
         next: (res) => {
           const n = res.targets.length;
           const files = res.targets.reduce((s, t) => s + t.filesCopied, 0);
+          this.replicatedTargets.set(res.targets.map(({ clinicId, clinicName }) => ({ clinicId, clinicName })));
+          this.logoTargetId.set(null);
           this.notice.set(
             `Replicados ${res.requirementCount} requisitos a ${n} consultorio(s); ${files} archivo(s) autodiligenciados con datos de cada profesional.`,
           );
