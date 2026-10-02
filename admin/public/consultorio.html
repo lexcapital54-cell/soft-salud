@@ -128,8 +128,8 @@
       background: #fff1f1; color: #8a1f1f; border-radius: 12px;
     }
     .clinic-logo {
-      display: block; width: 100%; max-width: 520px; height: auto;
-      margin: 0 0 22px; border-radius: 18px;
+      display: block; width: 100%; max-width: 420px; height: auto;
+      margin: 0 auto 22px; border-radius: 18px;
       box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
     }
     @media (max-width: 720px) {
@@ -414,7 +414,7 @@
         var logo = document.getElementById('clinicLogo');
         logo.onload = function () { logo.hidden = false; };
         logo.alt = user.clinicName || 'Logo del consultorio';
-        logo.src = '/clinic-logos/' + encodeURIComponent(user.clinicId) + '.jpg';
+        logo.src = '/clinic-logos/' + encodeURIComponent(user.clinicId) + '.jpg?v=2';
       }
 
       if (user.specialty === 'PSYCHOLOGY') {

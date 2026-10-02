@@ -691,19 +691,10 @@ export class HcePdfService {
     const header: TDocumentDefinitions['header'] = clinicLogo
       ? () =>
           ({
-            columns: [
-              { image: 'clinicLogo', fit: [210, 70], width: 'auto' },
-              {
-                stack: [
-                  { text: professionalName, fontSize: 10, bold: true, color: theme.title },
-                  { text: specialtyLabel, style: 'muted', color: theme.accent },
-                ],
-                alignment: 'right',
-                width: '*',
-                margin: [0, 22, 0, 0],
-              },
-            ],
-            margin: [52, 12, 52, 0],
+            image: 'clinicLogo',
+            fit: [140, 92],
+            alignment: 'center',
+            margin: [52, 10, 52, 0],
           }) as Content
       : isPsychology && images
         ? () =>
@@ -788,7 +779,7 @@ export class HcePdfService {
 
     return {
       pageSize: 'LETTER',
-      pageMargins: [52, clinicLogo ? 106 : isPsychology ? 96 : 72, 52, 68],
+      pageMargins: [52, clinicLogo ? 114 : isPsychology ? 96 : 72, 52, 68],
       defaultStyle: {
         font: 'Helvetica',
         fontSize: 10,
