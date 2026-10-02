@@ -9,6 +9,7 @@ import {
   PaymentMethod,
   PlatformChargeKind,
   PlatformPlanVariant,
+  PlatformReceiptStatus,
   Prisma,
   UserRole,
 } from '@prisma/client';
@@ -18,8 +19,15 @@ import {
   CreatePlatformReceiptDto,
   GenerateMonthlyHostingDto,
   HostingPeriodDto,
+  MarkReceiptPaidDto,
   UpdatePlatformFeeDto,
 } from './dto/platform-billing.dto';
+import {
+  HOSTING_PAYMENT_DAYS,
+  billingRange,
+  parsePeriodMonth,
+  periodLabel,
+} from './billing-period';
 import { PlatformReceiptPdfService } from './platform-receipt-pdf.service';
 import { EmailSmtpProvider } from '../notifications/notification-providers';
 
@@ -33,6 +41,16 @@ const PLAN_LABEL: Record<PlatformPlanVariant, string> = {
   WITHOUT_DOCS: 'Sin documentación',
   WITH_DOCS: 'Con documentación',
 };
+
+const STATUS_LABEL: Record<PlatformReceiptStatus, string> = {
+  PAID: 'Pagado',
+  PENDING: 'Pendiente',
+};
+
+const RECEIPT_INCLUDE = {
+  clinic: { select: { id: true, name: true, specialty: true, dashboardType: true } },
+  createdBy: { select: { id: true, fullName: true } },
+} as const;
 
 const METHOD_LABEL: Record<PaymentMethod, string> = {
   CASH: 'Efectivo',
@@ -52,26 +70,6 @@ function planFromDashboard(type: DashboardType | null | undefined): PlatformPlan
   return type === DashboardType.CLINICAL_HISTORY_WITH_DOCS
     ? PlatformPlanVariant.WITH_DOCS
     : PlatformPlanVariant.WITHOUT_DOCS;
-}
-
-function parsePeriodMonth(ym: string): Date {
-  const m = /^(\d{4})-(\d{2})$/.exec(ym.trim());
-  if (!m) {
-    throw new BadRequestException('periodMonth debe ser YYYY-MM');
-  }
-  const year = Number(m[1]);
-  const month = Number(m[2]);
-  if (month < 1 || month > 12) {
-    throw new BadRequestException('Mes inválido');
-  }
-  return new Date(Date.UTC(year, month - 1, 1));
-}
-
-function periodLabel(d: Date | null | undefined) {
-  if (!d) return null;
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-  return `${y}-${m}`;
 }
 
 @Injectable()
@@ -134,17 +132,15 @@ export class PlatformBillingService {
     const where: Prisma.PlatformReceiptWhereInput = {};
     if (clinicId) where.clinicId = clinicId;
     if (from || to) {
-      where.paidAt = {};
-      if (from) where.paidAt.gte = new Date(`${from}T00:00:00.000-05:00`);
-      if (to) where.paidAt.lte = new Date(`${to}T23:59:59.999-05:00`);
+      const range: Prisma.DateTimeFilter = {};
+      if (from) range.gte = new Date(`${from}T00:00:00.000-05:00`);
+      if (to) range.lte = new Date(`${to}T23:59:59.999-05:00`);
+      where.OR = [{ paidAt: range }, { status: PlatformReceiptStatus.PENDING }];
     }
     const rows = await this.prisma.platformReceipt.findMany({
       where,
-      include: {
-        clinic: { select: { id: true, name: true, specialty: true, dashboardType: true } },
-        createdBy: { select: { id: true, fullName: true } },
-      },
-      orderBy: { paidAt: 'desc' },
+      include: RECEIPT_INCLUDE,
+      orderBy: [{ status: 'desc' }, { createdAt: 'desc' }],
       take: 500,
     });
     return rows.map((r) => this.mapReceipt(r));
@@ -185,7 +181,13 @@ export class PlatformBillingService {
       }`;
 
     const number = await this.nextNumber();
-    const paidAt = dto.paidAt ? new Date(dto.paidAt) : new Date();
+    const status = dto.status ?? PlatformReceiptStatus.PAID;
+    const paidAt =
+      status === PlatformReceiptStatus.PENDING
+        ? null
+        : dto.paidAt
+          ? new Date(dto.paidAt)
+          : new Date();
     const row = await this.prisma.platformReceipt.create({
       data: {
         number,
@@ -195,18 +197,19 @@ export class PlatformBillingService {
         description,
         amount: new Prisma.Decimal(amount),
         method: dto.method ?? PaymentMethod.TRANSFER,
+        status,
         paidAt,
         periodMonth,
         notes: dto.notes?.trim() || null,
         createdById: user.id,
       },
-      include: {
-        clinic: { select: { id: true, name: true, specialty: true, dashboardType: true } },
-        createdBy: { select: { id: true, fullName: true } },
-      },
+      include: RECEIPT_INCLUDE,
     });
 
-    if (dto.kind === PlatformChargeKind.MONTHLY_HOSTING) {
+    if (
+      dto.kind === PlatformChargeKind.MONTHLY_HOSTING &&
+      status === PlatformReceiptStatus.PAID
+    ) {
       await this.reactivateClinicAfterHostingPayment(
         dto.clinicId,
         periodLabel(periodMonth) || '',
@@ -214,6 +217,45 @@ export class PlatformBillingService {
       );
     }
 
+    return this.mapReceipt(row);
+  }
+
+  async markReceiptPaid(user: User, id: string, dto: MarkReceiptPaidDto) {
+    this.assertSuperAdmin(user);
+    const current = await this.prisma.platformReceipt.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException('Recibo no encontrado');
+    if (current.status === PlatformReceiptStatus.PAID) {
+      throw new BadRequestException(`El recibo ${current.number} ya está pagado.`);
+    }
+    const row = await this.prisma.platformReceipt.update({
+      where: { id },
+      data: {
+        status: PlatformReceiptStatus.PAID,
+        paidAt: dto.paidAt ? new Date(dto.paidAt) : new Date(),
+        ...(dto.method ? { method: dto.method } : {}),
+      },
+      include: RECEIPT_INCLUDE,
+    });
+    if (row.kind === PlatformChargeKind.MONTHLY_HOSTING) {
+      await this.reactivateClinicAfterHostingPayment(
+        row.clinicId,
+        periodLabel(row.periodMonth) || '',
+        row.number,
+      );
+    }
+    return this.mapReceipt(row);
+  }
+
+  /** Revierte a pendiente: conserva número, monto y concepto; solo quita la fecha de pago. */
+  async markReceiptPending(user: User, id: string) {
+    this.assertSuperAdmin(user);
+    const current = await this.prisma.platformReceipt.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException('Recibo no encontrado');
+    const row = await this.prisma.platformReceipt.update({
+      where: { id },
+      data: { status: PlatformReceiptStatus.PENDING, paidAt: null },
+      include: RECEIPT_INCLUDE,
+    });
     return this.mapReceipt(row);
   }
 
@@ -241,24 +283,31 @@ export class PlatformBillingService {
         kind: PlatformChargeKind.MONTHLY_HOSTING,
         periodMonth,
       },
-      select: { clinicId: true, number: true, amount: true, paidAt: true },
+      select: { id: true, clinicId: true, number: true, amount: true, paidAt: true, status: true },
     });
     const paidByClinic = new Map(paid.map((p) => [p.clinicId, p]));
+    const range = billingRange(periodMonth);
 
     return clinics.map((c) => {
       const receipt = paidByClinic.get(c.id);
-      const status = receipt
-        ? 'PAID'
-        : c.hostingSuspendedAt
-          ? 'SUSPENDED'
-          : 'UNPAID';
+      const status =
+        receipt?.status === PlatformReceiptStatus.PAID
+          ? 'PAID'
+          : c.hostingSuspendedAt
+            ? 'SUSPENDED'
+            : receipt
+              ? 'PENDING'
+              : 'UNPAID';
       return {
         clinicId: c.id,
         clinicName: c.name,
         dashboardType: c.dashboardType,
         plan: planFromDashboard(c.dashboardType),
         periodMonth: period,
+        billingRange: range.label,
+        dueDate: range.dueDate,
         status,
+        receiptId: receipt?.id ?? null,
         receiptNumber: receipt?.number ?? null,
         amountPaid: receipt ? money(receipt.amount) : null,
         paidAt: receipt?.paidAt?.toISOString() ?? null,
@@ -287,7 +336,7 @@ export class PlatformBillingService {
         body: [
           `Estimado(a) administrador(a) de ${clinic.name},`,
           '',
-          `Le informamos que el arrendamiento mensual del espacio en el servidor de HabiliSALUD correspondiente al periodo ${period} aún no está registrado.`,
+          `Le informamos que el arrendamiento mensual del espacio en el servidor de HabiliSALUD correspondiente al periodo ${period} (${billingRange(periodMonth).label}) aún no está registrado. La mensualidad se paga dentro de los primeros ${HOSTING_PAYMENT_DAYS} días de cada mes.`,
           '',
           'Debe ponerse al día con el pago para evitar la suspensión del acceso de los usuarios del consultorio.',
           '',
@@ -399,10 +448,11 @@ export class PlatformBillingService {
     ].join('\n');
   }
 
-  private async unpaidClinics(periodMonth: Date, clinicId?: string) {
+  async unpaidClinics(periodMonth: Date, clinicId?: string) {
     const paid = await this.prisma.platformReceipt.findMany({
       where: {
         kind: PlatformChargeKind.MONTHLY_HOSTING,
+        status: PlatformReceiptStatus.PAID,
         periodMonth,
         ...(clinicId ? { clinicId } : {}),
       },
@@ -418,7 +468,9 @@ export class PlatformBillingService {
       select: {
         id: true,
         name: true,
+        isActive: true,
         hostingSuspendedAt: true,
+        hostingDueNotifiedAt: true,
       },
       orderBy: { name: 'asc' },
     });
@@ -473,7 +525,7 @@ export class PlatformBillingService {
     });
   }
 
-  private async notifyClinicAdmins(
+  async notifyClinicAdmins(
     clinicId: string,
     clinicName: string,
     message: { subject: string; body: string },
@@ -508,6 +560,7 @@ export class PlatformBillingService {
     const periodMonth = parsePeriodMonth(dto.periodMonth);
     const method = dto.method ?? PaymentMethod.TRANSFER;
     const paidAt = dto.paidAt ? new Date(dto.paidAt) : new Date();
+    const status = dto.status ?? PlatformReceiptStatus.PAID;
 
     const clinics = await this.prisma.clinic.findMany({
       where: {
@@ -534,7 +587,7 @@ export class PlatformBillingService {
         skipped.push({
           clinicId: clinic.id,
           clinicName: clinic.name,
-          reason: `Ya cobrado (${existing.number})`,
+          reason: `Ya tiene cobro (${existing.number})`,
         });
         continue;
       }
@@ -547,6 +600,7 @@ export class PlatformBillingService {
           method,
           paidAt: paidAt.toISOString(),
           periodMonth: dto.periodMonth,
+          status,
         });
         created.push(receipt);
       } catch (err) {
@@ -573,7 +627,7 @@ export class PlatformBillingService {
     const from = new Date(Date.UTC(y, 0, 1));
     const to = new Date(Date.UTC(y + 1, 0, 1));
     const rows = await this.prisma.platformReceipt.findMany({
-      where: { paidAt: { gte: from, lt: to } },
+      where: { status: PlatformReceiptStatus.PAID, paidAt: { gte: from, lt: to } },
       select: { paidAt: true, amount: true, kind: true },
     });
 
@@ -587,6 +641,7 @@ export class PlatformBillingService {
     }));
 
     for (const r of rows) {
+      if (!r.paidAt) continue;
       const partsPaid = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'America/Bogota',
         year: 'numeric',
@@ -637,7 +692,7 @@ export class PlatformBillingService {
 
   async summary(user: User, from?: string, to?: string) {
     this.assertSuperAdmin(user);
-    const where: Prisma.PlatformReceiptWhereInput = {};
+    const where: Prisma.PlatformReceiptWhereInput = { status: PlatformReceiptStatus.PAID };
     if (from || to) {
       where.paidAt = {};
       if (from) where.paidAt.gte = new Date(`${from}T00:00:00.000-05:00`);
@@ -685,13 +740,16 @@ export class PlatformBillingService {
     const buffer = await this.pdfService.build({
       number: row.number,
       paidAt: row.paidAt,
+      pending: row.status === PlatformReceiptStatus.PENDING,
       clinicName: row.clinic.name,
       kindLabel: KIND_LABEL[row.kind],
       planLabel: PLAN_LABEL[row.plan],
       description: row.description,
       amount: money(row.amount),
       method: METHOD_LABEL[row.method],
-      periodLabel: periodLabel(row.periodMonth),
+      periodLabel: row.periodMonth
+        ? `${periodLabel(row.periodMonth)} (${billingRange(row.periodMonth).label})`
+        : null,
       notes: row.notes,
       createdByName: row.createdBy?.fullName,
     });
@@ -786,7 +844,8 @@ export class PlatformBillingService {
     amount: Prisma.Decimal;
     currency: string;
     method: PaymentMethod;
-    paidAt: Date;
+    status: PlatformReceiptStatus;
+    paidAt: Date | null;
     periodMonth: Date | null;
     notes: string | null;
     createdAt: Date;
@@ -812,8 +871,11 @@ export class PlatformBillingService {
       currency: r.currency,
       method: r.method,
       methodLabel: METHOD_LABEL[r.method],
-      paidAt: r.paidAt.toISOString(),
+      status: r.status,
+      statusLabel: STATUS_LABEL[r.status],
+      paidAt: r.paidAt?.toISOString() ?? null,
       periodMonth: periodLabel(r.periodMonth),
+      billingRange: r.periodMonth ? billingRange(r.periodMonth).label : null,
       notes: r.notes,
       createdBy: r.createdBy ?? null,
       createdAt: r.createdAt.toISOString(),

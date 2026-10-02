@@ -4,6 +4,7 @@ import {
   Get,
   Header,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -22,6 +23,7 @@ import {
   CreatePlatformReceiptDto,
   GenerateMonthlyHostingDto,
   HostingPeriodDto,
+  MarkReceiptPaidDto,
   UpdatePlatformFeeDto,
 } from './dto/platform-billing.dto';
 import { PlatformBillingService } from './platform-billing.service';
@@ -61,6 +63,20 @@ export class PlatformBillingController {
   @Post('receipts')
   createReceipt(@Req() req: AuthedRequest, @Body() dto: CreatePlatformReceiptDto) {
     return this.billing.createReceipt(req.user, dto);
+  }
+
+  @Post('receipts/:id/mark-paid')
+  markPaid(
+    @Req() req: AuthedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: MarkReceiptPaidDto,
+  ) {
+    return this.billing.markReceiptPaid(req.user, id, dto);
+  }
+
+  @Post('receipts/:id/mark-pending')
+  markPending(@Req() req: AuthedRequest, @Param('id', ParseUUIDPipe) id: string) {
+    return this.billing.markReceiptPending(req.user, id);
   }
 
   @Post('monthly-hosting/generate')

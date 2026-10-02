@@ -1,6 +1,6 @@
 <div class="card logo-card">
   <p class="eyebrow">Identidad del consultorio</p>
-  <h2>Logo del consultorio</h2>
+  <h2>Logo del consultorio{{ targetClinicName() ? ' · ' + targetClinicName() : '' }}</h2>
   <p class="lead">
     Cada consultorio carga su propio logo. No se copia al replicar o crear otro consultorio.
     Formatos PNG o JPG, máximo 2 MB; el PNG con fondo transparente se ve mejor.

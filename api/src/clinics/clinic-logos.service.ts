@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ClinicLogoKind } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.module';
 
@@ -44,6 +44,9 @@ export class ClinicLogosService {
     )?.mime;
     if (!mimeType) {
       throw new BadRequestException('Formato no admitido: use una imagen PNG o JPG.');
+    }
+    if (!(await this.prisma.clinic.count({ where: { id: clinicId } }))) {
+      throw new NotFoundException('Consultorio no encontrado.');
     }
     const data = new Uint8Array(file.buffer);
     await this.prisma.clinicLogo.upsert({

@@ -100,6 +100,14 @@
       min-width: 22px; height: 22px; padding: 0 6px; margin-left: 6px;
       border-radius: 999px; background: #c45c00; color: #fff; font-size: 12px; font-weight: 600;
     }
+    .hosting-panel {
+      margin: 0 0 18px; padding: 14px 18px; border-radius: 12px;
+      border: 1px solid #e8c4a8; background: #fff8f0;
+    }
+    .hosting-panel.overdue { border-color: #e8b4b4; background: #fdeeee; }
+    .hosting-panel h2 { margin: 0 0 6px; font-size: 1.05rem; color: #5c3a1e; }
+    .hosting-panel.overdue h2 { color: #8a1f1f; }
+    .hosting-panel p { margin: 0; color: #2e2e2e; line-height: 1.45; }
     .reps-panel {
       margin-top: 20px; padding: 16px 18px; border-radius: 18px;
       border: 1px solid #d5e2e5; background: #f7fbfb;
@@ -325,6 +333,11 @@
       <p class="msg" id="ripsMsg" hidden></p>
     </section>
 
+    <section class="hosting-panel" id="hostingPanel" role="status" hidden>
+      <h2 id="hostingTitle">Mensualidad HabiliSALUD</h2>
+      <p id="hostingMsg">—</p>
+    </section>
+
     <section class="reps-panel" id="repsPanel" hidden>
       <h2 id="repsTitle">Registro REPS</h2>
       <p id="repsMsg">—</p>
@@ -527,6 +540,35 @@
         }
       }
 
+      function loadHostingReminder() {
+        if (user.role !== 'ADMIN') return;
+        fetch('/api/me/hosting-reminder', { headers: authHeaders(), cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (!d || !d.show) return;
+            var panel = document.getElementById('hostingPanel');
+            var overdue = d.status === 'OVERDUE';
+            panel.hidden = false;
+            panel.className = 'hosting-panel' + (overdue ? ' overdue' : '');
+            document.getElementById('hostingTitle').textContent = overdue
+              ? 'Mensualidad vencida'
+              : 'Recordatorio: pague la mensualidad';
+            var amount = d.amount != null
+              ? ' por ' + Number(d.amount).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
+              : '';
+            var receipt = d.receiptNumber ? ' (cuenta de cobro ' + d.receiptNumber + ')' : '';
+            var when = overdue
+              ? 'El plazo venció el día ' + d.paymentDays + ' del mes. Póngase al día para evitar la suspensión del acceso.'
+              : d.daysLeft > 0
+                ? 'Tiene plazo hasta el día ' + d.paymentDays + ' (quedan ' + d.daysLeft + ' día' + (d.daysLeft === 1 ? '' : 's') + ').'
+                : 'Hoy es el último día del plazo.';
+            document.getElementById('hostingMsg').textContent =
+              'Mensualidad del servidor del periodo ' + d.billingRange + amount + receipt + '. ' + when +
+              ' Si ya pagó, envíe el soporte a HabiliSALUD.';
+          })
+          .catch(function () {});
+      }
+
       function loadReps() {
         var canWrite = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
         if (!canWrite) return;
@@ -580,6 +622,7 @@
 
       loadOpenHce();
       loadReps();
+      loadHostingReminder();
       loadSedes();
 
       if (!isSecretaria) {

@@ -13,6 +13,7 @@ import {
   PaymentMethod,
   PlatformChargeKind,
   PlatformPlanVariant,
+  PlatformReceiptStatus,
 } from '@prisma/client';
 
 export class CreatePlatformReceiptDto {
@@ -47,6 +48,11 @@ export class CreatePlatformReceiptDto {
   @IsOptional()
   @IsString()
   periodMonth?: string;
+
+  /** PENDING emite la cuenta de cobro sin registrar pago. */
+  @IsOptional()
+  @IsEnum(PlatformReceiptStatus)
+  status?: PlatformReceiptStatus;
 
   @IsOptional()
   @IsString()
@@ -87,6 +93,20 @@ export class GenerateMonthlyHostingDto {
   @IsOptional()
   @IsUUID()
   clinicId?: string;
+
+  @IsOptional()
+  @IsEnum(PlatformReceiptStatus)
+  status?: PlatformReceiptStatus;
+}
+
+export class MarkReceiptPaidDto {
+  @IsOptional()
+  @IsEnum(PaymentMethod)
+  method?: PaymentMethod;
+
+  @IsOptional()
+  @IsDateString()
+  paidAt?: string;
 }
 
 export class HostingPeriodDto {

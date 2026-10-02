@@ -79,6 +79,40 @@ export class ClinicLogosController {
     return this.logos.remove(this.clinicOf(req.user), logoKind(slot));
   }
 
+  @Get('clinics/:clinicId/logos')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  statusFor(@Param('clinicId', new ParseUUIDPipe()) clinicId: string) {
+    return this.logos.status(clinicId);
+  }
+
+  @Post('clinics/:clinicId/logos/:slot')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: CLINIC_LOGO_MAX_BYTES },
+    }),
+  )
+  uploadFor(
+    @Param('clinicId', new ParseUUIDPipe()) clinicId: string,
+    @Param('slot') slot: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.logos.save(clinicId, logoKind(slot), file);
+  }
+
+  @Delete('clinics/:clinicId/logos/:slot')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  removeFor(
+    @Param('clinicId', new ParseUUIDPipe()) clinicId: string,
+    @Param('slot') slot: string,
+  ) {
+    return this.logos.remove(clinicId, logoKind(slot));
+  }
+
   private clinicOf(user: User) {
     if (!user.clinicId) throw new BadRequestException('Su usuario no tiene consultorio asignado.');
     return user.clinicId;

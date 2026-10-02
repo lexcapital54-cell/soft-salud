@@ -1185,7 +1185,10 @@ model PlatformReceipt {
   amount      Decimal             @db.Decimal(12, 2)
   currency    String              @default("COP") @db.VarChar(3)
   method      PaymentMethod       @default(TRANSFER)
-  paidAt      DateTime            @map("paid_at") @db.Timestamptz(6)
+  /// PENDING: cuenta de cobro emitida sin pago; no cuenta como ingreso.
+  status      PlatformReceiptStatus @default(PAID)
+  /// Fecha del pago; null mientras el cobro está pendiente.
+  paidAt      DateTime?           @map("paid_at") @db.Timestamptz(6)
   /// Mes de servicio para arrendamiento (YYYY-MM-01).
   periodMonth DateTime?           @map("period_month") @db.Date
   notes       String?
@@ -1194,8 +1197,14 @@ model PlatformReceipt {
   createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([paidAt])
+  @@index([status])
   @@index([clinicId, kind, periodMonth])
   @@map("platform_receipts")
+}
+
+enum PlatformReceiptStatus {
+  PAID
+  PENDING
 }
 
 model QualitySnapshot {

@@ -6,10 +6,11 @@ import { AdminApiService } from '../admin-api.service';
 import { AuthService } from '../auth.service';
 import { Clinic, ClinicAdmin, ClinicSpecialty, DashboardType, DASHBOARD_TYPE_LABELS, SPECIALTY_LABELS } from '../models';
 import { WEBSITE_URL } from '../api.config';
+import { ClinicLogoSettings } from '../clinic-settings/clinic-logo-settings';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, ClinicLogoSettings],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
@@ -121,6 +122,12 @@ export class AdminDashboard {
         );
       },
     });
+  }
+
+  readonly logoClinicId = signal<string | null>(null);
+
+  toggleLogo(id: string) {
+    this.logoClinicId.update((cur) => (cur === id ? null : id));
   }
 
   readonly providerEdit = signal<{ id: string; address: string; phone: string; nit: string; habilitationCode: string } | null>(null);

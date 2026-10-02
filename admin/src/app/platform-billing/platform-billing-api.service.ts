@@ -13,6 +13,7 @@ export type PaymentMethod =
 
 export type PlatformChargeKind = 'CLINIC_SETUP' | 'MONTHLY_HOSTING' | 'OTHER';
 export type PlatformPlanVariant = 'WITHOUT_DOCS' | 'WITH_DOCS';
+export type PlatformReceiptStatus = 'PAID' | 'PENDING';
 
 export interface PlatformFee {
   id: string;
@@ -46,8 +47,11 @@ export interface PlatformReceipt {
   currency: string;
   method: PaymentMethod;
   methodLabel: string;
-  paidAt: string;
+  status: PlatformReceiptStatus;
+  statusLabel: string;
+  paidAt: string | null;
   periodMonth: string | null;
+  billingRange: string | null;
   notes: string | null;
   createdBy: { id: string; fullName: string } | null;
   createdAt: string;
@@ -80,7 +84,10 @@ export interface HostingStatusRow {
   dashboardType: string | null;
   plan: PlatformPlanVariant;
   periodMonth: string;
-  status: 'PAID' | 'UNPAID' | 'SUSPENDED';
+  billingRange: string;
+  dueDate: string;
+  status: 'PAID' | 'PENDING' | 'UNPAID' | 'SUSPENDED';
+  receiptId: string | null;
   receiptNumber: string | null;
   amountPaid: number | null;
   paidAt: string | null;
@@ -120,8 +127,17 @@ export class PlatformBillingApiService {
     paidAt?: string;
     periodMonth?: string;
     notes?: string;
+    status?: PlatformReceiptStatus;
   }) {
     return this.http.post<PlatformReceipt>(`${API}/platform-billing/receipts`, body);
+  }
+
+  markReceiptPaid(id: string, body: { method?: PaymentMethod } = {}) {
+    return this.http.post<PlatformReceipt>(`${API}/platform-billing/receipts/${id}/mark-paid`, body);
+  }
+
+  markReceiptPending(id: string) {
+    return this.http.post<PlatformReceipt>(`${API}/platform-billing/receipts/${id}/mark-pending`, {});
   }
 
   generateMonthlyHosting(body: {
@@ -129,6 +145,7 @@ export class PlatformBillingApiService {
     amount: number;
     method?: PaymentMethod;
     clinicId?: string;
+    status?: PlatformReceiptStatus;
   }) {
     return this.http.post<{
       periodMonth: string;

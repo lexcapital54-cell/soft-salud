@@ -10,7 +10,8 @@ import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 
 export type PlatformReceiptPdfInput = {
   number: string;
-  paidAt: Date;
+  paidAt: Date | null;
+  pending?: boolean;
   clinicName: string;
   kindLabel: string;
   planLabel: string;
@@ -41,11 +42,13 @@ export class PlatformReceiptPdfService {
         currency: 'COP',
         maximumFractionDigits: 0,
       }).format(n);
-    const date = input.paidAt.toLocaleString('es-CO', {
-      timeZone: 'America/Bogota',
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    });
+    const date = input.paidAt
+      ? input.paidAt.toLocaleString('es-CO', {
+          timeZone: 'America/Bogota',
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        })
+      : 'Pendiente de pago';
 
     const doc: TDocumentDefinitions = {
       pageSize: 'LETTER',
@@ -53,7 +56,9 @@ export class PlatformReceiptPdfService {
       defaultStyle: { font: 'Helvetica', fontSize: 10, color: '#1a1a1a' },
       content: [
         {
-          text: 'RECIBO DE COBRO — HabiliSALUD',
+          text: input.pending
+            ? 'CUENTA DE COBRO (PENDIENTE) — HabiliSALUD'
+            : 'RECIBO DE COBRO — HabiliSALUD',
           fontSize: 16,
           bold: true,
           color: '#003d4c',

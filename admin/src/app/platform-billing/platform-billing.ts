@@ -13,6 +13,7 @@ import {
   PlatformFee,
   PlatformPlanVariant,
   PlatformReceipt,
+  PlatformReceiptStatus,
   MonthlyIncomeReport,
   HostingStatusRow,
 } from './platform-billing-api.service';
@@ -61,6 +62,7 @@ export class PlatformBillingPage implements OnInit {
     method: 'TRANSFER' as PaymentMethod,
     periodMonth: new Date().toISOString().slice(0, 7),
     notes: '',
+    status: 'PAID' as PlatformReceiptStatus,
   };
 
   monthlyForm = {
@@ -68,7 +70,10 @@ export class PlatformBillingPage implements OnInit {
     method: 'TRANSFER' as PaymentMethod,
     clinicId: '',
     amount: null as number | null,
+    status: 'PENDING' as PlatformReceiptStatus,
   };
+
+  readonly busyReceiptId = signal<string | null>(null);
 
   incomeYear = new Date().getFullYear();
 
@@ -153,7 +158,54 @@ export class PlatformBillingPage implements OnInit {
   statusLabel(status: HostingStatusRow['status']) {
     if (status === 'PAID') return 'Pagado';
     if (status === 'SUSPENDED') return 'Suspendido';
-    return 'Sin pago';
+    if (status === 'PENDING') return 'Pendiente';
+    return 'Sin cobro';
+  }
+
+  periodRange(ym: string) {
+    const [y, m] = ym.split('-').map(Number);
+    if (!y || !m) return '';
+    const fmt = (d: Date) =>
+      d.toLocaleDateString('es-CO', {
+        timeZone: 'UTC',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+    return `${fmt(new Date(Date.UTC(y, m - 1, 0)))} – ${fmt(new Date(Date.UTC(y, m, 0)))}`;
+  }
+
+  markPaid(id: string, number: string) {
+    if (!window.confirm(`¿Registrar el pago del cobro ${number} con fecha de hoy?`)) return;
+    this.updateReceiptStatus(id, this.api.markReceiptPaid(id), `Cobro ${number} marcado como pagado.`);
+  }
+
+  markPending(id: string, number: string) {
+    const ok = window.confirm(
+      `El cobro ${number} quedará pendiente (se conserva el número y el monto; deja de contarse como ingreso). ¿Continuar?`,
+    );
+    if (!ok) return;
+    this.updateReceiptStatus(id, this.api.markReceiptPending(id), `Cobro ${number} marcado como pendiente.`);
+  }
+
+  private updateReceiptStatus(
+    id: string,
+    request: ReturnType<PlatformBillingApiService['markReceiptPaid']>,
+    message: string,
+  ) {
+    this.busyReceiptId.set(id);
+    this.error.set('');
+    request.subscribe({
+      next: () => {
+        this.busyReceiptId.set(null);
+        this.notice.set(message);
+        this.reload();
+      },
+      error: (err) => {
+        this.busyReceiptId.set(null);
+        this.error.set(err?.error?.message || 'No se pudo actualizar el cobro.');
+      },
+    });
   }
 
   suggestedAmount(): number | null {
@@ -194,11 +246,14 @@ export class PlatformBillingPage implements OnInit {
         periodMonth:
           this.form.kind === 'MONTHLY_HOSTING' ? this.form.periodMonth : undefined,
         notes: this.form.notes || undefined,
+        status: this.form.status,
       })
       .subscribe({
         next: (row) => {
           this.loading.set(false);
-          this.notice.set(`Recibo ${row.number} creado por ${row.amount.toLocaleString('es-CO')} COP.`);
+          this.notice.set(
+            `${row.status === 'PENDING' ? 'Cuenta de cobro' : 'Recibo'} ${row.number} creado por ${row.amount.toLocaleString('es-CO')} COP.`,
+          );
           this.form.notes = '';
           this.form.amount = null;
           this.setTab('resumen');
@@ -245,6 +300,7 @@ export class PlatformBillingPage implements OnInit {
         method: this.monthlyForm.method,
         clinicId: this.monthlyForm.clinicId || undefined,
         amount,
+        status: this.monthlyForm.status,
       })
       .subscribe({
         next: (res) => {

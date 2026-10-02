@@ -133,29 +133,52 @@
             <thead>
               <tr>
                 <th>Número</th>
-                <th>Fecha</th>
+                <th>Fecha de pago</th>
                 <th>Consultorio</th>
                 <th>Concepto</th>
                 <th>Plan</th>
                 <th>Total</th>
+                <th>Estado</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               @for (r of receipts(); track r.id) {
-                <tr>
+                <tr [class.warn]="r.status === 'PENDING'">
                   <td>{{ r.number }}</td>
-                  <td>{{ r.paidAt | date: 'short' }}</td>
+                  <td>{{ r.paidAt ? (r.paidAt | date: 'short') : '—' }}</td>
                   <td>{{ r.clinic?.name }}</td>
                   <td>
                     {{ r.kindLabel }}
-                    @if (r.periodMonth) {
-                      <span class="muted"> · {{ r.periodMonth }}</span>
+                    @if (r.billingRange) {
+                      <span class="muted"> · {{ r.billingRange }}</span>
                     }
                   </td>
                   <td>{{ r.planLabel }}</td>
                   <td>{{ r.amount | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
                   <td>
+                    <span class="pill" [attr.data-status]="r.status">{{ r.statusLabel }}</span>
+                  </td>
+                  <td class="row-actions">
+                    @if (r.status === 'PENDING') {
+                      <button
+                        type="button"
+                        class="linkish"
+                        [disabled]="busyReceiptId() === r.id"
+                        (click)="markPaid(r.id, r.number)"
+                      >
+                        Marcar pagado
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="linkish"
+                        [disabled]="busyReceiptId() === r.id"
+                        (click)="markPending(r.id, r.number)"
+                      >
+                        Marcar pendiente
+                      </button>
+                    }
                     <button type="button" class="linkish" (click)="openPdf(r.id)">PDF</button>
                   </td>
                 </tr>
@@ -202,8 +225,16 @@
             <label>
               Periodo (mes)
               <input type="month" [(ngModel)]="form.periodMonth" />
+              <small class="muted">Facturación {{ periodRange(form.periodMonth) }}</small>
             </label>
           }
+          <label>
+            Estado
+            <select [(ngModel)]="form.status">
+              <option value="PAID">Pagado (registrar pago hoy)</option>
+              <option value="PENDING">Pendiente (cuenta de cobro)</option>
+            </select>
+          </label>
           <label>
             Forma de pago
             <select [(ngModel)]="form.method">
@@ -247,8 +278,10 @@
       <section class="card form-card">
         <h2>Generar arrendamiento mensual</h2>
         <p class="muted">
-          Crea un recibo por consultorio cuando registre el pago (monto que usted define). Al
-          registrar el pago de un consultorio suspendido, se reactivan sus usuarios.
+          Facturación de fin de mes a fin de mes; la mensualidad se paga los primeros 5 días de
+          cada mes. Esos días el sistema envía un recordatorio diario al admin de cada consultorio
+          sin pago y le muestra un aviso en su panel de inicio. Al registrar el pago de un
+          consultorio suspendido, se reactivan sus usuarios.
         </p>
         <div class="grid">
           <label>
@@ -258,6 +291,14 @@
               [(ngModel)]="monthlyForm.periodMonth"
               (ngModelChange)="loadHostingStatus()"
             />
+            <small class="muted">Facturación {{ periodRange(monthlyForm.periodMonth) }}</small>
+          </label>
+          <label>
+            Registrar como
+            <select [(ngModel)]="monthlyForm.status">
+              <option value="PENDING">Pendiente (cuentas de cobro)</option>
+              <option value="PAID">Pagado</option>
+            </select>
           </label>
           <label>
             Monto (COP)
@@ -290,7 +331,13 @@
         </div>
         <div class="actions-row">
           <button type="button" class="primary" [disabled]="loading()" (click)="generateMonthly()">
-            {{ loading() ? 'Generando…' : 'Registrar cobros del mes' }}
+            {{
+              loading()
+                ? 'Generando…'
+                : monthlyForm.status === 'PENDING'
+                  ? 'Emitir cuentas de cobro del mes'
+                  : 'Registrar pagos del mes'
+            }}
           </button>
           <button type="button" class="ghost" [disabled]="loading()" (click)="notifyDue()">
             Avisar mora (ponerse al día)
@@ -302,9 +349,12 @@
       </section>
 
       <section class="card">
-        <h2>Estado del periodo {{ monthlyForm.periodMonth }}</h2>
+        <h2>
+          Estado del periodo {{ monthlyForm.periodMonth }}
+          <span class="muted">· {{ periodRange(monthlyForm.periodMonth) }}</span>
+        </h2>
         <p class="muted">
-          Sin pago → puede avisar o suspender. Al suspender se desactivan los usuarios y se avisa
+          Pendiente o sin cobro → puede marcar pagado, avisar o suspender. Al suspender se desactivan los usuarios y se avisa
           al admin. Al registrar el pago se reactivan.
         </p>
         @if (loading()) {
@@ -323,13 +373,26 @@
             </thead>
             <tbody>
               @for (row of hostingRows(); track row.clinicId) {
-                <tr [class.warn]="row.status === 'UNPAID'" [class.bad]="row.status === 'SUSPENDED'">
+                <tr
+                  [class.warn]="row.status === 'UNPAID' || row.status === 'PENDING'"
+                  [class.bad]="row.status === 'SUSPENDED'"
+                >
                   <td>{{ row.clinicName }}</td>
                   <td>
                     <span class="pill" [attr.data-status]="row.status">{{ statusLabel(row.status) }}</span>
                   </td>
                   <td>{{ row.receiptNumber || '—' }}</td>
                   <td class="row-actions">
+                    @if (row.status !== 'PAID' && row.receiptId) {
+                      <button
+                        type="button"
+                        class="linkish"
+                        [disabled]="busyReceiptId() === row.receiptId"
+                        (click)="markPaid(row.receiptId, row.receiptNumber || '')"
+                      >
+                        Marcar pagado
+                      </button>
+                    }
                     @if (row.status !== 'PAID') {
                       <button type="button" class="linkish" (click)="notifyDue(row.clinicId)">
                         Avisar

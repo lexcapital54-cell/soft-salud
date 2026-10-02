@@ -180,6 +180,14 @@
                     <button
                       type="button"
                       class="action-btn"
+                      [class.active]="logoClinicId() === clinic.id"
+                      (click)="toggleLogo(clinic.id)"
+                    >
+                      Logo
+                    </button>
+                    <button
+                      type="button"
+                      class="action-btn"
                       (click)="toggleDashboardMenu(clinic.id)"
                     >
                       {{ clinic.dashboardType ? 'Cambiar dashboard' : 'Crear dashboard consultorio' }}
@@ -237,6 +245,16 @@
                   </div>
                 </td>
               </tr>
+              @if (logoClinicId() === clinic.id) {
+                <tr class="logo-edit">
+                  <td colspan="6">
+                    <app-clinic-logo-settings [targetClinicId]="clinic.id" [targetClinicName]="clinic.name" />
+                    <div class="provider-edit-actions">
+                      <button type="button" class="action-btn" (click)="logoClinicId.set(null)">Cerrar</button>
+                    </div>
+                  </td>
+                </tr>
+              }
               @if (providerEdit(); as p) {
                 @if (p.id === clinic.id) {
                   <tr class="provider-edit">

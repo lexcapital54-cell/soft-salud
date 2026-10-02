@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, effect, inject, input, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API } from '../api.config';
 import { AuthService } from '../auth.service';
@@ -16,7 +16,10 @@ type Slot = {
   help: string;
 };
 
-/** Logo propio del consultorio (panel de inicio e historia clínica). Solo el administrador lo cambia. */
+/**
+ * Logo propio del consultorio (panel de inicio e historia clínica). Lo cambia el administrador
+ * del consultorio o, indicando `targetClinicId`, el SUPER_ADMIN para cualquier consultorio.
+ */
 @Component({
   selector: 'app-clinic-logo-settings',
   templateUrl: './clinic-logo-settings.html',
@@ -39,7 +42,13 @@ export class ClinicLogoSettings implements OnDestroy {
     },
   ];
 
-  readonly clinicId = computed(() => this.auth.user()?.clinicId ?? null);
+  readonly targetClinicId = input<string | null>(null);
+  readonly targetClinicName = input<string | null>(null);
+  readonly clinicId = computed(() => this.targetClinicId() ?? this.auth.user()?.clinicId ?? null);
+  private readonly base = computed(() => {
+    const target = this.targetClinicId();
+    return target ? `${API}/clinics/${target}/logos` : `${API}/me/clinic-logos`;
+  });
   readonly status = signal<LogoStatus>({ home: null, hc: null });
   readonly pending = signal<Partial<Record<ClinicLogoSlot, { file: File; preview: string }>>>({});
   readonly busy = signal<ClinicLogoSlot | null>(null);
@@ -48,6 +57,10 @@ export class ClinicLogoSettings implements OnDestroy {
 
   constructor() {
     effect(() => {
+      this.base();
+      this.status.set({ home: null, hc: null });
+      this.message.set('');
+      this.error.set('');
       if (this.clinicId()) this.load();
     });
   }
@@ -91,12 +104,12 @@ export class ClinicLogoSettings implements OnDestroy {
     if (!item) return;
     const body = new FormData();
     body.append('file', item.file);
-    this.run(slot, this.http.post<LogoStatus>(`${API}/me/clinic-logos/${slot}`, body), 'Logo guardado.');
+    this.run(slot, this.http.post<LogoStatus>(`${this.base()}/${slot}`, body), 'Logo guardado.');
   }
 
   remove(slot: ClinicLogoSlot) {
     if (!confirm('¿Quitar este logo del consultorio?')) return;
-    this.run(slot, this.http.delete<LogoStatus>(`${API}/me/clinic-logos/${slot}`), 'Logo quitado.');
+    this.run(slot, this.http.delete<LogoStatus>(`${this.base()}/${slot}`), 'Logo quitado.');
   }
 
   private run(slot: ClinicLogoSlot, req: Observable<LogoStatus>, ok: string) {
@@ -118,7 +131,7 @@ export class ClinicLogoSettings implements OnDestroy {
   }
 
   private load() {
-    this.http.get<LogoStatus>(`${API}/me/clinic-logos`).subscribe({
+    this.http.get<LogoStatus>(this.base()).subscribe({
       next: (status) => this.status.set(status),
       error: () => undefined,
     });

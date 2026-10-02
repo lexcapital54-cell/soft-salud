@@ -271,7 +271,8 @@ textarea {
   color: #065f46;
 }
 
-.pill[data-status='UNPAID'] {
+.pill[data-status='UNPAID'],
+.pill[data-status='PENDING'] {
   background: #fff7ed;
   color: #9a3412;
 }
