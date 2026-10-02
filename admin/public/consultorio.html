@@ -100,8 +100,11 @@
       min-width: 22px; height: 22px; padding: 0 6px; margin-left: 6px;
       border-radius: 999px; background: #c45c00; color: #fff; font-size: 12px; font-weight: 600;
     }
-    .receipts-folder { margin: 0 0 18px; padding: 14px 18px; border-radius: 12px; border: 1px solid #cfe0ea; background: #f7fbfd; }
-    .receipts-folder h2 { margin: 0 0 4px; font-size: 1.05rem; color: #003d4c; }
+    .receipts-folder { width: min(560px, calc(100vw - 32px)); max-height: 80vh; overflow: auto; padding: 16px 20px 20px; border-radius: 14px; border: 1px solid #cfe0ea; background: #f7fbfd; box-shadow: 0 18px 48px rgba(0, 40, 60, .25); }
+    .receipts-folder::backdrop { background: rgba(0, 30, 45, .45); }
+    .receipts-folder header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
+    .receipts-folder h2 { margin: 0; font-size: 1.05rem; color: #003d4c; }
+    .receipts-folder button.close { border: none; background: transparent; color: #4a6670; font-size: 1.1rem; padding: 4px 8px; }
     .receipts-folder p { margin: 0 0 10px; color: #4a6670; font-size: .9rem; }
     .receipts-folder ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
     .receipts-folder li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #dbe8ee; border-radius: 10px; background: #fff; }
@@ -345,12 +348,6 @@
       <p id="hostingMsg">—</p>
     </section>
 
-    <section class="receipts-folder" id="receiptsFolder" hidden>
-      <h2>📁 Recibos HabiliSALUD</h2>
-      <p>Cada vez que se registra un pago, aquí queda una copia del recibo de caja.</p>
-      <ul id="receiptsList"></ul>
-    </section>
-
     <section class="reps-panel" id="repsPanel" hidden>
       <h2 id="repsTitle">Registro REPS</h2>
       <p id="repsMsg">—</p>
@@ -399,6 +396,14 @@
         <p>Copia de los recibos de pago de la mensualidad y del alta de su consultorio.</p>
         <span class="cta">Abrir carpeta →</span>
       </a>
+      <dialog class="receipts-folder" id="receiptsFolder" aria-labelledby="receiptsFolderTitle">
+        <header>
+          <h2 id="receiptsFolderTitle">📁 Recibos HabiliSALUD</h2>
+          <button type="button" class="close" id="receiptsFolderClose" aria-label="Cerrar carpeta">✕</button>
+        </header>
+        <p>Cada vez que se registra un pago, aquí queda una copia del recibo de caja.</p>
+        <ul id="receiptsList"></ul>
+      </dialog>
       <a class="module" id="billing" href="/consultorio/recibos" hidden>
         <h2>Recibos de caja</h2>
         <p>Cobros, gastos, paquetes de sesiones y cierre diario de caja del consultorio.</p>
@@ -609,14 +614,16 @@
         }
         card.addEventListener('click', function (event) {
           event.preventDefault();
-          folder.hidden = !folder.hidden;
-          if (folder.hidden) return;
           list.innerHTML = '<li>Cargando…</li>';
+          folder.showModal();
           fetch('/api/me/platform-receipts', { headers: authHeaders(), cache: 'no-store' })
             .then(function (r) { return r.ok ? r.json() : []; })
             .then(render)
             .catch(function () { list.innerHTML = '<li>No se pudieron cargar los recibos.</li>'; });
-          folder.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        document.getElementById('receiptsFolderClose').addEventListener('click', function () { folder.close(); });
+        folder.addEventListener('click', function (event) {
+          if (event.target === folder) folder.close();
         });
       }
 
