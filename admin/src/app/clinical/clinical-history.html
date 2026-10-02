@@ -962,7 +962,7 @@
               }
               @if (content.assessment?.impressionNarrative) {
                 <div class="sealed-field">
-                  <strong>Impresión diagnóstica</strong>
+                  <strong>Impresión diagnóstica y tratamiento</strong>
                   <p>{{ content.assessment.impressionNarrative }}</p>
                 </div>
               }
@@ -3748,7 +3748,7 @@
                 </label>
 
                 <label id="ps-impresion">
-                  Impresión diagnóstica (narrativa)
+                  Impresión diagnóstica y tratamiento
                   <div class="dictation-row">
                     <textarea
                       rows="3"
@@ -3779,84 +3779,6 @@
             @if (isPsychologyClinic()) {
               @let ps = psych();
               <section class="block" id="ps-plan-section">
-                <h4 id="ps-plan">Plan terapéutico</h4>
-                <label>
-                  Objetivos terapéuticos
-                  <textarea
-                    rows="3"
-                    [(ngModel)]="ps.therapeuticObjectives"
-                    [readonly]="clinicalFormDisabled()"
-                    (ngModelChange)="onClinicalFieldChange()"
-                    placeholder="Ej.: Disminuir sintomatología ansiosa, fortalecer estrategias de afrontamiento…"
-                  ></textarea>
-                </label>
-                <label>
-                  Plan de manejo (uno por línea, se incluye en el RDA)
-                  <textarea
-                    rows="3"
-                    [(ngModel)]="managementPlanText"
-                    [readonly]="clinicalFormDisabled()"
-                    (ngModelChange)="onClinicalFieldChange()"
-                    placeholder="Psicoeducación&#10;Técnicas de relajación&#10;Reestructuración cognitiva"
-                  ></textarea>
-                </label>
-                <div class="ft-grid-3">
-                  <label>
-                    Enfoque terapéutico
-                    <input
-                      [(ngModel)]="ps.approach"
-                      [readonly]="clinicalFormDisabled()"
-                      (ngModelChange)="onClinicalFieldChange()"
-                      placeholder="Cognitivo-conductual, sistémico…"
-                      list="ps-approach-list"
-                    />
-                  </label>
-                  <label>
-                    Modalidad
-                    <select [(ngModel)]="ps.modality" [disabled]="clinicalFormDisabled()" (ngModelChange)="onClinicalFieldChange()">
-                      <option value="">—</option>
-                      <option>Individual</option>
-                      <option>Pareja</option>
-                      <option>Familiar</option>
-                      <option>Grupal</option>
-                    </select>
-                  </label>
-                  <label>
-                    Frecuencia
-                    <input
-                      [(ngModel)]="ps.frequency"
-                      [readonly]="clinicalFormDisabled()"
-                      (ngModelChange)="onClinicalFieldChange()"
-                      placeholder="Semanal, quincenal…"
-                    />
-                  </label>
-                  <label>
-                    Duración estimada
-                    <input
-                      [(ngModel)]="ps.estimatedDuration"
-                      [readonly]="clinicalFormDisabled()"
-                      (ngModelChange)="onClinicalFieldChange()"
-                      placeholder="Ej.: 3 meses"
-                    />
-                  </label>
-                  <label>
-                    N.º de sesiones
-                    <input
-                      [(ngModel)]="ps.sessionCount"
-                      [readonly]="clinicalFormDisabled()"
-                      (ngModelChange)="onClinicalFieldChange()"
-                    />
-                  </label>
-                </div>
-                <datalist id="ps-approach-list">
-                  <option value="Cognitivo-conductual"></option>
-                  <option value="Sistémico"></option>
-                  <option value="Psicodinámico"></option>
-                  <option value="Humanista"></option>
-                  <option value="Terapia de aceptación y compromiso (ACT)"></option>
-                  <option value="Terapia dialéctico-conductual (DBT)"></option>
-                </datalist>
-
                 <h4 id="ps-plan-valores">Plan de tratamiento y valores</h4>
                 @defer (on viewport) {
                   <app-physio-treatment-plan

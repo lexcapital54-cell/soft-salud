@@ -438,7 +438,7 @@ export class HcePdfService {
         ),
         ...this.mentalExamSections(mental, theme.title),
         this.section(
-          'Impresión diagnóstica',
+          'Impresión diagnóstica y tratamiento',
           assessment.impressionNarrative as string,
           theme.title,
         ),

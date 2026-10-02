@@ -1272,7 +1272,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     };
     const psych = this.psych();
     return this.psychModuleIds().map((m, i) => {
-      const status = psychModuleStatus(m.id, this.content, psych, this.managementPlanText, ctx);
+      const status = psychModuleStatus(m.id, this.content, psych, ctx);
       return { ...m, n: i + 1, status, dot: status ? moduleDotStyle(status.state) : '' };
     });
   }
@@ -2778,7 +2778,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
           ['Enfermedad actual', c.careMinimum?.presentIllness],
           ['Historia psicosocial', c.careMinimum?.systemsReview],
           ['Examen mental', c.mentalExam?.narrative],
-          ['Impresión diagnóstica', c.assessment?.impressionNarrative],
+          ['Impresión diagnóstica y tratamiento', c.assessment?.impressionNarrative],
         ];
     return parts
       .filter(([, v]) => (v || '').trim())

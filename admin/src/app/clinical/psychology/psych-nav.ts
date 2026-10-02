@@ -23,9 +23,8 @@ export function psychModuleList(flags: PsychNavFlags): PsychModule[] {
       ? []
       : [
           { id: 'ps-examen-mental', label: 'Examen mental' },
-          { id: 'ps-impresion', label: 'Impresión diagnóstica' },
+          { id: 'ps-impresion', label: 'Impresión y tratamiento' },
         ]),
-    { id: 'ps-plan', label: 'Plan terapéutico' },
     { id: 'ps-plan-valores', label: 'Plan y valores' },
     { id: 'cie-section', label: 'CIE-10' },
     { id: 'cups-section', label: 'Procedimientos' },
@@ -50,7 +49,6 @@ export function psychModuleStatus(
   id: string,
   content: ClinicalContent,
   psych: PsychologyContent,
-  managementPlan: string,
   ctx: PsychNavContext,
 ): ModuleStatus | null {
   switch (id) {
@@ -69,9 +67,7 @@ export function psychModuleStatus(
     case 'ps-examen-mental':
       return filled(content.mentalExam?.narrative) ? { state: 'done', hint: 'Registrado' } : { state: 'empty', hint: 'Sin examen mental' };
     case 'ps-impresion':
-      return filled(content.assessment?.impressionNarrative) ? { state: 'done', hint: 'Registrada' } : { state: 'empty', hint: 'Sin impresión diagnóstica' };
-    case 'ps-plan':
-      return ratio([psych.therapeuticObjectives, managementPlan, psych.sessionCount].filter(filled).length, 3, 'datos (objetivos, plan de manejo, sesiones)');
+      return filled(content.assessment?.impressionNarrative) ? { state: 'done', hint: 'Registrada' } : { state: 'empty', hint: 'Sin impresión diagnóstica y tratamiento' };
     case 'ps-plan-valores':
       return psych.treatmentPlan?.length
         ? { state: 'done', hint: `${psych.treatmentPlan.length} procedimiento(s) con valor` }
