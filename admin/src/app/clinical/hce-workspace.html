@@ -1,15 +1,8 @@
 <section class="hce-workspace">
-  <header class="ws-topbar">
+  <header class="ws-topbar" [class.with-logo]="!!clinicLogo()">
     <div class="ws-left">
       <a href="/consultorio.html">← Consultorio</a>
-      @if (clinicLogo(); as logo) {
-        <img
-          class="clinic-logo"
-          [src]="logo"
-          [alt]="user()?.clinicName || 'Logo del consultorio'"
-          (error)="logoFailed.set(true)"
-        />
-      } @else {
+      @if (!clinicLogo()) {
         <a
           class="brand"
           [href]="websiteUrl"
@@ -19,6 +12,14 @@
       }
       <strong class="ws-title">Historia clínica</strong>
     </div>
+    @if (clinicLogo(); as logo) {
+      <img
+        class="clinic-logo"
+        [src]="logo"
+        [alt]="user()?.clinicName || 'Logo del consultorio'"
+        (error)="logoFailed.set(true)"
+      />
+    }
     <div class="ws-actions">
       @if (canWrite()) {
         <a class="ghost ws-pdf-link" href="/consultorio/historias-pdf">Descargar PDF</a>
