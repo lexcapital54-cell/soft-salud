@@ -1,10 +1,12 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { PhysiotherapyContent } from '../clinical.models';
+import { PhysioIcon } from './physio-icons';
 import { THERAPIES, ensureIntake, therapyLabel } from './physio-intake.models';
 
 /** Terapias a aplicar (casillas) con opción de llevarlas al plan de intervención. */
 @Component({
   selector: 'app-physio-therapies',
+  imports: [PhysioIcon],
   template: `
     @let intake = state();
     <div class="th">
@@ -21,6 +23,7 @@ import { THERAPIES, ensureIntake, therapyLabel } from './physio-intake.models';
             (click)="toggle(t.key)"
           >
             <span class="th-box" aria-hidden="true">{{ on ? '✓' : '' }}</span>
+            <app-physio-icon class="th-icon" [name]="t.key" />
             <span>
               {{ t.label }}
               @if (t.hint) {
@@ -55,6 +58,8 @@ import { THERAPIES, ensureIntake, therapyLabel } from './physio-intake.models';
     .th-item small { display: block; color: #6a7d90; font-size: .75rem; }
     .th-box { flex: 0 0 22px; height: 22px; border-radius: 6px; border: 1.5px solid #9fb2c6; display: grid; place-items: center; font-weight: 700; color: #fff; }
     .th-item.on .th-box { background: #c59b27; border-color: #c59b27; }
+    .th-icon { width: 26px; height: 26px; }
+    .th-item.on .th-icon { color: #a07a14; }
     .th-other { display: block; margin-top: 10px; }
     .th-other input { width: 100%; }
     .th-actions { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }

@@ -1654,7 +1654,7 @@
                     ></textarea>
                 </label>
 
-                <h4>Antecedentes</h4>
+                <h4 class="ft-head"><app-physio-icon name="history" badge />Antecedentes</h4>
                 <app-physio-antecedents [data]="physio()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
                 <div class="ft-grid-2 ft-antecedents-more">
                   @for (item of ftOtherAntecedentKeys; track item.key) {
@@ -1670,7 +1670,7 @@
                   }
                 </div>
 
-                <h4>Revisión por sistemas</h4>
+                <h4 class="ft-head"><app-physio-icon name="systems" badge />Revisión por sistemas</h4>
                 <table class="ft-check-table">
                   <thead>
                     <tr>
@@ -1719,10 +1719,10 @@
                     ></textarea>
                 </label>
 
-                <h4 id="ft-zonas">Zonas a tratar</h4>
+                <h4 id="ft-zonas" class="ft-head"><app-physio-icon name="target" badge />Zonas a tratar</h4>
                 <app-physio-body-map [data]="physio()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
 
-                <h4 id="ft-evaluacion">Evaluación fisioterapéutica</h4>
+                <h4 id="ft-evaluacion" class="ft-head"><app-physio-icon name="evaluation" badge />Evaluación fisioterapéutica</h4>
                 <label>
                   Diagnóstico fisioterapéutico
                   <textarea
@@ -1743,7 +1743,7 @@
                 </label>
 
                 <div class="ft-valoracion-block" id="ft-valoracion-funcional">
-                <h4>Valoración fisioterapéutica</h4>
+                <h4 class="ft-head"><app-physio-icon name="search" badge />Valoración fisioterapéutica</h4>
                 <app-physio-quick-assessment [data]="physio()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
 
                 <h4>Valoración por sistemas y funciones</h4>
@@ -1848,7 +1848,7 @@
                 </table>
                 </div>
 
-                <h4 id="ft-diagnostico">Diagnóstico fisioterapéutico (codificación)</h4>
+                <h4 id="ft-diagnostico" class="ft-head"><app-physio-icon name="diagnosis" badge />Diagnóstico fisioterapéutico (codificación)</h4>
                 <div class="ft-grid-2">
                   <label>
                     Código
@@ -1877,10 +1877,10 @@
                     ></textarea>
                 </label>
 
-                <h4 id="ft-terapias">Terapias a aplicar</h4>
+                <h4 id="ft-terapias" class="ft-head"><app-physio-icon name="lotus" badge />Terapias a aplicar</h4>
                 <app-physio-therapies [data]="physio()" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
 
-                <h4 id="ft-plan">Plan terapéutico</h4>
+                <h4 id="ft-plan" class="ft-head"><app-physio-icon name="plan" badge />Plan terapéutico</h4>
                 <label>
                   Objetivos del tratamiento
                   <textarea
@@ -1926,7 +1926,7 @@
                   </label>
                 </div>
 
-                <h4 id="ft-plan-valores">Plan de tratamiento y valores</h4>
+                <h4 id="ft-plan-valores" class="ft-head"><app-physio-icon name="money" badge />Plan de tratamiento y valores</h4>
                 @defer (on viewport) {
                   <app-physio-treatment-plan [data]="physio()" [procedures]="procedures" [disabled]="clinicalFormDisabled()" (changed)="onClinicalFieldChange()" />
                 } @placeholder {
@@ -1940,7 +1940,7 @@
                   }
                 }
 
-                <h4 id="ft-cierre">Cierre de historia (opcional)</h4>
+                <h4 id="ft-cierre" class="ft-head"><app-physio-icon name="calendar" badge />Cierre de historia (opcional)</h4>
                 <div class="ft-grid-3">
                   <label>
                     Fecha de cierre

@@ -263,3 +263,12 @@ textarea[readonly] {
   width: auto;
   border-radius: 10px;
 }
+
+h4.ft-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #1b365d;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(197, 155, 39, 0.45);
+}

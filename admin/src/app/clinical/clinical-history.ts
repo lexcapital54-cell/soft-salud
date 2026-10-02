@@ -20,6 +20,7 @@ import { PhysioBodyMap } from './physio/physio-body-map';
 import { PhysioIntakeHeader } from './physio/physio-intake-header';
 import { PhysioQuickAssessment } from './physio/physio-quick-assessment';
 import { PhysioTherapies } from './physio/physio-therapies';
+import { PhysioIcon } from './physio/physio-icons';
 import { physioIntakeSummary } from './physio/physio-intake.summary';
 import { PHYSIO_MODULES, physioModuleStatus } from './physio/physio-nav';
 import { psychModuleList, psychModuleStatus } from './psychology/psych-nav';
@@ -359,6 +360,7 @@ function emptyContent(): ClinicalContent {
     PhysioIntakeHeader,
     PhysioQuickAssessment,
     PhysioTherapies,
+    PhysioIcon,
     OrthoFaceProportions,
     OrthoMovementPlan,
     OrthoArchAnalysis,
