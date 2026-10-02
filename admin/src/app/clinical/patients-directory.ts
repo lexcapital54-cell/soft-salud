@@ -1,6 +1,8 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { AgendaApiService } from '../agenda/agenda-api.service';
+import { AppointmentStatus, TodayAppointment } from '../agenda/agenda.models';
 import { AuthService } from '../auth.service';
 import { ClinicalApiService } from './clinical-api.service';
 import { EncounterListItem, Patient } from './clinical.models';
@@ -14,9 +16,23 @@ interface DayEntry {
   name: string;
   detail: string;
   encounterId: string | null;
-  note: string;
+  notes: string[];
   profileComplete: boolean;
+  /** Hora de la cita agendada ese día (HH:mm); null si no tiene cita. */
+  time: string | null;
+  kind: 'cita' | 'hc' | 'nuevo';
+  /** Cita de un día anterior cuya sesión sigue sin documentar. */
+  overdue: boolean;
 }
+
+const APPOINTMENT_STATUS_LABEL: Record<AppointmentStatus, string> = {
+  SCHEDULED: 'Agendada',
+  CONFIRMED: 'Confirmada',
+  IN_WAITING: 'En sala de espera',
+  COMPLETED: 'Atendida',
+  NO_SHOW: 'No asistió',
+  CANCELLED: 'Cancelada',
+};
 
 /** Celda del calendario mensual. */
 interface MonthCell {
@@ -45,6 +61,7 @@ function parseDateKey(key: string) {
 export class PatientsDirectory implements OnInit {
   private readonly api = inject(ClinicalApiService);
   private readonly auth = inject(AuthService);
+  private readonly agenda = inject(AgendaApiService);
 
   readonly canWrite = this.auth.canWriteClinical;
 
@@ -63,6 +80,7 @@ export class PatientsDirectory implements OnInit {
   readonly selectedDay = signal(toDateKey(new Date()));
   readonly encounters = signal<EncounterListItem[]>([]);
   readonly monthPatients = signal<Patient[]>([]);
+  readonly appointments = signal<TodayAppointment[]>([]);
 
   // Alta rápida
   readonly showNew = signal(false);
@@ -96,21 +114,53 @@ export class PatientsDirectory implements OnInit {
   });
 
   /**
-   * Actividad del mes por día, con un único renglón por paciente: primero las
-   * historias abiertas y después las fichas registradas que aún no aparecen.
+   * Actividad del mes por día, con un único renglón por paciente: si ese día
+   * tuvo cita, se le abrió la historia o se registró, todo se resume en él.
    */
   private readonly byDay = computed(() => {
     const map = new Map<string, DayEntry[]>();
 
     const push = (key: string, entry: DayEntry) => {
-      const bucket = map.get(key);
-      if (!bucket) {
-        map.set(key, [entry]);
+      const bucket = map.get(key) ?? [];
+      const existing = bucket.find((e) => e.patientId === entry.patientId);
+      if (!existing) {
+        bucket.push(entry);
+        map.set(key, bucket);
         return;
       }
-      if (bucket.some((e) => e.patientId === entry.patientId)) return;
-      bucket.push(entry);
+      for (const note of entry.notes) {
+        if (!existing.notes.includes(note)) existing.notes.push(note);
+      }
+      existing.encounterId ??= entry.encounterId;
+      existing.overdue ||= entry.overdue;
     };
+
+    for (const appt of this.appointments()) {
+      const patient = appt.patient;
+      if (appt.eventType !== 'CITA' || appt.status === 'CANCELLED' || !patient) continue;
+      const at = new Date(appt.startsAt);
+      const time = at.toLocaleTimeString('es-CO', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+      push(toDateKey(at), {
+        patientId: patient.id,
+        name: patient.fullName || `${patient.firstName} ${patient.lastName}`.trim(),
+        detail: patient.documentNumber
+          ? `${patient.documentType ?? ''} ${patient.documentNumber}`.trim()
+          : 'Ficha por completar',
+        encounterId: appt.encounterId,
+        notes: [
+          `Cita ${time} · ${APPOINTMENT_STATUS_LABEL[appt.status]}`,
+          ...(appt.clinicalPending ? [appt.clinicalPending] : []),
+        ],
+        profileComplete: patient.profileComplete !== false,
+        time,
+        kind: 'cita',
+        overdue: appt.clinicalOverdue,
+      });
+    }
 
     for (const enc of this.encounters()) {
       const patient = enc.patient;
@@ -119,11 +169,13 @@ export class PatientsDirectory implements OnInit {
         name: this.patientName(patient),
         detail: this.documentLabel(patient),
         encounterId: enc.id,
-        note:
-          enc.clinicalRecord?.status === 'SIGNED'
-            ? 'Historia cerrada'
-            : 'Historia en borrador',
+        notes: [
+          enc.clinicalRecord?.status === 'SIGNED' ? 'Historia cerrada' : 'Historia en borrador',
+        ],
         profileComplete: patient.profileComplete !== false,
+        time: null,
+        kind: 'hc',
+        overdue: false,
       });
     }
 
@@ -134,11 +186,22 @@ export class PatientsDirectory implements OnInit {
         name: this.patientName(patient),
         detail: this.documentLabel(patient),
         encounterId: null,
-        note: 'Paciente registrado',
+        notes: ['Paciente registrado'],
         profileComplete: patient.profileComplete !== false,
+        time: null,
+        kind: 'nuevo',
+        overdue: false,
       });
     }
 
+    for (const bucket of map.values()) {
+      bucket.sort((a, b) => {
+        if (a.time && b.time) return a.time.localeCompare(b.time);
+        if (a.time) return -1;
+        if (b.time) return 1;
+        return a.name.localeCompare(b.name, 'es');
+      });
+    }
     return map;
   });
 
@@ -260,6 +323,11 @@ export class PatientsDirectory implements OnInit {
     this.api.listPatients({ from, to }).subscribe({
       next: (rows) => this.monthPatients.set(rows),
       error: () => undefined,
+    });
+
+    this.agenda.listToday({ from, to }).subscribe({
+      next: (rows) => this.appointments.set(rows),
+      error: () => this.appointments.set([]),
     });
   }
 

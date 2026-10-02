@@ -118,7 +118,7 @@
           <button type="button" class="chip" (click)="goToday()">Hoy</button>
         </div>
         <span class="muted small">
-          {{ loading() ? 'Cargando…' : 'Pulse un día para ver sus historias y pacientes nuevos' }}
+          {{ loading() ? 'Cargando…' : 'Pulse un paciente para abrir su historia, o un día para ver el detalle' }}
         </span>
       </div>
 
@@ -130,38 +130,64 @@
 
       <div class="cal-grid">
         @for (cell of monthGrid(); track cell.key) {
-          <button
-            type="button"
+          <div
+            role="button"
+            tabindex="0"
             class="cal-day"
             [class.out]="!cell.inMonth"
             [class.today]="isToday(cell.key)"
             [class.active]="cell.key === selectedDay()"
+            [attr.aria-label]="'Ver pacientes del día ' + cell.dayNumber"
             (click)="selectDay(cell.key)"
+            (keydown.enter)="selectDay(cell.key)"
+            (keydown.space)="$event.preventDefault(); selectDay(cell.key)"
           >
             <span class="cal-number">{{ cell.dayNumber }}</span>
-            @for (entry of cell.entries.slice(0, 3); track entry.patientId) {
-              <span class="cal-chip" [class.new]="!entry.encounterId">
+            @for (entry of cell.entries.slice(0, 4); track entry.patientId) {
+              <a
+                class="cal-chip"
+                [class.new]="entry.kind === 'nuevo'"
+                [class.appt]="entry.kind === 'cita'"
+                [class.overdue]="entry.overdue"
+                routerLink="/consultorio/historia-clinica"
+                [queryParams]="{ patientId: entry.patientId }"
+                [title]="'Abrir historia clínica de ' + entry.name + ' · ' + entry.notes.join(' · ')"
+                (click)="$event.stopPropagation()"
+                (keydown.enter)="$event.stopPropagation()"
+              >
+                @if (entry.time) {
+                  <b>{{ entry.time }}</b>
+                }
                 {{ entry.name }}
-              </span>
+              </a>
             }
-            @if (cell.entries.length > 3) {
-              <span class="cal-more">+{{ cell.entries.length - 3 }} más</span>
+            @if (cell.entries.length > 4) {
+              <span class="cal-more">+{{ cell.entries.length - 4 }} más · ver día</span>
             }
-          </button>
+          </div>
         }
       </div>
     </div>
 
     <aside class="card day-card">
       <h2>{{ selectedDayLabel() }}</h2>
-      <p class="muted small">Pacientes con actividad este día</p>
+      <p class="muted small">
+        {{ dayEntries().length }} paciente{{ dayEntries().length === 1 ? '' : 's' }}
+        con cita, historia o registro este día
+      </p>
 
       <ul class="day-list">
         @for (entry of dayEntries(); track entry.patientId) {
-          <li>
+          <li [class.overdue]="entry.overdue">
             <div>
-              <strong>{{ entry.name }}</strong>
-              <span class="muted small">{{ entry.detail }} · {{ entry.note }}</span>
+              <strong>
+                @if (entry.time) {
+                  <span class="day-time">{{ entry.time }}</span>
+                }
+                {{ entry.name }}
+              </strong>
+              <span class="muted small">{{ entry.detail }}</span>
+              <span class="muted small">{{ entry.notes.join(' · ') }}</span>
             </div>
             <a
               class="linkish"

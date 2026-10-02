@@ -281,6 +281,59 @@ input {
   color: #7a5520;
 }
 
+a.cal-chip {
+  display: block;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a.cal-chip:hover,
+a.cal-chip:focus-visible {
+  border-color: #0d7377;
+  background: #e3f3f3;
+  outline: none;
+}
+
+.cal-chip b {
+  font-weight: 600;
+  margin-right: 2px;
+}
+
+.cal-chip.appt {
+  background: #eaf3fb;
+  border-color: #c9dff2;
+  color: #12385a;
+}
+
+.cal-chip.overdue {
+  background: #fdecec;
+  border-color: #f2c4c4;
+  color: #8a1f1f;
+}
+
+.cal-day {
+  cursor: pointer;
+}
+
+.cal-day:focus-visible {
+  outline: 2px solid #0d7377;
+  outline-offset: 1px;
+}
+
+.day-time {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: #eaf3fb;
+  color: #12385a;
+  font-size: 0.8rem;
+}
+
+.day-list li.overdue strong {
+  color: #8a1f1f;
+}
+
 .section-title {
   margin-top: 14px;
   padding-top: 12px;
