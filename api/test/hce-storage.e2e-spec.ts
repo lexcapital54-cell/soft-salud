@@ -409,6 +409,25 @@ describe('Almacenamiento de la historia clínica (base de pruebas)', () => {
     await http.get('/api/me/platform-receipts').set(auth()).expect(403);
   });
 
+  it('solo el administrador habilita RIPS y aplica a los profesionales del consultorio', async () => {
+    const adminLogin = await http.post('/api/auth/login').send({ email: 'admin@hce-test.local', password: 'AdminTest123!' }).expect(201);
+    const admin = { Authorization: `Bearer ${adminLogin.body.accessToken}` };
+
+    await http.post('/api/me/rips-settings').set(auth()).send({ ripsEnabled: true }).expect(403);
+    let pro = await prisma.user.findUnique({ where: { id: professionalId } });
+    check('RIPS', 'el profesional no puede activarlo', pro?.ripsEnabled, false);
+
+    await http.post('/api/me/rips-settings').set(admin).send({ ripsEnabled: true }).expect(201);
+    pro = await prisma.user.findUnique({ where: { id: professionalId } });
+    check('RIPS', 'users.rips_enabled del profesional (activado por el admin)', pro?.ripsEnabled, true);
+    const seen = await http.get('/api/me/rips-settings').set(auth()).expect(200);
+    check('RIPS', 'el profesional ve RIPS activado', seen.body.ripsEnabled, true);
+
+    await http.post('/api/me/rips-settings').set(admin).send({ ripsEnabled: false }).expect(201);
+    pro = await prisma.user.findUnique({ where: { id: professionalId } });
+    check('RIPS', 'users.rips_enabled del profesional (desactivado por el admin)', pro?.ripsEnabled, false);
+  });
+
   describe('enlace de la consulta virtual', () => {
     const inDays = (d: number) => new Date(Date.now() + d * 86400000).toISOString();
 
