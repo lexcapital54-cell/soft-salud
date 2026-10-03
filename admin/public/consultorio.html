@@ -128,6 +128,7 @@
     .reps-panel.warn h2 { color: #5c3a1e; }
     .reps-panel.urgent h2 { color: #8a1f1f; }
     .reps-panel p { margin: 0 0 10px; color: #2e2e2e; line-height: 1.45; }
+    .reps-panel .reps-date { font-size: 1rem; margin-bottom: 4px; }
     .reps-panel a { color: var(--brand); text-decoration: none; font-weight: 500; }
     .modules {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -333,6 +334,7 @@
 
     <section class="reps-panel" id="repsPanel" hidden>
       <h2 id="repsTitle">Registro REPS</h2>
+      <p id="repsDate" class="reps-date" hidden></p>
       <p id="repsMsg">—</p>
       <a href="/consultorio/configuracion">Actualizar fecha REPS →</a>
     </section>
@@ -505,11 +507,10 @@
         var canWrite = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
         if (!canWrite) return;
         var level = data.alertLevel || 'info';
-        // Solo aviso si falta, está por vencer (≤60) o venció.
-        if (level === 'ok') return;
         var panel = document.getElementById('repsPanel');
         var title = document.getElementById('repsTitle');
         var msg = document.getElementById('repsMsg');
+        var dateEl = document.getElementById('repsDate');
         panel.hidden = false;
         panel.className = 'reps-panel' + (level === 'urgent' || level === 'warn' ? ' ' + level : '');
         title.textContent =
@@ -517,8 +518,25 @@
             ? 'REPS vencido'
             : data.status === 'MISSING'
               ? 'REPS sin fecha registrada'
-              : 'REPS por vencer';
-        msg.textContent = data.message || 'Revise su registro REPS.';
+              : level === 'ok'
+                ? 'Registro REPS vigente'
+                : 'REPS por vencer';
+        if (data.repsExpirationDate) {
+          var parts = data.repsExpirationDate.slice(0, 10).split('-').map(Number);
+          var exp = new Date(parts[0], parts[1] - 1, parts[2]);
+          dateEl.hidden = false;
+          dateEl.innerHTML = '';
+          dateEl.appendChild(document.createTextNode('Fecha de vencimiento: '));
+          var strong = document.createElement('strong');
+          strong.textContent = exp.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+          dateEl.appendChild(strong);
+        } else {
+          dateEl.hidden = true;
+        }
+        msg.textContent =
+          level === 'ok' && data.daysRemaining != null
+            ? 'Quedan ' + data.daysRemaining + ' días para el vencimiento.'
+            : data.message || 'Revise su registro REPS.';
         if (data.repsExpirationDate) {
           user.repsExpirationDate = data.repsExpirationDate;
           localStorage.setItem('habilisalud_user', JSON.stringify(user));
