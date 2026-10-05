@@ -8,6 +8,7 @@ export interface StaffUser extends ClinicAdmin {
   createdAt?: string;
   /** Última contraseña asignada por el superadmin (solo panel admin). */
   currentPassword?: string | null;
+  repsExpirationDate?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -104,5 +105,9 @@ export class AdminApiService {
       currentPassword: string;
       message: string;
     }>(`${API}/users/${userId}/reset-password`, { password });
+  }
+
+  setUserReps(userId: string, repsExpirationDate: string | null) {
+    return this.http.post<StaffUser>(`${API}/users/${userId}/reps`, { repsExpirationDate });
   }
 }

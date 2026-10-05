@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { API } from '../api.config';
 
@@ -26,6 +26,11 @@ const LOGIN_URL = '/login-profesional.html';
         No ve ni edita historias clínicas.
       </p>
 
+      @if (isAdmin()) {
+        <p class="muted small">Si un asistente pierde su clave, use «Cambiar clave» para asignarle una nueva.</p>
+      } @else {
+        <p class="muted small">Si su asistente pierde la clave, el administrador del consultorio puede restablecerla.</p>
+      }
       @if (assistants().length) {
         <ul class="as-list">
           @for (a of assistants(); track a.id) {
@@ -34,9 +39,16 @@ const LOGIN_URL = '/login-profesional.html';
                 <strong>{{ a.fullName }}</strong>
                 <small>{{ a.email }} · {{ a.isActive ? 'Activo' : 'Desactivado' }}</small>
               </div>
-              <button type="button" class="as-ghost" [disabled]="busyId() === a.id" (click)="toggle(a)">
-                {{ a.isActive ? 'Desactivar' : 'Reactivar' }}
-              </button>
+              <div class="as-actions">
+                @if (isAdmin()) {
+                  <button type="button" class="as-ghost" [disabled]="busyId() === a.id" (click)="resetPin(a)">
+                    Cambiar clave
+                  </button>
+                }
+                <button type="button" class="as-ghost" [disabled]="busyId() === a.id" (click)="toggle(a)">
+                  {{ a.isActive ? 'Desactivar' : 'Reactivar' }}
+                </button>
+              </div>
             </li>
           }
         </ul>
@@ -48,16 +60,18 @@ const LOGIN_URL = '/login-profesional.html';
       <div class="as-grid">
         <label>Nombre completo <input [(ngModel)]="fullName" autocomplete="off" /></label>
         <label>Correo (usuario de ingreso) <input [(ngModel)]="email" type="email" autocomplete="off" /></label>
-        <label>Contraseña (mínimo 8) <input [(ngModel)]="password" type="text" autocomplete="new-password" /></label>
+        <label>Clave de 4 dígitos
+          <input [(ngModel)]="password" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]*" autocomplete="off" placeholder="0000" />
+        </label>
       </div>
       @if (error()) {
         <p class="err">{{ error() }}</p>
       }
       @if (created(); as c) {
         <div class="as-done">
-          <p><strong>Cuenta creada.</strong> Entregue estos datos a {{ c.fullName }}:</p>
+          <p><strong>{{ c.reset ? 'Clave actualizada.' : 'Cuenta creada.' }}</strong> Entregue estos datos a {{ c.fullName }}:</p>
           <p>Ingreso: <a [href]="loginUrl" target="_blank">{{ loginHost }}{{ loginUrl }}</a></p>
-          <p>Usuario: <strong>{{ c.email }}</strong> · Contraseña: <strong>{{ c.password }}</strong></p>
+          <p>Usuario: <strong>{{ c.email }}</strong> · Clave: <strong>{{ c.password }}</strong></p>
         </div>
       }
       <button type="button" class="primary" [disabled]="saving()" (click)="create()">
@@ -80,6 +94,7 @@ const LOGIN_URL = '/login-profesional.html';
     .as-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
     label { display: flex; flex-direction: column; gap: 5px; font-size: 0.85rem; color: #405a5f; }
     input { font: inherit; padding: 9px 11px; border: 1px solid #d3e0e1; border-radius: 10px; }
+    .as-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
     .as-ghost { border: 1px solid #d3e0e1; background: #fff; border-radius: 999px; padding: 7px 14px; font: inherit; font-size: 0.85rem; cursor: pointer; }
     .as-done { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: #eef8f1; border: 1px solid #bfe0c9; }
     .as-done p { margin: 0 0 4px; }
@@ -91,13 +106,15 @@ const LOGIN_URL = '/login-profesional.html';
 })
 export class AssistantsCard implements OnInit {
   private readonly http = inject(HttpClient);
+  /** Solo el administrador del consultorio cambia la clave. */
+  readonly isAdmin = input(false);
 
   readonly assistants = signal<Assistant[]>([]);
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly busyId = signal<string | null>(null);
   readonly error = signal('');
-  readonly created = signal<{ fullName: string; email: string; password: string } | null>(null);
+  readonly created = signal<{ fullName: string; email: string; password: string; reset?: boolean } | null>(null);
   readonly loginUrl = LOGIN_URL;
   readonly loginHost = location.origin;
 
@@ -130,8 +147,8 @@ export class AssistantsCard implements OnInit {
       this.error.set('Escriba el nombre y un correo válido.');
       return;
     }
-    if (password.length < 8) {
-      this.error.set('La contraseña debe tener al menos 8 caracteres.');
+    if (!/^\d{4}$/.test(password)) {
+      this.error.set('La clave debe ser de 4 dígitos.');
       return;
     }
     this.saving.set(true);
@@ -150,6 +167,27 @@ export class AssistantsCard implements OnInit {
         this.saving.set(false);
         const msg = err?.error?.message;
         this.error.set(Array.isArray(msg) ? msg.join(' ') : msg || 'No se pudo crear el asistente.');
+      },
+    });
+  }
+
+  resetPin(a: Assistant) {
+    const pin = window.prompt(`Nueva clave de 4 dígitos para ${a.fullName}:`)?.trim();
+    if (pin === undefined || pin === '') return;
+    if (!/^\d{4}$/.test(pin)) {
+      this.error.set('La clave debe ser de 4 dígitos.');
+      return;
+    }
+    this.busyId.set(a.id);
+    this.error.set('');
+    this.http.post<Assistant>(`${API}/me/assistants/${a.id}/password`, { password: pin }).subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.created.set({ fullName: a.fullName, email: a.email, password: pin, reset: true });
+      },
+      error: (err) => {
+        this.busyId.set(null);
+        this.error.set(err?.error?.message || 'No se pudo cambiar la clave.');
       },
     });
   }

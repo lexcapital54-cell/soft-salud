@@ -67,7 +67,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HceWorkspaceService } from './hce-workspace.service';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   Observable,
   Subscription,
@@ -380,7 +380,6 @@ function emptyContent(): ClinicalContent {
     OrthoAuditTimeline,
     OrthoLiveChip,
     FormsModule,
-    RouterLink,
     DatePipe,
     DecimalPipe,
     ConsentSigner,

@@ -168,6 +168,31 @@ export class UsersService {
     return this.toAssistant(await this.usersRepository.save(user));
   }
 
+  async setAssistantPin(requester: User, id: string, pin: string) {
+    const clinicId = this.requireClinic(requester);
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user || user.role !== UserRole.RECEPTIONIST || user.clinicId !== clinicId) {
+      throw new NotFoundException('Asistente no encontrado en este consultorio');
+    }
+    user.passwordHash = await bcrypt.hash(pin, 10);
+    user.passwordReminder = pin;
+    await this.usersRepository.save(user);
+    return { ...this.toAssistant(user), password: pin };
+  }
+
+  /** Fecha de vencimiento REPS del profesional; solo la cambia HABILISALUD. */
+  async setRepsExpiration(userId: string, raw: string | null | undefined) {
+    const user = await this.findById(userId);
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+    const value = raw?.trim() || null;
+    const parsed = value ? new Date(`${value.slice(0, 10)}T12:00:00.000Z`) : null;
+    if (parsed && Number.isNaN(parsed.getTime())) {
+      throw new BadRequestException('Fecha inválida. Use formato AAAA-MM-DD.');
+    }
+    user.repsExpirationDate = parsed;
+    return this.toStaffUser(await this.usersRepository.save(user));
+  }
+
   private requireClinic(requester: User) {
     if (!requester.clinicId) {
       throw new BadRequestException('Su usuario no tiene consultorio asignado');
@@ -195,6 +220,13 @@ export class UsersService {
     }
     if (!(STAFF_CREATABLE_ROLES as readonly UserRole[]).includes(user.role)) {
       throw new BadRequestException('Este tipo de usuario no se gestiona aquí.');
+    }
+    if (user.role === UserRole.RECEPTIONIST ? !/^\d{4}$/.test(password) : password.length < 8) {
+      throw new BadRequestException(
+        user.role === UserRole.RECEPTIONIST
+          ? 'La clave del asistente administrativo debe ser de 4 dígitos.'
+          : 'La contraseña debe tener mínimo 8 caracteres.',
+      );
     }
 
     const previousPassword = user.passwordReminder ?? null;

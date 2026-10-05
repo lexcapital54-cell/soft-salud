@@ -9,7 +9,6 @@ import {
   Query,
   Req,
   UseGuards,
-  BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
@@ -27,7 +26,6 @@ import {
   UpdateDiagnosesDto,
   UpdateProceduresDto,
   UpdateProfessionalSignatureDto,
-  UpdateRepsSettingsDto,
 } from './dto/clinical.dto';
 import { EncountersService } from './encounters.service';
 import { ProfessionalSignatureService } from './professional-signature.service';
@@ -254,38 +252,20 @@ export class EncountersController {
     const repsExpirationDate = this.formatDateOnly(row?.repsExpirationDate ?? null);
     return {
       ...this.repsStatusPayload(repsExpirationDate),
-      note: 'Registre la fecha de vencimiento de su inscripción REPS. Recibirá aviso a 60 y 30 días, y si ya venció.',
+      note: 'La fecha REPS la registra HABILISALUD. Recibirá aviso a 60 y 30 días, y si ya venció.',
     };
   }
 
   @Put('me/reps-settings')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
-  async saveRepsSettings(
-    @Req() req: { user: User },
-    @Body() dto: UpdateRepsSettingsDto,
-  ) {
-    const raw = dto.repsExpirationDate?.trim() || null;
-    const parsed = raw ? new Date(`${raw.slice(0, 10)}T12:00:00.000Z`) : null;
-    if (raw && Number.isNaN(parsed!.getTime())) {
-      throw new BadRequestException('Fecha inválida. Use formato YYYY-MM-DD.');
-    }
-
-    await this.prisma.user.update({
-      where: { id: req.user.id },
-      data: { repsExpirationDate: parsed },
-    });
-    req.user.repsExpirationDate = parsed;
-    const repsExpirationDate = this.formatDateOnly(parsed);
-    return this.repsStatusPayload(repsExpirationDate);
+  @Roles(UserRole.SUPER_ADMIN)
+  saveRepsSettings() {
+    throw new ForbiddenException('La fecha REPS la actualiza HABILISALUD desde el panel de administración.');
   }
 
   @Post('me/reps-settings')
-  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
-  saveRepsSettingsViaPost(
-    @Req() req: { user: User },
-    @Body() dto: UpdateRepsSettingsDto,
-  ) {
-    return this.saveRepsSettings(req, dto);
+  @Roles(UserRole.SUPER_ADMIN)
+  saveRepsSettingsViaPost() {
+    return this.saveRepsSettings();
   }
 
   private formatDateOnly(value: Date | string | null | undefined): string | null {

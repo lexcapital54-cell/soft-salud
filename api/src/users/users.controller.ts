@@ -19,6 +19,7 @@ import {
   UpdateStaffUserDto,
 } from './dto/create-staff-user.dto';
 import { UsersService } from './users.service';
+import { UpdateRepsSettingsDto } from '../modules/clinical/dto/clinical.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -54,6 +55,11 @@ export class UsersController {
   @Post(':id/reset-password')
   resetPassword(@Param('id') id: string, @Body() dto: ResetUserPasswordDto) {
     return this.usersService.resetPassword(id, dto.password);
+  }
+
+  @Post(':id/reps')
+  setReps(@Param('id') id: string, @Body() dto: UpdateRepsSettingsDto) {
+    return this.usersService.setRepsExpiration(id, dto.repsExpirationDate);
   }
 
   @Patch(':id')

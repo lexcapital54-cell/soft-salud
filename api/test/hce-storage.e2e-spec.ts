@@ -437,26 +437,48 @@ describe('Almacenamiento de la historia clínica (base de pruebas)', () => {
     const created = await http.post('/api/me/assistants').set(auth()).send({
       fullName: 'Asistente Prueba',
       email: 'asistente@hce-test.local',
-      password: 'Asistente123!',
+      password: '4821',
     }).expect(201);
+    await http.post('/api/me/assistants').set(auth()).send({ fullName: 'X', email: 'x@hce-test.local', password: 'Asistente123!' }).expect(400);
     const row = await prisma.user.findUnique({ where: { id: created.body.id } });
     check('Asistente', 'rol y consultorio', [row?.role, row?.clinicId], ['RECEPTIONIST', clinicId]);
-    check('Asistente', 'la respuesta no expone la contraseña', JSON.stringify(created.body).includes('Asistente123!'), false);
+    check('Asistente', 'la respuesta no expone la contraseña', JSON.stringify(created.body).includes('4821'), false);
 
-    const login = await http.post('/api/auth/login').send({ email: 'asistente@hce-test.local', password: 'Asistente123!' }).expect(201);
+    const login = await http.post('/api/auth/login').send({ email: 'asistente@hce-test.local', password: '4821' }).expect(201);
     const asis = { Authorization: `Bearer ${login.body.accessToken}` };
     await http.get('/api/appointments/today').set(asis).expect(200);
     await http.get('/api/billing/receipts').set(asis).expect(200);
     await http.get(`/api/encounters/for-patient/${patientId}`).set(asis).expect(403);
-    await http.post('/api/me/assistants').set(asis).send({ fullName: 'Otro', email: 'otro@hce-test.local', password: 'Otro12345!' }).expect(403);
+    await http.post('/api/me/assistants').set(asis).send({ fullName: 'Otro', email: 'otro@hce-test.local', password: '1234' }).expect(403);
 
     const list = await http.get('/api/me/assistants').set(auth()).expect(200);
     check('Asistente', 'aparece en la lista del consultorio', list.body.map((a: { email: string }) => a.email), ['asistente@hce-test.local']);
 
+    await http.post(`/api/me/assistants/${created.body.id}/password`).set(auth()).send({ password: '1111' }).expect(403);
+    const adminLogin = await http.post('/api/auth/login').send({ email: 'admin@hce-test.local', password: 'AdminTest123!' }).expect(201);
+    const adm = { Authorization: `Bearer ${adminLogin.body.accessToken}` };
+    await http.post(`/api/me/assistants/${created.body.id}/password`).set(adm).send({ password: 'abcd' }).expect(400);
+    const reset = await http.post(`/api/me/assistants/${created.body.id}/password`).set(adm).send({ password: '7350' }).expect(201);
+    check('Asistente', 'el admin restablece la clave de 4 dígitos', reset.body.password, '7350');
+    await http.post('/api/auth/login').send({ email: 'asistente@hce-test.local', password: '4821' }).expect(401);
+    await http.post('/api/auth/login').send({ email: 'asistente@hce-test.local', password: '7350' }).expect(201);
+    await http.post(`/api/me/assistants/${professionalId}/password`).set(adm).send({ password: '0000' }).expect(404);
+
     await http.post(`/api/me/assistants/${created.body.id}/active`).set(auth()).send({ isActive: false }).expect(201);
-    await http.post('/api/auth/login').send({ email: 'asistente@hce-test.local', password: 'Asistente123!' }).expect(401);
+    await http.post('/api/auth/login').send({ email: 'asistente@hce-test.local', password: '7350' }).expect(401);
     const kept = await prisma.user.findUnique({ where: { id: created.body.id } });
     check('Asistente', 'desactivar no borra la cuenta', [kept?.isActive, !!kept], [false, true]);
+  });
+
+  it('la fecha REPS es informativa para el profesional: solo HABILISALUD la cambia', async () => {
+    const sa = { Authorization: `Bearer ${saToken}` };
+    await http.post('/api/me/reps-settings').set(auth()).send({ repsExpirationDate: '2030-01-15' }).expect(403);
+    await http.put('/api/me/reps-settings').set(auth()).send({ repsExpirationDate: '2030-01-15' }).expect(403);
+    const saved = await http.post(`/api/users/${professionalId}/reps`).set(sa).send({ repsExpirationDate: '2030-01-15' }).expect(201);
+    check('REPS', 'HABILISALUD guarda la fecha', saved.body.repsExpirationDate, '2030-01-15');
+    const seen = await http.get('/api/me/reps-settings').set(auth()).expect(200);
+    check('REPS', 'el profesional ve la fecha', seen.body.repsExpirationDate, '2030-01-15');
+    await http.post(`/api/users/${professionalId}/reps`).set(auth()).send({ repsExpirationDate: '2031-01-01' }).expect(403);
   });
 
   it('registro completo de psicología: guarda la ficha de ingreso sin duplicar ni borrar datos', async () => {

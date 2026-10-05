@@ -46,7 +46,7 @@ export class CreateStaffUserDto {
 
 export class ResetUserPasswordDto {
   @IsString()
-  @MinLength(8)
+  @MinLength(4)
   @MaxLength(72)
   password!: string;
 }

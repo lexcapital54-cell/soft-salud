@@ -9,12 +9,8 @@
     <app-clinic-switcher (switched)="onClinicSwitched()" />
   </header>
 
-  @if (isClinicAdmin()) {
-    <app-clinic-logo-settings />
-  }
-
   @if (canWriteClinical()) {
-    <app-assistants-card />
+    <app-assistants-card [isAdmin]="isClinicAdmin()" />
   }
 
   @if (canManageAccess()) {
@@ -121,40 +117,5 @@
       </div>
     </div>
   }
-
-  <div class="card">
-    <p class="eyebrow">Habilitación profesional</p>
-    <h2>Registro REPS</h2>
-    <p class="lead">
-      Indique la fecha de vencimiento de su inscripción en el
-      <strong>Registro Especial de Prestadores de Servicios de Salud (REPS)</strong>.
-      El sistema avisará a 60 y 30 días, y si ya está vencido.
-    </p>
-
-    <label class="field">
-      Fecha de vencimiento REPS
-      <input type="date" [(ngModel)]="repsExpirationDate" name="repsExpirationDate" />
-    </label>
-
-    @if (repsStatus()) {
-      <p class="reps-status" [class]="repsAlertLevel()">{{ repsStatus() }}</p>
-    }
-
-    @if (repsMessage()) {
-      <p class="ok">{{ repsMessage() }}</p>
-    }
-    @if (repsError()) {
-      <p class="err">{{ repsError() }}</p>
-    }
-
-    <button
-      type="button"
-      class="primary"
-      (click)="saveReps()"
-      [disabled]="savingReps()"
-    >
-      {{ savingReps() ? 'Guardando…' : 'Guardar fecha REPS' }}
-    </button>
-  </div>
 
 </section>

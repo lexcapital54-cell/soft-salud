@@ -34,6 +34,7 @@ export class PasswordAdminPage implements OnInit {
   filterRole: '' | StaffRole = '';
   selectedUserId = '';
   resetPassword = '';
+  repsDate = '';
   showCurrentPassword = signal(false);
   showResetPassword = signal(false);
 
@@ -61,6 +62,7 @@ export class PasswordAdminPage implements OnInit {
   onSelectUser(userId: string) {
     this.selectedUserId = userId;
     this.resetPassword = '';
+    this.repsDate = this.users().find((u) => u.id === userId)?.repsExpirationDate?.slice(0, 10) || '';
     this.showCurrentPassword.set(false);
     this.showResetPassword.set(false);
     this.error.set('');
@@ -96,7 +98,12 @@ export class PasswordAdminPage implements OnInit {
       this.error.set('Seleccione un usuario para cambiar la contraseña.');
       return;
     }
-    if (this.resetPassword.length < 8) {
+    if (target.role === 'RECEPTIONIST') {
+      if (!/^\d{4}$/.test(this.resetPassword)) {
+        this.error.set('La clave del asistente administrativo debe ser de 4 dígitos.');
+        return;
+      }
+    } else if (this.resetPassword.length < 8) {
       this.error.set('La nueva contraseña debe tener mínimo 8 caracteres.');
       return;
     }
@@ -116,6 +123,33 @@ export class PasswordAdminPage implements OnInit {
       error: (err) => {
         this.loading.set(false);
         this.error.set(err?.error?.message || 'No se pudo cambiar la contraseña.');
+      },
+    });
+  }
+
+  isProfessional(u: StaffUser) {
+    return u.role === 'ADMIN' || u.role === 'HEALTH_PROFESSIONAL';
+  }
+
+  saveReps() {
+    const target = this.selectedUser();
+    if (!target) return;
+    this.loading.set(true);
+    this.error.set('');
+    this.notice.set('');
+    this.api.setUserReps(target.id, this.repsDate || null).subscribe({
+      next: (res) => {
+        this.loading.set(false);
+        this.notice.set(
+          res.repsExpirationDate
+            ? `Fecha REPS de ${target.fullName} actualizada: ${res.repsExpirationDate}.`
+            : `Fecha REPS de ${target.fullName} eliminada.`,
+        );
+        this.reload();
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err?.error?.message || 'No se pudo guardar la fecha REPS.');
       },
     });
   }

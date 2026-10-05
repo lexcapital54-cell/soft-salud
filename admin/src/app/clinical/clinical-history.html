@@ -82,7 +82,7 @@
   @if (repsAlert(); as reps) {
     <p class="banner" [class.err]="reps.level === 'urgent'" [class.warn]="reps.level === 'warn'">
       {{ reps.message }}
-      <a routerLink="/consultorio/configuracion">Actualizar REPS →</a>
+      <small>Para actualizar la fecha, comuníquese con HABILISALUD.</small>
     </p>
   }
 

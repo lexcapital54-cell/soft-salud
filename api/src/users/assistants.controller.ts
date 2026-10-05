@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Req, UseGuards } from '@nestjs/common';
-import { IsBoolean, IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
@@ -16,9 +16,12 @@ class CreateAssistantDto {
   @IsEmail()
   email!: string;
 
-  @IsString()
-  @MinLength(8)
-  @MaxLength(72)
+  @Matches(/^\d{4}$/, { message: 'La clave del asistente debe ser de 4 dígitos.' })
+  password!: string;
+}
+
+class AssistantPinDto {
+  @Matches(/^\d{4}$/, { message: 'La clave del asistente debe ser de 4 dígitos.' })
   password!: string;
 }
 
@@ -51,5 +54,16 @@ export class AssistantsController {
     @Body() dto: AssistantActiveDto,
   ) {
     return this.users.setAssistantActive(req.user, id, dto.isActive);
+  }
+
+  /** Solo el administrador del consultorio cambia o restablece la clave (p. ej. por pérdida). */
+  @Post(':id/password')
+  @Roles(UserRole.ADMIN)
+  setPin(
+    @Req() req: { user: User },
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AssistantPinDto,
+  ) {
+    return this.users.setAssistantPin(req.user, id, dto.password);
   }
 }
