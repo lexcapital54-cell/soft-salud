@@ -21,6 +21,8 @@ import { PhysioIntakeHeader } from './physio/physio-intake-header';
 import { PhysioQuickAssessment } from './physio/physio-quick-assessment';
 import { PhysioTherapies } from './physio/physio-therapies';
 import { PhysioIcon } from './physio/physio-icons';
+import { PsychPatientExtras } from './psychology/psych-patient-extras';
+import type { PatientExtras } from './patient-extras';
 import { physioIntakeSummary } from './physio/physio-intake.summary';
 import { PHYSIO_MODULES, physioModuleStatus } from './physio/physio-nav';
 import { psychModuleList, psychModuleStatus } from './psychology/psych-nav';
@@ -361,6 +363,7 @@ function emptyContent(): ClinicalContent {
     PhysioQuickAssessment,
     PhysioTherapies,
     PhysioIcon,
+    PsychPatientExtras,
     OrthoFaceProportions,
     OrthoMovementPlan,
     OrthoArchAnalysis,
@@ -3621,6 +3624,18 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /** Guarda demografía del paciente (incl. profesión/ocupación) con el mismo debounce. */
+  /** Siempre un objeto: el formulario de extras lo edita en el sitio. */
+  patientExtras(): PatientExtras {
+    if (!this.patientForm.extras) this.patientForm.extras = {};
+    return this.patientForm.extras;
+  }
+
+  onPatientExtrasChanged() {
+    if (!this.canWrite()) return;
+    if (!(this.selectedPatientId || this.encounter()?.patient?.id)) return;
+    this.autosave.notifyPatientChange();
+  }
+
   onPatientFormInput(event: Event) {
     const target = event.target as HTMLElement;
     if (!target.matches('input, textarea, select')) return;
@@ -6259,6 +6274,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     if (f.guardianRelationship) payload.guardianRelationship = f.guardianRelationship;
     if (f.guardianPhone) payload.guardianPhone = f.guardianPhone;
     if (f.guardianEmail) payload.guardianEmail = f.guardianEmail;
+    if (f.extras && Object.keys(f.extras).length) payload.extras = f.extras;
     // La foto se gestiona por POST/DELETE /patients/:id/photo (no por URL).
 
     if (!Object.keys(payload).length) return of(null);

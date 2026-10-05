@@ -433,6 +433,63 @@ describe('Almacenamiento de la historia clínica (base de pruebas)', () => {
     check('RIPS', 'users.rips_enabled del profesional (desactivado por HABILISALUD)', pro?.ripsEnabled, false);
   });
 
+  it('registro completo de psicología: guarda la ficha de ingreso sin duplicar ni borrar datos', async () => {
+    await http.post('/api/patients/intake').set(auth()).send({ firstName: 'Sin', lastName: 'Documento' }).expect(400);
+
+    const first = await http.post('/api/patients/intake').set(auth()).send({
+      firstName: 'Laura Sofía',
+      lastName: 'Ingreso Prueba',
+      documentType: 'CC',
+      documentNumber: '9000000077',
+      birthDate: '1995-03-02',
+      sexAtBirth: 'Femenino',
+      maritalStatus: 'Soltero(a)',
+      city: 'Manizales',
+      department: 'Caldas',
+      address: 'Cra 23 # 45-10',
+      eps: 'EPS Pruebas',
+      regime: 'Contributivo',
+      extras: {
+        birthPlace: 'Pereira',
+        neighborhood: 'Chipre',
+        stratum: '3',
+        religion: 'Católica',
+        otherSpecialtyCare: ['Psiquiatría'],
+        otherSpecialtyDetail: 'Control mensual',
+        currentMedications: 'Sertralina 50 mg',
+      },
+    }).expect(201);
+    check('Ficha de ingreso', 'crea paciente nuevo', first.body.reused, false);
+    let row = await prisma.patient.findUnique({ where: { id: first.body.id } });
+    const extras = row?.extras as Record<string, unknown>;
+    check('Ficha de ingreso', 'patients.extras.birthPlace', extras.birthPlace, 'Pereira');
+    check('Ficha de ingreso', 'patients.extras.stratum', extras.stratum, '3');
+    check('Ficha de ingreso', 'patients.extras.otherSpecialtyCare', extras.otherSpecialtyCare, ['Psiquiatría']);
+    check('Ficha de ingreso', 'patients.regime', row?.regime, 'Contributivo');
+
+    const again = await http.post('/api/patients/intake').set(auth()).send({
+      firstName: 'Laura Sofía',
+      lastName: 'Ingreso Prueba',
+      documentType: 'CC',
+      documentNumber: '9000000077',
+      phone: '3001112233',
+      eps: '',
+      extras: { religion: 'Ninguna', neighborhood: '' },
+    }).expect(201);
+    check('Ficha de ingreso', 'reutiliza la ficha existente', [again.body.reused, again.body.id], [true, first.body.id]);
+    row = await prisma.patient.findUnique({ where: { id: first.body.id } });
+    const merged = row?.extras as Record<string, unknown>;
+    check('Ficha de ingreso', 'completa datos nuevos', [row?.phone, merged.religion], ['3001112233', 'Ninguna']);
+    check('Ficha de ingreso', 'no vacía datos previos', [row?.eps, merged.neighborhood, merged.currentMedications], ['EPS Pruebas', 'Chipre', 'Sertralina 50 mg']);
+    const count = await prisma.patient.count({ where: { clinicId, documentNumber: '9000000077' } });
+    check('Ficha de ingreso', 'una sola ficha por persona', count, 1);
+
+    await http.post(`/api/patients/${first.body.id}/update`).set(auth()).send({ extras: { stratum: '4' } }).expect(201);
+    row = await prisma.patient.findUnique({ where: { id: first.body.id } });
+    const updated = row?.extras as Record<string, unknown>;
+    check('Ficha de ingreso', 'la HC actualiza extras sin perder el resto', [updated.stratum, updated.birthPlace], ['4', 'Pereira']);
+  });
+
   describe('enlace de la consulta virtual', () => {
     const inDays = (d: number) => new Date(Date.now() + d * 86400000).toISOString();
 

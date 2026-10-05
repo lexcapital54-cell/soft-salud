@@ -22,6 +22,7 @@ import { User } from '../../users/user.entity';
 import {
   CreatePatientDto,
   DentalInstructionsDto,
+  IntakePatientDto,
   QuickPatientDto,
   UpdatePatientDto,
 } from './dto/patient.dto';
@@ -102,6 +103,12 @@ export class PatientsController {
   @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
   quickCreate(@Req() req: { user: User }, @Body() dto: QuickPatientDto) {
     return this.patientsService.quickCreate(req.user, dto);
+  }
+
+  @Post('intake')
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.RECEPTIONIST, UserRole.AUXILIAR)
+  intake(@Req() req: { user: User }, @Body() dto: IntakePatientDto) {
+    return this.patientsService.intake(req.user, dto);
   }
 
   @Patch(':id')

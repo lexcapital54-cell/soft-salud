@@ -13,6 +13,7 @@ import {
   TodayAppointment,
 } from './agenda.models';
 import { API } from '../api.config';
+import type { Patient } from '../clinical/clinical.models';
 
 /** Reintenta solo cuando el navegador no obtuvo respuesta (status 0). */
 function retryOnDisconnect<T>() {
@@ -62,6 +63,11 @@ export class AgendaApiService {
     documentNumber?: string;
   }) {
     return this.http.post<PatientOption>(`${API}/patients/quick`, body);
+  }
+
+  /** Alta completa (ficha de ingreso de psicología); reutiliza la ficha si ya existe. */
+  intakePatient(body: Partial<Patient>) {
+    return this.http.post<PatientOption>(`${API}/patients/intake`, body);
   }
 
   listProfessionals() {

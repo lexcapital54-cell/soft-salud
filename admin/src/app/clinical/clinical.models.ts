@@ -1,5 +1,6 @@
 import type { DentistryContent } from './dentistry/dentistry.models';
 import type { PhysioIntake } from './physio/physio-intake.models';
+import type { PatientExtras } from './patient-extras';
 
 export type CareModality = 'IN_PERSON' | 'VIRTUAL';
 export type DiagnosisType = 'PRINCIPAL' | 'RELATED' | 'IMPRESSION';
@@ -56,6 +57,7 @@ export interface Patient {
   guardianPhone?: string | null;
   guardianEmail?: string | null;
   photoUrl?: string | null;
+  extras?: PatientExtras | null;
   createdAt?: string;
   /** Ya tiene historia clínica abierta: la atención se anota como evolución. */
   hasClinicalHistory?: boolean;

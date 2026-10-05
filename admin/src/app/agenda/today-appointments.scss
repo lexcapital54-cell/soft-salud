@@ -1290,6 +1290,43 @@ select {
   color: #fff;
 }
 
+.intake-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.intake-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  border: 1px solid #d8e2e2;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #47656b;
+  cursor: pointer;
+}
+
+.intake-mode strong {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #003d4c;
+}
+
+.intake-mode span {
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.intake-mode.on {
+  border-color: #003d4c;
+  background: #eef6f7;
+  box-shadow: inset 0 0 0 1px #003d4c;
+}
+
 .picked-patient {
   display: flex;
   align-items: center;

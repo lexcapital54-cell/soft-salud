@@ -1322,6 +1322,14 @@
           </div>
           }
 
+          @if (isPsychologyClinic() && patientMode !== 'create') {
+            <app-psych-patient-extras
+              [extras]="patientExtras()"
+              [disabled]="!canWrite()"
+              (changed)="onPatientExtrasChanged()"
+            />
+          }
+
           <div class="patient-photo-box">
             <div class="patient-photo-frame">
               @if (patientPhotoSrc()) {

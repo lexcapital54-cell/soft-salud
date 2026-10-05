@@ -8,8 +8,11 @@ import {
 import { User } from '../../users/user.entity';
 import { PrismaService } from '../../prisma/prisma.module';
 import { EmailSmtpProvider } from '../notifications/notification-providers';
+import { Prisma } from '@prisma/client';
 import {
   CreatePatientDto,
+  IntakePatientDto,
+  PatientExtrasDto,
   QuickPatientDto,
   UpdatePatientDto,
 } from './dto/patient.dto';
@@ -29,6 +32,22 @@ const historyProbe = {
  * Marca si el paciente ya tiene historia clínica: la recepción necesita saber,
  * al agendar, que la atención se registrará como nota de evolución.
  */
+/** Combina sin perder claves previas: extras guarda datos de varios formularios. */
+function mergeExtras(
+  current: Prisma.JsonValue | null | undefined,
+  incoming: PatientExtrasDto | undefined,
+): Prisma.InputJsonValue | undefined {
+  if (!incoming) return undefined;
+  const base =
+    current && typeof current === 'object' && !Array.isArray(current)
+      ? (current as Record<string, unknown>)
+      : {};
+  const provided = Object.fromEntries(
+    Object.entries(incoming).filter(([, v]) => v !== undefined),
+  );
+  return { ...base, ...provided } as Prisma.InputJsonValue;
+}
+
 function withHistoryFlag<T extends { encounters: { id: string }[] }>(row: T) {
   const { encounters, ...patient } = row;
   return { ...patient, hasClinicalHistory: encounters.length > 0 };
@@ -218,6 +237,7 @@ export class PatientsService {
           guardianPhone: dto.guardianPhone,
           guardianEmail: dto.guardianEmail,
           photoUrl: dto.photoUrl,
+          extras: mergeExtras(null, dto.extras),
         },
       });
       return withProfileStatus(patient);
@@ -300,9 +320,51 @@ export class PatientsService {
           ? { guardianEmail: dto.guardianEmail }
           : {}),
         ...(dto.photoUrl !== undefined ? { photoUrl: dto.photoUrl } : {}),
+        ...(dto.extras !== undefined
+          ? { extras: mergeExtras(existing.extras, dto.extras) }
+          : {}),
       },
     });
     return withProfileStatus(updated);
+  }
+
+  /**
+   * Alta completa desde la agenda (ficha de ingreso de psicología). Si la
+   * persona ya existe se completa su ficha con lo diligenciado, sin vaciar
+   * datos previos, en vez de crear un duplicado.
+   */
+  async intake(user: User, dto: IntakePatientDto) {
+    const clinicId = this.requireClinicId(user);
+    if (!dto.documentType?.trim() || !dto.documentNumber?.trim()) {
+      throw new BadRequestException('Tipo y número de documento son obligatorios.');
+    }
+    const existing = await this.findByIdentity(
+      clinicId,
+      dto.firstName.trim(),
+      dto.lastName.trim(),
+      dto.documentNumber,
+    );
+    if (!existing) {
+      const created = await this.create(user, dto);
+      return { ...created, hasClinicalHistory: false, reused: false };
+    }
+
+    const filled: UpdatePatientDto = {};
+    for (const [key, value] of Object.entries(dto) as [keyof UpdatePatientDto, unknown][]) {
+      if (key === 'extras') continue;
+      if (typeof value === 'string' && value.trim()) {
+        (filled as Record<string, unknown>)[key] = value.trim();
+      }
+    }
+    if (dto.extras) {
+      filled.extras = Object.fromEntries(
+        Object.entries(dto.extras).filter(([, v]) =>
+          Array.isArray(v) ? v.length > 0 : typeof v === 'string' && v.trim() !== '',
+        ),
+      ) as PatientExtrasDto;
+    }
+    const updated = await this.update(user, existing.id, filled);
+    return { ...updated, hasClinicalHistory: existing.encounters.length > 0, reused: true };
   }
 
   async getForClinic(user: User, id: string) {

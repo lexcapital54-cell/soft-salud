@@ -1,0 +1,165 @@
+<div class="pi-backdrop" (click)="close()"></div>
+<section class="pi-dialog" role="dialog" aria-modal="true" aria-labelledby="piTitle">
+  <header class="pi-head">
+    <div>
+      <p class="pi-eyebrow">Psicología · Registro completo</p>
+      <h2 id="piTitle">Ficha de ingreso del paciente</h2>
+      <p class="pi-sub">Los campos con * son obligatorios. El resto se puede completar después en la historia clínica.</p>
+    </div>
+    <button type="button" class="pi-close" aria-label="Cerrar" (click)="close()">✕</button>
+  </header>
+
+  <div class="pi-body">
+    <fieldset class="pi-section">
+      <legend><span class="pi-num">1</span> Datos de identificación del paciente</legend>
+      <div class="pi-grid">
+        <label class="span-2">Nombres *
+          <input [(ngModel)]="form.firstName" placeholder="Nombres completos" autocomplete="off" />
+        </label>
+        <label class="span-2">Apellidos *
+          <input [(ngModel)]="form.lastName" placeholder="Apellidos completos" autocomplete="off" />
+        </label>
+        <label class="span-2">Tipo de documento *
+          <select [(ngModel)]="form.documentType" (ngModelChange)="touch()">
+            @for (t of documentTypes; track t.value) {
+              <option [value]="t.value">{{ t.label }}</option>
+            }
+          </select>
+        </label>
+        <label class="span-2">Número de documento *
+          <input [(ngModel)]="form.documentNumber" placeholder="1.020.304.050" autocomplete="off" />
+        </label>
+        <label class="span-2">Lugar de nacimiento
+          <input [(ngModel)]="extras.birthPlace" placeholder="Municipio / país" />
+        </label>
+        <label>Fecha de nacimiento
+          <input type="date" [(ngModel)]="form.birthDate" (ngModelChange)="touch()" />
+        </label>
+        <label>Edad
+          <input [value]="age() !== null ? age() + ' años' : '—'" readonly class="pi-readonly" />
+        </label>
+        <label>Sexo al nacer
+          <select [(ngModel)]="form.sexAtBirth">
+            <option value="">—</option>
+            <option>Femenino</option>
+            <option>Masculino</option>
+            <option>Intersexual</option>
+          </select>
+        </label>
+        <label>Profesión
+          <input [(ngModel)]="form.profession" placeholder="Ej. Docente" />
+        </label>
+        @if (!isMinor()) {
+          <label>Estado civil
+            <select [(ngModel)]="form.maritalStatus">
+              <option value="">—</option>
+              <option>Soltero(a)</option>
+              <option>Casado(a)</option>
+              <option>Unión libre</option>
+              <option>Divorciado(a)</option>
+              <option>Viudo(a)</option>
+            </select>
+          </label>
+        }
+        <label>Religión
+          <input [(ngModel)]="extras.religion" placeholder="Ej. Católica, ninguna…" />
+        </label>
+        <label>Departamento
+          <select [(ngModel)]="form.department" (ngModelChange)="onDepartmentChange()">
+            @for (d of departments(); track d.code) {
+              <option [value]="d.name">{{ d.name }}</option>
+            }
+          </select>
+        </label>
+        <label>Municipio de residencia
+          <select [(ngModel)]="form.city">
+            @for (m of municipalityOptions(); track m.code) {
+              <option [value]="m.name">{{ m.name }}</option>
+            }
+          </select>
+        </label>
+        <label>Barrio
+          <input [(ngModel)]="extras.neighborhood" placeholder="Barrio" />
+        </label>
+        <label>Estrato socioeconómico
+          <select [(ngModel)]="extras.stratum">
+            <option value="">—</option>
+            @for (s of stratumOptions; track s) {
+              <option [value]="s">Estrato {{ s }}</option>
+            }
+          </select>
+        </label>
+        <label class="span-4">Dirección completa
+          <input [(ngModel)]="form.address" placeholder="Calle, número, apto / casa" />
+        </label>
+        <label class="span-2">Celular del paciente (si cuenta con uno)
+          <input [(ngModel)]="form.phone" placeholder="300 123 4567" inputmode="tel" />
+        </label>
+        <label class="span-2">Correo electrónico (si cuenta con uno)
+          <input [(ngModel)]="form.email" placeholder="correo@email.com" inputmode="email" />
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset class="pi-section">
+      <legend><span class="pi-num">2</span> Información de salud</legend>
+      <div class="pi-grid">
+        <label class="span-2">EPS
+          <input [(ngModel)]="form.eps" placeholder="Nombre de la EPS" />
+        </label>
+        <label class="span-2">Régimen / tipo de vinculación
+          <select [(ngModel)]="form.regime">
+            <option value="">—</option>
+            <option>Contributivo</option>
+            <option>Subsidiado</option>
+            <option>Especial</option>
+            <option>Particular</option>
+          </select>
+        </label>
+      </div>
+
+      <p class="pi-question">¿Cuenta actualmente con atención o seguimiento por otra especialidad?</p>
+      <div class="pi-chips">
+        <button
+          type="button"
+          class="pi-chip pi-chip-none"
+          [class.on]="hasSpecialty(noOtherSpecialty)"
+          [attr.aria-pressed]="hasSpecialty(noOtherSpecialty)"
+          (click)="toggleSpecialty(noOtherSpecialty)"
+        >No cuenta con otra</button>
+        @for (s of specialtyOptions; track s) {
+          <button
+            type="button"
+            class="pi-chip"
+            [class.on]="hasSpecialty(s)"
+            [attr.aria-pressed]="hasSpecialty(s)"
+            (click)="toggleSpecialty(s)"
+          >{{ s }}</button>
+        }
+      </div>
+      @if (showSpecialtyDetail()) {
+        <label class="pi-full">Detalle (profesional, institución, motivo)
+          <input [(ngModel)]="extras.otherSpecialtyDetail" placeholder="Ej. Psiquiatría en Clínica San Marcel, control mensual" />
+        </label>
+      }
+
+      <label class="pi-full">Medicamentos que toma actualmente (si aplica)
+        <textarea
+          rows="3"
+          [(ngModel)]="extras.currentMedications"
+          placeholder="Nombre, dosis y frecuencia. Ej. Sertralina 50 mg cada mañana"
+        ></textarea>
+      </label>
+    </fieldset>
+  </div>
+
+  <footer class="pi-foot">
+    @if (error()) {
+      <p class="pi-error" role="alert">{{ error() }}</p>
+    }
+    <button type="button" class="pi-btn-ghost" [disabled]="saving()" (click)="close()">Cancelar</button>
+    <button type="button" class="pi-btn-primary" [disabled]="saving()" (click)="save()">
+      {{ saving() ? 'Registrando…' : 'Registrar y usar en la cita' }}
+    </button>
+  </footer>
+</section>

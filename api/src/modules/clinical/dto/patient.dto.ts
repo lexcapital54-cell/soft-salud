@@ -1,5 +1,8 @@
 import { PartialType } from '@nestjs/mapped-types';
+import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsDateString,
   IsEmail,
   IsIn,
@@ -7,7 +10,47 @@ import {
   IsString,
   MaxLength,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+
+/** Datos sin columna propia (ficha de ingreso de psicología); se guardan en Patient.extras. */
+export class PatientExtrasDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  birthPlace?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  neighborhood?: string;
+
+  @IsOptional()
+  @IsIn(['', '1', '2', '3', '4', '5', '6'])
+  stratum?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  religion?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(60, { each: true })
+  otherSpecialtyCare?: string[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  otherSpecialtyDetail?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  currentMedications?: string;
+}
 
 /** Registro rápido desde la agenda: lo mínimo para poder llamar al paciente. */
 export class QuickPatientDto {
@@ -202,9 +245,17 @@ export class CreatePatientDto {
   @IsOptional()
   @IsString()
   photoUrl?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PatientExtrasDto)
+  extras?: PatientExtrasDto;
 }
 
 export class UpdatePatientDto extends PartialType(CreatePatientDto) {}
+
+/** Alta completa desde la agenda (psicología); el servicio exige tipo y número de documento. */
+export class IntakePatientDto extends CreatePatientDto {}
 
 /** Plan de tratamiento o indicaciones odontológicas enviadas al paciente. */
 export class DentalInstructionsDto {

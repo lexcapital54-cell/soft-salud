@@ -15,6 +15,7 @@ import { UnsavedWorkService } from '../unsaved-work.service';
 import { AgendaApiService } from './agenda-api.service';
 import { AgendaMonth, monthGridRange, shiftMonth } from './agenda-month';
 import { ClinicSwitcher } from '../clinic-switcher';
+import { PsychIntakeDialog } from './psych-intake-dialog';
 import {
   AgendaCell,
   AgendaColumn,
@@ -103,7 +104,7 @@ function buildTimeOptions(fromMinutes: number, toMinutes: number) {
 
 @Component({
   selector: 'app-today-appointments',
-  imports: [FormsModule, RouterLink, DatePipe, ClinicSwitcher, AgendaMonth],
+  imports: [FormsModule, RouterLink, DatePipe, ClinicSwitcher, AgendaMonth, PsychIntakeDialog],
   templateUrl: './today-appointments.html',
   styleUrl: './today-appointments.scss',
 })
@@ -174,6 +175,10 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
   readonly patientSearching = signal(false);
   readonly selectedPatient = signal<PatientOption | null>(null);
   readonly creatingPatient = signal(false);
+  /** Psicología ofrece además el registro completo (ficha de ingreso). */
+  readonly isPsychology = computed(() => this.user()?.specialty === 'PSYCHOLOGY');
+  readonly newPatientMode = signal<'quick' | 'full'>('quick');
+  readonly showIntake = signal(false);
   patientQuery = '';
   newPatient = {
     firstName: '',
@@ -559,6 +564,8 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
 
   private openBooking() {
     this.patientTab.set('search');
+    this.newPatientMode.set('quick');
+    this.showIntake.set(false);
     this.patientQuery = '';
     this.patientResults.set([]);
     this.selectedPatient.set(null);
@@ -751,6 +758,18 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
 
   patientLabel(patient: PatientOption) {
     return `${patient.firstName} ${patient.lastName}`.replace(/\s+/g, ' ').trim();
+  }
+
+  onIntakeCreated(patient: PatientOption) {
+    this.showIntake.set(false);
+    this.selectedPatient.set(patient);
+    this.patientTab.set('search');
+    this.error.set('');
+    this.message.set(
+      patient.reused
+        ? `${this.patientLabel(patient)} ya estaba registrado: se completó su ficha con los datos nuevos.`
+        : `${this.patientLabel(patient)} quedó registrado con su ficha de ingreso completa.`,
+    );
   }
 
   /** Alta exprés: deja la ficha lista para agendar y la selecciona en el modal. */

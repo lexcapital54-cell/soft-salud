@@ -53,6 +53,13 @@
     </div>
   }
 
+  @if (showBooking() && showIntake()) {
+    <app-psych-intake-dialog
+      (created)="onIntakeCreated($event)"
+      (closed)="showIntake.set(false)"
+    />
+  }
+
   @if (showBooking()) {
     <div class="modal-backdrop" (click)="closeBooking()"></div>
     <div class="modal booking-modal" role="dialog" aria-label="Programar cita">
@@ -155,6 +162,41 @@
                 </p>
               }
             } @else {
+              @if (isPsychology()) {
+                <div class="intake-modes" role="radiogroup" aria-label="Tipo de registro">
+                  <button
+                    type="button"
+                    class="intake-mode"
+                    role="radio"
+                    [class.on]="newPatientMode() === 'quick'"
+                    [attr.aria-checked]="newPatientMode() === 'quick'"
+                    (click)="newPatientMode.set('quick')"
+                  >
+                    <strong>Registro rápido</strong>
+                    <span>Nombre, teléfono y cédula. Se completa en la consulta.</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="intake-mode"
+                    role="radio"
+                    [class.on]="newPatientMode() === 'full'"
+                    [attr.aria-checked]="newPatientMode() === 'full'"
+                    (click)="newPatientMode.set('full')"
+                  >
+                    <strong>Registro completo</strong>
+                    <span>Ficha de ingreso: identificación e información de salud.</span>
+                  </button>
+                </div>
+              }
+              @if (isPsychology() && newPatientMode() === 'full') {
+                <p class="muted small">
+                  Diligencie la ficha de ingreso: datos de identificación, residencia, EPS, otras
+                  especialidades y medicamentos. Si la persona ya existe se completa su ficha.
+                </p>
+                <button type="button" class="ghost full" (click)="showIntake.set(true)">
+                  Abrir ficha de ingreso completa
+                </button>
+              } @else {
               <p class="muted small">
                 Solo para pacientes nuevos. Si el nombre o la cédula ya existen se
                 reutiliza esa ficha en vez de crear una segunda.
@@ -189,6 +231,7 @@
               >
                 {{ creatingPatient() ? 'Registrando…' : 'Registrar paciente' }}
               </button>
+              }
             }
           }
         </section>
