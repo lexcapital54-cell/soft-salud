@@ -272,3 +272,23 @@ h4.ft-head {
   padding-bottom: 6px;
   border-bottom: 1px solid rgba(197, 155, 39, 0.45);
 }
+
+.intake-summary {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid #cfe2e4;
+  border-left: 4px solid #0b7285;
+  border-radius: 12px;
+  background: #f2fafa;
+  font-size: 0.88rem;
+  color: #1f3a40;
+}
+.intake-summary p { margin: 0 0 6px; }
+.intake-summary .intake-summary-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0b7285;
+  font-weight: 600;
+}
+.intake-summary a { color: #0b7285; font-size: 0.82rem; text-decoration: none; font-weight: 500; }

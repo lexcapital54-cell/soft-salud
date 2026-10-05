@@ -3659,6 +3659,17 @@
                 </label>
 
                 <h4>Antecedentes</h4>
+                @if (isPsychologyClinic() && intakeHealthSummary(); as intake) {
+                  <div class="intake-summary">
+                    <p class="intake-summary-title">Registrado en la ficha de ingreso</p>
+                    <p>
+                      <strong>Seguimiento por otra especialidad:</strong>
+                      {{ intake.specialties }}{{ intake.detail ? ' — ' + intake.detail : '' }}
+                    </p>
+                    <p><strong>Medicamentos actuales:</strong> {{ intake.medications }}</p>
+                    <a href="#odo-identificacion" (click)="$event.preventDefault(); scrollToOdo('odo-identificacion')">Editar en Identificación →</a>
+                  </div>
+                }
                 @if (content.careMinimum.antecedentFlags; as flags) {
                   <div class="antecedent-grid">
                     @for (

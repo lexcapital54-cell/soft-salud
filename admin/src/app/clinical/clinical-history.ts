@@ -22,7 +22,7 @@ import { PhysioQuickAssessment } from './physio/physio-quick-assessment';
 import { PhysioTherapies } from './physio/physio-therapies';
 import { PhysioIcon } from './physio/physio-icons';
 import { PsychPatientExtras } from './psychology/psych-patient-extras';
-import type { PatientExtras } from './patient-extras';
+import { NO_OTHER_SPECIALTY, type PatientExtras } from './patient-extras';
 import { physioIntakeSummary } from './physio/physio-intake.summary';
 import { PHYSIO_MODULES, physioModuleStatus } from './physio/physio-nav';
 import { psychModuleList, psychModuleStatus } from './psychology/psych-nav';
@@ -3624,6 +3624,19 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /** Guarda demografía del paciente (incl. profesión/ocupación) con el mismo debounce. */
+  /** Lo registrado al agendar (ficha de ingreso) que interesa en antecedentes. */
+  intakeHealthSummary() {
+    const e = this.patientForm.extras;
+    const care = e?.otherSpecialtyCare ?? [];
+    const meds = e?.currentMedications?.trim();
+    if (!care.length && !meds) return null;
+    return {
+      specialties: care.length ? care.join(', ') : 'Sin registrar',
+      detail: care.includes(NO_OTHER_SPECIALTY) ? '' : e?.otherSpecialtyDetail?.trim() || '',
+      medications: meds || 'Sin registrar',
+    };
+  }
+
   /** Siempre un objeto: el formulario de extras lo edita en el sitio. */
   patientExtras(): PatientExtras {
     if (!this.patientForm.extras) this.patientForm.extras = {};
