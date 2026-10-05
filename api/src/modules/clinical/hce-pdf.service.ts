@@ -39,6 +39,7 @@ import {
 } from './dentistry-labels';
 import { num } from '../billing/treatment-plan-items';
 import { physioIntakeSections } from './physio-intake.pdf';
+import { psychInfoTable, psychPatientRows } from './psych-intake.pdf';
 
 type EncounterPdfRow = Encounter & {
   patient: Patient;
@@ -333,8 +334,12 @@ export class HcePdfService {
             'Fecha digitación',
             fmt((content.documentedAt as string) || record?.createdAt),
           ],
-          ['Paciente', patientName],
-          ['Documento', `${patient.documentType} ${patient.documentNumber}`],
+          ...(isPsychology
+            ? []
+            : [
+                ['Paciente', patientName],
+                ['Documento', `${patient.documentType} ${patient.documentNumber}`],
+              ]),
           ['Profesional', encounter.professional.fullName],
           [
             'Tarjeta profesional',
@@ -355,6 +360,21 @@ export class HcePdfService {
         theme.title,
       ),
     ];
+
+    if (isPsychology) {
+      const rows = psychPatientRows(patient);
+      for (const [title, list] of [
+        ['Datos de identificación del paciente', rows.identification],
+        ['Información de salud', rows.health],
+      ] as const) {
+        const table = psychInfoTable([...list], theme.title);
+        if (!table) continue;
+        body.push(
+          { text: title, style: 'sectionTitle', alignment: 'center', margin: [0, 8, 0, 4] },
+          table,
+        );
+      }
+    }
 
     if (record?.noteFormat === ClinicalNoteFormat.SOAP) {
       const soap = (content.soap || {}) as Record<string, string>;
@@ -443,7 +463,7 @@ export class HcePdfService {
         ),
         this.section('Antecedentes', care.antecedents as string, theme.title),
         this.section(
-          'Revisión por sistemas',
+          isPsychology ? 'Historia psicosocial' : 'Revisión por sistemas',
           care.systemsReview as string,
           theme.title,
         ),
@@ -2037,6 +2057,8 @@ export class HcePdfService {
   ): Content {
     const value = (text || '').trim();
     if (!value) return { text: '' };
+    // Secciones cortas no se parten: el título nunca queda solo al pie de página.
+    const keepTogether = value.length < 700 && value.split('\n').length <= 12;
     if (options?.banded) {
       return {
         stack: [
@@ -2066,7 +2088,7 @@ export class HcePdfService {
             margin: [0, 0, 0, 6] as [number, number, number, number],
           },
         ],
-        unbreakable: false,
+        unbreakable: keepTogether,
       };
     }
     return {
@@ -2086,7 +2108,7 @@ export class HcePdfService {
           margin: [0, 0, 0, 6] as [number, number, number, number],
         },
       ],
-      unbreakable: false,
+      unbreakable: keepTogether,
     };
   }
 
