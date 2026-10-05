@@ -461,7 +461,7 @@ export class ClinicAccessService {
   roleLabel(role: string) {
     switch (role) {
       case UserRole.RECEPTIONIST:
-        return 'Secretaría';
+        return 'Asistente administrativo';
       case UserRole.HEALTH_PROFESSIONAL:
         return 'Profesional de salud';
       case UserRole.ADMIN:

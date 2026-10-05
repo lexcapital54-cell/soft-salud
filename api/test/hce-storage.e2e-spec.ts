@@ -433,6 +433,32 @@ describe('Almacenamiento de la historia clínica (base de pruebas)', () => {
     check('RIPS', 'users.rips_enabled del profesional (desactivado por HABILISALUD)', pro?.ripsEnabled, false);
   });
 
+  it('el profesional crea su asistente administrativo: agenda y recibos, sin historia clínica', async () => {
+    const created = await http.post('/api/me/assistants').set(auth()).send({
+      fullName: 'Asistente Prueba',
+      email: 'asistente@hce-test.local',
+      password: 'Asistente123!',
+    }).expect(201);
+    const row = await prisma.user.findUnique({ where: { id: created.body.id } });
+    check('Asistente', 'rol y consultorio', [row?.role, row?.clinicId], ['RECEPTIONIST', clinicId]);
+    check('Asistente', 'la respuesta no expone la contraseña', JSON.stringify(created.body).includes('Asistente123!'), false);
+
+    const login = await http.post('/api/auth/login').send({ email: 'asistente@hce-test.local', password: 'Asistente123!' }).expect(201);
+    const asis = { Authorization: `Bearer ${login.body.accessToken}` };
+    await http.get('/api/appointments/today').set(asis).expect(200);
+    await http.get('/api/billing/receipts').set(asis).expect(200);
+    await http.get(`/api/encounters/for-patient/${patientId}`).set(asis).expect(403);
+    await http.post('/api/me/assistants').set(asis).send({ fullName: 'Otro', email: 'otro@hce-test.local', password: 'Otro12345!' }).expect(403);
+
+    const list = await http.get('/api/me/assistants').set(auth()).expect(200);
+    check('Asistente', 'aparece en la lista del consultorio', list.body.map((a: { email: string }) => a.email), ['asistente@hce-test.local']);
+
+    await http.post(`/api/me/assistants/${created.body.id}/active`).set(auth()).send({ isActive: false }).expect(201);
+    await http.post('/api/auth/login').send({ email: 'asistente@hce-test.local', password: 'Asistente123!' }).expect(401);
+    const kept = await prisma.user.findUnique({ where: { id: created.body.id } });
+    check('Asistente', 'desactivar no borra la cuenta', [kept?.isActive, !!kept], [false, true]);
+  });
+
   it('registro completo de psicología: guarda la ficha de ingreso sin duplicar ni borrar datos', async () => {
     await http.post('/api/patients/intake').set(auth()).send({ firstName: 'Sin', lastName: 'Documento' }).expect(400);
 

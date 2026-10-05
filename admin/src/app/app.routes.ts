@@ -90,7 +90,7 @@ export const routes: Routes = [
   {
     path: 'consultorio/recibos',
     component: BillingDashboard,
-    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard],
+    canActivate: [authGuard, clinicStaffGuard],
   },
   // Rutas desconocidas: no mandar al login administrativo por defecto.
   { path: '**', redirectTo: 'login', pathMatch: 'full' },

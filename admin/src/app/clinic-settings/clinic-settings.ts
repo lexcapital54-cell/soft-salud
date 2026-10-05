@@ -5,6 +5,7 @@ import { AuthService } from '../auth.service';
 import { ClinicalApiService } from '../clinical/clinical-api.service';
 import { ClinicSwitcher } from '../clinic-switcher';
 import { ClinicLogoSettings } from './clinic-logo-settings';
+import { AssistantsCard } from './assistants-card';
 import { API, WEBSITE_URL } from '../api.config';
 
 type StaffRow = {
@@ -33,7 +34,7 @@ type DirectoryClinic = {
 
 @Component({
   selector: 'app-clinic-settings',
-  imports: [FormsModule, ClinicSwitcher, ClinicLogoSettings],
+  imports: [FormsModule, ClinicSwitcher, ClinicLogoSettings, AssistantsCard],
   templateUrl: './clinic-settings.html',
   styleUrl: './clinic-settings.scss',
 })
@@ -46,6 +47,7 @@ export class ClinicSettings {
   readonly user = this.auth.user;
   readonly canManageAccess = this.auth.canManageClinicAccess;
   readonly isClinicAdmin = this.auth.isClinicAdmin;
+  readonly canWriteClinical = this.auth.canWriteClinical;
   readonly savingReps = signal(false);
   readonly repsMessage = signal('');
   readonly repsError = signal('');

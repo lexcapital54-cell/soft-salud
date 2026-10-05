@@ -2,7 +2,7 @@
   <header class="topbar">
     <div class="topbar-left">
       @if (isReceptionist()) {
-        <strong>Agenda · Secretaría</strong>
+        <strong>Agenda · Asistente administrativo</strong>
       } @else {
         <a href="/consultorio.html">← Consultorio</a>
         <strong>Agenda del día</strong>
@@ -14,6 +14,9 @@
         [label]="isReceptionist() ? 'Doctora' : 'Sede'"
         (switched)="onClinicSwitched()"
       />
+      @if (isReceptionist() && billingEnabled()) {
+        <a class="ghost topbar-link" routerLink="/consultorio/recibos">Recibos de caja</a>
+      }
       @if (canManage()) {
         <button type="button" class="primary" (click)="toggleBooking()">
           {{ showBooking() ? 'Cerrar' : 'Nueva cita' }}

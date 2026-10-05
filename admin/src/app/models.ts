@@ -47,7 +47,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   SUPER_ADMIN: 'Superadmin',
   ADMIN: 'Administrador',
   HEALTH_PROFESSIONAL: 'Profesional de salud',
-  RECEPTIONIST: 'Secretaría',
+  RECEPTIONIST: 'Asistente administrativo',
   AUDITOR: 'Auditor',
   AUXILIAR: 'Auxiliar',
 };

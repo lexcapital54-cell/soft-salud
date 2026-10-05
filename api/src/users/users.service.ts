@@ -93,7 +93,7 @@ export class UsersService {
   async createStaffUser(dto: CreateStaffUserDto) {
     if (!(STAFF_CREATABLE_ROLES as readonly UserRole[]).includes(dto.role)) {
       throw new BadRequestException(
-        'Rol no permitido. Use ADMIN, HEALTH_PROFESSIONAL, RECEPTIONIST o AUDITOR.',
+        'Rol no permitido. Use ADMIN, HEALTH_PROFESSIONAL, RECEPTIONIST, AUXILIAR o AUDITOR.',
       );
     }
 
@@ -127,6 +127,62 @@ export class UsersService {
     const saved = await this.usersRepository.save(user);
     saved.clinic = clinic;
     return this.toStaffUser(saved);
+  }
+
+  /** Asistentes administrativos (rol RECEPTIONIST) del consultorio activo de quien consulta. */
+  async listAssistants(requester: User) {
+    const clinicId = this.requireClinic(requester);
+    const users = await this.usersRepository.find({
+      where: { role: UserRole.RECEPTIONIST, clinicId },
+      order: { createdAt: 'DESC' },
+    });
+    return users.map((u) => this.toAssistant(u));
+  }
+
+  async createAssistant(requester: User, dto: { fullName: string; email: string; password: string }) {
+    const clinicId = this.requireClinic(requester);
+    const created = await this.createStaffUser({
+      clinicId,
+      fullName: dto.fullName,
+      email: dto.email,
+      password: dto.password,
+      role: UserRole.RECEPTIONIST,
+    });
+    return {
+      id: created.id,
+      fullName: created.fullName,
+      email: created.email,
+      isActive: created.isActive,
+      createdAt: created.createdAt,
+    };
+  }
+
+  /** Desactivar no borra la cuenta: solo impide el ingreso. */
+  async setAssistantActive(requester: User, id: string, isActive: boolean) {
+    const clinicId = this.requireClinic(requester);
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user || user.role !== UserRole.RECEPTIONIST || user.clinicId !== clinicId) {
+      throw new NotFoundException('Asistente no encontrado en este consultorio');
+    }
+    user.isActive = isActive;
+    return this.toAssistant(await this.usersRepository.save(user));
+  }
+
+  private requireClinic(requester: User) {
+    if (!requester.clinicId) {
+      throw new BadRequestException('Su usuario no tiene consultorio asignado');
+    }
+    return requester.clinicId;
+  }
+
+  private toAssistant(u: User) {
+    return {
+      id: u.id,
+      fullName: u.fullName,
+      email: u.email,
+      isActive: u.isActive,
+      createdAt: u.createdAt,
+    };
   }
 
   async resetPassword(userId: string, password: string) {

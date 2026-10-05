@@ -48,7 +48,7 @@ export const clinicStaffGuard: CanActivateFn = () => {
 };
 
 /**
- * Secretaría solo agenda: bloquea pacientes, HCE, config, docs, etc.
+ * Asistente administrativo: solo agenda y recibos; bloquea pacientes, HCE, config, docs, etc.
  * Redirige a /consultorio/agenda.
  */
 export const agendaOnlyGuard: CanActivateFn = () => {

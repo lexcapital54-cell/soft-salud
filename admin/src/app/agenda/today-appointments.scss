@@ -32,6 +32,18 @@ button {
   padding: 9px 15px;
 }
 
+a.topbar-link {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #0d7377;
+  background: #fff;
+  color: #0d7377;
+  padding: 9px 15px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
 button.primary {
   background: #003d4c;
   border-color: #003d4c;

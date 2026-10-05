@@ -13,19 +13,23 @@
     <app-clinic-logo-settings />
   }
 
+  @if (canWriteClinical()) {
+    <app-assistants-card />
+  }
+
   @if (canManageAccess()) {
   <div class="card">
     <p class="eyebrow">Operación multi-sede</p>
     <h2>Acceso a sedes</h2>
     <p class="lead">
-      Asigne a su <strong>Secretaría</strong> (y al personal) las sedes físicas que pueden
+      Asigne a su <strong>asistente administrativo</strong> (y al personal) las sedes físicas que pueden
       gestionar. Al cambiar de sede en el selector, ven agenda y pacientes de esa ubicación.
     </p>
 
     <h3 class="subhead">Vincular otra sede a su cuenta</h3>
     <p class="muted small">
       Primero vincule la segunda ubicación a usted como administrador; luego podrá
-      asignársela a la secretaría.
+      asignársela al asistente administrativo.
     </p>
     <div class="row-inline">
       <select [(ngModel)]="linkClinicId" name="linkClinicId">

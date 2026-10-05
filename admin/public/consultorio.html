@@ -323,7 +323,7 @@
     <p class="meta" id="specialty">Especialidad: —</p>
     <p class="dashboard-type" id="plan">Plan activo: —</p>
     <p class="meta" id="secretariaHint" hidden>
-      Perfil Secretaría: use el selector <strong>Doctora</strong> para cambiar entre agendas
+      Perfil Asistente administrativo: use el selector <strong>Doctora</strong> para cambiar entre agendas
       y programar citas. Si una doctora bloquea el día o una franja, verá el aviso en Agenda.
     </p>
 
@@ -382,6 +382,11 @@
         <p>Cada vez que se registra un pago, aquí queda una copia del recibo de caja.</p>
         <ul id="receiptsList"></ul>
       </dialog>
+      <a class="module" id="assistantsMod" href="/consultorio/configuracion?seccion=asistentes" hidden>
+        <h2>Asistente administrativo</h2>
+        <p>Cree la cuenta de su asistente: maneja la agenda y los recibos de caja, sin acceso a historias clínicas.</p>
+        <span class="cta">Gestionar asistentes →</span>
+      </a>
       <a class="module" id="billing" href="/consultorio/recibos" hidden>
         <h2>Recibos de caja</h2>
         <p>Cobros, gastos, paquetes de sesiones y cierre diario de caja del consultorio.</p>
@@ -446,7 +451,7 @@
 
       var isSecretaria = user.role === 'RECEPTIONIST';
       if (isSecretaria) {
-        // Secretaría: solo agenda (también por URL directa a otros módulos).
+        // Asistente administrativo: entra a la agenda (desde allí abre recibos de caja).
         location.replace('/consultorio/agenda?_=' + Date.now());
         return;
       }
@@ -461,6 +466,7 @@
       }
 
       var canWriteClinical = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
+      document.getElementById('assistantsMod').hidden = !canWriteClinical;
       if (!canWriteClinical) {
         var pdfMod = document.getElementById('hcePdf');
         if (pdfMod) pdfMod.hidden = true;

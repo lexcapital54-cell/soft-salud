@@ -1,6 +1,10 @@
 <header class="top">
   <div>
-    <a routerLink="/consultorio" class="back">← Consultorio</a>
+    @if (isReceptionist()) {
+      <a routerLink="/consultorio/agenda" class="back">← Agenda</a>
+    } @else {
+      <a routerLink="/consultorio" class="back">← Consultorio</a>
+    }
     <h1>Recibos de caja</h1>
     <p class="muted">Ingresos, gastos, paquetes de sesiones y cierre diario.</p>
   </div>

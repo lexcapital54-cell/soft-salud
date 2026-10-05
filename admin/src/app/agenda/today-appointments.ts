@@ -177,6 +177,10 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
   readonly creatingPatient = signal(false);
   /** Psicología ofrece además el registro completo (ficha de ingreso). */
   readonly isPsychology = computed(() => this.user()?.specialty === 'PSYCHOLOGY');
+  /** Mismas especialidades que muestran «Recibos de caja» en el dashboard. */
+  readonly billingEnabled = computed(() =>
+    ['PSYCHOLOGY', 'PHYSIOTHERAPY', 'DENTISTRY', 'ORTHODONTICS'].includes(this.user()?.specialty ?? ''),
+  );
   readonly newPatientMode = signal<'quick' | 'full'>('quick');
   readonly showIntake = signal(false);
   patientQuery = '';

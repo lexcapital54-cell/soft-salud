@@ -28,6 +28,7 @@ export class BillingDashboard implements OnInit {
   private readonly clinical = inject(ClinicalApiService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
+  readonly isReceptionist = this.auth.isReceptionist;
 
   readonly tab = signal<Tab>('recibos');
   readonly loading = signal(false);
