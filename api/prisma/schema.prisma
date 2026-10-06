@@ -16,6 +16,8 @@ enum UserRole {
   RECEPTIONIST
   AUDITOR
   AUXILIAR
+  /// Equipo comercial de HABILISALUD: solo consulta los consultorios demo.
+  COMMERCIAL
 
   @@map("users_role_enum")
 }

@@ -37,9 +37,9 @@ export class DemoService {
     @InjectRepository(User) private readonly usersRepository: Repository<User>,
   ) {}
 
-  async list() {
+  async list(activeOnly = false) {
     const clinics = await this.prisma.clinic.findMany({
-      where: { isDemo: true },
+      where: { isDemo: true, ...(activeOnly ? { isActive: true } : {}) },
       orderBy: { createdAt: 'asc' },
       include: {
         users: {

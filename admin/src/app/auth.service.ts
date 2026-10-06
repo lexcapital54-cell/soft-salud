@@ -14,6 +14,7 @@ export class AuthService {
   readonly user = this.userSignal.asReadonly();
   readonly isLoggedIn = computed(() => !!this.userSignal());
   readonly isSuperAdmin = computed(() => this.userSignal()?.role === 'SUPER_ADMIN');
+  readonly isCommercial = computed(() => this.userSignal()?.role === 'COMMERCIAL');
   readonly isClinicAdmin = computed(() => this.userSignal()?.role === 'ADMIN');
   readonly isClinicStaff = computed(() => {
     const role = this.userSignal()?.role;

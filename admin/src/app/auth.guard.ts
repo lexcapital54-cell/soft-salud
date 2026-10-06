@@ -27,6 +27,20 @@ export const superAdminGuard: CanActivateFn = () => {
   if (auth.isSuperAdmin()) {
     return true;
   }
+  if (auth.isCommercial()) {
+    return router.parseUrl('/admin/demos');
+  }
+  if (auth.isClinicStaff()) {
+    window.location.replace(`/consultorio.html?_=${Date.now()}`);
+    return false;
+  }
+  return goAdminLogin();
+};
+
+/** Consultorios demo: HABILISALUD los gestiona y el equipo comercial solo los consulta. */
+export const demosGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  if (auth.isSuperAdmin() || auth.isCommercial()) return true;
   if (auth.isClinicStaff()) {
     window.location.replace(`/consultorio.html?_=${Date.now()}`);
     return false;

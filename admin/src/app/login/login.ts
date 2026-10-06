@@ -93,6 +93,10 @@ export class Login {
           return;
         }
 
+        if (res.user.role === 'COMMERCIAL') {
+          window.location.replace('/admin/demos');
+          return;
+        }
         if (res.user.role !== 'SUPER_ADMIN') {
           this.auth.logout();
           this.error.set(

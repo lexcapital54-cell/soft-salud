@@ -42,10 +42,10 @@
     <div class="card">
       <p class="eyebrow">Acceso administrativo</p>
       <h1>Iniciar sesión</h1>
-      <p class="hint">Solo superusuario HABILISALUD (creación de consultorios).</p>
+      <p class="hint">Superusuario y equipo comercial de HABILISALUD.</p>
       <form id="form">
         <label>Correo <input id="email" type="email" autocomplete="username" required /></label>
-        <label>Contraseña <input id="password" type="password" autocomplete="current-password" required minlength="6" /></label>
+        <label>Contraseña <input id="password" type="password" autocomplete="current-password" required minlength="4" /></label>
         <p class="error" id="error" hidden></p>
         <button type="submit" id="btn">Entrar</button>
       </form>
@@ -74,14 +74,15 @@
           });
           var data = await res.json().catch(function () { return {}; });
           if (!res.ok) throw new Error((data && data.message) || 'Credenciales inválidas.');
-          if (!data.user || data.user.role !== 'SUPER_ADMIN') {
+          var role = data.user && data.user.role;
+          if (role !== 'SUPER_ADMIN' && role !== 'COMMERCIAL') {
             localStorage.removeItem('habilisalud_token');
             localStorage.removeItem('habilisalud_user');
             throw new Error('Este acceso es solo para superadmin. Use el ingreso del profesional.');
           }
           localStorage.setItem('habilisalud_token', data.accessToken);
           localStorage.setItem('habilisalud_user', JSON.stringify(data.user));
-          location.replace('/admin?_=' + Date.now());
+          location.replace((role === 'COMMERCIAL' ? '/admin/demos' : '/admin') + '?_=' + Date.now());
         } catch (ex) {
           err.textContent = (ex && ex.message) || 'No se pudo iniciar sesión.';
           err.hidden = false;

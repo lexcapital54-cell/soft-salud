@@ -26,4 +26,5 @@ ALTER TABLE clinics ALTER COLUMN id SET DEFAULT gen_random_uuid();
 ALTER TABLE clinics ALTER COLUMN updated_at SET DEFAULT now();
 ALTER TABLE user_clinic_access ALTER COLUMN id SET DEFAULT gen_random_uuid();
 SQL
+docker exec -i "$NAME" psql -q -v ON_ERROR_STOP=1 -U postgres -d habilisalud_test < prisma/migrations/20261011_commercial_user/migration.sql
 npx jest --config ./test/jest-e2e.json --runInBand test/hce-storage.e2e-spec.ts "$@"

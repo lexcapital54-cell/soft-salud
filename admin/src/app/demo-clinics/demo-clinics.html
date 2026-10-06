@@ -2,13 +2,15 @@
   <aside>
     <div>
       <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()">HABILISALUD</a>
-      <p class="role">Superadmin</p>
+      <p class="role">{{ readOnly() ? 'Comercial' : 'Superadmin' }}</p>
     </div>
     <nav>
-      <a routerLink="/admin">Administración</a>
-      <a routerLink="/admin/contrasenas">Contraseñas</a>
-      <a routerLink="/admin/ingresos">Recibos de caja</a>
-      <a routerLink="/admin/documentos">Documentos</a>
+      @if (!readOnly()) {
+        <a routerLink="/admin">Administración</a>
+        <a routerLink="/admin/contrasenas">Contraseñas</a>
+        <a routerLink="/admin/ingresos">Recibos de caja</a>
+        <a routerLink="/admin/documentos">Documentos</a>
+      }
       <a class="active">Consultorios demo</a>
     </nav>
     <div class="session">
@@ -40,6 +42,7 @@
       <p class="error">{{ error() }}</p>
     }
 
+    @if (!readOnly()) {
     <section class="card demo-create">
       <h2>Crear demo</h2>
       <div class="demo-create-row">
@@ -64,6 +67,7 @@
         <p class="hint">Preparando {{ specialtyLabel(s) }}: pacientes, agenda e historias firmadas…</p>
       }
     </section>
+    }
 
     @if (loading() && !demos().length) {
       <p class="empty">Cargando…</p>
@@ -101,9 +105,11 @@
 
           <div class="demo-actions">
             <button type="button" class="ghost compact" (click)="copyAccess(demo)">Copiar accesos</button>
-            <button type="button" class="ghost compact" (click)="toggleActive(demo)">
-              {{ demo.isActive ? 'Desactivar' : 'Reactivar' }}
-            </button>
+            @if (!readOnly()) {
+              <button type="button" class="ghost compact" (click)="toggleActive(demo)">
+                {{ demo.isActive ? 'Desactivar' : 'Reactivar' }}
+              </button>
+            }
           </div>
         </article>
       }

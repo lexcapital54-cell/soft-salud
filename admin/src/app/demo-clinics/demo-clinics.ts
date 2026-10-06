@@ -35,6 +35,8 @@ export class DemoClinicsPage implements OnInit {
 
   readonly websiteUrl = WEBSITE_URL;
   readonly user = this.auth.user;
+  /** El equipo comercial solo consulta: no crea ni desactiva demos. */
+  readonly readOnly = this.auth.isCommercial;
   readonly loginUrl = location.origin + LOGIN_PATH;
   readonly specialties = Object.entries(SPECIALTY_LABELS) as [ClinicSpecialty, string][];
 

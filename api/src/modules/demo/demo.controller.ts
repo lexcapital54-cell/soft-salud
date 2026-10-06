@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Req, UseGuards } from '@nestjs/common';
 import { ClinicSpecialty } from '@prisma/client';
 import { IsBoolean, IsEnum } from 'class-validator';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 import { UserRole } from '../../common/enums';
+import { User } from '../../users/user.entity';
 import { DemoService } from './demo.service';
 
 class CreateDemoDto {
@@ -17,7 +18,7 @@ class DemoActiveDto {
   isActive: boolean;
 }
 
-/** Consultorios de demostración comercial; solo HABILISALUD. */
+/** Consultorios de demostración comercial: HABILISALUD los gestiona; el equipo comercial solo los consulta. */
 @Controller('admin/demos')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.SUPER_ADMIN)
@@ -25,8 +26,9 @@ export class DemoController {
   constructor(private readonly demos: DemoService) {}
 
   @Get()
-  list() {
-    return this.demos.list();
+  @Roles(UserRole.SUPER_ADMIN, UserRole.COMMERCIAL)
+  list(@Req() req: { user: User }) {
+    return this.demos.list(req.user.role === UserRole.COMMERCIAL);
   }
 
   @Post()

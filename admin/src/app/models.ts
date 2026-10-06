@@ -4,7 +4,8 @@ export type UserRole =
   | 'HEALTH_PROFESSIONAL'
   | 'RECEPTIONIST'
   | 'AUDITOR'
-  | 'AUXILIAR';
+  | 'AUXILIAR'
+  | 'COMMERCIAL';
 
 export type ClinicSpecialty =
   | 'PSYCHOLOGY'
@@ -50,6 +51,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   RECEPTIONIST: 'Asistente administrativo',
   AUDITOR: 'Auditor',
   AUXILIAR: 'Auxiliar',
+  COMMERCIAL: 'Comercial',
 };
 
 export interface ClinicAdmin {

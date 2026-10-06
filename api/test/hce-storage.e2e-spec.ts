@@ -527,6 +527,18 @@ describe('Almacenamiento de la historia clínica (base de pruebas)', () => {
     const pro = first.users.find((u: { role: string }) => u.role === 'ADMIN');
     await http.post('/api/auth/login').send({ email: pro.email, password: pro.password }).expect(401);
     await http.post(`/api/admin/demos/${clinicId}/active`).set(sa).send({ isActive: false }).expect(404);
+
+    const com = await http.post('/api/auth/login').send({ email: 'comercial@habilisalud.com', password: '2020' }).expect(201);
+    check('Comercial', 'rol del usuario comercial', com.body.user.role, 'COMMERCIAL');
+    const comAuth = { Authorization: `Bearer ${com.body.accessToken}` };
+    const seen = await http.get('/api/admin/demos').set(comAuth).expect(200);
+    check('Comercial', 've solo las demos activas', seen.body.length, 5);
+    check('Comercial', 've los accesos de cada demo', seen.body.every((d: { users: unknown[] }) => d.users.length === 2), true);
+    await http.post('/api/admin/demos').set(comAuth).send({ specialty: 'PSYCHOLOGY' }).expect(403);
+    await http.post(`/api/admin/demos/${seen.body[0].id}/active`).set(comAuth).send({ isActive: false }).expect(403);
+    await http.get('/api/clinics').set(comAuth).expect(403);
+    await http.get('/api/users/staff').set(comAuth).expect(403);
+    await http.get('/api/patients').set(comAuth).expect((r) => expect([400, 403]).toContain(r.status));
   }, 120000);
 
   it('registro completo de psicología: guarda la ficha de ingreso sin duplicar ni borrar datos', async () => {

@@ -9,6 +9,7 @@ import {
   documentsReadGuard,
   guestGuard,
   superAdminGuard,
+  demosGuard,
 } from './auth.guard';
 import { TodayAppointmentsDashboard } from './agenda/today-appointments';
 import { HceExport } from './clinical/hce-export';
@@ -49,7 +50,7 @@ export const routes: Routes = [
   {
     path: 'admin/demos',
     component: DemoClinicsPage,
-    canActivate: [authGuard, superAdminGuard],
+    canActivate: [authGuard, demosGuard],
   },
   // Redirect old users module URL
   { path: 'admin/usuarios', redirectTo: 'admin/contrasenas', pathMatch: 'full' },
