@@ -26,7 +26,7 @@ const HOUR = 60 * 60 * 1000;
 
 const appointmentInclude = {
   patient: true,
-  clinic: { select: { id: true, name: true, address: true } },
+  clinic: { select: { id: true, name: true, address: true, isDemo: true } },
   professional: { select: { id: true, fullName: true } },
 } satisfies Prisma.AppointmentInclude;
 
@@ -223,6 +223,7 @@ export class NotificationsService {
     },
   ) {
     if (!appointment.patientId || !appointment.patient) return false;
+    if (appointment.clinic.isDemo) return false;
     const recipient = this.resolveRecipient(appointment, channel);
     if (!recipient) return false;
 

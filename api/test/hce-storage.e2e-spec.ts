@@ -481,6 +481,54 @@ describe('Almacenamiento de la historia clínica (base de pruebas)', () => {
     await http.post(`/api/users/${professionalId}/reps`).set(auth()).send({ repsExpirationDate: '2031-01-01' }).expect(403);
   });
 
+  it('consultorios demo: HABILISALUD los crea con historias firmadas y quedan aislados', async () => {
+    const sa = { Authorization: `Bearer ${saToken}` };
+    await http.get('/api/admin/demos').set(auth()).expect(403);
+    const specialties = ['PSYCHOLOGY', 'PHYSIOTHERAPY', 'DENTISTRY', 'ORTHODONTICS', 'MEDICINE', 'AESTHETIC'];
+    const outDir = process.env.DEMO_PDF_DIR;
+    if (outDir) fs.mkdirSync(outDir, { recursive: true });
+    for (const specialty of specialties) {
+      const demo = await http.post('/api/admin/demos').set(sa).send({ specialty }).expect(201);
+      check('Demo', `${specialty}: pacientes / historias firmadas`, [demo.body.patients, demo.body.signedRecords], [4, 2]);
+      check('Demo', `${specialty}: citas de hoy`, demo.body.appointmentsToday, 4);
+      const pro = demo.body.users.find((u: { role: string }) => u.role === 'ADMIN');
+      const asis = demo.body.users.find((u: { role: string }) => u.role === 'RECEPTIONIST');
+      check('Demo', `${specialty}: clave del asistente de 4 dígitos`, /^\d{4}$/.test(asis?.password ?? ''), true);
+      const login = await http.post('/api/auth/login').send({ email: pro.email, password: pro.password }).expect(201);
+      const demoAuth = { Authorization: `Bearer ${login.body.accessToken}` };
+      const records = await prisma.clinicalRecord.findMany({
+        where: { encounter: { clinicId: demo.body.id }, status: 'SIGNED' },
+        include: { evolutions: true },
+      });
+      for (const [i, rec] of records.entries()) {
+        const pdf = await http.get(`/api/clinical-exports/${rec.encounterId}/pdf`).set(demoAuth).buffer(true)
+          .parse((res, cb) => { const parts: Buffer[] = []; res.on('data', (c: Buffer) => parts.push(c)); res.on('end', () => cb(null, Buffer.concat(parts))); })
+          .expect(200);
+        check('Demo', `${specialty}: PDF de la historia ${i + 1}`, (pdf.body as Buffer).subarray(0, 4).toString(), '%PDF');
+        if (outDir) fs.writeFileSync(path.join(outDir, `${specialty}-${i + 1}.pdf`), pdf.body as Buffer);
+      }
+      const signedConsents = await prisma.patientConsent.count({ where: { clinicId: demo.body.id } });
+      if (['PSYCHOLOGY', 'PHYSIOTHERAPY'].includes(specialty)) {
+        check('Demo', `${specialty}: consentimientos firmados`, signedConsents, 2);
+      }
+      const logs = await prisma.notificationLog.count({ where: { clinicId: demo.body.id } });
+      check('Demo', `${specialty}: sin mensajes a pacientes`, logs, 0);
+    }
+    const evolutions = await prisma.clinicalEvolution.count({ where: { clinicalRecord: { encounter: { clinic: { isDemo: true } } } } });
+    check('Demo', 'evoluciones de ejemplo (psicología, fisioterapia, medicina)', evolutions, 3);
+    const real = await http.get('/api/clinics').set(sa).expect(200);
+    check('Demo', 'no aparecen en la lista de consultorios reales', real.body.some((c: { name: string }) => c.name.startsWith('Demo ')), false);
+    const staff = await http.get('/api/users/staff').set(sa).expect(200);
+    check('Demo', 'sus usuarios no aparecen en Contraseñas', staff.body.some((u: { email: string }) => u.email.endsWith('@habilisalud.demo')), false);
+    const list = await http.get('/api/admin/demos').set(sa).expect(200);
+    check('Demo', 'el módulo lista las 6 demos', list.body.length, 6);
+    const first = list.body[0];
+    await http.post(`/api/admin/demos/${first.id}/active`).set(sa).send({ isActive: false }).expect(201);
+    const pro = first.users.find((u: { role: string }) => u.role === 'ADMIN');
+    await http.post('/api/auth/login').send({ email: pro.email, password: pro.password }).expect(401);
+    await http.post(`/api/admin/demos/${clinicId}/active`).set(sa).send({ isActive: false }).expect(404);
+  }, 120000);
+
   it('registro completo de psicología: guarda la ficha de ingreso sin duplicar ni borrar datos', async () => {
     await http.post('/api/patients/intake').set(auth()).send({ firstName: 'Sin', lastName: 'Documento' }).expect(400);
 

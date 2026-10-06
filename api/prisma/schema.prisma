@@ -326,6 +326,8 @@ model Clinic {
   /// Código de habilitación del prestador en el REPS.
   habilitationCode String?      @map("habilitation_code") @db.VarChar(20)
   isActive      Boolean         @default(true) @map("is_active")
+  /// Consultorio de demostración comercial: datos ficticios, sin cobros ni avisos a pacientes.
+  isDemo        Boolean         @default(false) @map("is_demo")
   /// Periodo de arrendamiento pendiente (YYYY-MM-01). Null si está al día.
   hostingPeriodDue    DateTime? @map("hosting_period_due") @db.Date
   /// Si no es null, el consultorio está suspendido por falta de pago de arrendamiento.

@@ -44,6 +44,9 @@ export class Clinic {
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
+  @Column({ name: 'is_demo', default: false })
+  isDemo: boolean;
+
   @Column({ name: 'hosting_period_due', type: 'date', nullable: true })
   hostingPeriodDue: Date | null;
 

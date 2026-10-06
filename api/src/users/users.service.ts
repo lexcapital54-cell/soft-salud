@@ -56,7 +56,7 @@ export class UsersService {
       relations: { clinic: true },
       order: { createdAt: 'DESC' },
     });
-    return users.map(toPublicUser);
+    return users.filter((u) => !u.clinic?.isDemo).map(toPublicUser);
   }
 
   /** Lista usuarios de consultorio (admin, profesional, recepción, auditor). */
@@ -77,7 +77,7 @@ export class UsersService {
       relations: { clinic: true },
       order: { createdAt: 'DESC' },
     });
-    return users.map((u) => this.toStaffUser(u));
+    return users.filter((u) => !u.clinic?.isDemo).map((u) => this.toStaffUser(u));
   }
 
   async createClinicAdmin(dto: CreateClinicAdminDto) {

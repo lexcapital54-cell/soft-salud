@@ -251,7 +251,7 @@ export class PlatformBillingService {
     const period = periodLabel(periodMonth)!;
 
     const clinics = await this.prisma.clinic.findMany({
-      where: { dashboardType: { not: null } },
+      where: { dashboardType: { not: null }, isDemo: false },
       select: {
         id: true,
         name: true,
@@ -449,6 +449,7 @@ export class PlatformBillingService {
     const clinics = await this.prisma.clinic.findMany({
       where: {
         dashboardType: { not: null },
+        isDemo: false,
         ...(clinicId ? { id: clinicId } : {}),
       },
       select: {
@@ -551,6 +552,7 @@ export class PlatformBillingService {
     const clinics = await this.prisma.clinic.findMany({
       where: {
         isActive: true,
+        isDemo: false,
         ...(dto.clinicId ? { id: dto.clinicId } : {}),
         dashboardType: { not: null },
       },

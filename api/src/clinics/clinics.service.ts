@@ -37,6 +37,7 @@ export class ClinicsService {
 
   async findAll() {
     const clinics = await this.clinicsRepository.find({
+      where: { isDemo: false },
       relations: { admins: true },
       order: { createdAt: 'DESC' },
     });

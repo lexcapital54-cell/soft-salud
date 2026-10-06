@@ -10,6 +10,7 @@ import { AgendaModule } from './modules/agenda/agenda.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { PlatformBillingModule } from './modules/platform-billing/platform-billing.module';
 import { ClinicalModule } from './modules/clinical/clinical.module';
+import { DemoModule } from './modules/demo/demo.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -48,6 +49,7 @@ import { UsersModule } from './users/users.module';
     DocumentsModule,
     BillingModule,
     PlatformBillingModule,
+    DemoModule,
   ],
   providers: [SeedService],
 })

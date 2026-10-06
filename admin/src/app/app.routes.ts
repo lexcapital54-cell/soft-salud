@@ -20,6 +20,7 @@ import { DocumentsDashboard } from './documents/documents-dashboard';
 import { BillingDashboard } from './billing/billing-dashboard';
 import { PlatformBillingPage } from './platform-billing/platform-billing';
 import { PasswordAdminPage } from './password-admin/password-admin';
+import { DemoClinicsPage } from './demo-clinics/demo-clinics';
 import { Login } from './login/login';
 
 export const routes: Routes = [
@@ -43,6 +44,11 @@ export const routes: Routes = [
   {
     path: 'admin/ingresos',
     component: PlatformBillingPage,
+    canActivate: [authGuard, superAdminGuard],
+  },
+  {
+    path: 'admin/demos',
+    component: DemoClinicsPage,
     canActivate: [authGuard, superAdminGuard],
   },
   // Redirect old users module URL

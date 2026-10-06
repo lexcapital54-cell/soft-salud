@@ -33,7 +33,7 @@ export class ClinicAccessService {
   async listAccessibleClinics(user: User): Promise<AccessibleClinicDto[]> {
     if (user.role === UserRole.SUPER_ADMIN) {
       const all = await this.prisma.clinic.findMany({
-        where: { isActive: true },
+        where: { isActive: true, isDemo: false },
         orderBy: { name: 'asc' },
       });
       return all.map((c) => ({
@@ -172,7 +172,7 @@ export class ClinicAccessService {
   /** Catálogo completo de sedes activas (para vincular una segunda sede). */
   async listDirectory() {
     return this.prisma.clinic.findMany({
-      where: { isActive: true },
+      where: { isActive: true, isDemo: false },
       orderBy: { name: 'asc' },
       select: {
         id: true,
@@ -188,7 +188,7 @@ export class ClinicAccessService {
   async listGrantableClinics(actor: User) {
     if (actor.role === UserRole.SUPER_ADMIN) {
       return this.prisma.clinic.findMany({
-        where: { isActive: true },
+        where: { isActive: true, isDemo: false },
         orderBy: { name: 'asc' },
         select: {
           id: true,
