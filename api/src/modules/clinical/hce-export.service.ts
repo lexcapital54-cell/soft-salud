@@ -11,6 +11,7 @@ import { SearchHceExportQueryDto } from './dto/hce-export.dto';
 import { HcePdfService, PatientSignatureInfo } from './hce-pdf.service';
 import { buildOrthoEpicrisis } from './ortho-epicrisis';
 import { OrthoEpicrisisPdfService } from './ortho-epicrisis-pdf.service';
+import { ClinicalStorageService } from './clinical-storage.service';
 import { PassThrough } from 'stream';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const createArchive = require('archiver') as (
@@ -53,6 +54,7 @@ export class HceExportService {
     private readonly prisma: PrismaService,
     private readonly pdf: HcePdfService,
     private readonly epicrisisPdf: OrthoEpicrisisPdfService,
+    private readonly storage: ClinicalStorageService,
   ) {}
 
   private requireClinicId(user: User) {
@@ -148,6 +150,7 @@ export class HceExportService {
         address: clinic?.address,
         phone: clinic?.phone,
         specialty: clinic?.specialty,
+        patientPhoto: await this.patientPhotoDataUrl(encounter.patient.photoUrl),
       },
       await this.patientSignatureFor(encounter),
     );
@@ -162,6 +165,21 @@ export class HceExportService {
     const rows = await this.prisma.clinicLogo.findMany({ where: { clinicId } });
     const row = rows.find((r) => r.kind === 'HC') ?? rows.find((r) => r.kind === 'HOME');
     return row ? `data:${row.mimeType};base64,${Buffer.from(row.data).toString('base64')}` : null;
+  }
+
+  /** Foto del paciente guardada en storage; el PDF solo admite JPG/PNG. Sin foto o con error, null. */
+  private async patientPhotoDataUrl(photoUrl?: string | null): Promise<string | null> {
+    const key = (photoUrl || '').trim();
+    if (!key || /^(https?:|data:)/i.test(key)) return null;
+    const lower = key.toLowerCase();
+    const mime = lower.endsWith('.png') ? 'image/png' : /\.(jpe?g)$/.test(lower) ? 'image/jpeg' : null;
+    if (!mime) return null;
+    try {
+      const buffer = await this.storage.readBuffer(key);
+      return `data:${mime};base64,${buffer.toString('base64')}`;
+    } catch {
+      return null;
+    }
   }
 
   /** Epicrisis de cierre del tratamiento de ortodoncia (resumen automático + firmas). */

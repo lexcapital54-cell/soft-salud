@@ -80,6 +80,32 @@ function painText(raw: unknown): string {
   return `Dolor EVA: ${n}/10 (${band})`;
 }
 
+/** EVA escrita en un texto ("EVA 5", "EVA: 5/10", "dolor 5/10"); null si no aparece. */
+export function physioPainFromText(text: string): number | null {
+  const m = text.match(/\bEVA\b\D{0,6}(\d{1,2})(?:\s*\/\s*10)?/i) ?? text.match(/\bdolor\b\D{0,12}(\d{1,2})\s*\/\s*10/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return n >= 0 && n <= 10 ? n : null;
+}
+
+/** Métricas cuantitativas registradas en la valoración (para tarjetas del PDF); sin datos, lista vacía. */
+export function physioMetricItems(physio: Rec): Array<{ label: string; value: string; unit?: string; note?: string; tone?: 'success' | 'warning' | 'error' }> {
+  const intake = rec(physio.intake);
+  const fa = rec(physio.functionalAssessment);
+  const items: Array<{ label: string; value: string; unit?: string; note?: string; tone?: 'success' | 'warning' | 'error' }> = [];
+  const m = String(fa.pain ?? '').match(/\d+/);
+  const pain = m ? Number(m[0]) : NaN;
+  if (Number.isFinite(pain) && pain >= 0 && pain <= 10) {
+    const band = pain === 0 ? 'Sin dolor' : pain <= 3 ? 'Leve' : pain <= 6 ? 'Moderado' : 'Severo';
+    items.push({ label: 'Dolor (EVA)', value: String(pain), unit: '/10', note: band, tone: pain <= 3 ? 'success' : pain <= 6 ? 'warning' : 'error' });
+  }
+  if (LABELS[s(intake.painFrequency)]) items.push({ label: 'Frecuencia del dolor', value: LABELS[s(intake.painFrequency)] });
+  if (s(physio.sessionCount) || typeof physio.sessionCount === 'number') {
+    items.push({ label: 'Sesiones planeadas', value: String(physio.sessionCount).trim() });
+  }
+  return items;
+}
+
 /** Secciones listas para el PDF; las vacías no se devuelven. */
 export function physioIntakeSections(physio: Rec): {
   header: string;
