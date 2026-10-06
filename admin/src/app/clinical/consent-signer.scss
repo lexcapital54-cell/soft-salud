@@ -427,40 +427,40 @@ app-consent-ci-details {
   margin: 4px 0 14px;
 }
 
-/* Paleta Dulcemente cuando la HC es de psicología */
+/* Paleta mocha cuando la HC es de psicología */
 :host-context(.specialty-psychology) {
   .signer-head h3,
   .pads-title {
-    color: #6e5448;
+    color: #6b4a3c;
   }
 
   .eyebrow,
   button.linkish {
-    color: #c48b7e;
+    color: #9a6a4f;
   }
 
   .remote-invite {
-    border-color: #e1b7ad;
-    background: #fbf6f4;
+    border-color: #e8cdb8;
+    background: #fcf6f1;
   }
 
   .remote-invite .primary,
   button.primary {
-    background: #8f7064;
-    border-color: #8f7064;
+    background: #8c5e45;
+    border-color: #8c5e45;
     color: #ffffff;
   }
 
   .remote-invite .secondary,
   button.ghost {
     background: #fffdfc;
-    border-color: #e1b7ad;
-    color: #6e5448;
+    border-color: #e8cdb8;
+    color: #6b4a3c;
   }
 
   .pads-highlight {
-    border-color: #e1b7ad;
-    background: #faf4f1;
+    border-color: #e8cdb8;
+    background: #fbf1e8;
   }
 
   .lead,

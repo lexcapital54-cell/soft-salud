@@ -173,16 +173,21 @@ export class HceExportService {
     };
   }
 
-  /** Foto del paciente guardada en storage; el PDF solo admite JPG/PNG. Sin foto o con error, null. */
+  /** Foto del paciente (storage o data URL antigua); el PDF solo admite JPG/PNG. Sin foto o con error, null. */
   private async patientPhotoDataUrl(photoUrl?: string | null): Promise<string | null> {
     const key = (photoUrl || '').trim();
-    if (!key || /^(https?:|data:)/i.test(key)) return null;
-    const lower = key.toLowerCase();
-    const mime = lower.endsWith('.png') ? 'image/png' : /\.(jpe?g)$/.test(lower) ? 'image/jpeg' : null;
-    if (!mime) return null;
+    if (!key || /^https?:/i.test(key)) return null;
     try {
-      const buffer = await this.storage.readBuffer(key);
-      return `data:${mime};base64,${buffer.toString('base64')}`;
+      const buffer = /^data:/i.test(key)
+        ? Buffer.from(key.slice(key.indexOf(',') + 1), 'base64')
+        : await this.storage.readBuffer(key);
+      const mime =
+        buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff
+          ? 'image/jpeg'
+          : buffer.subarray(0, 4).toString('hex') === '89504e47'
+            ? 'image/png'
+            : null;
+      return mime ? `data:${mime};base64,${buffer.toString('base64')}` : null;
     } catch {
       return null;
     }

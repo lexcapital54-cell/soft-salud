@@ -4866,6 +4866,11 @@
               <span class="muted">· TP {{ content.signature.professionalCard }}</span>
             }
           </p>
+          @if (!content.signature.professionalCard && !isLocked()) {
+            <p class="muted small" role="note">
+              Sin tarjeta profesional registrada. Regístrela en <a href="/consultorio">Inicio</a> para que acompañe su firma.
+            </p>
+          }
 
           @if (isLocked()) {
             <div class="sealed">

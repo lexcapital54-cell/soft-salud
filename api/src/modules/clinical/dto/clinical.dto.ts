@@ -231,6 +231,17 @@ export class UpdateProfessionalSignatureDto {
   signatureBase64: string;
 }
 
+/** Número de tarjeta profesional (obligatorio: no se borra desde el dashboard). */
+export class UpdateProfessionalCardDto {
+  @IsString()
+  @MinLength(2, { message: 'Escriba el número de tarjeta profesional.' })
+  @MaxLength(40)
+  @Matches(/^[\p{L}\p{N} .\-/]*$/u, {
+    message: 'La tarjeta profesional solo admite letras, números, espacios, punto, guion y barra.',
+  })
+  professionalCard: string;
+}
+
 export class UpdateRipsSettingsDto {
   @IsBoolean()
   ripsEnabled: boolean;

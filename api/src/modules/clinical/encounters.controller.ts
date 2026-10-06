@@ -10,6 +10,7 @@ import {
   Req,
   UseGuards,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
@@ -25,6 +26,7 @@ import {
   UpdateAttendanceMetaDto,
   UpdateDiagnosesDto,
   UpdateProceduresDto,
+  UpdateProfessionalCardDto,
   UpdateProfessionalSignatureDto,
 } from './dto/clinical.dto';
 import { EncountersService } from './encounters.service';
@@ -208,6 +210,41 @@ export class EncountersController {
   @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
   removeMySignature(@Req() req: { user: User }) {
     return this.signatures.remove(req.user);
+  }
+
+  /** Tarjeta profesional que acompaña la firma en la historia clínica y su PDF. */
+  @Get('me/professional-card')
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
+  async getProfessionalCard(@Req() req: { user: User }) {
+    const row = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { professionalCard: true },
+    });
+    return { professionalCard: row?.professionalCard ?? null };
+  }
+
+  @Put('me/professional-card')
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
+  saveProfessionalCard(@Req() req: { user: User }, @Body() dto: UpdateProfessionalCardDto) {
+    return this.storeProfessionalCard(req.user, dto);
+  }
+
+  /** Alias en POST: ver nota sobre PATCH/PUT en PatientsController. */
+  @Post('me/professional-card')
+  @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
+  saveProfessionalCardViaPost(@Req() req: { user: User }, @Body() dto: UpdateProfessionalCardDto) {
+    return this.storeProfessionalCard(req.user, dto);
+  }
+
+  private async storeProfessionalCard(user: User, dto: UpdateProfessionalCardDto) {
+    const value = dto.professionalCard.replace(/\s+/g, ' ').trim();
+    if (value.length < 2) throw new BadRequestException('Escriba el número de tarjeta profesional.');
+    const row = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { professionalCard: value },
+      select: { professionalCard: true },
+    });
+    return { professionalCard: row.professionalCard };
   }
 
   /** Toggle Res. 2275 RIPS (facturación EPS). No afecta generación RDA. */

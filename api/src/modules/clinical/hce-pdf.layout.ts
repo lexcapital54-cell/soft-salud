@@ -301,25 +301,29 @@ export function card(title: string, iconName: string, inner: Content[], fill: st
 
 /** Datos del paciente: foto (si existe), nombre y campos registrados. */
 export function patientCard(name: string, fields: Array<[string, string]>, photo: string | null): Content {
-  const grid = fieldGrid(fields, 2);
-  const right: Content[] = [
-    { text: clean(name) || 'Paciente', font: 'Times', bold: true, fontSize: 13, color: P.navy, margin: [0, 0, 0, 3] } as Content,
-    ...(grid ? [grid] : []),
-  ];
-  const inner: Content = photo
-    ? ({
-        columns: [
-          {
-            width: 64,
-            table: { widths: [58], body: [[{ image: photo, fit: [58, 70], alignment: 'center' }]] },
-            layout: boxLayout(P.gold, 2),
-          },
-          { width: '*', stack: right },
-        ],
-        columnGap: 10,
-      } as Content)
-    : ({ stack: right } as Content);
-  return card('Datos del paciente', 'user', [inner]);
+  const title = { text: clean(name) || 'Paciente', font: 'Times', bold: true, fontSize: 13, color: P.navy, margin: [0, 0, 0, 3] } as Content;
+  if (!photo) {
+    const grid = fieldGrid(fields, 2);
+    return card('Datos del paciente', 'user', [{ stack: [title, ...(grid ? [grid] : [])] } as Content]);
+  }
+  // Junto a la foto la columna es angosta: allí solo van los primeros datos y el resto ocupa todo el ancho.
+  const filled = fields.filter(([, v]) => clean(v));
+  const beside = fieldGrid(filled.slice(0, 3), 1);
+  const below = fieldGrid(filled.slice(3), 2);
+  return card('Datos del paciente', 'user', [
+    {
+      columns: [
+        {
+          width: 64,
+          table: { widths: [58], body: [[{ image: photo, fit: [58, 70], alignment: 'center' }]] },
+          layout: boxLayout(P.gold, 2),
+        },
+        { width: '*', stack: [title, ...(beside ? [beside] : [])] },
+      ],
+      columnGap: 10,
+    } as Content,
+    ...(below ? [{ ...(below as object), margin: [0, 4, 0, 0] } as Content] : []),
+  ]);
 }
 
 export type SummaryRow = { icon: string; label: string; value: string; tone?: 'success' | 'warning' | 'error' };

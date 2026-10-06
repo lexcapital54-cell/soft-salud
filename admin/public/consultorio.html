@@ -183,6 +183,18 @@
     .hosting-panel.overdue h2, .reps-panel.urgent h2 { color: #9b3333; }
     .reps-panel .reps-date { font-size: .92rem; }
     .reps-panel .reps-note { margin: 0; font-size: .78rem; color: var(--muted); }
+    .tp-body { flex: 1 1 auto; min-width: 0; }
+    .tp-form label { display: block; margin: 2px 0 4px; font-size: .8rem; font-weight: 600; color: var(--ink); }
+    .tp-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+    .tp-row input {
+      flex: 1 1 160px; min-width: 0; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px;
+      font: inherit; font-size: .92rem; color: var(--ink); background: #fff;
+    }
+    .tp-row input:focus-visible { outline: 2px solid var(--nav-2); outline-offset: 1px; border-color: var(--nav-2); }
+    .tp-row .btn:disabled { opacity: .6; cursor: progress; }
+    .tp-status { margin: 4px 0 0 !important; font-size: .82rem !important; }
+    .tp-status.ok { color: #1f7a55 !important; }
+    .tp-status.err { color: #a33a3a !important; }
 
     /* Indicadores */
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
@@ -359,11 +371,25 @@
       --bg: #f3f9f8; --soft: #e0f2f1; --ink: #11292d; --muted: #4f6f73;
       --glow-rgb: 77, 182, 172; --cta: #00796b; --tone-bg: #e0f2f1; --tone-ink: #00695c;
     }
+    /* Psicología: tonos mocha (crema, durazno y café) con menú lateral claro. */
     body.specialty-psychology {
-      --nav: #8f7064; --nav-2: #7f6256; --accent: #c48b7e; --accent-soft: #fff1ec;
-      --bg: #faf6f4; --soft: #f6ebe7; --ink: #4a3b36; --muted: #7a6460;
-      --glow-rgb: 196, 139, 126; --cta: #9a5f52; --tone-bg: #f6ebe7; --tone-ink: #9a5f52;
+      --nav: #8c5e45; --nav-2: #7a4f3a; --accent: #c99a80; --accent-soft: #fbe7d9;
+      --bg: #f6f0eb; --soft: #fbecdf; --ink: #3a2622; --muted: #7a625a; --line: rgba(122, 79, 58, .12);
+      --glow-rgb: 201, 154, 128; --cta: #8c5e45; --tone-bg: #fbecdf; --tone-ink: #7a4f3a;
+      --shadow: 0 1px 2px rgba(90, 55, 40, .05), 0 12px 30px -24px rgba(90, 55, 40, .4);
     }
+    body.specialty-psychology .sb { background: #fcf6f1; color: var(--ink); border-right: 1px solid #efe2d8; }
+    body.specialty-psychology .sb-brand { border-bottom-color: #efe2d8; }
+    body.specialty-psychology .brand { color: var(--ink); }
+    body.specialty-psychology .sb-clinic { color: var(--nav); }
+    body.specialty-psychology .sb nav a { color: #4a3530; }
+    body.specialty-psychology .sb nav a:hover { background: #f8ebe0; color: var(--ink); }
+    body.specialty-psychology .sb nav a.active { background: #f6e3d5; border-left-color: #a87556; color: var(--ink); }
+    body.specialty-psychology .sb nav a.active .ico { color: var(--nav); }
+    body.specialty-psychology .sb-foot { border-top-color: #efe2d8; color: var(--muted); }
+    body.specialty-psychology .sb-mini-btn { background: #f8ebe0; color: #5a423a; }
+    body.specialty-psychology .sb-mini-btn:hover { background: #f6e3d5; color: var(--ink); }
+    body.specialty-psychology .sb-close { background: #f8ebe0; color: var(--ink); }
   </style>
 </head>
 <body>
@@ -494,6 +520,22 @@
               <p id="repsDate" class="reps-date" hidden></p>
               <p id="repsMsg">—</p>
               <p class="reps-note">Solo informativo. Si la fecha cambió, solicite la actualización a HABILISALUD.</p>
+            </div>
+          </section>
+          <section class="reps-panel tp-panel" id="tpPanel" hidden>
+            <span class="alert-ico" aria-hidden="true"><svg class="ico"><use href="#i-steth"/></svg></span>
+            <div class="tp-body">
+              <h2 id="tpTitle">Tarjeta profesional</h2>
+              <p id="tpMsg">—</p>
+              <form class="tp-form" id="tpForm" novalidate>
+                <label for="tpInput">Número de tarjeta profesional</label>
+                <div class="tp-row">
+                  <input id="tpInput" name="professionalCard" type="text" maxlength="40" autocomplete="off" inputmode="text" aria-describedby="tpNote tpStatus" />
+                  <button type="submit" class="btn btn-primary" id="tpSave">Guardar</button>
+                </div>
+                <p class="reps-note" id="tpNote">Aparece junto a su firma en la historia clínica y en el PDF.</p>
+                <p class="tp-status" id="tpStatus" role="status" aria-live="polite"></p>
+              </form>
             </div>
           </section>
         </div>
@@ -1060,6 +1102,72 @@
           .catch(function () {});
       }
 
+      function loadProfessionalCard() {
+        if (['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) === -1) return;
+        var panel = document.getElementById('tpPanel');
+        var form = document.getElementById('tpForm');
+        var input = document.getElementById('tpInput');
+        var save = document.getElementById('tpSave');
+        var status = document.getElementById('tpStatus');
+
+        function render(card) {
+          panel.hidden = false;
+          panel.className = 'reps-panel tp-panel' + (card ? '' : ' warn');
+          input.value = card || '';
+          document.getElementById('tpTitle').textContent = card ? 'Tarjeta profesional' : 'Registre su tarjeta profesional';
+          document.getElementById('tpMsg').textContent = card
+            ? 'Registrada: TP ' + card + '. Puede corregirla si cambió.'
+            : 'Aún no tiene tarjeta profesional registrada; sin ella su firma en la historia clínica queda incompleta.';
+        }
+
+        function setStatus(text, tone) {
+          status.textContent = text;
+          status.className = 'tp-status' + (tone ? ' ' + tone : '');
+        }
+
+        fetch('/api/me/professional-card', { headers: authHeaders(), cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (data) { if (data) render(data.professionalCard || ''); })
+          .catch(function () {});
+
+        form.addEventListener('submit', function (ev) {
+          ev.preventDefault();
+          var value = input.value.replace(/\s+/g, ' ').trim();
+          if (!/^[\p{L}\p{N} .\-/]{2,40}$/u.test(value)) {
+            setStatus('Use solo letras, números, espacios, punto, guion o barra (2 a 40 caracteres).', 'err');
+            input.focus();
+            return;
+          }
+          save.disabled = true;
+          setStatus('Guardando…');
+          fetch('/api/me/professional-card', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ professionalCard: value }),
+          })
+            .then(function (r) {
+              return r.json().catch(function () { return {}; }).then(function (body) {
+                if (!r.ok) {
+                  var msg = Array.isArray(body.message) ? body.message[0] : body.message;
+                  throw new Error(msg || 'No se pudo guardar la tarjeta profesional.');
+                }
+                return body;
+              });
+            })
+            .then(function (data) {
+              var card = data.professionalCard || '';
+              render(card);
+              try {
+                user.professionalCard = card || null;
+                localStorage.setItem('habilisalud_user', JSON.stringify(user));
+              } catch (e) {}
+              setStatus('Guardada. Se mostrará junto a su firma en la historia clínica.', 'ok');
+            })
+            .catch(function (err) { setStatus(err.message, 'err'); })
+            .then(function () { save.disabled = false; });
+        });
+      }
+
       function loadReps() {
         var canWrite = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
         if (!canWrite) return;
@@ -1113,6 +1221,7 @@
 
       loadOpenHce();
       loadReps();
+      loadProfessionalCard();
       loadHostingReminder();
       setupReceiptsFolder();
       loadSedes();
