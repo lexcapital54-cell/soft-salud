@@ -9,11 +9,11 @@
 
 .hce-page.specialty-psychology {
   background:
-    linear-gradient(180deg, #fdf4f9 0%, #ffffff 240px);
-  --hce-accent: #b0447e;
-  --hce-title: #8a4590;
-  --hce-rose: #f3bcd6;
-  --hce-gold: #7cc3ea;
+    linear-gradient(180deg, #faf4f1 0%, #ffffff 240px);
+  --hce-accent: #c48b7e;
+  --hce-title: #8f7064;
+  --hce-rose: #e1b7ad;
+  --hce-gold: #c9a46a;
   --hce-peach: #f5d1a9;
   --hce-lavender: #d6bbdd;
   --hce-sky: #89d1f2;
@@ -254,59 +254,59 @@
 }
 
 .hce-page.specialty-psychology .block {
-  border-color: #f1dcea;
+  border-color: #edd8d1;
 }
 
 /* Paleta Dulcemente en botones: acento en borde/fondo, texto siempre legible */
 .hce-page.specialty-psychology button.primary,
 .hce-page.specialty-psychology .save-bar button.primary {
-  background: #4a2f63;
-  border-color: #4a2f63;
+  background: #8f7064;
+  border-color: #8f7064;
   color: #ffffff;
 }
 
 .hce-page.specialty-psychology button.ghost,
 .hce-page.specialty-psychology .save-bar button.ghost,
 .hce-page.specialty-psychology button.logout {
-  background: #fffbfd;
-  border-color: #f3bcd6;
-  color: #4a2f63;
+  background: #fffdfc;
+  border-color: #e1b7ad;
+  color: #6e5448;
 }
 
 .hce-page.specialty-psychology button.linkish {
-  color: #b0447e;
+  color: #c48b7e;
   background: transparent;
 }
 
 .hce-page.specialty-psychology .photo-btn-primary,
 .hce-page.specialty-psychology .anexo-btn-pick {
-  background: #4a2f63;
-  border-color: #4a2f63;
+  background: #8f7064;
+  border-color: #8f7064;
   color: #ffffff;
 }
 
 .hce-page.specialty-psychology .photo-btn-secondary,
 .hce-page.specialty-psychology .anexo-btn {
-  background: #fffbfd;
-  border-color: #f3bcd6;
-  color: #4a2f63;
+  background: #fffdfc;
+  border-color: #e1b7ad;
+  color: #6e5448;
 }
 
 .hce-page.specialty-psychology .autosave-chip {
-  border-color: #f1dcea;
-  background: #fdf4f9;
-  color: #4a2f63;
+  border-color: #edd8d1;
+  background: #fbf6f4;
+  color: #6e5448;
 }
 
 .hce-page.specialty-psychology .autosave-chip.pending {
-  color: #4a2f63;
-  background: #fdf4f9;
-  border-color: #f3bcd6;
+  color: #6e5448;
+  background: #faf4f1;
+  border-color: #e1b7ad;
 }
 
 .hce-page.specialty-psychology .cie-block {
   border-color: var(--hce-accent);
-  background: #fdf4f9;
+  background: #fbf6f4;
 }
 
 .hce-page.specialty-psychology .cie-block h3 {

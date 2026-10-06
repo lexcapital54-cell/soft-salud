@@ -39,13 +39,13 @@ const NAVY_PALETTE: Palette = {
   error: '#D45B5B',
 };
 
-/** Paleta original del membrete de psicología (café, rosa empolvado y dorado). */
+/** Paleta del membrete de psicología: café con leche pastel, rosa empolvado y dorado. */
 const PSYCH_PALETTE: Palette = {
-  navy: '#2A1F1C',
-  navy2: '#8E5B4F',
+  navy: '#8F7064',
+  navy2: '#7F6256',
   gold: '#C9A46A',
   goldSoft: '#FBF4EA',
-  ink: '#1A1A1A',
+  ink: '#3F322E',
   muted: '#7A6A66',
   line: '#E8DCD8',
   soft: '#FBF6F4',
@@ -151,10 +151,11 @@ export function tableCell(text: string, bold = false, compact = false): Content 
 }
 
 /** Bloque principal de la primera página: título, subtítulo y especialidad real. */
-export function documentHeading(specialty: string, subtitle: string): Content {
+export function documentHeading(specialty: string, subtitle: string, logo = false): Content {
   const w = HCE_PAGE.content;
   return {
     stack: [
+      ...(logo ? [{ image: 'clinicLogo', fit: [200, 96], alignment: 'center', margin: [0, 0, 0, 8] }] : []),
       {
         text: 'RESUMEN DE HISTORIA CLÍNICA',
         font: 'Times',

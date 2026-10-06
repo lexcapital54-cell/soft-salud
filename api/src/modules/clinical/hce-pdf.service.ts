@@ -320,7 +320,7 @@ export class HcePdfService {
     ];
 
     const body: Content[] = [
-      documentHeading(headingLine, 'Documento de resumen para seguimiento profesional'),
+      documentHeading(headingLine, 'Documento de resumen para seguimiento profesional', !!clinicLogo),
       metaStrip([
         { icon: 'calendar', label: 'Fecha de emisión', value: generatedAt },
         { icon: 'file', label: 'N.º de historia', value: encounter.externalCode || '' },
@@ -333,7 +333,7 @@ export class HcePdfService {
           label: 'Servicio',
           value: [encounter.serviceType || 'Consulta externa', dentalService].filter(Boolean).join(' — '),
         },
-        { icon: 'building', label: 'IPS / consultorio', value: clinic.name },
+        { icon: 'building', label: 'Profesional independiente', value: clinic.name },
       ]),
       {
         columns: [
@@ -659,7 +659,7 @@ export class HcePdfService {
     });
 
     const headerLeft: Content = clinicLogo
-      ? ({ image: 'clinicLogo', fit: [120, 30] } as Content)
+      ? ({ image: 'clinicLogo', fit: [60, 34] } as Content)
       : ({ text: clinic.name, font: 'Times', bold: true, fontSize: 10.5, color: P.navy, margin: [0, 4, 0, 0] } as Content);
     const headerRight = ['Historia clínica', patientName, encounter.externalCode ? `N.º ${encounter.externalCode}` : '']
       .filter(Boolean)
@@ -678,7 +678,9 @@ export class HcePdfService {
         alignment: 'left',
       },
       images: clinicLogo ? { clinicLogo } : {},
-      header: () => runningHeader(headerLeft, headerRight),
+      // En la primera página el logo va grande en el encabezado del documento.
+      header: (currentPage: number) =>
+        runningHeader(clinicLogo && currentPage === 1 ? { text: '' } : headerLeft, headerRight),
       footer: (currentPage: number, pageCount: number) =>
         runningFooter(footerLeft, `Generado el ${generatedAt}`, currentPage, pageCount),
       content: body,
