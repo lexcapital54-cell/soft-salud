@@ -338,14 +338,14 @@
   );
 }
 
-/* Psicología: paleta Dulcemente (café profundo + rosa empolvado). */
+/* Psicología: algodón de azúcar (ciruela de base, rosa y azul bebé de acento). */
 .hce-page.specialty-psychology {
   @include premium-hc(
-    $navy: #2a1f1c, $navy-2: #4a3631, $gold: #c48b7e, $shadow: #2a1f1c,
-    $line: #eddcd6, $soft: #faf4f1, $bg: #faf6f4, $ink: #2a1f1c,
-    $field-border: #e3cfc8, $field-hover: #d4b3aa, $readonly-bg: #f8f1ee, $readonly-ink: #6e5d58, $placeholder: #b39d97, $arrow: '2a1f1c',
-    $row-line: #f0e4e0, $row-even: #fcf8f6, $row-hover: #f7eeea, $ghost-border: #e1b7ad,
-    $chip-border: #e1b7ad, $chip-bg: #fbf3ef, $chip-ink: #6b3f35
+    $navy: #8a4590, $navy-2: #56659f, $gold: #f08cba, $shadow: #6a3f7a,
+    $line: #f1dcea, $soft: #eef7fd, $bg: #fdf7fb, $ink: #3b2a4d,
+    $field-border: #ead3e3, $field-hover: #d9b6cf, $readonly-bg: #faf2f7, $readonly-ink: #6a5878, $placeholder: #ab98b8, $arrow: '8a4590',
+    $row-line: #f4e6ef, $row-even: #fefafd, $row-hover: #f9eef5, $ghost-border: #f3bcd6,
+    $chip-border: #bfe3f7, $chip-bg: #eaf6fd, $chip-ink: #2c5a78
   );
 }
 

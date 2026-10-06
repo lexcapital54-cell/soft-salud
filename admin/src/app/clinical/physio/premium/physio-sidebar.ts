@@ -74,7 +74,7 @@ interface NavItem {
       display: flex; flex-direction: column; gap: 18px; padding: 22px 14px;
       color: #fff; background:
         radial-gradient(260px 220px at 0% 100%, rgba(var(--pd-gold-rgb, 199, 154, 75), 0.16), transparent 70%),
-        linear-gradient(180deg, var(--pd-navy, #0b2239) 0%, var(--sb-nav-2, #10304d) 100%);
+        linear-gradient(180deg, var(--sb-nav, var(--pd-navy, #0b2239)) 0%, var(--sb-nav-2, #10304d) 100%);
       z-index: 40;
     }
     .sb-brand { position: relative; display: grid; justify-items: center; gap: 8px; padding: 6px 4px 16px; border-bottom: 1px solid rgba(var(--pd-gold-rgb, 199, 154, 75), 0.35); text-align: center; }
@@ -100,7 +100,7 @@ interface NavItem {
       .sb.open { transform: none; }
       .sb-open {
         display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 8px 16px;
-        border: 0; border-bottom: 2px solid var(--pd-gold, #c79a4b); background: var(--pd-navy, #0b2239); color: #fff; font: inherit; text-align: left; cursor: pointer;
+        border: 0; border-bottom: 2px solid var(--pd-gold, #c79a4b); background: var(--sb-nav, var(--pd-navy, #0b2239)); color: #fff; font: inherit; text-align: left; cursor: pointer;
       }
       .sb-open app-physio-icon { width: 22px; height: 22px; color: var(--pd-gold-soft, #e2c58e); flex: 0 0 auto; }
       .sb-open span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif; font-size: 1.02rem; font-weight: 600; }
