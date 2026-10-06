@@ -7,400 +7,532 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <title>Consultorio · HABILISALUD</title>
   <style>
-    :root { --brand:#0d7377; --ink:#003d4c; --muted:#8f8f8f; }
+    :root {
+      --nav: #0b2239; --nav-2: #163a59; --accent: #c79a4b; --accent-soft: #e2c58e;
+      --bg: #f6f8fa; --card: #fff; --ink: #172033; --muted: #687386; --line: rgba(15, 35, 55, .08);
+      --soft: #eaf1f7; --ok: #1fa774; --warn: #d99a32; --danger: #d45b5b;
+      --brand: var(--nav-2);
+      --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+      --shadow: 0 1px 2px rgba(11, 34, 57, .04), 0 12px 30px -24px rgba(11, 34, 57, .45);
+    }
     * { box-sizing: border-box; }
+    html, body { overflow-x: hidden; }
     body {
-      margin: 0; min-height: 100svh; font-family: "DM Sans", system-ui, sans-serif;
-      background: #f3f7f8; color: #000;
+      margin: 0; min-height: 100svh; font-family: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--ink); line-height: 1.45;
     }
-    header {
-      display: flex; justify-content: space-between; align-items: center;
-      gap: 16px; padding: 28px;
+    [hidden] { display: none !important; }
+    .ico { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    a:focus-visible, button:focus-visible, select:focus-visible {
+      outline: 3px solid rgba(199, 154, 75, .6); outline-offset: 2px;
     }
-    .brand { letter-spacing: -0.02em; color: #000; text-decoration: none; }
-    .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .user-chip { text-align: right; }
-    .session-name { margin: 0; font-size: 14px; color: #2e2e2e; }
-    .session-email { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
-    .sede-switch {
-      display: inline-flex; align-items: center; gap: 8px;
-      font-size: 13px; color: #405a5f;
+
+    /* Estructura */
+    .app { display: flex; min-height: 100svh; }
+    .sb {
+      position: sticky; top: 0; height: 100svh; width: 248px; flex: 0 0 248px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 22px; padding: 26px 16px 20px; color: #fff; z-index: 40;
+      background:
+        radial-gradient(280px 240px at 0% 100%, rgba(199, 154, 75, .16), transparent 70%),
+        linear-gradient(180deg, var(--nav) 0%, #10304d 100%);
     }
+    .sb-brand { display: grid; gap: 6px; padding: 0 10px 18px; border-bottom: 1px solid rgba(199, 154, 75, .35); }
+    .brand {
+      font-family: var(--serif); font-size: 1.25rem; font-weight: 600; letter-spacing: .08em;
+      color: #fff; text-decoration: none;
+    }
+    .sb-clinic { margin: 0; font-size: .74rem; letter-spacing: .2em; text-transform: uppercase; color: var(--accent-soft); overflow-wrap: anywhere; }
+    .sb nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+    .sb nav a {
+      display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 9px 12px;
+      border-left: 3px solid transparent; border-radius: 10px;
+      color: rgba(255, 255, 255, .84); font-size: .92rem; text-decoration: none;
+    }
+    .sb nav a:hover { background: rgba(255, 255, 255, .07); color: #fff; }
+    .sb nav a.active { background: rgba(255, 255, 255, .12); border-left-color: var(--accent); color: #fff; font-weight: 600; }
+    .sb nav a.active .ico { color: var(--accent-soft); }
+    .sb-foot {
+      margin: auto 0 0; padding: 14px 12px 0; border-top: 1px solid rgba(255, 255, 255, .1);
+      font-size: .68rem; line-height: 1.8; letter-spacing: .22em; text-transform: uppercase; color: rgba(255, 255, 255, .6);
+    }
+    .sb-close, .menu-btn, .scrim { display: none; }
+    .shell { flex: 1 1 auto; min-width: 0; }
+
+    /* Encabezado */
+    .top {
+      position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; padding: 14px 32px; background: rgba(246, 248, 250, .92); backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+    }
+    .top-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .top-title h2 { margin: 0; font-family: var(--serif); font-size: 1.3rem; font-weight: 600; color: var(--nav); }
+    .top-date { margin: 0; font-size: .8rem; color: var(--muted); }
+    .top-date::first-letter { text-transform: uppercase; }
+    .header-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
+    .sede-switch { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
     .sede-switch select {
-      font: inherit; padding: 8px 10px; border: 1px solid #d8e2e2;
-      border-radius: 10px; background: #fff; color: var(--ink); max-width: 220px;
+      font: inherit; min-height: 40px; padding: 8px 12px; border: 1px solid var(--line);
+      border-radius: 10px; background: #fff; color: var(--nav); max-width: 220px;
     }
-    .sede-switch .lbl {
-      text-transform: uppercase; letter-spacing: .04em; font-size: 11px; color: var(--muted);
+    .sede-switch .lbl { text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
+    .user-chip { display: flex; align-items: center; gap: 10px; }
+    .avatar {
+      display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+      background: var(--nav); color: #fff; font-family: var(--serif); font-weight: 600; font-size: .95rem;
+      box-shadow: 0 0 0 2px #fff, 0 0 0 3px var(--accent);
     }
+    .user-text { text-align: left; min-width: 0; }
+    .session-name { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink); }
+    .session-role { margin: 0; font-size: 12px; color: var(--muted); }
+    .session-email { margin: 0; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
     .btn {
-      border: 1px solid #000; background: #fff; border-radius: 30px;
-      padding: 12px 18px; font: inherit; cursor: pointer; text-decoration: none; color: inherit;
-      display: inline-block;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px;
+      border: 1px solid #d5dde6; background: #fff; border-radius: 10px; padding: 8px 16px;
+      font: inherit; font-size: .88rem; font-weight: 600; color: var(--nav); cursor: pointer; text-decoration: none;
     }
-    .btn-primary { border-color: var(--ink); background: var(--ink); color: #fff; }
+    .btn:hover { border-color: var(--nav); background: var(--soft); }
+    .btn-primary { border-color: var(--nav); background: var(--nav); color: #fff; }
+    .btn-primary:hover { background: var(--nav-2); }
     .btn:disabled { opacity: .55; cursor: wait; }
-    .card {
-      margin: 0 auto 48px; max-width: 900px; padding: 48px; background: #fff;
-      border: 1px solid #d7e3e6; border-radius: 45px;
-      box-shadow: 0 16px 48px rgba(0, 45, 92, 0.1);
-    }
-    .eyebrow {
-      color: var(--brand); letter-spacing: 0.08em; text-transform: uppercase; font-size: 13px; margin: 0;
-    }
-    h1 {
-      margin: 8px 0 12px; font-size: clamp(28px, 5vw, 48px); font-weight: 400; letter-spacing: -0.03em;
-    }
-    .meta { color: #2e2e2e; margin: 0 0 8px; }
-    .dashboard-type { margin: 8px 0 0; color: var(--ink); font-weight: 500; }
-    .rips-panel {
-      margin-top: 28px; padding: 22px; border-radius: 22px;
-      border: 2px solid var(--brand); background: #e8f6f6;
-    }
-    .rips-panel h2 { margin: 0 0 8px; font-size: 22px; font-weight: 600; color: var(--ink); }
-    .rips-panel p { margin: 0 0 16px; color: #2e2e2e; line-height: 1.45; }
-    .toggle-row {
-      display: flex; align-items: center; justify-content: space-between; gap: 16px;
-      flex-wrap: wrap; margin-bottom: 14px;
-    }
-    .switch {
-      position: relative; width: 56px; height: 32px; flex-shrink: 0;
-    }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
-      position: absolute; inset: 0; cursor: pointer; background: #b7c6c9;
-      border-radius: 999px; transition: .2s;
-    }
-    .slider:before {
-      content: ""; position: absolute; height: 24px; width: 24px; left: 4px; bottom: 4px;
-      background: #fff; border-radius: 50%; transition: .2s;
-    }
-    .switch input:checked + .slider { background: var(--brand); }
-    .switch input:checked + .slider:before { transform: translateX(24px); }
-    .status { font-weight: 600; color: var(--ink); }
-    .msg { margin: 10px 0 0; font-size: 14px; }
-    .msg.ok { color: #0d5c3d; }
-    .msg.err { color: #8a1f1f; }
-    .open-hce-panel {
-      margin-top: 20px; padding: 16px 18px; border-radius: 18px;
-      border: 1px solid #e8c4a8; background: #fff8f0;
-    }
-    .open-hce-panel h2 { margin: 0 0 10px; font-size: 1.05rem; color: #5c3a1e; }
-    .open-hce-panel ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
-    .open-hce-panel li {
-      display: flex; justify-content: space-between; align-items: center; gap: 10px;
-      flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; background: #fff;
-      border: 1px solid #f0dcc8; font-size: .92rem;
-    }
-    .open-hce-panel li.urgent { border-color: #e08a8a; background: #fff5f5; }
-    .open-hce-panel li.warn { border-color: #e8b86d; }
-    .open-hce-panel a { color: var(--brand); text-decoration: none; font-weight: 500; }
-    .open-hce-badge {
-      display: inline-flex; align-items: center; justify-content: center;
-      min-width: 22px; height: 22px; padding: 0 6px; margin-left: 6px;
-      border-radius: 999px; background: #c45c00; color: #fff; font-size: 12px; font-weight: 600;
-    }
-    .receipts-folder { width: min(560px, calc(100vw - 32px)); max-height: 80vh; overflow: auto; padding: 16px 20px 20px; border-radius: 14px; border: 1px solid #cfe0ea; background: #f7fbfd; box-shadow: 0 18px 48px rgba(0, 40, 60, .25); }
-    .receipts-folder::backdrop { background: rgba(0, 30, 45, .45); }
-    .receipts-folder header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
-    .receipts-folder h2 { margin: 0; font-size: 1.05rem; color: #003d4c; }
-    .receipts-folder button.close { border: none; background: transparent; color: #4a6670; font-size: 1.1rem; padding: 4px 8px; }
-    .receipts-folder p { margin: 0 0 10px; color: #4a6670; font-size: .9rem; }
-    .receipts-folder ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-    .receipts-folder li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #dbe8ee; border-radius: 10px; background: #fff; }
-    .receipts-folder li small { display: block; color: #6a8085; }
-    .receipts-folder button { border: 1px solid #0d7377; background: #fff; color: #0d7377; border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; }
-    .hosting-panel {
-      margin: 0 0 18px; padding: 14px 18px; border-radius: 12px;
-      border: 1px solid #e8c4a8; background: #fff8f0;
-    }
-    .hosting-panel.overdue { border-color: #e8b4b4; background: #fdeeee; }
-    .hosting-panel h2 { margin: 0 0 6px; font-size: 1.05rem; color: #5c3a1e; }
-    .hosting-panel.overdue h2 { color: #8a1f1f; }
-    .hosting-panel p { margin: 0; color: #2e2e2e; line-height: 1.45; }
-    .reps-panel {
-      margin-top: 20px; padding: 16px 18px; border-radius: 18px;
-      border: 1px solid #d5e2e5; background: #f7fbfb;
-    }
-    .reps-panel.warn { border-color: #e8c4a8; background: #fff8f0; }
-    .reps-panel.urgent { border-color: #e8b4b4; background: #fdeeee; }
-    .reps-panel h2 { margin: 0 0 8px; font-size: 1.05rem; color: #003d4c; }
-    .reps-panel.warn h2 { color: #5c3a1e; }
-    .reps-panel.urgent h2 { color: #8a1f1f; }
-    .reps-panel p { margin: 0 0 10px; color: #2e2e2e; line-height: 1.45; }
-    .reps-panel .reps-date { font-size: 1rem; margin-bottom: 4px; }
-    .reps-panel a { color: var(--brand); text-decoration: none; font-weight: 500; }
-    .reps-panel .reps-note { margin: 0; font-size: 0.82rem; color: #6b6b6b; }
-    .modules {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px; margin-top: 28px;
-    }
-    .module {
-      display: block; background: #fff; border: 1px solid #d5e2e5; border-radius: 22px;
-      padding: 22px 20px 18px; box-shadow: 0 10px 28px rgba(0, 45, 92, 0.1);
-      color: inherit; text-decoration: none;
-    }
-    .module h2 { margin: 0 0 8px; font-size: 22px; font-weight: 400; }
-    .module p { margin: 0; color: var(--muted); line-height: 1.4; }
-    .cta { display: inline-block; margin-top: 14px; color: var(--brand); font-size: 14px; }
+    .btn .ico { width: 18px; height: 18px; }
+
+    /* Contenido */
+    .card { padding: 26px 32px 48px; max-width: 1360px; margin: 0 auto; display: grid; gap: 22px; }
     .err-banner {
-      margin: 0 auto 16px; max-width: 900px; padding: 12px 16px;
-      background: #fff1f1; color: #8a1f1f; border-radius: 12px;
+      margin: 24px 32px 0; padding: 12px 16px; border: 1px solid #f0c9c9;
+      background: #fdf3f3; color: #9b3333; border-radius: 12px;
+    }
+    .err-banner a { color: inherit; font-weight: 600; }
+
+    .hero {
+      position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between;
+      gap: 24px; padding: 30px 32px; border-radius: 20px; color: #fff;
+      background:
+        radial-gradient(420px 260px at 92% 0%, rgba(199, 154, 75, .26), transparent 70%),
+        linear-gradient(135deg, var(--nav) 0%, var(--nav-2) 100%);
+      box-shadow: 0 20px 40px -28px rgba(11, 34, 57, .9);
+    }
+    .hero-rule { display: block; width: 52px; height: 2px; background: var(--accent); margin-bottom: 16px; }
+    .hero h1 { margin: 0; font-family: var(--serif); font-size: clamp(1.6rem, 3vw, 2.3rem); font-weight: 600; line-height: 1.15; }
+    .hero h1 span { color: var(--accent-soft); }
+    .hero-sub { margin: 8px 0 0; color: rgba(255, 255, 255, .82); font-size: .98rem; }
+    .hero-id {
+      display: grid; justify-items: end; gap: 4px; text-align: right; min-width: 0; max-width: 46%;
     }
     .clinic-logo {
-      display: block; width: 100%; max-width: 420px; height: auto;
-      margin: 0 auto 22px; border-radius: 18px;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+      display: block; max-width: 200px; max-height: 76px; object-fit: contain; margin-bottom: 8px;
+      background: #fff; border-radius: 12px; padding: 8px 12px;
+    }
+    .eyebrow { margin: 0; font-size: .7rem; letter-spacing: .22em; text-transform: uppercase; color: var(--accent-soft); }
+    .hero-clinic { margin: 0; font-family: var(--serif); font-size: 1.25rem; font-weight: 600; overflow-wrap: anywhere; }
+    .meta, .dashboard-type { margin: 0; font-size: .84rem; color: rgba(255, 255, 255, .8); }
+    .hint {
+      margin: 0; padding: 12px 16px; border-radius: 12px; background: var(--soft); color: var(--nav); font-size: .9rem;
+    }
+
+    /* Avisos */
+    .alerts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .alerts:not(:has(> section:not([hidden]))) { display: none; }
+    .hosting-panel, .reps-panel {
+      display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; border-radius: 16px;
+      border: 1px solid var(--line); background: #fff; box-shadow: var(--shadow);
+    }
+    .alert-ico { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: var(--soft); color: var(--nav-2); flex: 0 0 auto; }
+    .hosting-panel h2, .reps-panel h2 { margin: 0 0 4px; font-size: 1rem; color: var(--nav); }
+    .hosting-panel p, .reps-panel p { margin: 0 0 6px; color: var(--ink); font-size: .9rem; }
+    .hosting-panel, .reps-panel.warn { border-color: #f1dcb3; background: #fffaf0; }
+    .hosting-panel .alert-ico, .reps-panel.warn .alert-ico { background: #fbefd9; color: #8a5b12; }
+    .hosting-panel h2, .reps-panel.warn h2 { color: #7a4f0e; }
+    .hosting-panel.overdue, .reps-panel.urgent { border-color: #f0c9c9; background: #fdf4f4; }
+    .hosting-panel.overdue .alert-ico, .reps-panel.urgent .alert-ico { background: #fbe4e4; color: #a33a3a; }
+    .hosting-panel.overdue h2, .reps-panel.urgent h2 { color: #9b3333; }
+    .reps-panel .reps-date { font-size: .92rem; }
+    .reps-panel .reps-note { margin: 0; font-size: .78rem; color: var(--muted); }
+
+    /* Indicadores */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .stat {
+      display: flex; align-items: center; gap: 14px; padding: 18px 20px; border-radius: 16px;
+      background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow);
+    }
+    .stat-ico { display: inline-grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: var(--soft); color: var(--nav-2); flex: 0 0 auto; }
+    .stat-ico .ico { width: 22px; height: 22px; }
+    .stat[data-tone="ok"] .stat-ico { background: #e3f5ed; color: #13704d; }
+    .stat[data-tone="warn"] .stat-ico { background: #fbefd9; color: #8a5b12; }
+    .stat[data-tone="gold"] .stat-ico { background: #f6ecda; color: #8a6420; }
+    .stat-label { margin: 0; font-size: .8rem; color: var(--muted); }
+    .stat-value { margin: 2px 0 0; font-family: var(--serif); font-size: 1.8rem; font-weight: 600; line-height: 1; color: var(--nav); }
+    .stat-sub { margin: 4px 0 0; font-size: .76rem; color: var(--muted); }
+
+    /* Paneles */
+    .grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); gap: 22px; align-items: start; }
+    .side { display: grid; gap: 22px; }
+    .panel {
+      background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px; box-shadow: var(--shadow); min-width: 0;
+    }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .panel-head h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-family: var(--serif); font-size: 1.12rem; font-weight: 600; color: var(--nav); }
+    .panel-head h2 .ico { color: var(--accent); }
+    .panel-link { display: inline-flex; align-items: center; gap: 4px; font-size: .84rem; font-weight: 600; color: var(--nav-2); text-decoration: none; }
+    .panel-link:hover { text-decoration: underline; }
+    .panel-link .ico { width: 16px; height: 16px; }
+    .empty { margin: 0; padding: 18px; border-radius: 12px; background: #f8fafc; color: var(--muted); font-size: .9rem; text-align: center; }
+    .skeleton { display: grid; gap: 10px; }
+    .skeleton span { display: block; height: 52px; border-radius: 12px; background: linear-gradient(90deg, #edf1f5 25%, #f6f8fa 50%, #edf1f5 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    @media (prefers-reduced-motion: reduce) { .skeleton span { animation: none; } }
+
+    .agenda-list { list-style: none; margin: 0; padding: 0; display: grid; }
+    .agenda-list li {
+      display: grid; grid-template-columns: 6.6em minmax(0, 1fr) auto; gap: 14px; align-items: center;
+      padding: 12px 4px; border-bottom: 1px solid #eef2f6;
+    }
+    .agenda-list li:last-child { border-bottom: 0; }
+    .ag-time { font-weight: 700; font-size: .9rem; white-space: nowrap; color: var(--nav); font-variant-numeric: tabular-nums; border-right: 2px solid var(--accent); padding-right: 10px; }
+    .ag-main { min-width: 0; }
+    .ag-name { margin: 0; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ag-detail { margin: 2px 0 0; font-size: .8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: .74rem; font-weight: 600; white-space: nowrap; background: #eef2f6; color: #445063; }
+    .chip[data-tone="info"] { background: var(--soft); color: var(--nav-2); }
+    .chip[data-tone="live"] { background: #fbefd9; color: #7a4f0e; }
+    .chip[data-tone="ok"] { background: #e3f5ed; color: #13704d; }
+    .chip[data-tone="danger"] { background: #fbe9e9; color: #9b3333; }
+    .chip[data-tone="block"] { background: #f1f4f7; color: #5b6676; }
+
+    .next {
+      position: relative; overflow: hidden; color: #fff; border: 0;
+      background: radial-gradient(260px 180px at 100% 0%, rgba(199, 154, 75, .25), transparent 70%), linear-gradient(150deg, var(--nav) 0%, var(--nav-2) 100%);
+    }
+    .next .panel-head h2 { color: #fff; }
+    .next-time { margin: 0; font-family: var(--serif); font-size: 1.9rem; font-weight: 600; line-height: 1.1; }
+    .next-day { margin: 2px 0 12px; font-size: .84rem; color: var(--accent-soft); text-transform: capitalize; }
+    .next-name { margin: 0; font-weight: 600; font-size: 1.02rem; }
+    .next-meta { margin: 6px 0 0; display: grid; gap: 4px; font-size: .84rem; color: rgba(255, 255, 255, .85); }
+    .next-meta span { display: inline-flex; align-items: center; gap: 8px; }
+    .next-meta .ico { width: 16px; height: 16px; color: var(--accent-soft); }
+    .next .btn { margin-top: 16px; width: 100%; background: #fff; border-color: #fff; color: var(--nav); }
+    .next .btn:hover { background: var(--soft); }
+    .next .empty { background: rgba(255, 255, 255, .08); color: rgba(255, 255, 255, .85); }
+
+    .open-hce-panel h2 { color: var(--nav); }
+    .open-hce-badge {
+      display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 7px;
+      border-radius: 999px; background: var(--accent); color: #fff; font-family: inherit; font-size: 12px; font-weight: 700;
+    }
+    .open-hce-panel ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; max-height: 340px; overflow: auto; }
+    .open-hce-panel li {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 10px 12px; border-radius: 12px; background: #fff; border: 1px solid #eef2f6; border-left: 3px solid #cfd8e3; font-size: .9rem;
+    }
+    .open-hce-panel li.warn { border-left-color: var(--warn); }
+    .open-hce-panel li.urgent { border-left-color: var(--danger); background: #fffafa; }
+    .open-hce-panel li small { display: block; color: var(--muted); font-size: .8rem; }
+    .open-hce-panel li .doc { color: var(--muted); font-weight: 400; margin-left: 4px; }
+    .open-hce-panel a { display: inline-flex; align-items: center; gap: 4px; color: var(--nav-2); text-decoration: none; font-weight: 600; font-size: .84rem; }
+    .open-hce-panel a:hover { text-decoration: underline; }
+
+    /* Módulos */
+    .section-title { display: flex; align-items: center; gap: 12px; margin: 6px 0 -6px; }
+    .section-title h2 { margin: 0; font-family: var(--serif); font-size: 1.2rem; font-weight: 600; color: var(--nav); }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(199, 154, 75, .55), transparent); }
+    .modules { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+    .module {
+      display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-content: start;
+      padding: 20px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow);
+      color: inherit; text-decoration: none; transition: border-color .15s, box-shadow .15s, transform .15s;
+    }
+    .module:hover { border-color: rgba(199, 154, 75, .7); box-shadow: 0 16px 34px -24px rgba(11, 34, 57, .55); transform: translateY(-2px); }
+    .mod-ico { grid-row: span 3; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--soft); color: var(--nav-2); }
+    .module h2 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--nav); }
+    .module p { margin: 0; color: var(--muted); font-size: .86rem; }
+    .cta { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; color: #8a6420; font-size: .84rem; font-weight: 700; }
+    .cta .ico { width: 16px; height: 16px; }
+
+    .receipts-folder { width: min(560px, calc(100vw - 32px)); max-height: 80vh; overflow: auto; padding: 20px 22px 22px; border-radius: 16px; border: 1px solid var(--line); background: #fff; box-shadow: 0 24px 60px rgba(11, 34, 57, .3); color: var(--ink); }
+    .receipts-folder::backdrop { background: rgba(11, 34, 57, .5); }
+    .receipts-folder header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 6px; }
+    .receipts-folder h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-family: var(--serif); font-size: 1.15rem; color: var(--nav); }
+    .receipts-folder h2 .ico { color: var(--accent); }
+    .receipts-folder button.close { display: inline-grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: #f1f4f7; color: var(--nav); cursor: pointer; }
+    .receipts-folder p { margin: 0 0 12px; color: var(--muted); font-size: .9rem; }
+    .receipts-folder ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .receipts-folder li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #eef2f6; border-radius: 12px; background: #fff; }
+    .receipts-folder li small { display: block; color: var(--muted); }
+    .receipts-folder li button { border: 1px solid var(--nav); background: #fff; color: var(--nav); border-radius: 10px; padding: 7px 14px; cursor: pointer; font: inherit; font-size: .84rem; font-weight: 600; }
+    .receipts-folder li button:hover { background: var(--soft); }
+
+    /* Responsive */
+    @media (max-width: 1180px) {
+      .grid { grid-template-columns: 1fr; }
+      .side { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    }
+    @media (max-width: 1024px) {
+      .sb { position: fixed; left: 0; top: 0; transform: translateX(-105%); transition: transform .22s ease; box-shadow: 18px 0 40px -20px rgba(0, 0, 0, .5); }
+      .sb.open { transform: none; }
+      .sb-close { display: inline-grid; place-items: center; position: absolute; top: 14px; right: 12px; width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .1); color: #fff; cursor: pointer; }
+      .menu-btn { display: inline-grid; place-items: center; width: 42px; height: 42px; border: 1px solid #d5dde6; border-radius: 12px; background: #fff; color: var(--nav); cursor: pointer; flex: 0 0 auto; }
+      .scrim:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 39; background: rgba(11, 34, 57, .45); }
+      .top { padding: 12px 20px; }
+      .card { padding: 20px 20px 40px; }
     }
     @media (max-width: 720px) {
-      header { flex-direction: column; align-items: flex-start; }
-      .card { margin: 0 16px 40px; padding: 28px; }
+      .top { position: static; flex-wrap: wrap; gap: 12px; padding: 12px 14px; }
+      .header-actions { width: 100%; justify-content: space-between; gap: 10px; }
+      .user-chip { flex: 1 1 0; min-width: 0; }
+      .user-text p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .avatar { width: 36px; height: 36px; font-size: .85rem; }
+      .user-text .session-email { display: none; }
+      .sede-switch { order: 3; width: 100%; }
+      .sede-switch select { flex: 1; max-width: none; }
+      .hero { flex-direction: column; align-items: flex-start; padding: 24px 22px; }
+      .hero-id { justify-items: start; text-align: left; max-width: 100%; }
+      .card { padding: 16px 14px 36px; gap: 18px; }
+      .panel { padding: 18px 16px; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .stat { flex-direction: column; align-items: flex-start; padding: 16px; gap: 10px; }
+      .agenda-list li { grid-template-columns: 6.2em minmax(0, 1fr); gap: 10px; }
+      .agenda-list li .chip { grid-column: 2; justify-self: start; }
+      .err-banner { margin: 16px 14px 0; }
     }
+    @media (prefers-reduced-motion: reduce) { .sb, .module { transition: none; } }
 
-    /* Dulcemente — solo psicología */
+    /* Psicología: conserva la paleta Dulcemente sobre la misma estructura */
     body.specialty-psychology {
-      --brand: #c48b7e;
-      --ink: #2a1f1c;
-      --muted: #8a7470;
-      --rose: #e1b7ad;
-      --gold: #c9a46a;
-      background: linear-gradient(180deg, #faf4f1 0%, #f7f0ec 40%, #f3f7f8 100%);
-      color: var(--ink);
+      --nav: #2a1f1c; --nav-2: #4a3631; --accent: #c48b7e; --accent-soft: #e1b7ad;
+      --bg: #faf6f4; --soft: #f6ebe7; --ink: #2a1f1c; --muted: #7a6460;
     }
-    body.specialty-psychology .brand { color: var(--ink); }
-    body.specialty-psychology .card {
-      border-color: #edd8d1;
-      box-shadow: 0 16px 48px rgba(42, 31, 28, 0.08);
-      border-left: 6px solid var(--rose);
-    }
-    body.specialty-psychology .eyebrow { color: var(--brand); }
-    body.specialty-psychology h1 { color: var(--ink); }
-    body.specialty-psychology .btn {
-      border-color: #e1b7ad;
-      color: #2a1f1c;
-      background: #fff;
-    }
-    body.specialty-psychology .btn-primary {
-      border-color: #2a1f1c;
-      background: #2a1f1c;
-      color: #ffffff;
-    }
-    body.specialty-psychology .btn-primary:hover {
-      background: #3d2f2b;
-      color: #ffffff;
-    }
-    body.specialty-psychology .module {
-      border-color: #edd8d1;
-      background: #fffdfc;
-      box-shadow: 0 10px 28px rgba(42, 31, 28, 0.07);
-      transition: border-color .2s, box-shadow .2s, transform .15s;
-      color: #2a1f1c;
-    }
-    body.specialty-psychology .module:hover {
-      border-color: #c48b7e;
-      box-shadow: 0 14px 32px rgba(196, 139, 126, 0.22);
-      transform: translateY(-2px);
-    }
-    body.specialty-psychology .module h2 {
-      color: #2a1f1c;
-    }
-    body.specialty-psychology .module p {
-      color: #5c4a46;
-    }
-    body.specialty-psychology .cta {
-      color: #c48b7e;
-      font-weight: 600;
-    }
-    body.specialty-psychology .rips-panel {
-      border-color: var(--brand);
-      background: #fbf6f4;
-    }
-    body.specialty-psychology .rips-panel h2 { color: var(--ink); }
-    body.specialty-psychology .switch input:checked + .slider { background: var(--brand); }
-    body.specialty-psychology .status { color: var(--ink); }
-    body.specialty-psychology .reps-panel {
-      border-color: #edd8d1;
-      background: #fbf6f4;
-    }
-    body.specialty-psychology .reps-panel h2 { color: var(--ink); }
-    body.specialty-psychology .reps-panel a,
-    body.specialty-psychology .open-hce-panel a { color: var(--brand); }
-    body.specialty-psychology .open-hce-badge { background: var(--gold); }
-    body.specialty-psychology .sede-switch select {
-      border-color: #edd8d1;
-      color: var(--ink);
-    }
-
-    /* HC-FT — fisioterapia (paleta azul de la plantilla) */
-    body.specialty-physiotherapy {
-      --brand: #0072ce;
-      --ink: #004a8c;
-      --muted: #5a6f85;
-      background: linear-gradient(180deg, #e8f3fc 0%, #f3f7f8 100%);
-      color: #1a1a1a;
-    }
-    body.specialty-physiotherapy .brand { color: #004a8c; }
-    body.specialty-physiotherapy .card {
-      border-color: #0072ce;
-      box-shadow: 0 16px 48px rgba(0, 74, 140, 0.1);
-      border-left: 6px solid #004a8c;
-    }
-    body.specialty-physiotherapy .eyebrow { color: #0072ce; }
-    body.specialty-physiotherapy h1 { color: #004a8c; }
-    body.specialty-physiotherapy .btn {
-      border-color: #0072ce;
-      color: #004a8c;
-      background: #fff;
-    }
-    body.specialty-physiotherapy .btn-primary {
-      border-color: #004a8c;
-      background: #004a8c;
-      color: #ffffff;
-    }
-    body.specialty-physiotherapy .btn-primary:hover {
-      background: #003a70;
-      color: #ffffff;
-    }
-    body.specialty-physiotherapy .module {
-      border-color: #b7d6f5;
-      background: #fff;
-      box-shadow: 0 10px 28px rgba(0, 74, 140, 0.08);
-      color: #1a1a1a;
-      transition: border-color .2s, box-shadow .2s, transform .15s;
-    }
-    body.specialty-physiotherapy .module:hover {
-      border-color: #0072ce;
-      box-shadow: 0 14px 32px rgba(0, 114, 206, 0.2);
-      transform: translateY(-2px);
-    }
-    body.specialty-physiotherapy .module h2 { color: #004a8c; }
-    body.specialty-physiotherapy .module p { color: #5a6f85; }
-    body.specialty-physiotherapy .cta { color: #0072ce; font-weight: 600; }
-    body.specialty-physiotherapy .rips-panel {
-      border-color: #0072ce;
-      background: #e1f0ff;
-    }
-    body.specialty-physiotherapy .rips-panel h2 { color: #004a8c; }
-    body.specialty-physiotherapy .switch input:checked + .slider { background: #0072ce; }
-    body.specialty-physiotherapy .status { color: #004a8c; }
-    body.specialty-physiotherapy .reps-panel {
-      border-color: #b7d6f5;
-      background: #eef6fc;
-    }
-    body.specialty-physiotherapy .reps-panel h2 { color: #004a8c; }
-    body.specialty-physiotherapy .reps-panel a,
-    body.specialty-physiotherapy .open-hce-panel a { color: #0072ce; }
-    body.specialty-physiotherapy .open-hce-badge { background: #004a8c; }
-    body.specialty-physiotherapy .sede-switch select {
-      border-color: #b7d6f5;
-      color: #004a8c;
-    }
+    body.specialty-psychology .cta { color: #9a5f52; }
+    body.specialty-psychology .stat[data-tone="gold"] .stat-ico { background: #f6ebe7; color: #9a5f52; }
   </style>
 </head>
 <body>
-  <header>
-    <a class="brand" href="https://www.habilisalud.com">HABILISALUD</a>
-    <div class="header-actions">
-      <label class="sede-switch" id="sedeSwitch" hidden>
-        <span class="lbl" id="sedeLbl">Sede</span>
-        <select id="sedeSelect"></select>
-      </label>
-      <div class="user-chip">
-        <p class="session-name" id="fullName">—</p>
-        <p class="session-email" id="email">—</p>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></symbol>
+      <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M3 9.5h18M8 3v3M16 3v3"/></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.4 3.2-5.5 6.5-5.5s5.9 2.1 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.7 3.2 2.5 3.5 5.2"/></symbol>
+      <symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 11h6M9 15h4"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></symbol>
+      <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+      <symbol id="i-user-plus" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.4 3.2-5.5 6.5-5.5s5.9 2.1 6.5 5.5M19 8v6M16 11h6"/></symbol>
+      <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2Z"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+      <symbol id="i-logout" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5M5 12h11"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+      <symbol id="i-wait" viewBox="0 0 24 24"><path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 3-2 4-4 5"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20Z"/><path d="M12 10v4M12 17h.01"/></symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+      <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></symbol>
+      <symbol id="i-badge" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6Z"/><path d="m9 12 2 2 4-4"/></symbol>
+      <symbol id="i-steth" viewBox="0 0 24 24"><path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v2a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="11" r="2"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="app">
+    <aside class="sb" id="sidebar" aria-label="Menú del consultorio">
+      <button type="button" class="sb-close" id="sbClose" aria-label="Cerrar menú"><svg class="ico"><use href="#i-x"/></svg></button>
+      <div class="sb-brand">
+        <a class="brand" href="https://www.habilisalud.com">HABILISALUD</a>
+        <p class="sb-clinic" id="sbClinic">Consultorio</p>
       </div>
-      <button type="button" class="btn" id="logout">Cerrar sesión</button>
-    </div>
-  </header>
+      <nav>
+        <ul>
+          <li><a href="/consultorio.html" class="active" aria-current="page"><svg class="ico"><use href="#i-home"/></svg>Inicio</a></li>
+          <li><a href="/consultorio/agenda" data-for="modAgenda"><svg class="ico"><use href="#i-calendar"/></svg>Agenda</a></li>
+          <li><a href="/consultorio/pacientes" data-for="modPacientes"><svg class="ico"><use href="#i-users"/></svg>Pacientes</a></li>
+          <li><a href="/consultorio/historia-clinica" data-for="hce"><svg class="ico"><use href="#i-clipboard"/></svg>Historia clínica</a></li>
+          <li><a href="/consultorio/historias-pdf" data-for="hcePdf"><svg class="ico"><use href="#i-download"/></svg>Historias en PDF</a></li>
+          <li><a href="/consultorio/documentos" data-for="docs"><svg class="ico"><use href="#i-file"/></svg>Gestión documental</a></li>
+          <li><a href="/consultorio/recibos" data-for="billing"><svg class="ico"><use href="#i-receipt"/></svg>Recibos de caja</a></li>
+          <li><a href="/consultorio/configuracion?seccion=asistentes" data-for="assistantsMod"><svg class="ico"><use href="#i-user-plus"/></svg>Asistentes</a></li>
+          <li><a href="#recibos-habilisalud" data-for="platformReceipts"><svg class="ico"><use href="#i-folder"/></svg>Recibos HabiliSALUD</a></li>
+        </ul>
+      </nav>
+      <p class="sb-foot">Atención<br />Seguimiento<br />Control</p>
+    </aside>
+    <div class="scrim" id="scrim" hidden></div>
 
-  <p class="err-banner" id="authErr" hidden>
-    Sesión no válida. <a href="/login-profesional.html">Inicie sesión de nuevo</a>.
-  </p>
+    <div class="shell">
+      <header class="top">
+        <div class="top-title">
+          <button type="button" class="menu-btn" id="menuBtn" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false"><svg class="ico"><use href="#i-menu"/></svg></button>
+          <div>
+            <h2>Inicio</h2>
+            <p class="top-date" id="todayLabel"></p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <label class="sede-switch" id="sedeSwitch" hidden>
+            <span class="lbl" id="sedeLbl">Sede</span>
+            <select id="sedeSelect"></select>
+          </label>
+          <div class="user-chip">
+            <span class="avatar" id="avatar" aria-hidden="true">—</span>
+            <div class="user-text">
+              <p class="session-name" id="fullName">—</p>
+              <p class="session-role" id="roleLabel"></p>
+              <p class="session-email" id="email">—</p>
+            </div>
+          </div>
+          <button type="button" class="btn" id="logout"><svg class="ico"><use href="#i-logout"/></svg>Cerrar sesión</button>
+        </div>
+      </header>
 
-  <div class="card" id="main" hidden>
-    <img class="clinic-logo" id="clinicLogo" alt="" hidden />
-    <p class="eyebrow" id="dashEyebrow">Dashboard del consultorio</p>
-    <h1 id="clinicName">Consultorio</h1>
-    <p class="meta" id="specialty">Especialidad: —</p>
-    <p class="dashboard-type" id="plan">Plan activo: —</p>
-    <p class="meta" id="secretariaHint" hidden>
-      Perfil Asistente administrativo: use el selector <strong>Doctora</strong> para cambiar entre agendas
-      y programar citas. Si una doctora bloquea el día o una franja, verá el aviso en Agenda.
-    </p>
+      <p class="err-banner" id="authErr" hidden>
+        Sesión no válida. <a href="/login-profesional.html">Inicie sesión de nuevo</a>.
+      </p>
 
-    <section class="hosting-panel" id="hostingPanel" role="status" hidden>
-      <h2 id="hostingTitle">Mensualidad HabiliSALUD</h2>
-      <p id="hostingMsg">—</p>
-    </section>
+      <main class="card" id="main" hidden>
+        <section class="hero" aria-labelledby="greeting">
+          <div>
+            <span class="hero-rule" aria-hidden="true"></span>
+            <h1 id="greeting">Bienvenido</h1>
+            <p class="hero-sub">Resumen de tu actividad clínica de hoy</p>
+          </div>
+          <div class="hero-id">
+            <img class="clinic-logo" id="clinicLogo" alt="" hidden />
+            <p class="eyebrow" id="dashEyebrow">Dashboard del consultorio</p>
+            <p class="hero-clinic" id="clinicName">Consultorio</p>
+            <p class="meta" id="specialty">Especialidad: —</p>
+            <p class="dashboard-type" id="plan">Plan activo: —</p>
+          </div>
+        </section>
 
-    <section class="open-hce-panel" id="openHcePanel" hidden>
-      <h2>
-        <span id="openHceTitle">Historias clínicas sin cerrar</span>
-        <span class="open-hce-badge" id="openHceBadge">0</span>
-      </h2>
-      <ul id="openHceList"></ul>
-    </section>
-
-    <div class="modules">
-      <a class="module" id="modAgenda" href="/consultorio/agenda">
-        <h2>Agenda del día</h2>
-        <p>Citas de hoy, admisión con Habeas Data, sala de espera y consultas de telemedicina.</p>
-        <span class="cta">Abrir agenda →</span>
-      </a>
-      <a class="module" id="modPacientes" href="/consultorio/pacientes">
-        <h2>Pacientes</h2>
-        <p>Busque pacientes y consulte por calendario las historias clínicas creadas cada día.</p>
-        <span class="cta">Ver pacientes →</span>
-      </a>
-      <a class="module" id="hce" href="/consultorio/historia-clinica">
-        <h2>Historia clínica</h2>
-        <p>Gestione historias clínicas de sus pacientes según la especialidad del consultorio.</p>
-        <span class="cta">Abrir HCE →</span>
-      </a>
-      <a class="module" id="hcePdf" href="/consultorio/historias-pdf">
-        <h2>Descargar historias (PDF)</h2>
-        <p>
-          Busque por nombre o documento y descargue historias clínicas en PDF con membrete, sin
-          límite de mes.
+        <p class="hint" id="secretariaHint" hidden>
+          Perfil Asistente administrativo: use el selector <strong>Doctora</strong> para cambiar entre agendas
+          y programar citas. Si una doctora bloquea el día o una franja, verá el aviso en Agenda.
         </p>
-        <span class="cta">Exportar PDF →</span>
-      </a>
-      <a class="module" id="docs" href="/consultorio/documentos" hidden>
-        <h2>Gestión documental</h2>
-        <p>Documentación, evidencias y requisitos de habilitación alineados a la normativa vigente.</p>
-        <span class="cta">Ver módulo →</span>
-      </a>
-      <a class="module" id="platformReceipts" href="#recibos-habilisalud" hidden>
-        <h2>📁 Recibos HabiliSALUD</h2>
-        <p>Copia de los recibos de pago de la mensualidad y del alta de su consultorio.</p>
-        <span class="cta">Abrir carpeta →</span>
-      </a>
-      <dialog class="receipts-folder" id="receiptsFolder" aria-labelledby="receiptsFolderTitle">
-        <header>
-          <h2 id="receiptsFolderTitle">📁 Recibos HabiliSALUD</h2>
-          <button type="button" class="close" id="receiptsFolderClose" aria-label="Cerrar carpeta">✕</button>
-        </header>
-        <p>Cada vez que se registra un pago, aquí queda una copia del recibo de caja.</p>
-        <ul id="receiptsList"></ul>
-      </dialog>
-      <a class="module" id="assistantsMod" href="/consultorio/configuracion?seccion=asistentes" hidden>
-        <h2>Asistente administrativo</h2>
-        <p>Cree la cuenta de su asistente: maneja la agenda y los recibos de caja, sin acceso a historias clínicas.</p>
-        <span class="cta">Gestionar asistentes →</span>
-      </a>
-      <a class="module" id="billing" href="/consultorio/recibos" hidden>
-        <h2>Recibos de caja</h2>
-        <p>Cobros, gastos, paquetes de sesiones y cierre diario de caja del consultorio.</p>
-        <span class="cta">Abrir caja →</span>
-      </a>
-    </div>
 
-    <section class="reps-panel" id="repsPanel" hidden>
-      <h2 id="repsTitle">Registro REPS</h2>
-      <p id="repsDate" class="reps-date" hidden></p>
-      <p id="repsMsg">—</p>
-      <p class="reps-note">Solo informativo. Si la fecha cambió, solicite la actualización a HABILISALUD.</p>
-    </section>
+        <div class="alerts">
+          <section class="hosting-panel" id="hostingPanel" role="status" hidden>
+            <span class="alert-ico" aria-hidden="true"><svg class="ico"><use href="#i-alert"/></svg></span>
+            <div>
+              <h2 id="hostingTitle">Mensualidad HabiliSALUD</h2>
+              <p id="hostingMsg">—</p>
+            </div>
+          </section>
+          <section class="reps-panel" id="repsPanel" hidden>
+            <span class="alert-ico" aria-hidden="true"><svg class="ico"><use href="#i-badge"/></svg></span>
+            <div>
+              <h2 id="repsTitle">Registro REPS</h2>
+              <p id="repsDate" class="reps-date" hidden></p>
+              <p id="repsMsg">—</p>
+              <p class="reps-note">Solo informativo. Si la fecha cambió, solicite la actualización a HABILISALUD.</p>
+            </div>
+          </section>
+        </div>
+
+        <section class="stats" id="stats" aria-label="Indicadores de hoy" hidden>
+          <div class="stat">
+            <span class="stat-ico" aria-hidden="true"><svg class="ico"><use href="#i-calendar"/></svg></span>
+            <div><p class="stat-label">Citas de hoy</p><p class="stat-value" id="statToday">—</p><p class="stat-sub" id="statTodaySub">Sin información</p></div>
+          </div>
+          <div class="stat" data-tone="ok">
+            <span class="stat-ico" aria-hidden="true"><svg class="ico"><use href="#i-check"/></svg></span>
+            <div><p class="stat-label">Pacientes atendidos</p><p class="stat-value" id="statDone">—</p><p class="stat-sub">Citas finalizadas hoy</p></div>
+          </div>
+          <div class="stat" data-tone="warn">
+            <span class="stat-ico" aria-hidden="true"><svg class="ico"><use href="#i-wait"/></svg></span>
+            <div><p class="stat-label">En sala de espera</p><p class="stat-value" id="statWaiting">—</p><p class="stat-sub">Admitidos, pendientes de atención</p></div>
+          </div>
+          <div class="stat" data-tone="gold" id="statOpenCard" hidden>
+            <span class="stat-ico" aria-hidden="true"><svg class="ico"><use href="#i-clipboard"/></svg></span>
+            <div><p class="stat-label">Historias sin cerrar</p><p class="stat-value" id="statOpen">0</p><p class="stat-sub">Pendientes de firma</p></div>
+          </div>
+        </section>
+
+        <div class="grid">
+          <section class="panel" id="agendaPanel" aria-labelledby="agendaTitle" hidden>
+            <div class="panel-head">
+              <h2 id="agendaTitle"><svg class="ico"><use href="#i-calendar"/></svg>Agenda del día</h2>
+              <a class="panel-link" href="/consultorio/agenda">Ver agenda<svg class="ico"><use href="#i-chevron"/></svg></a>
+            </div>
+            <div id="agendaBody">
+              <div class="skeleton" aria-busy="true" aria-label="Cargando agenda"><span></span><span></span><span></span></div>
+            </div>
+          </section>
+
+          <div class="side">
+            <section class="panel next" id="nextPanel" aria-labelledby="nextTitle" hidden>
+              <div class="panel-head"><h2 id="nextTitle"><svg class="ico"><use href="#i-clock"/></svg>Próxima cita</h2></div>
+              <div id="nextBody"><p class="empty">Cargando…</p></div>
+            </section>
+
+            <section class="panel open-hce-panel" id="openHcePanel" hidden>
+              <div class="panel-head">
+                <h2><svg class="ico"><use href="#i-clipboard"/></svg><span id="openHceTitle">Historias clínicas sin cerrar</span></h2>
+                <span class="open-hce-badge" id="openHceBadge">0</span>
+              </div>
+              <ul id="openHceList"></ul>
+            </section>
+          </div>
+        </div>
+
+        <div class="section-title"><h2>Accesos rápidos</h2></div>
+        <div class="modules">
+          <a class="module" id="modAgenda" href="/consultorio/agenda">
+            <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-calendar"/></svg></span>
+            <h2>Agenda del día</h2>
+            <p>Citas de hoy, admisión con Habeas Data, sala de espera y consultas de telemedicina.</p>
+            <span class="cta">Abrir agenda<svg class="ico"><use href="#i-chevron"/></svg></span>
+          </a>
+          <a class="module" id="modPacientes" href="/consultorio/pacientes">
+            <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-users"/></svg></span>
+            <h2>Pacientes</h2>
+            <p>Busque pacientes y consulte por calendario las historias clínicas creadas cada día.</p>
+            <span class="cta">Ver pacientes<svg class="ico"><use href="#i-chevron"/></svg></span>
+          </a>
+          <a class="module" id="hce" href="/consultorio/historia-clinica">
+            <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-clipboard"/></svg></span>
+            <h2>Historia clínica</h2>
+            <p>Gestione historias clínicas de sus pacientes según la especialidad del consultorio.</p>
+            <span class="cta">Abrir HCE<svg class="ico"><use href="#i-chevron"/></svg></span>
+          </a>
+          <a class="module" id="hcePdf" href="/consultorio/historias-pdf">
+            <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-download"/></svg></span>
+            <h2>Descargar historias (PDF)</h2>
+            <p>Busque por nombre o documento y descargue historias clínicas en PDF con membrete, sin límite de mes.</p>
+            <span class="cta">Exportar PDF<svg class="ico"><use href="#i-chevron"/></svg></span>
+          </a>
+          <a class="module" id="docs" href="/consultorio/documentos" hidden>
+            <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-file"/></svg></span>
+            <h2>Gestión documental</h2>
+            <p>Documentación, evidencias y requisitos de habilitación alineados a la normativa vigente.</p>
+            <span class="cta">Ver módulo<svg class="ico"><use href="#i-chevron"/></svg></span>
+          </a>
+          <a class="module" id="platformReceipts" href="#recibos-habilisalud" hidden>
+            <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-folder"/></svg></span>
+            <h2>Recibos HabiliSALUD</h2>
+            <p>Copia de los recibos de pago de la mensualidad y del alta de su consultorio.</p>
+            <span class="cta">Abrir carpeta<svg class="ico"><use href="#i-chevron"/></svg></span>
+          </a>
+          <a class="module" id="assistantsMod" href="/consultorio/configuracion?seccion=asistentes" hidden>
+            <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-user-plus"/></svg></span>
+            <h2>Asistente administrativo</h2>
+            <p>Cree la cuenta de su asistente: maneja la agenda y los recibos de caja, sin acceso a historias clínicas.</p>
+            <span class="cta">Gestionar asistentes<svg class="ico"><use href="#i-chevron"/></svg></span>
+          </a>
+          <a class="module" id="billing" href="/consultorio/recibos" hidden>
+            <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-receipt"/></svg></span>
+            <h2>Recibos de caja</h2>
+            <p>Cobros, gastos, paquetes de sesiones y cierre diario de caja del consultorio.</p>
+            <span class="cta">Abrir caja<svg class="ico"><use href="#i-chevron"/></svg></span>
+          </a>
+        </div>
+        <dialog class="receipts-folder" id="receiptsFolder" aria-labelledby="receiptsFolderTitle">
+          <header>
+            <h2 id="receiptsFolderTitle"><svg class="ico"><use href="#i-folder"/></svg>Recibos HabiliSALUD</h2>
+            <button type="button" class="close" id="receiptsFolderClose" aria-label="Cerrar carpeta"><svg class="ico"><use href="#i-x"/></svg></button>
+          </header>
+          <p>Cada vez que se registra un pago, aquí queda una copia del recibo de caja.</p>
+          <ul id="receiptsList"></ul>
+        </dialog>
+      </main>
+    </div>
   </div>
 
   <script>
@@ -417,11 +549,26 @@
         CLINICAL_HISTORY: 'Historia clínica',
         CLINICAL_HISTORY_WITH_DOCS: 'Historia clínica con gestión documental',
       };
+      var roles = {
+        ADMIN: 'Administrador del consultorio',
+        HEALTH_PROFESSIONAL: 'Profesional de la salud',
+        AUDITOR: 'Auditoría',
+        AUXILIAR: 'Auxiliar',
+        RECEPTIONIST: 'Asistente administrativo',
+      };
+
+      function esc(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
 
       var token = localStorage.getItem('habilisalud_token');
       var raw = localStorage.getItem('habilisalud_user');
       var user = null;
       try { user = raw ? JSON.parse(raw) : null; } catch (e) { user = null; }
+
+      setupSidebar();
 
       if (!token || !user) {
         document.getElementById('authErr').hidden = false;
@@ -431,11 +578,26 @@
       document.getElementById('main').hidden = false;
       document.getElementById('fullName').textContent = user.fullName || '—';
       document.getElementById('email').textContent = user.email || '—';
+      document.getElementById('roleLabel').textContent = roles[user.role] || '';
+      document.getElementById('avatar').textContent = initials(user.fullName);
       document.getElementById('clinicName').textContent = user.clinicName || 'Consultorio';
+      document.getElementById('sbClinic').textContent = user.clinicName || 'Consultorio';
       document.getElementById('specialty').textContent =
         'Especialidad: ' + (labels[user.specialty] || 'Sin asignar');
       document.getElementById('plan').textContent =
         'Plan activo: ' + (plans[user.dashboardType] || 'Sin asignar');
+      document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('es-CO', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      });
+      var hour = new Date().getHours();
+      var greet = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+      var greeting = document.getElementById('greeting');
+      greeting.textContent = greet + (user.fullName ? ', ' : '');
+      if (user.fullName) {
+        var nameSpan = document.createElement('span');
+        nameSpan.textContent = user.fullName;
+        greeting.appendChild(nameSpan);
+      }
 
       if (user.clinicId) {
         var logo = document.getElementById('clinicLogo');
@@ -473,6 +635,42 @@
         if (pdfMod) pdfMod.hidden = true;
       }
 
+      function initials(name) {
+        var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) return '—';
+        return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+      }
+
+      /** El menú lateral muestra los mismos módulos visibles en Accesos rápidos. */
+      function syncNav() {
+        var links = document.querySelectorAll('.sb nav a[data-for]');
+        Array.prototype.forEach.call(links, function (link) {
+          var mod = document.getElementById(link.getAttribute('data-for'));
+          link.parentElement.hidden = !mod || mod.hidden;
+        });
+      }
+
+      function setupSidebar() {
+        var sb = document.getElementById('sidebar');
+        var scrim = document.getElementById('scrim');
+        var btn = document.getElementById('menuBtn');
+        function setOpen(open) {
+          sb.classList.toggle('open', open);
+          scrim.hidden = !open;
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+        btn.addEventListener('click', function () { setOpen(true); });
+        document.getElementById('sbClose').addEventListener('click', function () { setOpen(false); });
+        scrim.addEventListener('click', function () { setOpen(false); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+        var receiptsLink = sb.querySelector('a[data-for="platformReceipts"]');
+        receiptsLink.addEventListener('click', function (e) {
+          e.preventDefault();
+          setOpen(false);
+          document.getElementById('platformReceipts').click();
+        });
+      }
+
       function authHeaders() {
         return {
           'Content-Type': 'application/json',
@@ -483,9 +681,11 @@
       function loadOpenHce() {
         var canWrite = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
         if (!canWrite) return;
+        document.getElementById('statOpenCard').hidden = false;
         fetch('/api/encounters/open', { headers: authHeaders(), cache: 'no-store' })
           .then(function (r) { return r.ok ? r.json() : []; })
           .then(function (rows) {
+            document.getElementById('statOpen').textContent = String((rows && rows.length) || 0);
             if (!rows || !rows.length) return;
             var panel = document.getElementById('openHcePanel');
             var list = document.getElementById('openHceList');
@@ -498,16 +698,121 @@
                 ? ' · hace ' + item.daysOpen + ' día' + (item.daysOpen === 1 ? '' : 's')
                 : ' · hoy';
               var doc = item.documentNumber
-                ? ' <span style="color:#6a8085">' + (item.documentType || '') + ' ' + item.documentNumber + '</span>'
+                ? '<span class="doc">' + esc((item.documentType || '') + ' ' + item.documentNumber) + '</span>'
                 : '';
               var href = '/consultorio/historia-clinica?patientId=' + encodeURIComponent(item.patientId);
-              return '<li class="' + cls + '"><div><strong>' + item.patientName + '</strong>' + doc +
-                '<br><span style="color:#6a8085;font-size:.85rem">Abierta ' +
-                new Date(item.createdAt).toLocaleDateString('es-CO') + when + '</span></div>' +
-                '<a href="' + href + '">Abrir HCE →</a></li>';
+              return '<li class="' + cls + '"><div><strong>' + esc(item.patientName) + '</strong>' + doc +
+                '<small>Abierta ' + new Date(item.createdAt).toLocaleDateString('es-CO') + when + '</small></div>' +
+                '<a href="' + href + '">Abrir HCE<svg class="ico"><use href="#i-chevron"/></svg></a></li>';
             }).join('');
           })
           .catch(function () {});
+      }
+
+      var STATUS = {
+        SCHEDULED: { text: 'Programada', tone: 'info' },
+        CONFIRMED: { text: 'Confirmada', tone: 'info' },
+        IN_WAITING: { text: 'En sala de espera', tone: 'live' },
+        COMPLETED: { text: 'Finalizada', tone: 'ok' },
+        NO_SHOW: { text: 'No asistió', tone: 'danger' },
+        CANCELLED: { text: 'Cancelada', tone: 'danger' },
+      };
+
+      function dayKey(d) {
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      }
+
+      function timeOf(iso) {
+        return new Date(iso).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+      }
+
+      /** Agenda de hoy y próxima cita, con la misma consulta que usa el módulo Agenda. */
+      function loadAgenda() {
+        var panel = document.getElementById('agendaPanel');
+        var body = document.getElementById('agendaBody');
+        var nextPanel = document.getElementById('nextPanel');
+        var nextBody = document.getElementById('nextBody');
+        var stats = document.getElementById('stats');
+        panel.hidden = false;
+        nextPanel.hidden = false;
+        stats.hidden = false;
+        var now = new Date();
+        var to = new Date(now.getTime() + 14 * 86400000);
+        var todayKey = dayKey(now);
+        var url = '/api/appointments/today?from=' + todayKey + '&to=' + dayKey(to);
+        fetch(url, { headers: authHeaders(), cache: 'no-store' })
+          .then(function (r) { if (!r.ok) throw new Error('agenda'); return r.json(); })
+          .then(function (rows) {
+            rows = rows || [];
+            var today = rows.filter(function (a) { return dayKey(new Date(a.startsAt)) === todayKey; });
+            var citas = today.filter(function (a) { return a.eventType === 'CITA'; });
+            var active = citas.filter(function (a) { return a.status !== 'CANCELLED'; });
+            document.getElementById('statToday').textContent = String(active.length);
+            var pending = active.filter(function (a) { return ['SCHEDULED', 'CONFIRMED', 'IN_WAITING'].indexOf(a.status) !== -1; }).length;
+            document.getElementById('statTodaySub').textContent = active.length
+              ? pending + ' pendiente' + (pending === 1 ? '' : 's') + ' por atender'
+              : 'Sin citas programadas';
+            document.getElementById('statDone').textContent = String(citas.filter(function (a) { return a.status === 'COMPLETED'; }).length);
+            document.getElementById('statWaiting').textContent = String(citas.filter(function (a) { return a.status === 'IN_WAITING'; }).length);
+            renderAgenda(today);
+            renderNext(rows);
+          })
+          .catch(function () {
+            body.innerHTML = '<p class="empty">No se pudo cargar la agenda. <a class="panel-link" href="/consultorio/agenda">Abrir agenda</a></p>';
+            nextBody.innerHTML = '<p class="empty">No disponible</p>';
+            ['statToday', 'statDone', 'statWaiting'].forEach(function (id) { document.getElementById(id).textContent = '—'; });
+            document.getElementById('statTodaySub').textContent = 'No disponible';
+          });
+
+        function renderAgenda(today) {
+          if (!today.length) {
+            body.innerHTML = '<p class="empty">Sin citas registradas para hoy.</p>';
+            return;
+          }
+          var pros = {};
+          today.forEach(function (a) { if (a.professional) pros[a.professional.id] = true; });
+          var manyPros = Object.keys(pros).length > 1;
+          body.innerHTML = '<ul class="agenda-list">' + today.map(function (a) {
+            if (a.eventType === 'BLOQUEO') {
+              return '<li><span class="ag-time">' + timeOf(a.startsAt) + '</span><div class="ag-main"><p class="ag-name">Franja bloqueada</p>' +
+                '<p class="ag-detail">' + esc(a.blockReason || 'Sin motivo') + (manyPros && a.professional ? ' · ' + esc(a.professional.fullName) : '') + '</p></div>' +
+                '<span class="chip" data-tone="block">Bloqueo</span></li>';
+            }
+            var st = STATUS[a.status] || { text: a.status, tone: 'info' };
+            var detail = [a.reason, a.isTelemedicine || a.modality === 'VIRTUAL' ? 'Telemedicina' : 'Presencial'];
+            if (manyPros && a.professional) detail.push(a.professional.fullName);
+            return '<li><span class="ag-time">' + timeOf(a.startsAt) + '</span><div class="ag-main"><p class="ag-name">' +
+              esc(a.patient ? a.patient.fullName : 'Paciente sin asignar') + '</p><p class="ag-detail">' +
+              esc(detail.filter(Boolean).join(' · ')) + '</p></div><span class="chip" data-tone="' + st.tone + '">' + esc(st.text) + '</span></li>';
+          }).join('') + '</ul>';
+        }
+
+        function renderNext(rows) {
+          var nowMs = Date.now();
+          var next = rows.filter(function (a) {
+            return a.eventType === 'CITA' && ['SCHEDULED', 'CONFIRMED', 'IN_WAITING'].indexOf(a.status) !== -1 &&
+              new Date(a.endsAt || a.startsAt).getTime() >= nowMs;
+          })[0];
+          if (!next) {
+            nextBody.innerHTML = '<p class="empty">Sin citas próximas en los siguientes 14 días.</p>';
+            return;
+          }
+          var start = new Date(next.startsAt);
+          var virtual = next.isTelemedicine || next.modality === 'VIRTUAL';
+          var dayText = dayKey(start) === dayKey(new Date())
+            ? 'Hoy'
+            : start.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+          nextBody.innerHTML =
+            '<p class="next-time">' + timeOf(next.startsAt) + '</p>' +
+            '<p class="next-day">' + esc(dayText) + '</p>' +
+            '<p class="next-name">' + esc(next.patient ? next.patient.fullName : 'Paciente sin asignar') + '</p>' +
+            '<div class="next-meta">' +
+            (next.reason ? '<span><svg class="ico"><use href="#i-steth"/></svg>' + esc(next.reason) + '</span>' : '') +
+            '<span><svg class="ico"><use href="#i-' + (virtual ? 'video' : 'pin') + '"/></svg>' + (virtual ? 'Telemedicina' : 'Presencial') + '</span>' +
+            (next.professional ? '<span><svg class="ico"><use href="#i-users"/></svg>' + esc(next.professional.fullName) + '</span>' : '') +
+            '</div>' +
+            '<a class="btn" href="/consultorio/agenda">Abrir en la agenda<svg class="ico"><use href="#i-chevron"/></svg></a>';
+        }
       }
 
       function showRepsAlert(data) {
@@ -664,7 +969,7 @@
             wrap.hidden = false;
             sel.innerHTML = rows.map(function (c) {
               var selected = c.isCurrent || c.id === user.clinicId ? ' selected' : '';
-              return '<option value="' + c.id + '"' + selected + '>' + c.name + '</option>';
+              return '<option value="' + esc(c.id) + '"' + selected + '>' + esc(c.name) + '</option>';
             }).join('');
             sel.addEventListener('change', function () {
               var clinicId = sel.value;
@@ -699,6 +1004,8 @@
       loadHostingReminder();
       setupReceiptsFolder();
       loadSedes();
+      loadAgenda();
+      syncNav();
 
       if (!isSecretaria) {
         // RIPS lo activa HABILISALUD; aquí solo se sincroniza la sesión para la HCE.
