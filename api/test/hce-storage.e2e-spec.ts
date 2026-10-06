@@ -541,6 +541,61 @@ describe('Almacenamiento de la historia clínica (base de pruebas)', () => {
     await http.get('/api/patients').set(comAuth).expect((r) => expect([400, 403]).toContain(r.status));
   }, 120000);
 
+  it('consultorios demo: estructura documental completa sin copiar soportes del cliente real', async () => {
+    const sa = { Authorization: `Bearer ${saToken}` };
+    const saUser = await prisma.user.findFirstOrThrow({ where: { role: 'SUPER_ADMIN' } });
+    const real = await http.post('/api/clinics').set(sa).send({
+      name: 'Odontología Real Pruebas',
+      specialty: 'DENTISTRY',
+      admin: { fullName: 'Odontóloga Real', email: 'odonto.real@hce-test.local', password: 'OdontoReal123!' },
+    }).expect(201);
+    await prisma.clinic.update({ where: { id: real.body.id }, data: { dashboardType: 'CLINICAL_HISTORY_WITH_DOCS' } });
+    const realAdmin = await prisma.user.findFirstOrThrow({ where: { email: 'odonto.real@hce-test.local' } });
+    const category = await prisma.documentCategory.upsert({
+      where: { code: 'TEST_DOC_CAT' },
+      create: { code: 'TEST_DOC_CAT', name: 'Talento humano (prueba)', pillar: 'TALENTO_HUMANO', sortOrder: 1 },
+      update: {},
+    });
+    const store = async (key: string, text: string) =>
+      prisma.storedFile.create({ data: { storageKey: key, mimeType: 'text/plain', sizeBytes: text.length, data: Buffer.from(text) } });
+    const template = await prisma.documentRequirement.create({
+      data: { clinicId: real.body.id, categoryId: category.id, code: 'TEST_PROTOCOLO', title: 'Protocolo de bioseguridad' },
+    });
+    const own = await prisma.documentRequirement.create({
+      data: { clinicId: real.body.id, categoryId: category.id, code: 'TEST_DIPLOMA', title: 'Diploma del profesional' },
+    });
+    await store('test/protocolo.txt', 'Plantilla HABILISALUD');
+    await store('test/diploma.txt', 'Diploma real del cliente');
+    await prisma.documentFile.create({
+      data: { requirementId: template.id, uploadedById: saUser.id, originalName: 'protocolo.txt', storageKey: 'test/protocolo.txt', mimeType: 'text/plain', sizeBytes: 21, status: 'SIGNED' },
+    });
+    await prisma.documentFile.create({
+      data: { requirementId: own.id, uploadedById: realAdmin.id, originalName: 'diploma.txt', storageKey: 'test/diploma.txt', mimeType: 'text/plain', sizeBytes: 24, status: 'SIGNED' },
+    });
+
+    const demos = await http.get('/api/admin/demos').set(sa).expect(200);
+    const dental = demos.body.find((d: { specialty: string; isActive: boolean }) => d.specialty === 'DENTISTRY' && d.isActive);
+    const res = await http.post(`/api/admin/demos/${dental.id}/documents`).set(sa).expect(201);
+    check('Demo documentos', 'toma como modelo el consultorio real de la especialidad', res.body.source, 'Odontología Real Pruebas');
+    const files = await prisma.documentFile.findMany({
+      where: { requirement: { clinicId: dental.id } },
+      include: { requirement: { select: { code: true } } },
+    });
+    check('Demo documentos', 'copia la estructura (requisitos)', res.body.requirements >= 2, true);
+    check('Demo documentos', 'solo copia plantillas de HABILISALUD', files.map((f) => f.requirement.code), ['TEST_PROTOCOLO']);
+    const again = await http.post(`/api/admin/demos/${dental.id}/documents`).set(sa).expect(201);
+    check('Demo documentos', 'recargar no duplica archivos', again.body.filesCopied, 0);
+    const realFiles = await prisma.documentFile.count({ where: { requirement: { clinicId: real.body.id } } });
+    check('Demo documentos', 'el consultorio real queda intacto', realFiles, 2);
+
+    const psych = demos.body.find((d: { specialty: string; isActive: boolean }) => d.specialty === 'PSYCHOLOGY' && d.isActive) ??
+      demos.body.find((d: { specialty: string }) => d.specialty === 'PSYCHOLOGY');
+    const psychDocs = await prisma.documentRequirement.count({ where: { clinicId: psych.id } });
+    check('Demo documentos', 'psicología trae lista de habilitación y SG-SST', psychDocs > 20, true);
+    const com = await http.post('/api/auth/login').send({ email: 'comercial@habilisalud.com', password: '2020' }).expect(201);
+    await http.post(`/api/admin/demos/${dental.id}/documents`).set({ Authorization: `Bearer ${com.body.accessToken}` }).expect(403);
+  }, 120000);
+
   it('registro completo de psicología: guarda la ficha de ingreso sin duplicar ni borrar datos', async () => {
     await http.post('/api/patients/intake').set(auth()).send({ firstName: 'Sin', lastName: 'Documento' }).expect(400);
 

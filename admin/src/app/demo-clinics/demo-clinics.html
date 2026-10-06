@@ -64,7 +64,7 @@
         }
       </div>
       @if (creating(); as s) {
-        <p class="hint">Preparando {{ specialtyLabel(s) }}: pacientes, agenda e historias firmadas…</p>
+        <p class="hint">Preparando {{ specialtyLabel(s) }}: pacientes, agenda, historias firmadas y documentación…</p>
       }
     </section>
     }
@@ -90,6 +90,7 @@
             <li><strong>{{ demo.patients }}</strong> pacientes</li>
             <li><strong>{{ demo.signedRecords }}</strong> historias firmadas</li>
             <li><strong>{{ demo.appointmentsToday }}</strong> citas hoy</li>
+            <li><strong>{{ demo.documents }}</strong> documentos ({{ demo.documentsWithFiles }} con soporte)</li>
           </ul>
 
           <div class="demo-access">
@@ -106,6 +107,9 @@
           <div class="demo-actions">
             <button type="button" class="ghost compact" (click)="copyAccess(demo)">Copiar accesos</button>
             @if (!readOnly()) {
+              <button type="button" class="ghost compact" [disabled]="!!loadingDocs()" (click)="loadDocuments(demo)">
+                {{ loadingDocs() === demo.id ? 'Cargando…' : 'Cargar documentación' }}
+              </button>
               <button type="button" class="ghost compact" (click)="toggleActive(demo)">
                 {{ demo.isActive ? 'Desactivar' : 'Reactivar' }}
               </button>

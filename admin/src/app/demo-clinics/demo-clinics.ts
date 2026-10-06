@@ -17,6 +17,8 @@ type DemoClinic = {
   patients: number;
   signedRecords: number;
   appointmentsToday: number;
+  documents: number;
+  documentsWithFiles: number;
   users: DemoUser[];
 };
 
@@ -43,6 +45,7 @@ export class DemoClinicsPage implements OnInit {
   readonly demos = signal<DemoClinic[]>([]);
   readonly loading = signal(false);
   readonly creating = signal<ClinicSpecialty | null>(null);
+  readonly loadingDocs = signal<string | null>(null);
   readonly notice = signal('');
   readonly error = signal('');
   specialty: ClinicSpecialty = 'PSYCHOLOGY';
@@ -121,6 +124,31 @@ export class DemoClinicsPage implements OnInit {
       },
       error: (err) => this.error.set(err?.error?.message || 'No se pudo cambiar el estado.'),
     });
+  }
+
+  loadDocuments(demo: DemoClinic) {
+    this.loadingDocs.set(demo.id);
+    this.error.set('');
+    this.notice.set('');
+    this.http
+      .post<{ source: string | null; requirementsCreated: number; filesCopied: number; requirements: number; withFiles: number }>(
+        `${API}/admin/demos/${demo.id}/documents`,
+        {},
+      )
+      .subscribe({
+        next: (r) => {
+          this.loadingDocs.set(null);
+          const from = r.source ? ` Modelo: ${r.source}.` : '';
+          this.notice.set(
+            `«${demo.name}»: ${r.requirements} documentos (${r.withFiles} con soporte). Nuevos: ${r.requirementsCreated} requisitos y ${r.filesCopied} archivos.${from}`,
+          );
+          this.reload();
+        },
+        error: (err) => {
+          this.loadingDocs.set(null);
+          this.error.set(err?.error?.message || 'No se pudo cargar la documentación.');
+        },
+      });
   }
 
   copy(text: string) {

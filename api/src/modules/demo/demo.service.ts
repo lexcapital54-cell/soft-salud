@@ -3,12 +3,25 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomInt } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
-import { AppointmentStatus, CareModality, ClinicSpecialty, DashboardType, Prisma, UserRole } from '@prisma/client';
+import { extname } from 'path';
+import {
+  AppointmentStatus,
+  CareModality,
+  ClinicSpecialty,
+  DashboardType,
+  DocumentFileStatus,
+  Prisma,
+  UserRole,
+} from '@prisma/client';
+import { UserRole as AppRole } from '../../common/enums';
 import { PrismaService } from '../../prisma/prisma.module';
 import { User } from '../../users/user.entity';
 import { isCiConsentSpec } from '../clinical/consent-ci/ci-consent.types';
 import { ConsentsService } from '../clinical/consents.service';
+import { ClinicalStorageService } from '../clinical/clinical-storage.service';
 import { EncountersService } from '../clinical/encounters.service';
+import { DocumentProvisionService } from '../documents/document-provision.service';
+import { PdfBrandService } from '../documents/pdf-brand.service';
 import { DemoSpecialtyKit, demoKit } from './demo-content';
 import { demoSignatureDataUrl } from './demo-signature';
 
@@ -34,6 +47,9 @@ export class DemoService {
     private readonly prisma: PrismaService,
     private readonly encounters: EncountersService,
     private readonly consents: ConsentsService,
+    private readonly provision: DocumentProvisionService,
+    private readonly pdfBrand: PdfBrandService,
+    private readonly storage: ClinicalStorageService,
     @InjectRepository(User) private readonly usersRepository: Repository<User>,
   ) {}
 
@@ -98,7 +114,126 @@ export class DemoService {
     });
 
     await this.seedClinicalData(clinic.id, professional.id, kit);
+    try {
+      await this.loadDocuments(clinic.id);
+    } catch (error) {
+      this.logger.warn(
+        `Demo ${kit.label}: documentación pendiente (${error instanceof Error ? error.message : String(error)})`,
+      );
+    }
     return (await this.list()).find((d) => d.id === clinic.id)!;
+  }
+
+  /**
+   * Estructura documental completa: aprovisionamiento estándar + requisitos del
+   * consultorio real más completo de la especialidad. Solo se copian las
+   * plantillas que cargó HABILISALUD (autodiligenciadas con el profesional demo);
+   * los soportes propios del cliente real nunca salen de su consultorio.
+   */
+  async loadDocuments(id: string) {
+    const clinic = await this.prisma.clinic.findFirst({ where: { id, isDemo: true } });
+    if (!clinic) throw new NotFoundException('Consultorio demo no encontrado');
+    if (clinic.dashboardType !== DashboardType.CLINICAL_HISTORY_WITH_DOCS) {
+      await this.prisma.clinic.update({
+        where: { id },
+        data: { dashboardType: DashboardType.CLINICAL_HISTORY_WITH_DOCS },
+      });
+    }
+    await this.provision.ensureForClinic(id, DashboardType.CLINICAL_HISTORY_WITH_DOCS);
+
+    const peers = await this.prisma.clinic.findMany({
+      where: { isDemo: false, specialty: clinic.specialty, dashboardType: DashboardType.CLINICAL_HISTORY_WITH_DOCS },
+      select: { id: true, name: true, _count: { select: { documentRequirements: true } } },
+    });
+    peers.sort((a, b) => b._count.documentRequirements - a._count.documentRequirements);
+    const source = peers.find((p) => p._count.documentRequirements > 0) ?? null;
+
+    let requirementsCreated = 0;
+    let filesCopied = 0;
+    if (source) {
+      const professional = await this.usersRepository.findOne({
+        where: { clinicId: id, role: AppRole.ADMIN },
+        relations: { clinic: true },
+      });
+      const brand = professional ? await this.pdfBrand.resolveBrand(professional, id) : null;
+      const sourceReqs = await this.prisma.documentRequirement.findMany({
+        where: { clinicId: source.id },
+        include: {
+          category: true,
+          files: {
+            where: { status: { not: DocumentFileStatus.RETIRED }, uploadedBy: { role: UserRole.SUPER_ADMIN } },
+            orderBy: { version: 'asc' },
+          },
+        },
+      });
+
+      for (const req of sourceReqs) {
+        let target = await this.prisma.documentRequirement.findFirst({ where: { clinicId: id, code: req.code } });
+        if (!target) {
+          target = await this.prisma.documentRequirement.create({
+            data: {
+              clinicId: id,
+              categoryId: req.categoryId,
+              code: req.code,
+              title: req.title,
+              description: req.description,
+              isMandatory: req.isMandatory,
+              isEnabled: req.isEnabled,
+              validityDays: req.validityDays,
+              requiresClinicSignature: req.requiresClinicSignature,
+            },
+          });
+          requirementsCreated += 1;
+        }
+        if (!professional || !req.files.length) continue;
+        const hasFiles = await this.prisma.documentFile.count({ where: { requirementId: target.id } });
+        if (hasFiles) continue;
+
+        for (const [index, file] of req.files.entries()) {
+          try {
+            let buffer = await this.storage.readBuffer(file.storageKey);
+            const mime = file.mimeType || 'application/octet-stream';
+            if (brand && (mime.includes('pdf') || file.originalName.toLowerCase().endsWith('.pdf'))) {
+              buffer = await this.pdfBrand.brandPdf(buffer, brand, { force: true });
+            }
+            const version = index + 1;
+            const { storageKey, contentHash } = await this.storage.writeBuffer(
+              `habilitation-docs/${id}/${req.category.pillar.toLowerCase()}/${req.code}`,
+              `v${version}-demo-${Date.now()}${(extname(file.originalName) || '').slice(0, 12)}`,
+              buffer,
+              mime,
+            );
+            await this.prisma.documentFile.create({
+              data: {
+                requirementId: target.id,
+                uploadedById: professional.id,
+                version,
+                periodLabel: file.periodLabel,
+                status: DocumentFileStatus.SIGNED,
+                originalName: file.originalName,
+                storageKey,
+                mimeType: mime,
+                sizeBytes: buffer.length,
+                checksum: contentHash,
+                expiresAt: file.expiresAt,
+                notes: 'Plantilla HABILISALUD para consultorio demo.',
+              },
+            });
+            filesCopied += 1;
+          } catch (error) {
+            this.logger.warn(
+              `Demo: no se copió ${file.originalName} (${error instanceof Error ? error.message : String(error)})`,
+            );
+          }
+        }
+      }
+    }
+
+    const [requirements, withFiles] = await Promise.all([
+      this.prisma.documentRequirement.count({ where: { clinicId: id } }),
+      this.prisma.documentRequirement.count({ where: { clinicId: id, files: { some: {} } } }),
+    ]);
+    return { id, source: source?.name ?? null, requirementsCreated, filesCopied, requirements, withFiles };
   }
 
   async setActive(id: string, isActive: boolean) {
@@ -235,12 +370,14 @@ export class DemoService {
       include: { users: { select: { role: true; fullName: true; email: true; passwordReminder: true } } };
     }>,
   ) {
-    const [patients, signedRecords, appointmentsToday] = await Promise.all([
+    const [patients, signedRecords, appointmentsToday, documents, documentsWithFiles] = await Promise.all([
       this.prisma.patient.count({ where: { clinicId: clinic.id } }),
       this.prisma.clinicalRecord.count({ where: { status: 'SIGNED', encounter: { clinicId: clinic.id } } }),
       this.prisma.appointment.count({
         where: { clinicId: clinic.id, startsAt: { gte: bogotaAt(0, 0), lt: bogotaAt(1, 0) } },
       }),
+      this.prisma.documentRequirement.count({ where: { clinicId: clinic.id, isEnabled: true } }),
+      this.prisma.documentRequirement.count({ where: { clinicId: clinic.id, isEnabled: true, files: { some: {} } } }),
     ]);
     return {
       id: clinic.id,
@@ -251,6 +388,8 @@ export class DemoService {
       patients,
       signedRecords,
       appointmentsToday,
+      documents,
+      documentsWithFiles,
       users: clinic.users.map((u) => ({
         role: u.role,
         roleLabel: ROLE_LABELS[u.role] ?? u.role,

@@ -17,6 +17,6 @@ import { SgsstFillPdfService } from './sgsst-fill-pdf.service';
     HabilitationPackImportService,
     PdfBrandService,
   ],
-  exports: [DocumentsService, DocumentProvisionService],
+  exports: [DocumentsService, DocumentProvisionService, PdfBrandService],
 })
 export class DocumentsModule {}

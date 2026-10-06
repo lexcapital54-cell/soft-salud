@@ -36,6 +36,11 @@ export class DemoController {
     return this.demos.create(dto.specialty);
   }
 
+  @Post(':id/documents')
+  loadDocuments(@Param('id', ParseUUIDPipe) id: string) {
+    return this.demos.loadDocuments(id);
+  }
+
   @Post(':id/active')
   setActive(@Param('id', ParseUUIDPipe) id: string, @Body() dto: DemoActiveDto) {
     return this.demos.setActive(id, dto.isActive);
