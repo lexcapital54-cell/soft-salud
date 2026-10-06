@@ -217,6 +217,11 @@
     .stat-label { margin: 0; font-size: .8rem; color: var(--muted); }
     .stat-value { margin: 2px 0 0; font-family: var(--serif); font-size: 1.8rem; font-weight: 600; line-height: 1; color: var(--nav); }
     .stat-sub { margin: 4px 0 0; font-size: .76rem; color: var(--muted); }
+    .stat-link { position: relative; color: inherit; text-decoration: none; transition: border-color .15s ease, transform .15s ease; }
+    .stat-link:hover { border-color: var(--nav-2); transform: translateY(-1px); }
+    .stat-link:focus-visible { outline: 3px solid rgba(var(--glow-rgb), .7); outline-offset: 2px; }
+    .stat-go { width: 18px; height: 18px; margin-left: auto; color: var(--muted); flex: 0 0 auto; }
+    @media (prefers-reduced-motion: reduce) { .stat-link { transition: none; } .stat-link:hover { transform: none; } }
 
     /* Paneles */
     .grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); gap: 22px; align-items: start; }
@@ -354,6 +359,7 @@
       .panel { padding: 18px 16px; }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
       .stat { flex-direction: column; align-items: flex-start; padding: 16px; gap: 10px; }
+      .stat-go { position: absolute; top: 16px; right: 14px; }
       .agenda-list li { grid-template-columns: 6.2em minmax(0, 1fr); gap: 10px; }
       .agenda-list li .chip { grid-column: 2; justify-self: start; }
       .err-banner { margin: 16px 14px 0; }
@@ -539,17 +545,19 @@
             <span class="stat-ico" aria-hidden="true"><svg class="ico"><use href="#i-calendar"/></svg></span>
             <div><p class="stat-label">Citas de hoy</p><p class="stat-value" id="statToday">—</p><p class="stat-sub" id="statTodaySub">Sin información</p></div>
           </div>
-          <div class="stat" data-tone="ok">
+          <a class="stat stat-link" data-tone="ok" href="/consultorio/agenda?estado=COMPLETED" aria-label="Pacientes atendidos hoy: ver en la agenda">
             <span class="stat-ring" aria-hidden="true">
               <svg viewBox="0 0 44 44"><circle class="ring-bg" cx="22" cy="22" r="18" /><circle class="ring-val" id="statDoneRing" cx="22" cy="22" r="18" pathLength="100" stroke-dasharray="0 100" /></svg>
               <span id="statDonePct">—</span>
             </span>
             <div><p class="stat-label">Pacientes atendidos</p><p class="stat-value" id="statDone">—</p><p class="stat-sub" id="statDoneSub">Citas finalizadas hoy</p></div>
-          </div>
-          <div class="stat" data-tone="warn">
+            <svg class="ico stat-go" aria-hidden="true"><use href="#i-chevron"/></svg>
+          </a>
+          <a class="stat stat-link" data-tone="warn" href="/consultorio/agenda?estado=IN_WAITING" aria-label="Pacientes en sala de espera: ver en la agenda">
             <span class="stat-ico" aria-hidden="true"><svg class="ico"><use href="#i-wait"/></svg></span>
             <div><p class="stat-label">En sala de espera</p><p class="stat-value" id="statWaiting">—</p><p class="stat-sub">Admitidos, pendientes de atención</p></div>
-          </div>
+            <svg class="ico stat-go" aria-hidden="true"><use href="#i-chevron"/></svg>
+          </a>
           <div class="stat" data-tone="gold" id="statOpenCard" hidden>
             <span class="stat-ico" aria-hidden="true"><svg class="ico"><use href="#i-clipboard"/></svg></span>
             <div><p class="stat-label">Historias sin cerrar</p><p class="stat-value" id="statOpen">0</p><p class="stat-sub">Pendientes de firma</p></div>
@@ -1221,6 +1229,11 @@
       loadSedes();
       loadAgenda();
       syncNav();
+
+      // Los cambios de estado se hacen en la Agenda: el resumen se vuelve a leer al regresar y cada minuto.
+      setInterval(function () { if (!document.hidden) loadAgenda(); }, 60000);
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) loadAgenda(); });
+      window.addEventListener('pageshow', function (ev) { if (ev.persisted) loadAgenda(); });
 
       if (!isSecretaria) {
         // RIPS lo activa HABILISALUD; aquí solo se sincroniza la sesión para la HCE.

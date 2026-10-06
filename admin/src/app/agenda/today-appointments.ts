@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { UnsavedWorkService } from '../unsaved-work.service';
 import { AgendaApiService } from './agenda-api.service';
@@ -112,6 +112,7 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
   private readonly api = inject(AgendaApiService);
   private readonly auth = inject(AuthService);
   private readonly unsaved = inject(UnsavedWorkService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly user = this.auth.user;
   readonly canManage = this.auth.canManageAgenda;
@@ -447,6 +448,10 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
   );
 
   ngOnInit() {
+    // El dashboard abre la agenda ya filtrada (?estado=IN_WAITING o COMPLETED).
+    const estado = this.route.snapshot.queryParamMap.get('estado');
+    const filter = this.statusFilters.find((f) => f.value && f.value === estado);
+    if (filter) this.statusFilter = filter.value;
     this.refresh();
     this.clock = setInterval(() => this.now.set(Date.now()), 20_000);
     if (this.canManage()) {
