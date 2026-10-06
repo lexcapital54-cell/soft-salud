@@ -264,3 +264,46 @@
     max-width: 160px;
   }
 }
+
+/* Fisioterapia: menú lateral azul marino + contenido en tonos claros. */
+.ws-shell.ws-physio {
+  display: flex;
+  align-items: flex-start;
+  min-height: 100svh;
+  background: #f6f8fa;
+
+  @media (max-width: 1100px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hce-workspace {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: #f6f8fa;
+  }
+
+  .ws-left a {
+    color: #163a59;
+  }
+
+  /* El logo del consultorio ya va en el menú lateral. */
+  .ws-topbar.with-logo {
+    display: flex;
+  }
+
+  .ws-topbar .clinic-logo {
+    display: none;
+  }
+
+  .ws-title {
+    color: #0b2239;
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    letter-spacing: 0.02em;
+  }
+
+  .ws-tab.active {
+    border-color: #c79a4b;
+    color: #0b2239;
+  }
+}

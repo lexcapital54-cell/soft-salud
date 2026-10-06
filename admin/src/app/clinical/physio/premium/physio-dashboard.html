@@ -1,0 +1,306 @@
+<section class="pd" id="ft-resumen" aria-labelledby="pd-title">
+  <header class="pd-header">
+    <div>
+      <h1 id="pd-title" class="pd-title">Historia clínica <span>de fisioterapia</span></h1>
+      <p class="pd-subtitle">Rehabilitación física personalizada para el movimiento y el bienestar</p>
+    </div>
+    <button type="button" class="pd-btn ghost pd-toggle" [attr.aria-expanded]="!collapsed()" aria-controls="pd-body" (click)="toggle()">
+      {{ collapsed() ? 'Mostrar resumen' : 'Ocultar resumen' }}
+    </button>
+  </header>
+
+  @if (!collapsed()) {
+    <div id="pd-body">
+      @if (loading()) {
+        <div class="pd-skeleton" aria-label="Cargando historia clínica" aria-busy="true">
+          <span class="sk-hero"></span>
+          <div class="sk-row"><span></span><span></span></div>
+          <div class="sk-row"><span></span><span></span></div>
+        </div>
+      } @else {
+        <div class="pd-layout">
+          <div class="pd-main">
+            <app-physio-patient-card
+              [patient]="patient()"
+              [photo]="photo()"
+              [motive]="motive()"
+              [modality]="modality()"
+              [professional]="encounter()?.professional?.fullName || ''"
+              [sealed]="locked()"
+              [editable]="canWrite()"
+              (edit)="goto.emit('odo-identificacion')"
+            />
+
+            @if (alerts().length) {
+              <div class="pd-alert" role="alert">
+                <app-physio-icon name="alert" />
+                @for (a of alerts(); track a) {
+                  <span>{{ a }}</span>
+                }
+              </div>
+            }
+
+            <div class="pd-row">
+              <app-physio-section-card
+                icon="note"
+                heading="Motivo de consulta"
+                [date]="assessmentDate()"
+                [editable]="editable()"
+                [empty]="!motive() && !presentIllness()"
+                (edit)="goto.emit('hce-section-3')"
+              >
+                @if (motive()) {
+                  <p class="pd-text">{{ motive() }}</p>
+                }
+                @if (presentIllness()) {
+                  <h4 class="pd-sub">Enfermedad actual</h4>
+                  <p class="pd-text">{{ presentIllness() }}</p>
+                }
+              </app-physio-section-card>
+
+              <app-physio-section-card
+                icon="history"
+                heading="Antecedentes clínicos y funcionales"
+                [editable]="editable()"
+                [empty]="!antecedents().length"
+                (edit)="goto.emit('hce-section-3')"
+              >
+                <dl class="pd-dl">
+                  @for (r of antecedents(); track r.label) {
+                    <div>
+                      <dt>{{ r.label }}</dt>
+                      <dd [class.ok]="r.tone === 'ok'">{{ r.value }}</dd>
+                    </div>
+                  }
+                </dl>
+              </app-physio-section-card>
+            </div>
+
+            <div class="pd-row">
+              <app-physio-section-card
+                icon="activity"
+                heading="Estado funcional actual"
+                [date]="assessmentDate()"
+                [editable]="editable()"
+                (edit)="goto.emit('ft-valoracion-funcional')"
+              >
+                <div class="pd-metrics">
+                  @for (m of metrics(); track m.key) {
+                    <app-physio-metric-card [metric]="m" (open)="goto.emit($event)" />
+                  }
+                </div>
+                @if (!hasMetrics()) {
+                  <p class="pd-hint">Los indicadores se llenan con la valoración fisioterapéutica (EVA, rango, fuerza, postura, marcha y equilibrio).</p>
+                }
+              </app-physio-section-card>
+
+              <app-physio-section-card
+                icon="stethoscope"
+                heading="Evaluación fisioterapéutica"
+                [editable]="editable()"
+                [empty]="!evaluation().length"
+                emptyText="Pendiente de valoración"
+                (edit)="goto.emit('ft-evaluacion')"
+              >
+                <dl class="pd-dl">
+                  @for (r of evaluation(); track r.label) {
+                    <div>
+                      <dt>{{ r.label }}</dt>
+                      <dd [class.warn]="r.tone === 'warn'" [class.ok]="r.tone === 'ok'">{{ r.value }}</dd>
+                    </div>
+                  }
+                </dl>
+              </app-physio-section-card>
+            </div>
+
+            <div class="pd-row">
+              <app-physio-section-card
+                icon="diagnosis"
+                heading="Impresión clínica"
+                [editable]="editable()"
+                [empty]="!hasImpression()"
+                (edit)="goto.emit('ft-diagnostico')"
+              >
+                @let imp = impression();
+                @if (imp.narrative) {
+                  <p class="pd-text">{{ imp.narrative }}</p>
+                }
+                @if (imp.physioDiagnosis) {
+                  <h4 class="pd-sub">Diagnóstico fisioterapéutico</h4>
+                  <p class="pd-text">{{ imp.physioDiagnosis }}</p>
+                }
+                @if (imp.code || imp.codeDescription) {
+                  <p class="pd-code"><b>{{ imp.code }}</b> {{ imp.codeDescription }}</p>
+                }
+                @if (imp.cie.length) {
+                  <h4 class="pd-sub">Diagnóstico médico relacionado (CIE-10)</h4>
+                  <ul class="pd-cie">
+                    @for (d of imp.cie; track d.code) {
+                      <li>
+                        <b>{{ d.code }}</b> {{ d.description }}
+                        @if (d.type) {
+                          <span>{{ d.type }}</span>
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+              </app-physio-section-card>
+
+              <app-physio-section-card
+                icon="plan"
+                heading="Plan terapéutico"
+                [editable]="editable()"
+                [empty]="!hasPlan()"
+                (edit)="goto.emit('ft-plan')"
+              >
+                @let p = plan();
+                @if (p.steps.length) {
+                  <ol class="pd-steps">
+                    @for (s of p.steps; track $index) {
+                      <li>{{ s }}</li>
+                    }
+                  </ol>
+                }
+                @if (p.therapies.length) {
+                  <div class="pd-chips" aria-label="Terapias indicadas">
+                    @for (t of p.therapies; track t.key) {
+                      <span class="pd-chip">
+                        @if (t.key !== 'other') {
+                          <app-physio-icon [name]="t.key" />
+                        }
+                        {{ t.label }}
+                      </span>
+                    }
+                  </div>
+                }
+                @if (p.frequency || p.duration || p.sessions) {
+                  <dl class="pd-inline">
+                    @if (p.frequency) {
+                      <div><dt>Frecuencia</dt><dd>{{ p.frequency }}</dd></div>
+                    }
+                    @if (p.duration) {
+                      <div><dt>Duración</dt><dd>{{ p.duration }}</dd></div>
+                    }
+                    @if (p.sessions) {
+                      <div><dt>Sesiones</dt><dd>{{ p.sessions }}</dd></div>
+                    }
+                  </dl>
+                }
+                @let pr = progress();
+                @if (pr.count) {
+                  <div class="pd-progress" [attr.aria-label]="pr.done + ' de ' + pr.count + ' procedimientos terminados'">
+                    <span [style.width.%]="(pr.done / pr.count) * 100"></span>
+                  </div>
+                  <p class="pd-hint">{{ pr.done }} de {{ pr.count }} procedimientos terminados · {{ pr.sessions }} sesiones en el plan</p>
+                }
+              </app-physio-section-card>
+            </div>
+
+            <div class="pd-row three">
+              <app-physio-section-card
+                icon="objectives"
+                heading="Objetivos terapéuticos"
+                [editable]="editable()"
+                [empty]="!objectives().groups.length"
+                (edit)="goto.emit('ft-plan')"
+              >
+                @for (g of objectives().groups; track $index) {
+                  @if (g.term) {
+                    <h4 class="pd-sub">{{ g.term }}</h4>
+                  }
+                  <ol class="pd-steps small">
+                    @for (o of g.items; track $index) {
+                      <li>{{ o }}</li>
+                    }
+                  </ol>
+                }
+              </app-physio-section-card>
+
+              <app-physio-section-card
+                icon="lotus"
+                heading="Intervenciones / técnicas utilizadas"
+                [editable]="editable()"
+                [empty]="!interventions().length"
+                (edit)="goto.emit('ft-terapias')"
+              >
+                <app-physio-interventions-table [rows]="interventions()" />
+              </app-physio-section-card>
+
+              <app-physio-section-card
+                icon="chart"
+                heading="Evolución y seguimiento"
+                [empty]="!entries().length && pain().length < 2"
+                emptyText="Aún no hay notas de evolución firmadas."
+              >
+                @if (pain().length >= 2) {
+                  <app-physio-evolution-chart [points]="pain()" />
+                } @else if (entries().length) {
+                  <p class="pd-hint">La gráfica de dolor aparece cuando hay al menos dos registros de EVA (valoración inicial o notas que indiquen «EVA 5/10»).</p>
+                }
+                @if (entries().length) {
+                  <app-physio-evolution-timeline [entries]="entries()" />
+                }
+              </app-physio-section-card>
+            </div>
+          </div>
+
+          <aside class="pd-aside" aria-label="Panel de la atención">
+            <div class="pd-brand">
+              @if (clinicLogo() && !logoFailed()) {
+                <img [src]="clinicLogo()" [alt]="clinicName() || 'Logo del consultorio'" (error)="logoFailed.set(true)" />
+              } @else {
+                <strong>{{ clinicName() || 'Consultorio' }}</strong>
+              }
+              <span class="pd-brand-sp">Fisioterapia integral</span>
+              <span class="pd-brand-tags">Movilidad · Fuerza · Recuperación</span>
+            </div>
+
+            <app-physio-next-session [patientId]="patient()?.id || encounter()?.patient?.id || null" [query]="patientQuery()" />
+
+            <section class="pd-side-card" aria-labelledby="pd-docs-title">
+              <header><app-physio-icon name="file" /><h3 id="pd-docs-title">Documentos y acciones</h3></header>
+              <div class="pd-actions">
+                @if (canWrite() && encounter()) {
+                  <button type="button" class="pd-btn ghost" [disabled]="downloading()" (click)="downloadPdf()">
+                    <app-physio-icon name="download" />{{ downloading() ? 'Generando PDF…' : 'Descargar historia (PDF)' }}
+                  </button>
+                }
+                @if (canWrite() && locked()) {
+                  <button type="button" class="pd-btn primary" (click)="newEvolution.emit()">
+                    <app-physio-icon name="pencil" />Nueva nota de evolución
+                  </button>
+                }
+                <button type="button" class="pd-btn ghost" (click)="goto.emit('consent-section')">
+                  <app-physio-icon name="clipboard" />Consentimientos y firmas
+                </button>
+                <button type="button" class="pd-btn ghost" (click)="goto.emit('anexos-section')">
+                  <app-physio-icon name="plan" />Anexos
+                </button>
+              </div>
+              @if (downloadError()) {
+                <p class="pd-error" role="alert">
+                  {{ downloadError() }}
+                  <button type="button" class="pd-link" (click)="downloadPdf()">Reintentar</button>
+                </p>
+              }
+            </section>
+
+            <section class="pd-side-card" aria-labelledby="pd-notes-title">
+              <header><app-physio-icon name="note" /><h3 id="pd-notes-title">Notas del profesional</h3></header>
+              @if (latestNote(); as n) {
+                <p class="pd-note-title">{{ n.title }}</p>
+                <p class="pd-note">{{ n.text }}</p>
+                @if (n.author) {
+                  <p class="pd-note-author">{{ n.author }}</p>
+                }
+              } @else {
+                <p class="pd-empty">Sin notas registradas</p>
+              }
+            </section>
+          </aside>
+        </div>
+      }
+    </div>
+  }
+</section>

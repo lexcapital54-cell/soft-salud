@@ -285,6 +285,25 @@
       </div>
     </div>
 
+    @if (isPhysiotherapyClinic() && encounter() && (!isAuditor() || !content._redacted)) {
+      <app-physio-dashboard
+        [patient]="patientForm"
+        [photo]="patientPhotoSrc()"
+        [encounter]="encounter()"
+        [content]="content"
+        [evolutions]="evolutions()"
+        [diagnoses]="diagnoses"
+        [canWrite]="canWrite()"
+        [formDisabled]="clinicalFormDisabled()"
+        [locked]="isLocked()"
+        [loading]="loading()"
+        [clinicName]="user()?.clinicName || ''"
+        [clinicLogo]="clinicLogo()"
+        (goto)="scrollToOdo($event)"
+        (newEvolution)="scrollToEvolutions()"
+      />
+    }
+
     <div class="layout">
       <div class="main">
         @if (isLocked()) {

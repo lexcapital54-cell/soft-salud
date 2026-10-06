@@ -21,6 +21,7 @@ import { PhysioIntakeHeader } from './physio/physio-intake-header';
 import { PhysioQuickAssessment } from './physio/physio-quick-assessment';
 import { PhysioTherapies } from './physio/physio-therapies';
 import { PhysioIcon } from './physio/physio-icons';
+import { PhysioDashboard } from './physio/premium/physio-dashboard';
 import { PsychPatientExtras } from './psychology/psych-patient-extras';
 import { NO_OTHER_SPECIALTY, type PatientExtras } from './patient-extras';
 import { physioIntakeSummary } from './physio/physio-intake.summary';
@@ -343,6 +344,7 @@ function emptyContent(): ClinicalContent {
 @Component({
   selector: 'app-clinical-history',
   imports: [
+    PhysioDashboard,
     NgTemplateOutlet,
     DentalExamGroup,
     DentalPeriodontogram,

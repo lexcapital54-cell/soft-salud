@@ -3,6 +3,7 @@ import { CompletenessContext, ModuleStatus } from '../dentistry/dental-completen
 
 /** Módulos de la historia de fisioterapia (menú superior), en el orden en que aparecen en pantalla. */
 export const PHYSIO_MODULES = [
+  { id: 'ft-resumen', label: 'Resumen' },
   { id: 'odo-identificacion', label: 'Identificación' },
   { id: 'ft-atencion', label: 'Datos de la atención' },
   { id: 'hce-section-3', label: 'Motivo y antecedentes' },

@@ -6,6 +6,7 @@ import { WEBSITE_URL } from '../api.config';
 import { clinicLogoUrl } from '../clinic-logo';
 import { ClinicalHistory } from './clinical-history';
 import { ClinicSwitcher } from '../clinic-switcher';
+import { PhysioSidebar } from './physio/premium/physio-sidebar';
 import { HceWorkspaceService } from './hce-workspace.service';
 import { OpenEncountersAlert } from './open-encounters-alert';
 import { VoiceDictationService } from './voice-dictation.service';
@@ -13,7 +14,7 @@ import { ClinicalTextToSpeechService } from './clinical-text-to-speech.service';
 
 @Component({
   selector: 'app-hce-workspace',
-  imports: [ClinicalHistory, OpenEncountersAlert, ClinicSwitcher],
+  imports: [ClinicalHistory, OpenEncountersAlert, ClinicSwitcher, PhysioSidebar],
   templateUrl: './hce-workspace.html',
   styleUrl: './hce-workspace.scss',
 })
@@ -35,6 +36,7 @@ export class HceWorkspace implements OnInit, OnDestroy {
     this.logoFailed() ? null : clinicLogoUrl(this.user()?.clinicId, 'hc'),
   );
   readonly canWrite = this.auth.canWriteClinical;
+  readonly isPhysio = computed(() => String(this.user()?.specialty || '').toUpperCase() === 'PHYSIOTHERAPY');
   readonly tabs = this.workspace.tabs;
   readonly activeKey = this.workspace.activeKey;
   bulkSaveMessage = '';

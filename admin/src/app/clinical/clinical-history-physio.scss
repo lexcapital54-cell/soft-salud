@@ -1,14 +1,13 @@
 /* Acabado premium de la historia de fisioterapia: azul marino + dorado. */
 .hce-page.specialty-physiotherapy {
-  --ft-navy: #1b365d;
-  --ft-navy-2: #24477a;
-  --ft-gold: #c59b27;
-  --ft-line: #dbe3ee;
-  --ft-soft: #f6f8fb;
-  --hce-accent: #1b365d;
-  background:
-    radial-gradient(1200px 380px at 50% -120px, #e6edf6 0%, transparent 70%),
-    linear-gradient(180deg, #f3f6fa 0%, #ffffff 320px);
+  --ft-navy: #0b2239;
+  --ft-navy-2: #163a59;
+  --ft-gold: #c79a4b;
+  --ft-line: #e3e9f0;
+  --ft-soft: #f6f8fa;
+  --hce-accent: #0b2239;
+  background: #f6f8fa;
+  color: #172033;
 
   .topbar-left a,
   .brand {
@@ -22,8 +21,8 @@
     border-radius: 18px;
     background: #fff;
     box-shadow:
-      0 1px 2px rgba(27, 54, 93, 0.04),
-      0 14px 34px -20px rgba(27, 54, 93, 0.28);
+      0 1px 2px rgba(11, 34, 57, 0.04),
+      0 14px 34px -20px rgba(11, 34, 57, 0.28);
   }
 
   .block > h3,
@@ -31,10 +30,11 @@
   .cups-block > h3,
   .block .section3-head,
   .control-mode .control-mode-head {
-    background: linear-gradient(120deg, var(--ft-navy) 0%, var(--ft-navy-2) 100%);
+    background: var(--ft-navy);
     border-bottom: 2px solid var(--ft-gold);
     border-radius: 17px 17px 0 0;
     letter-spacing: 0.01em;
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
   }
 
   .block h4,
@@ -54,9 +54,34 @@
   }
 
   .ft-valoracion-block {
-    border: 1px solid #e8d9ad;
+    border: 1px solid #ecdcbc;
     border-radius: 16px;
-    background: linear-gradient(180deg, #fffdf6 0%, #ffffff 100%);
+    background: #fffdf8;
+  }
+
+  /* Menú de módulos (pestañas internas) */
+  .odo-nav {
+    border: 1px solid var(--ft-line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 10px 26px -22px rgba(11, 34, 57, 0.5);
+
+    > strong {
+      color: var(--ft-navy);
+      font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    }
+  }
+
+  .odo-nav-mods button {
+    border-radius: 999px;
+    color: var(--ft-navy);
+
+    &.on {
+      background: var(--ft-navy);
+      border-color: var(--ft-navy);
+      color: #fff;
+      box-shadow: inset 0 -2px 0 var(--ft-gold);
+    }
   }
 
   /* Etiquetas */
@@ -72,15 +97,15 @@
     input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']),
     select,
     textarea {
-      border: 1px solid #d5deea;
-      border-radius: 10px;
-      background-color: #fbfcfe;
-      padding: 9px 12px;
+      border: 1px solid #d5dee8;
+      border-radius: 12px;
+      background-color: #fff;
+      padding: 10px 14px;
       font-family: inherit;
       font-size: 0.92rem;
       font-weight: 400;
       color: #1f2d3d;
-      box-shadow: inset 0 1px 2px rgba(27, 54, 93, 0.04);
+      box-shadow: inset 0 1px 2px rgba(11, 34, 57, 0.04);
       transition:
         border-color 0.15s,
         box-shadow 0.15s,
@@ -94,7 +119,13 @@
         outline: none;
         border-color: var(--ft-navy);
         background-color: #fff;
-        box-shadow: 0 0 0 3px rgba(27, 54, 93, 0.12);
+        box-shadow: 0 0 0 3px rgba(199, 154, 75, 0.28);
+      }
+
+      &[aria-invalid='true'],
+      &.ng-invalid.ng-touched {
+        border-color: #d45b5b;
+        box-shadow: 0 0 0 3px rgba(212, 91, 91, 0.14);
       }
 
       &[readonly],
@@ -108,10 +139,28 @@
       }
     }
 
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']),
+    select {
+      min-height: 44px;
+    }
+
+    textarea {
+      min-height: 88px;
+      line-height: 1.5;
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    input[type='checkbox']:focus-visible,
+    input[type='radio']:focus-visible {
+      outline: 3px solid rgba(199, 154, 75, 0.6);
+      outline-offset: 2px;
+    }
+
     select {
       appearance: none;
       padding-right: 34px;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%231b365d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%230b2239' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 12px center;
     }
@@ -158,10 +207,15 @@
   .save-bar button.primary,
   .photo-btn-primary,
   .anexo-btn-pick {
-    background: linear-gradient(120deg, var(--ft-navy) 0%, var(--ft-navy-2) 100%);
+    background: var(--ft-navy);
     border-color: var(--ft-navy);
     color: #fff;
-    box-shadow: 0 8px 18px -10px rgba(27, 54, 93, 0.7);
+    border-radius: 10px;
+    box-shadow: 0 8px 18px -12px rgba(11, 34, 57, 0.7);
+
+    &:hover:not(:disabled) {
+      background: var(--ft-navy-2);
+    }
   }
 
   button.ghost,
@@ -187,7 +241,7 @@
     border-color: var(--ft-line);
     background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(8px);
-    box-shadow: 0 -8px 24px -16px rgba(27, 54, 93, 0.3);
+    box-shadow: 0 -8px 24px -16px rgba(11, 34, 57, 0.3);
   }
 
   .save-bar-info strong {
@@ -218,5 +272,19 @@
   &.embedded-page {
     background: transparent;
     border-left: 4px solid var(--ft-gold);
+  }
+
+  @media (max-width: 600px) {
+    padding-left: 8px;
+    padding-right: 8px;
+
+    &.embedded-page {
+      border-left-width: 3px;
+    }
+
+    .doc {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
   }
 }
