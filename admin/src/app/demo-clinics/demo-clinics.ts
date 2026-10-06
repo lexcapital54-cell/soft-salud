@@ -126,21 +126,30 @@ export class DemoClinicsPage implements OnInit {
     });
   }
 
-  loadDocuments(demo: DemoClinic) {
+  loadDocuments(demo: DemoClinic, files = true) {
+    if (
+      !files &&
+      !window.confirm(`¿Dejar «${demo.name}» solo con la estructura documental? Los archivos del demo se retiran (no se borran).`)
+    )
+      return;
     this.loadingDocs.set(demo.id);
     this.error.set('');
     this.notice.set('');
     this.http
-      .post<{ source: string | null; requirementsCreated: number; filesCopied: number; requirements: number; withFiles: number }>(
-        `${API}/admin/demos/${demo.id}/documents`,
-        {},
-      )
+      .post<{
+        source: string | null;
+        requirementsCreated: number;
+        filesCopied: number;
+        filesRetired: number;
+        requirements: number;
+        withFiles: number;
+      }>(`${API}/admin/demos/${demo.id}/documents`, { files })
       .subscribe({
         next: (r) => {
           this.loadingDocs.set(null);
           const from = r.source ? ` Modelo: ${r.source}.` : '';
           this.notice.set(
-            `«${demo.name}»: ${r.requirements} documentos (${r.withFiles} con soporte). Nuevos: ${r.requirementsCreated} requisitos y ${r.filesCopied} archivos.${from}`,
+            `«${demo.name}»: ${r.requirements} documentos (${r.withFiles} con soporte). Nuevos: ${r.requirementsCreated} requisitos y ${r.filesCopied} archivos.${r.filesRetired ? ` Retirados: ${r.filesRetired}.` : ''}${from}`,
           );
           this.reload();
         },

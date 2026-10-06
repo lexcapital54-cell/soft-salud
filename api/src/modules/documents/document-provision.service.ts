@@ -17,7 +17,11 @@ export class DocumentProvisionService {
     private readonly packImport: HabilitationPackImportService,
   ) {}
 
-  async ensureForClinic(clinicId: string, dashboardType: string | null) {
+  async ensureForClinic(
+    clinicId: string,
+    dashboardType: string | null,
+    options: { importPack?: boolean } = {},
+  ) {
     if (dashboardType !== DashboardType.CLINICAL_HISTORY_WITH_DOCS) {
       return { skipped: true as const };
     }
@@ -63,6 +67,10 @@ export class DocumentProvisionService {
     this.logger.log(
       `Gestión documental lista para ${clinicId}: ${excel.upserted} requisitos de habilitación + ${sgsst.upserted} SG-SST`,
     );
+
+    if (options.importPack === false) {
+      return { skipped: false as const, excel, sgsst };
+    }
 
     try {
       await this.packImport.importForClinic(clinicId);

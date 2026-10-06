@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Req, UseGuards } from '@nestjs/common';
 import { ClinicSpecialty } from '@prisma/client';
-import { IsBoolean, IsEnum } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional } from 'class-validator';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
@@ -16,6 +16,13 @@ class CreateDemoDto {
 class DemoActiveDto {
   @IsBoolean()
   isActive: boolean;
+}
+
+class DemoDocumentsDto {
+  /** false = solo la estructura de requisitos, sin archivos. */
+  @IsOptional()
+  @IsBoolean()
+  files?: boolean;
 }
 
 /** Consultorios de demostración comercial: HABILISALUD los gestiona; el equipo comercial solo los consulta. */
@@ -37,8 +44,8 @@ export class DemoController {
   }
 
   @Post(':id/documents')
-  loadDocuments(@Param('id', ParseUUIDPipe) id: string) {
-    return this.demos.loadDocuments(id);
+  loadDocuments(@Param('id', ParseUUIDPipe) id: string, @Body() dto: DemoDocumentsDto) {
+    return this.demos.loadDocuments(id, { files: dto.files });
   }
 
   @Post(':id/active')

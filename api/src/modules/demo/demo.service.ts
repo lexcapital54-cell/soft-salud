@@ -115,7 +115,7 @@ export class DemoService {
 
     await this.seedClinicalData(clinic.id, professional.id, kit);
     try {
-      await this.loadDocuments(clinic.id);
+      await this.loadDocuments(clinic.id, { files: specialty !== ClinicSpecialty.PSYCHOLOGY });
     } catch (error) {
       this.logger.warn(
         `Demo ${kit.label}: documentación pendiente (${error instanceof Error ? error.message : String(error)})`,
@@ -130,7 +130,8 @@ export class DemoService {
    * plantillas que cargó HABILISALUD (autodiligenciadas con el profesional demo);
    * los soportes propios del cliente real nunca salen de su consultorio.
    */
-  async loadDocuments(id: string) {
+  async loadDocuments(id: string, options: { files?: boolean } = {}) {
+    const withFiles = options.files !== false;
     const clinic = await this.prisma.clinic.findFirst({ where: { id, isDemo: true } });
     if (!clinic) throw new NotFoundException('Consultorio demo no encontrado');
     if (clinic.dashboardType !== DashboardType.CLINICAL_HISTORY_WITH_DOCS) {
@@ -139,7 +140,7 @@ export class DemoService {
         data: { dashboardType: DashboardType.CLINICAL_HISTORY_WITH_DOCS },
       });
     }
-    await this.provision.ensureForClinic(id, DashboardType.CLINICAL_HISTORY_WITH_DOCS);
+    await this.provision.ensureForClinic(id, DashboardType.CLINICAL_HISTORY_WITH_DOCS, { importPack: withFiles });
 
     const peers = await this.prisma.clinic.findMany({
       where: { isDemo: false, specialty: clinic.specialty, dashboardType: DashboardType.CLINICAL_HISTORY_WITH_DOCS },
@@ -185,7 +186,7 @@ export class DemoService {
           });
           requirementsCreated += 1;
         }
-        if (!professional || !req.files.length) continue;
+        if (!withFiles || !professional || !req.files.length) continue;
         const hasFiles = await this.prisma.documentFile.count({ where: { requirementId: target.id } });
         if (hasFiles) continue;
 
@@ -229,11 +230,29 @@ export class DemoService {
       }
     }
 
-    const [requirements, withFiles] = await Promise.all([
+    let filesRetired = 0;
+    if (!withFiles) {
+      const retired = await this.prisma.documentFile.updateMany({
+        where: { requirement: { clinicId: id }, status: { not: DocumentFileStatus.RETIRED } },
+        data: { status: DocumentFileStatus.RETIRED, retiredAt: new Date() },
+      });
+      filesRetired = retired.count;
+    }
+
+    const activeFile = { some: { status: { not: DocumentFileStatus.RETIRED } } };
+    const [requirements, requirementsWithFiles] = await Promise.all([
       this.prisma.documentRequirement.count({ where: { clinicId: id } }),
-      this.prisma.documentRequirement.count({ where: { clinicId: id, files: { some: {} } } }),
+      this.prisma.documentRequirement.count({ where: { clinicId: id, files: activeFile } }),
     ]);
-    return { id, source: source?.name ?? null, requirementsCreated, filesCopied, requirements, withFiles };
+    return {
+      id,
+      source: source?.name ?? null,
+      requirementsCreated,
+      filesCopied,
+      filesRetired,
+      requirements,
+      withFiles: requirementsWithFiles,
+    };
   }
 
   async setActive(id: string, isActive: boolean) {
@@ -377,7 +396,7 @@ export class DemoService {
         where: { clinicId: clinic.id, startsAt: { gte: bogotaAt(0, 0), lt: bogotaAt(1, 0) } },
       }),
       this.prisma.documentRequirement.count({ where: { clinicId: clinic.id, isEnabled: true } }),
-      this.prisma.documentRequirement.count({ where: { clinicId: clinic.id, isEnabled: true, files: { some: {} } } }),
+      this.prisma.documentRequirement.count({ where: { clinicId: clinic.id, isEnabled: true, files: { some: { status: { not: DocumentFileStatus.RETIRED } } } } }),
     ]);
     return {
       id: clinic.id,

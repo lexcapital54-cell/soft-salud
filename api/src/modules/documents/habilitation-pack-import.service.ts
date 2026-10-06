@@ -42,6 +42,7 @@ export class HabilitationPackImportService implements OnModuleInit {
     const clinics = await this.prisma.clinic.findMany({
       where: {
         isActive: true,
+        isDemo: false,
         dashboardType: DashboardType.CLINICAL_HISTORY_WITH_DOCS,
         // El pack de psicología no aplica a fisioterapia, odontología ni ortodoncia.
         specialty: { notIn: ['PHYSIOTHERAPY', 'DENTISTRY', 'ORTHODONTICS'] },

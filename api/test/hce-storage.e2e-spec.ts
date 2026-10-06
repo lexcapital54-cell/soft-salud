@@ -592,6 +592,13 @@ describe('Almacenamiento de la historia clínica (base de pruebas)', () => {
       demos.body.find((d: { specialty: string }) => d.specialty === 'PSYCHOLOGY');
     const psychDocs = await prisma.documentRequirement.count({ where: { clinicId: psych.id } });
     check('Demo documentos', 'psicología trae lista de habilitación y SG-SST', psychDocs > 20, true);
+    const psychFiles = await prisma.documentFile.count({ where: { requirement: { clinicId: psych.id }, status: { not: 'RETIRED' } } });
+    check('Demo documentos', 'psicología queda sin documentación cargada', psychFiles, 0);
+    const bare = await http.post(`/api/admin/demos/${dental.id}/documents`).set(sa).send({ files: false }).expect(201);
+    check('Demo documentos', 'solo estructura: retira los archivos del demo', [bare.body.filesRetired, bare.body.withFiles], [1, 0]);
+    const kept = await prisma.documentFile.count({ where: { requirement: { clinicId: dental.id } } });
+    check('Demo documentos', 'solo estructura: no borra archivos', kept, 1);
+    check('Demo documentos', 'solo estructura: conserva los requisitos', bare.body.requirements, res.body.requirements);
     const com = await http.post('/api/auth/login').send({ email: 'comercial@habilisalud.com', password: '2020' }).expect(201);
     await http.post(`/api/admin/demos/${dental.id}/documents`).set({ Authorization: `Bearer ${com.body.accessToken}` }).expect(403);
   }, 120000);

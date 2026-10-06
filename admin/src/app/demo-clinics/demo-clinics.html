@@ -110,6 +110,9 @@
               <button type="button" class="ghost compact" [disabled]="!!loadingDocs()" (click)="loadDocuments(demo)">
                 {{ loadingDocs() === demo.id ? 'Cargando…' : 'Cargar documentación' }}
               </button>
+              <button type="button" class="ghost compact" [disabled]="!!loadingDocs()" (click)="loadDocuments(demo, false)">
+                Solo estructura
+              </button>
               <button type="button" class="ghost compact" (click)="toggleActive(demo)">
                 {{ demo.isActive ? 'Desactivar' : 'Reactivar' }}
               </button>
