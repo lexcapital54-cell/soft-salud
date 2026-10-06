@@ -57,6 +57,24 @@
       margin: auto 0 0; padding: 14px 12px 0; border-top: 1px solid rgba(255, 255, 255, .1);
       font-size: .68rem; line-height: 1.8; letter-spacing: .22em; text-transform: uppercase; color: rgba(255, 255, 255, .6);
     }
+    .brand-short { display: none; }
+    .sb-mini-btn {
+      display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 8px 12px; border: 0; border-radius: 10px;
+      background: rgba(255, 255, 255, .06); color: rgba(255, 255, 255, .78); font: inherit; font-size: .82rem; cursor: pointer;
+    }
+    .sb-mini-btn:hover { background: rgba(255, 255, 255, .12); color: #fff; }
+    .sb-mini-btn:focus-visible { outline: 3px solid rgba(var(--glow-rgb), .7); outline-offset: 2px; }
+    @media (min-width: 1025px) {
+      .sb { transition: width .2s ease, flex-basis .2s ease, padding .2s ease; }
+      body.sb-mini .sb { width: 84px; flex-basis: 84px; padding-inline: 14px; }
+      body.sb-mini .brand-full, body.sb-mini .sb-clinic, body.sb-mini .sb-foot,
+      body.sb-mini .sb nav a span, body.sb-mini .sb-mini-btn span { display: none; }
+      body.sb-mini .brand-short { display: inline; }
+      body.sb-mini .sb-brand { justify-items: center; padding-inline: 0; }
+      body.sb-mini .sb nav a, body.sb-mini .sb-mini-btn { justify-content: center; padding-inline: 0; }
+      body.sb-mini .sb-mini-btn { margin-top: auto; }
+      body.sb-mini .sb-mini-btn .ico { transform: scaleX(-1); }
+    }
     .sb-close, .menu-btn, .scrim { display: none; }
     .shell { flex: 1 1 auto; min-width: 0; }
 
@@ -108,12 +126,27 @@
 
     .hero {
       position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between;
-      gap: 24px; padding: 30px 32px; border-radius: 20px; color: #fff;
+      gap: 24px; padding: 34px 36px; border-radius: 20px; color: #fff;
       background:
         radial-gradient(420px 260px at 92% 0%, rgba(var(--glow-rgb), .26), transparent 70%),
         linear-gradient(135deg, var(--nav) 0%, var(--nav-2) 100%);
       box-shadow: 0 20px 40px -28px rgba(11, 34, 57, .9);
     }
+    .hero-decor {
+      position: absolute; inset: 0 0 auto auto; width: 440px; height: 100%; min-height: 220px; pointer-events: none;
+      fill: none; stroke: rgba(var(--glow-rgb), .32); stroke-width: 1;
+    }
+    .hero-main, .hero-id { position: relative; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    .hero-btn {
+      display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 9px 16px; border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, .28); background: rgba(255, 255, 255, .06); color: #fff;
+      font-size: .88rem; font-weight: 600; text-decoration: none; transition: background-color .15s, border-color .15s;
+    }
+    .hero-btn:hover { background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .5); }
+    .hero-btn.primary { background: #fff; border-color: #fff; color: var(--nav); }
+    .hero-btn.primary:hover { background: var(--soft); }
+    .hero-btn .ico { width: 18px; height: 18px; }
     .hero-rule { display: block; width: 52px; height: 2px; background: var(--accent); margin-bottom: 16px; }
     .hero h1 { margin: 0; font-family: var(--serif); font-size: clamp(1.6rem, 3vw, 2.3rem); font-weight: 600; line-height: 1.15; }
     .hero h1 span { color: var(--accent-soft); }
@@ -159,6 +192,13 @@
     }
     .stat-ico { display: inline-grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: var(--soft); color: var(--nav-2); flex: 0 0 auto; }
     .stat-ico .ico { width: 22px; height: 22px; }
+    .stat-ring { position: relative; display: inline-grid; place-items: center; width: 52px; height: 52px; flex: 0 0 auto; }
+    .stat-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+    .stat-ring circle { fill: none; stroke-width: 4.5; }
+    .ring-bg { stroke: #e3f5ed; }
+    .ring-val { stroke: var(--ok); stroke-linecap: round; transition: stroke-dasharray .6s ease; }
+    .stat-ring span { font-size: .72rem; font-weight: 700; color: #13704d; }
+    @media (prefers-reduced-motion: reduce) { .ring-val { transition: none; } }
     .stat[data-tone="ok"] .stat-ico { background: #e3f5ed; color: #13704d; }
     .stat[data-tone="warn"] .stat-ico { background: #fbefd9; color: #8a5b12; }
     .stat[data-tone="gold"] .stat-ico { background: var(--tone-bg); color: var(--tone-ink); }
@@ -190,6 +230,15 @@
       padding: 12px 4px; border-bottom: 1px solid #eef2f6;
     }
     .agenda-list li:last-child { border-bottom: 0; }
+    .agenda-list li.up-next { margin: 4px -10px; padding-inline: 14px; border-radius: 12px; border-bottom-color: transparent; background: var(--soft); box-shadow: inset 3px 0 0 var(--accent); }
+    .agenda-list li.up-next .chip { background: #fff; }
+    .agenda-list li.past .ag-name, .agenda-list li.past .ag-time { color: var(--muted); }
+    .ag-next { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--nav); color: #fff; font-size: .68rem; font-weight: 700; letter-spacing: .04em; vertical-align: 2px; }
+    .ag-progress { margin: -4px 0 10px; }
+    .ag-progress-text { display: flex; justify-content: space-between; gap: 10px; font-size: .8rem; color: var(--muted); margin-bottom: 6px; }
+    .ag-progress-text strong { color: var(--nav); font-weight: 600; }
+    .ag-bar { height: 6px; border-radius: 999px; background: #edf1f5; overflow: hidden; }
+    .ag-bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--nav-2), var(--accent)); }
     .ag-time { font-weight: 700; font-size: .9rem; white-space: nowrap; color: var(--nav); font-variant-numeric: tabular-nums; border-right: 2px solid var(--accent); padding-right: 10px; }
     .ag-main { min-width: 0; }
     .ag-name { margin: 0; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -271,6 +320,7 @@
     @media (max-width: 1024px) {
       .sb { position: fixed; left: 0; top: 0; transform: translateX(-105%); transition: transform .22s ease; box-shadow: 18px 0 40px -20px rgba(0, 0, 0, .5); }
       .sb.open { transform: none; }
+      .sb-mini-btn { display: none; }
       .sb-close { display: inline-grid; place-items: center; position: absolute; top: 14px; right: 12px; width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .1); color: #fff; cursor: pointer; }
       .menu-btn { display: inline-grid; place-items: center; width: 42px; height: 42px; border: 1px solid #d5dde6; border-radius: 12px; background: #fff; color: var(--nav); cursor: pointer; flex: 0 0 auto; }
       .scrim:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 39; background: rgba(11, 34, 57, .45); }
@@ -339,6 +389,8 @@
       <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
       <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></symbol>
       <symbol id="i-badge" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6Z"/><path d="m9 12 2 2 4-4"/></symbol>
+      <symbol id="i-collapse" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 10l-2 2 2 2"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
       <symbol id="i-steth" viewBox="0 0 24 24"><path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v2a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="11" r="2"/></symbol>
     </defs>
   </svg>
@@ -347,23 +399,24 @@
     <aside class="sb" id="sidebar" aria-label="Menú del consultorio">
       <button type="button" class="sb-close" id="sbClose" aria-label="Cerrar menú"><svg class="ico"><use href="#i-x"/></svg></button>
       <div class="sb-brand">
-        <a class="brand" href="https://www.habilisalud.com">HABILISALUD</a>
+        <a class="brand" href="https://www.habilisalud.com" title="HABILISALUD"><span class="brand-full">HABILISALUD</span><span class="brand-short" aria-hidden="true">HS</span></a>
         <p class="sb-clinic" id="sbClinic">Consultorio</p>
       </div>
       <nav>
         <ul>
-          <li><a href="/consultorio.html" class="active" aria-current="page"><svg class="ico"><use href="#i-home"/></svg>Inicio</a></li>
-          <li><a href="/consultorio/agenda" data-for="modAgenda"><svg class="ico"><use href="#i-calendar"/></svg>Agenda</a></li>
-          <li><a href="/consultorio/pacientes" data-for="modPacientes"><svg class="ico"><use href="#i-users"/></svg>Pacientes</a></li>
-          <li><a href="/consultorio/historia-clinica" data-for="hce"><svg class="ico"><use href="#i-clipboard"/></svg>Historia clínica</a></li>
-          <li><a href="/consultorio/historias-pdf" data-for="hcePdf"><svg class="ico"><use href="#i-download"/></svg>Historias en PDF</a></li>
-          <li><a href="/consultorio/documentos" data-for="docs"><svg class="ico"><use href="#i-file"/></svg>Gestión documental</a></li>
-          <li><a href="/consultorio/recibos" data-for="billing"><svg class="ico"><use href="#i-receipt"/></svg>Recibos de caja</a></li>
-          <li><a href="/consultorio/configuracion?seccion=asistentes" data-for="assistantsMod"><svg class="ico"><use href="#i-user-plus"/></svg>Asistentes</a></li>
-          <li><a href="#recibos-habilisalud" data-for="platformReceipts"><svg class="ico"><use href="#i-folder"/></svg>Recibos HabiliSALUD</a></li>
+          <li><a href="/consultorio.html" class="active" aria-current="page" title="Inicio"><svg class="ico"><use href="#i-home"/></svg><span>Inicio</span></a></li>
+          <li><a href="/consultorio/agenda" data-for="modAgenda" title="Agenda"><svg class="ico"><use href="#i-calendar"/></svg><span>Agenda</span></a></li>
+          <li><a href="/consultorio/pacientes" data-for="modPacientes" title="Pacientes"><svg class="ico"><use href="#i-users"/></svg><span>Pacientes</span></a></li>
+          <li><a href="/consultorio/historia-clinica" data-for="hce" title="Historia clínica"><svg class="ico"><use href="#i-clipboard"/></svg><span>Historia clínica</span></a></li>
+          <li><a href="/consultorio/historias-pdf" data-for="hcePdf" title="Historias en PDF"><svg class="ico"><use href="#i-download"/></svg><span>Historias en PDF</span></a></li>
+          <li><a href="/consultorio/documentos" data-for="docs" title="Gestión documental"><svg class="ico"><use href="#i-file"/></svg><span>Gestión documental</span></a></li>
+          <li><a href="/consultorio/recibos" data-for="billing" title="Recibos de caja"><svg class="ico"><use href="#i-receipt"/></svg><span>Recibos de caja</span></a></li>
+          <li><a href="/consultorio/configuracion?seccion=asistentes" data-for="assistantsMod" title="Asistentes"><svg class="ico"><use href="#i-user-plus"/></svg><span>Asistentes</span></a></li>
+          <li><a href="#recibos-habilisalud" data-for="platformReceipts" title="Recibos HabiliSALUD"><svg class="ico"><use href="#i-folder"/></svg><span>Recibos HabiliSALUD</span></a></li>
         </ul>
       </nav>
       <p class="sb-foot">Atención<br />Seguimiento<br />Control</p>
+      <button type="button" class="sb-mini-btn" id="sbMiniBtn" aria-pressed="false"><svg class="ico"><use href="#i-collapse"/></svg><span>Contraer menú</span></button>
     </aside>
     <div class="scrim" id="scrim" hidden></div>
 
@@ -399,10 +452,18 @@
 
       <main class="card" id="main" hidden>
         <section class="hero" aria-labelledby="greeting">
-          <div>
+          <svg class="hero-decor" viewBox="0 0 400 400" preserveAspectRatio="xMaxYMin slice" aria-hidden="true">
+            <circle cx="400" cy="0" r="150" /><circle cx="400" cy="0" r="210" /><circle cx="400" cy="0" r="270" />
+          </svg>
+          <div class="hero-main">
             <span class="hero-rule" aria-hidden="true"></span>
             <h1 id="greeting">Bienvenido</h1>
             <p class="hero-sub">Resumen de tu actividad clínica de hoy</p>
+            <div class="hero-actions">
+              <a class="hero-btn primary" href="/consultorio/agenda" data-for="modAgenda"><svg class="ico"><use href="#i-calendar"/></svg>Abrir agenda</a>
+              <a class="hero-btn" href="/consultorio/historia-clinica" data-for="hce"><svg class="ico"><use href="#i-clipboard"/></svg>Historia clínica</a>
+              <a class="hero-btn" href="/consultorio/pacientes" data-for="modPacientes"><svg class="ico"><use href="#i-users"/></svg>Pacientes</a>
+            </div>
           </div>
           <div class="hero-id">
             <img class="clinic-logo" id="clinicLogo" alt="" hidden />
@@ -443,8 +504,11 @@
             <div><p class="stat-label">Citas de hoy</p><p class="stat-value" id="statToday">—</p><p class="stat-sub" id="statTodaySub">Sin información</p></div>
           </div>
           <div class="stat" data-tone="ok">
-            <span class="stat-ico" aria-hidden="true"><svg class="ico"><use href="#i-check"/></svg></span>
-            <div><p class="stat-label">Pacientes atendidos</p><p class="stat-value" id="statDone">—</p><p class="stat-sub">Citas finalizadas hoy</p></div>
+            <span class="stat-ring" aria-hidden="true">
+              <svg viewBox="0 0 44 44"><circle class="ring-bg" cx="22" cy="22" r="18" /><circle class="ring-val" id="statDoneRing" cx="22" cy="22" r="18" pathLength="100" stroke-dasharray="0 100" /></svg>
+              <span id="statDonePct">—</span>
+            </span>
+            <div><p class="stat-label">Pacientes atendidos</p><p class="stat-value" id="statDone">—</p><p class="stat-sub" id="statDoneSub">Citas finalizadas hoy</p></div>
           </div>
           <div class="stat" data-tone="warn">
             <span class="stat-ico" aria-hidden="true"><svg class="ico"><use href="#i-wait"/></svg></span>
@@ -654,12 +718,12 @@
         return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
       }
 
-      /** El menú lateral muestra los mismos módulos visibles en Accesos rápidos. */
+      /** El menú lateral y los atajos de la bienvenida muestran solo los módulos visibles en Accesos rápidos. */
       function syncNav() {
-        var links = document.querySelectorAll('.sb nav a[data-for]');
+        var links = document.querySelectorAll('.sb nav a[data-for], .hero-actions a[data-for]');
         Array.prototype.forEach.call(links, function (link) {
           var mod = document.getElementById(link.getAttribute('data-for'));
-          link.parentElement.hidden = !mod || mod.hidden;
+          (link.closest('li') || link).hidden = !mod || mod.hidden;
         });
       }
 
@@ -676,6 +740,20 @@
         document.getElementById('sbClose').addEventListener('click', function () { setOpen(false); });
         scrim.addEventListener('click', function () { setOpen(false); });
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+        var miniBtn = document.getElementById('sbMiniBtn');
+        var miniKey = 'hs.dash.sbMini';
+        function setMini(mini) {
+          document.body.classList.toggle('sb-mini', mini);
+          miniBtn.setAttribute('aria-pressed', mini ? 'true' : 'false');
+          miniBtn.setAttribute('aria-label', mini ? 'Expandir menú' : 'Contraer menú');
+          miniBtn.title = mini ? 'Expandir menú' : 'Contraer menú';
+        }
+        try { setMini(localStorage.getItem(miniKey) === '1'); } catch (e) { setMini(false); }
+        miniBtn.addEventListener('click', function () {
+          var mini = !document.body.classList.contains('sb-mini');
+          setMini(mini);
+          try { localStorage.setItem(miniKey, mini ? '1' : '0'); } catch (e) { /* sin almacenamiento */ }
+        });
         var receiptsLink = sb.querySelector('a[data-for="platformReceipts"]');
         receiptsLink.addEventListener('click', function (e) {
           e.preventDefault();
@@ -765,9 +843,17 @@
             document.getElementById('statTodaySub').textContent = active.length
               ? pending + ' pendiente' + (pending === 1 ? '' : 's') + ' por atender'
               : 'Sin citas programadas';
-            document.getElementById('statDone').textContent = String(citas.filter(function (a) { return a.status === 'COMPLETED'; }).length);
+            var done = citas.filter(function (a) { return a.status === 'COMPLETED'; }).length;
+            var expected = active.filter(function (a) { return a.status !== 'NO_SHOW'; }).length;
+            var pct = expected ? Math.round((done / expected) * 100) : 0;
+            document.getElementById('statDone').textContent = String(done);
+            document.getElementById('statDoneSub').textContent = expected
+              ? 'de ' + expected + ' cita' + (expected === 1 ? '' : 's') + ' de hoy'
+              : 'Sin citas programadas';
+            document.getElementById('statDonePct').textContent = expected ? pct + '%' : '—';
+            document.getElementById('statDoneRing').setAttribute('stroke-dasharray', pct + ' 100');
             document.getElementById('statWaiting').textContent = String(citas.filter(function (a) { return a.status === 'IN_WAITING'; }).length);
-            renderAgenda(today);
+            renderAgenda(today, done, expected);
             renderNext(rows);
           })
           .catch(function () {
@@ -775,9 +861,10 @@
             nextBody.innerHTML = '<p class="empty">No disponible</p>';
             ['statToday', 'statDone', 'statWaiting'].forEach(function (id) { document.getElementById(id).textContent = '—'; });
             document.getElementById('statTodaySub').textContent = 'No disponible';
+            document.getElementById('statDoneSub').textContent = 'No disponible';
           });
 
-        function renderAgenda(today) {
+        function renderAgenda(today, done, expected) {
           if (!today.length) {
             body.innerHTML = '<p class="empty">Sin citas registradas para hoy.</p>';
             return;
@@ -785,7 +872,17 @@
           var pros = {};
           today.forEach(function (a) { if (a.professional) pros[a.professional.id] = true; });
           var manyPros = Object.keys(pros).length > 1;
-          body.innerHTML = '<ul class="agenda-list">' + today.map(function (a) {
+          var nowMs = Date.now();
+          var upNext = today.filter(function (a) {
+            return a.eventType === 'CITA' && ['SCHEDULED', 'CONFIRMED', 'IN_WAITING'].indexOf(a.status) !== -1 &&
+              new Date(a.endsAt || a.startsAt).getTime() >= nowMs;
+          })[0];
+          var progress = expected
+            ? '<div class="ag-progress"><div class="ag-progress-text"><span>Avance del día</span><strong>' + done + ' de ' + expected + ' atendidas</strong></div>' +
+              '<div class="ag-bar" role="progressbar" aria-valuemin="0" aria-valuemax="' + expected + '" aria-valuenow="' + done + '" aria-label="Citas atendidas hoy">' +
+              '<span style="width:' + Math.round((done / expected) * 100) + '%"></span></div></div>'
+            : '';
+          body.innerHTML = progress + '<ul class="agenda-list">' + today.map(function (a) {
             if (a.eventType === 'BLOQUEO') {
               return '<li><span class="ag-time">' + timeOf(a.startsAt) + '</span><div class="ag-main"><p class="ag-name">Franja bloqueada</p>' +
                 '<p class="ag-detail">' + esc(a.blockReason || 'Sin motivo') + (manyPros && a.professional ? ' · ' + esc(a.professional.fullName) : '') + '</p></div>' +
@@ -794,8 +891,10 @@
             var st = STATUS[a.status] || { text: a.status, tone: 'info' };
             var detail = [a.reason, a.isTelemedicine || a.modality === 'VIRTUAL' ? 'Telemedicina' : 'Presencial'];
             if (manyPros && a.professional) detail.push(a.professional.fullName);
-            return '<li><span class="ag-time">' + timeOf(a.startsAt) + '</span><div class="ag-main"><p class="ag-name">' +
-              esc(a.patient ? a.patient.fullName : 'Paciente sin asignar') + '</p><p class="ag-detail">' +
+            var cls = a === upNext ? 'up-next' : ['COMPLETED', 'CANCELLED', 'NO_SHOW'].indexOf(a.status) !== -1 ? 'past' : '';
+            return '<li class="' + cls + '"><span class="ag-time">' + timeOf(a.startsAt) + '</span><div class="ag-main"><p class="ag-name">' +
+              esc(a.patient ? a.patient.fullName : 'Paciente sin asignar') +
+              (a === upNext ? ' <span class="ag-next">Siguiente</span>' : '') + '</p><p class="ag-detail">' +
               esc(detail.filter(Boolean).join(' · ')) + '</p></div><span class="chip" data-tone="' + st.tone + '">' + esc(st.text) + '</span></li>';
           }).join('') + '</ul>';
         }
