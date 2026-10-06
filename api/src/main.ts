@@ -1,14 +1,10 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 import { NestFactory } from '@nestjs/core';
-import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  // La historia guarda firmas y consentimientos en base64: el límite por defecto (100 KB) bloquea el guardado.
-  app.useBodyParser('json', { limit: '15mb' });
-  app.useBodyParser('urlencoded', { limit: '15mb', extended: true });
+  const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
 
   // Antes de CORS para que también queden trazados los preflight OPTIONS, que
