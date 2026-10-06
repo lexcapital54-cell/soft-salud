@@ -302,6 +302,24 @@
         (goto)="scrollToOdo($event)"
         (newEvolution)="scrollToEvolutions()"
       />
+    } @else if (isPsychologyClinic() && encounter() && (!isAuditor() || !content._redacted)) {
+      <app-psych-dashboard
+        [patient]="patientForm"
+        [photo]="patientPhotoSrc()"
+        [encounter]="encounter()"
+        [content]="content"
+        [evolutions]="evolutions()"
+        [diagnoses]="diagnoses"
+        [soap]="isSoap()"
+        [canWrite]="canWrite()"
+        [formDisabled]="clinicalFormDisabled()"
+        [locked]="isLocked()"
+        [loading]="loading()"
+        [clinicName]="user()?.clinicName || ''"
+        [clinicLogo]="clinicLogo()"
+        (goto)="scrollToOdo($event)"
+        (newEvolution)="scrollToEvolutions()"
+      />
     }
 
     <div class="layout">

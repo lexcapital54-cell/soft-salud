@@ -58,7 +58,7 @@ const VISIBLE = 3;
     .tl-pro { font-size: 0.78rem; color: var(--pd-muted, #687386); }
     .tl-more, .tl-all { border: 0; background: none; padding: 4px 0; color: var(--pd-navy-2, #163a59); font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
     .tl-all { margin-top: 10px; }
-    .tl-more:focus-visible, .tl-all:focus-visible { outline: 3px solid rgba(199, 154, 75, 0.55); outline-offset: 2px; border-radius: 4px; }
+    .tl-more:focus-visible, .tl-all:focus-visible { outline: 3px solid rgba(var(--pd-gold-rgb, 199, 154, 75), 0.55); outline-offset: 2px; border-radius: 4px; }
   `,
 })
 export class PhysioEvolutionTimeline {

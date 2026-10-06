@@ -265,12 +265,30 @@
   }
 }
 
-/* Fisioterapia: menú lateral azul marino + contenido en tonos claros. */
+/* Historia premium: menú lateral oscuro + contenido en tonos claros; la paleta va por especialidad. */
 .ws-shell.ws-physio {
+  --pd-navy: #0b2239;
+  --pd-navy-2: #163a59;
+  --pd-gold: #c79a4b;
+  --ws-bg: #f6f8fa;
+}
+
+.ws-shell.ws-psych {
+  --pd-navy: #2a1f1c;
+  --pd-navy-2: #4a3631;
+  --sb-nav-2: #3a2a26;
+  --pd-gold: #c48b7e;
+  --pd-gold-rgb: 196, 139, 126;
+  --pd-gold-soft: #e1b7ad;
+  --pd-shadow-rgb: 42, 31, 28;
+  --ws-bg: #faf6f4;
+}
+
+.ws-shell.ws-premium {
   display: flex;
   align-items: flex-start;
   min-height: 100svh;
-  background: #f6f8fa;
+  background: var(--ws-bg);
 
   @media (max-width: 1100px) {
     flex-direction: column;
@@ -280,11 +298,11 @@
   .hce-workspace {
     flex: 1 1 auto;
     min-width: 0;
-    background: #f6f8fa;
+    background: var(--ws-bg);
   }
 
   .ws-left a {
-    color: #163a59;
+    color: var(--pd-navy-2);
   }
 
   /* El logo del consultorio ya va en el menú lateral. */
@@ -297,13 +315,13 @@
   }
 
   .ws-title {
-    color: #0b2239;
+    color: var(--pd-navy);
     font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
     letter-spacing: 0.02em;
   }
 
   .ws-tab.active {
-    border-color: #c79a4b;
-    color: #0b2239;
+    border-color: var(--pd-gold);
+    color: var(--pd-navy);
   }
 }

@@ -40,7 +40,7 @@
   color: var(--pd-navy);
 
   span {
-    color: #a87b2f;
+    color: var(--pd-gold-ink, #a87b2f);
   }
 }
 
@@ -90,8 +90,8 @@
   border-radius: 18px;
   padding: 16px 18px;
   box-shadow:
-    0 1px 2px rgba(11, 34, 57, 0.04),
-    0 10px 28px -22px rgba(11, 34, 57, 0.35);
+    0 1px 2px rgba(var(--pd-shadow-rgb, 11, 34, 57), 0.04),
+    0 10px 28px -22px rgba(var(--pd-shadow-rgb, 11, 34, 57), 0.35);
 
   header {
     display: flex;
@@ -126,16 +126,16 @@
   border-radius: 18px;
   color: #fff;
   background:
-    radial-gradient(240px 160px at 85% 0%, rgba(199, 154, 75, 0.28), transparent 70%),
+    radial-gradient(240px 160px at 85% 0%, rgba(var(--pd-gold-rgb, 199, 154, 75), 0.28), transparent 70%),
     linear-gradient(160deg, var(--pd-navy) 0%, var(--pd-navy-2) 100%);
-  box-shadow: 0 16px 34px -22px rgba(11, 34, 57, 0.8);
+  box-shadow: 0 16px 34px -22px rgba(var(--pd-shadow-rgb, 11, 34, 57), 0.8);
 
   &::after {
     content: '';
     position: absolute;
     inset: auto 18px 12px;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(199, 154, 75, 0.7), transparent);
+    background: linear-gradient(90deg, transparent, rgba(var(--pd-gold-rgb, 199, 154, 75), 0.7), transparent);
   }
 
   img {
@@ -160,7 +160,7 @@
   font-size: 0.74rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: #e2c58e;
+  color: var(--pd-gold-soft, #e2c58e);
 }
 
 .pd-brand-tags {
@@ -467,7 +467,7 @@ app-physio-evolution-timeline {
   }
 
   &:focus-visible {
-    outline: 3px solid rgba(199, 154, 75, 0.55);
+    outline: 3px solid rgba(var(--pd-gold-rgb, 199, 154, 75), 0.55);
     outline-offset: 2px;
   }
 }

@@ -70,9 +70,9 @@ import { ageFrom, formatDate, sexLabel } from './physio-premium.models';
     .pc {
       display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(180px, 240px); gap: 22px; align-items: center;
       background: #fff; border: 1px solid var(--pd-line, #e3e9f0); border-radius: 20px; padding: 20px 22px;
-      box-shadow: 0 1px 2px rgba(11, 34, 57, 0.04), 0 14px 34px -24px rgba(11, 34, 57, 0.4);
+      box-shadow: 0 1px 2px rgba(var(--pd-shadow-rgb, 11, 34, 57), 0.04), 0 14px 34px -24px rgba(var(--pd-shadow-rgb, 11, 34, 57), 0.4);
     }
-    .pc-photo { width: 104px; height: 104px; border-radius: 50%; padding: 3px; background: linear-gradient(140deg, #e2c58e, #c79a4b); }
+    .pc-photo { width: 104px; height: 104px; border-radius: 50%; padding: 3px; background: linear-gradient(140deg, var(--pd-gold-soft, #e2c58e), var(--pd-gold, #c79a4b)); }
     .pc-photo img, .pc-initials { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid #fff; display: grid; place-items: center; }
     .pc-initials { background: var(--pd-navy, #0b2239); color: #fff; font-size: 2rem; font-weight: 600; font-family: var(--pd-serif); letter-spacing: 0.04em; }
     .pc-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -96,7 +96,7 @@ import { ageFrom, formatDate, sexLabel } from './physio-premium.models';
     }
     .pc-edit app-physio-icon { width: 14px; height: 14px; color: currentColor; }
     .pc-edit:hover { border-color: var(--pd-navy, #0b2239); }
-    .pc-edit:focus-visible { outline: 3px solid rgba(199, 154, 75, 0.55); outline-offset: 2px; }
+    .pc-edit:focus-visible { outline: 3px solid rgba(var(--pd-gold-rgb, 199, 154, 75), 0.55); outline-offset: 2px; }
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     @container pc (max-width: 760px) {
       .pc { grid-template-columns: auto minmax(0, 1fr); }

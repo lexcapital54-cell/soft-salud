@@ -36,6 +36,8 @@ export interface FunctionalMetric {
   chip: Chip | null;
   /** Sección del formulario donde se edita. */
   go: string;
+  /** Texto cuando no hay valor (por defecto «Pendiente de valoración»). */
+  pending?: string;
 }
 
 export interface LabeledValue {

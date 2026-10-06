@@ -13,7 +13,7 @@ import { FunctionalMetric } from './physio-premium.models';
       class="mc"
       [class.pending]="m.value === null"
       [attr.data-tone]="m.chip?.tone || 'neutral'"
-      [attr.aria-label]="m.label + ': ' + (m.value === null ? 'pendiente de valoración' : m.value + m.unit + (m.chip ? ', ' + m.chip.text : ''))"
+      [attr.aria-label]="m.label + ': ' + (m.value === null ? (m.pending || 'pendiente de valoración') : m.value + m.unit + (m.chip ? ', ' + m.chip.text : ''))"
       (click)="open.emit(m.go)"
     >
       <span class="mc-label">{{ m.label }}</span>
@@ -24,7 +24,7 @@ import { FunctionalMetric } from './physio-premium.models';
           <span class="mc-chip">{{ m.chip.text }}</span>
         }
       } @else {
-        <span class="mc-pending">Pendiente de valoración</span>
+        <span class="mc-pending">{{ m.pending || 'Pendiente de valoración' }}</span>
       }
       @if (m.detail) {
         <span class="mc-detail">{{ m.detail }}</span>
@@ -42,8 +42,8 @@ import { FunctionalMetric } from './physio-premium.models';
       font: inherit; color: var(--pd-ink, #172033); text-align: center; cursor: pointer;
       transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
     }
-    .mc:hover { border-color: #c9d6e3; box-shadow: 0 10px 24px -18px rgba(11, 34, 57, 0.45); transform: translateY(-1px); }
-    .mc:focus-visible { outline: 3px solid rgba(199, 154, 75, 0.55); outline-offset: 2px; }
+    .mc:hover { border-color: #c9d6e3; box-shadow: 0 10px 24px -18px rgba(var(--pd-shadow-rgb, 11, 34, 57), 0.45); transform: translateY(-1px); }
+    .mc:focus-visible { outline: 3px solid rgba(var(--pd-gold-rgb, 199, 154, 75), 0.55); outline-offset: 2px; }
     .mc[data-tone='ok'] { --tone: #1fa774; --tone-bg: #e5f6ee; --tone-ink: #13704d; }
     .mc[data-tone='mild'] { --tone: #c79a4b; --tone-bg: #fbf3e4; --tone-ink: #7a5718; }
     .mc[data-tone='warn'] { --tone: #d99a32; --tone-bg: #fdf0dc; --tone-ink: #85520c; }

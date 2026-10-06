@@ -55,7 +55,7 @@ const isoDay = (d: Date) =>
     header app-physio-icon { width: 20px; height: 20px; color: var(--pd-navy, #0b2239); }
     h3 { margin: 0; font-family: var(--pd-serif); font-size: 1.08rem; font-weight: 600; color: var(--pd-navy, #0b2239); }
     .ns-when { display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 14px; background: var(--pd-bg, #f6f8fa); }
-    .ns-cal { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: #c79a4b; flex: 0 0 auto; }
+    .ns-cal { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--pd-gold, #c79a4b); flex: 0 0 auto; }
     .ns-cal app-physio-icon { width: 20px; height: 20px; color: #fff; }
     .ns-when strong { display: block; color: var(--pd-navy, #0b2239); font-size: 0.95rem; text-transform: capitalize; }
     .ns-when span { color: var(--pd-ink, #172033); font-size: 0.88rem; }
@@ -70,7 +70,7 @@ const isoDay = (d: Date) =>
     }
     .ns-btn:hover { background: var(--pd-navy-2, #163a59); }
     .ns-btn.ghost { background: #fff; color: var(--pd-navy, #0b2239); border-color: var(--pd-line, #d8e1ea); }
-    .ns-btn:focus-visible { outline: 3px solid rgba(199, 154, 75, 0.55); outline-offset: 2px; }
+    .ns-btn:focus-visible { outline: 3px solid rgba(var(--pd-gold-rgb, 199, 154, 75), 0.55); outline-offset: 2px; }
     .sk { display: grid; gap: 8px; }
     .sk span { height: 14px; border-radius: 6px; background: linear-gradient(90deg, #eef2f6 25%, #f7f9fb 50%, #eef2f6 75%); background-size: 200% 100%; animation: sh 1.2s infinite; }
     .sk span:first-child { height: 42px; }

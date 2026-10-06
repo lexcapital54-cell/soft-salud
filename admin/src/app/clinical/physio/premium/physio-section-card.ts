@@ -39,13 +39,13 @@ let seq = 0;
       border: 1px solid var(--pd-line, #e3e9f0);
       border-radius: 18px;
       padding: 18px 20px;
-      box-shadow: 0 1px 2px rgba(11, 34, 57, 0.04), 0 10px 28px -22px rgba(11, 34, 57, 0.35);
+      box-shadow: 0 1px 2px rgba(var(--pd-shadow-rgb, 11, 34, 57), 0.04), 0 10px 28px -22px rgba(var(--pd-shadow-rgb, 11, 34, 57), 0.35);
     }
     .sc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
     .sc-icon {
       display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
       background: var(--pd-soft, #eaf1f7); color: var(--pd-navy, #0b2239);
-      box-shadow: inset 0 0 0 1px rgba(199, 154, 75, 0.45);
+      box-shadow: inset 0 0 0 1px rgba(var(--pd-gold-rgb, 199, 154, 75), 0.45);
     }
     .sc-icon app-physio-icon { width: 18px; height: 18px; color: var(--pd-navy, #0b2239); }
     h3 {
@@ -61,7 +61,7 @@ let seq = 0;
     }
     .sc-edit app-physio-icon { width: 14px; height: 14px; color: currentColor; }
     .sc-edit:hover { border-color: var(--pd-navy, #0b2239); background: var(--pd-soft, #eaf1f7); }
-    .sc-edit:focus-visible { outline: 3px solid rgba(199, 154, 75, 0.55); outline-offset: 2px; }
+    .sc-edit:focus-visible { outline: 3px solid rgba(var(--pd-gold-rgb, 199, 154, 75), 0.55); outline-offset: 2px; }
     .sc-body { color: var(--pd-ink, #172033); font-size: 0.92rem; line-height: 1.55; }
     .sc-empty {
       margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--pd-bg, #f6f8fa);

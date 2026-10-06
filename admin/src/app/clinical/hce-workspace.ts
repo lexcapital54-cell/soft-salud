@@ -36,7 +36,12 @@ export class HceWorkspace implements OnInit, OnDestroy {
     this.logoFailed() ? null : clinicLogoUrl(this.user()?.clinicId, 'hc'),
   );
   readonly canWrite = this.auth.canWriteClinical;
-  readonly isPhysio = computed(() => String(this.user()?.specialty || '').toUpperCase() === 'PHYSIOTHERAPY');
+  readonly premium = computed(() => {
+    const specialty = String(this.user()?.specialty || '').toUpperCase();
+    if (specialty === 'PHYSIOTHERAPY') return 'physio';
+    if (specialty === 'PSYCHOLOGY') return 'psych';
+    return null;
+  });
   readonly tabs = this.workspace.tabs;
   readonly activeKey = this.workspace.activeKey;
   bulkSaveMessage = '';

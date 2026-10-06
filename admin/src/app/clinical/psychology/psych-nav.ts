@@ -15,6 +15,7 @@ export interface PsychNavFlags {
 /** Módulos de la historia de psicología (menú superior), en el orden en que aparecen en pantalla. */
 export function psychModuleList(flags: PsychNavFlags): PsychModule[] {
   return [
+    { id: 'ps-resumen', label: 'Resumen' },
     ...(flags.locked ? [{ id: 'evoluciones-section', label: 'Evolución' }] : []),
     { id: 'odo-identificacion', label: 'Identificación' },
     { id: 'ft-atencion', label: 'Datos de la atención' },

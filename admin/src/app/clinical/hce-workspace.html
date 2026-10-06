@@ -1,6 +1,15 @@
-<div class="ws-shell" [class.ws-physio]="isPhysio()">
-@if (isPhysio()) {
+<div class="ws-shell" [class.ws-premium]="!!premium()" [class.ws-physio]="premium() === 'physio'" [class.ws-psych]="premium() === 'psych'">
+@if (premium() === 'physio') {
   <app-physio-sidebar [clinicName]="user()?.clinicName || ''" [logo]="clinicLogo()" />
+} @else if (premium() === 'psych') {
+  <app-physio-sidebar
+    [clinicName]="user()?.clinicName || ''"
+    [logo]="clinicLogo()"
+    specialtyLabel="Psicología"
+    historyLabel="Historia de psicología"
+    evolutionSection="evoluciones-section"
+    [tagline]="['Escucha', 'Acompañamiento', 'Bienestar']"
+  />
 }
 <section class="hce-workspace">
   <header class="ws-topbar" [class.with-logo]="!!clinicLogo()">
