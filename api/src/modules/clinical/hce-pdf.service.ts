@@ -56,8 +56,10 @@ import {
   metricCards,
   patientCard,
   richText,
+  letterheadFooter,
   runningFooter,
   runningHeader,
+  useHcePage,
   sectionHeader,
   signatureColumn,
   tableCell,
@@ -111,6 +113,8 @@ type ClinicInfo = {
   name: string;
   /** Logo del consultorio como data URL (PNG/JPG), o null para el membrete estándar. */
   logo?: string | null;
+  /** Hoja membretada A4 (data URL) del consultorio; si existe, es el fondo de cada página. */
+  letterhead?: string | null;
   address?: string | null;
   phone?: string | null;
   specialty?: ClinicSpecialty | string | null;
@@ -219,6 +223,8 @@ export class HcePdfService {
     this.sectionNo = 0;
     const isPsychology = specialty === ClinicSpecialty.PSYCHOLOGY;
     useHcePalette(isPsychology ? 'psychology' : 'default');
+    const letterhead = clinic.letterhead || null;
+    useHcePage(!!letterhead);
     const theme = { title: P.navy };
     const patient = encounter.patient;
     const record = encounter.clinicalRecord;
@@ -320,7 +326,7 @@ export class HcePdfService {
     ];
 
     const body: Content[] = [
-      documentHeading(headingLine, 'Documento de resumen para seguimiento profesional', !!clinicLogo),
+      documentHeading(headingLine, 'Documento de resumen para seguimiento profesional', !!clinicLogo && !letterhead),
       metaStrip([
         { icon: 'calendar', label: 'Fecha de emisión', value: generatedAt },
         { icon: 'file', label: 'N.º de historia', value: encounter.externalCode || '' },
@@ -665,10 +671,31 @@ export class HcePdfService {
       .filter(Boolean)
       .join('  ·  ');
     const footerLeft = [clinic.name, clinic.phone].filter(Boolean).join(' · ');
+    const pageChrome: Partial<TDocumentDefinitions> = letterhead
+      ? {
+          images: { letterhead },
+          background: (_page: number, size: { width: number; height: number }) =>
+            ({ image: 'letterhead', width: size.width, height: size.height }) as Content,
+          footer: (currentPage: number, pageCount: number) =>
+            letterheadFooter(headerRight, footerLeft, `Generado el ${generatedAt}`, currentPage, pageCount),
+        }
+      : {
+          images: clinicLogo ? { clinicLogo } : ({} as Record<string, string>),
+          // En la primera página el logo va grande en el encabezado del documento.
+          header: (currentPage: number) =>
+            runningHeader(clinicLogo && currentPage === 1 ? { text: '' } : headerLeft, headerRight),
+          footer: (currentPage: number, pageCount: number) =>
+            runningFooter(footerLeft, `Generado el ${generatedAt}`, currentPage, pageCount),
+        };
 
     return {
       pageSize: HCE_PAGE.size,
-      pageMargins: [HCE_PAGE.side, clinicLogo ? HCE_PAGE.top + 8 : HCE_PAGE.top, HCE_PAGE.side, HCE_PAGE.bottom],
+      pageMargins: [
+        HCE_PAGE.side,
+        clinicLogo && !letterhead ? HCE_PAGE.top + 8 : HCE_PAGE.top,
+        HCE_PAGE.side,
+        HCE_PAGE.bottom,
+      ],
       info: { title: `Resumen de historia clínica — ${patientName}`, author: clinic.name, subject: specialtyName },
       defaultStyle: {
         font: 'Helvetica',
@@ -677,12 +704,7 @@ export class HcePdfService {
         color: P.ink,
         alignment: 'left',
       },
-      images: clinicLogo ? { clinicLogo } : {},
-      // En la primera página el logo va grande en el encabezado del documento.
-      header: (currentPage: number) =>
-        runningHeader(clinicLogo && currentPage === 1 ? { text: '' } : headerLeft, headerRight),
-      footer: (currentPage: number, pageCount: number) =>
-        runningFooter(footerLeft, `Generado el ${generatedAt}`, currentPage, pageCount),
+      ...pageChrome,
       content: body,
       styles: {
         body: { fontSize: 9.3, alignment: 'justify', color: P.ink },

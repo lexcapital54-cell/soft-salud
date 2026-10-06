@@ -1484,6 +1484,8 @@ model StoredFile {
 enum ClinicLogoKind {
   HOME
   HC
+  /// Hoja membretada A4 completa que se usa como fondo del PDF de la historia.
+  LETTERHEAD
 }
 
 /// Logo propio del consultorio. Tabla aparte de Clinic: copiar o replicar un consultorio no lo arrastra.

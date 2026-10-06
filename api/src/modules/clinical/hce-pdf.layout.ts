@@ -78,6 +78,11 @@ export const HCE_PAGE = {
   },
 };
 
+/** Con hoja membretada los márgenes dejan libres el logo, las ondas laterales y la firma del pie. */
+export function useHcePage(letterhead: boolean) {
+  Object.assign(HCE_PAGE, letterhead ? { side: 60, top: 86, bottom: 80 } : { side: 48, top: 66, bottom: 56 });
+}
+
 type Margin = [number, number, number, number];
 
 const ICON_PATHS: Record<string, string> = {
@@ -612,5 +617,31 @@ export function runningFooter(left: string, generated: string, page: number, pag
       },
     ],
     margin: [HCE_PAGE.side, 14, HCE_PAGE.side, 0] as Margin,
+  } as Content;
+}
+
+/** Pie sobre hoja membretada: datos a los lados para no tapar la firma impresa en el centro. */
+export function letterheadFooter(
+  document: string,
+  clinic: string,
+  generated: string,
+  page: number,
+  pages: number,
+): Content {
+  const small = { fontSize: 7, color: P.muted };
+  return {
+    columns: [
+      { width: 190, stack: [{ text: document, ...small }, { text: generated, ...small }] },
+      { width: '*', text: '' },
+      {
+        width: 170,
+        alignment: 'right',
+        stack: [
+          { text: clinic, ...small },
+          { text: `Página ${page} de ${pages}`, fontSize: 7.2, bold: true, color: P.navy2 },
+        ],
+      },
+    ],
+    margin: [HCE_PAGE.side, 24, HCE_PAGE.side, 0] as Margin,
   } as Content;
 }

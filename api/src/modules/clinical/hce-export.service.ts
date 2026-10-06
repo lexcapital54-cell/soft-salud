@@ -142,10 +142,12 @@ export class HceExportService {
       where: { id: encounter.clinicId },
       select: { name: true, address: true, phone: true, specialty: true },
     });
+    const images = await this.clinicLogoDataUrls(encounter.clinicId);
     const buffer = await this.pdf.buildPdfBuffer(
       encounter as never,
       {
-        logo: await this.clinicLogoDataUrl(encounter.clinicId),
+        logo: images.logo,
+        letterhead: images.letterhead,
         name: clinic?.name ?? 'Consultorio',
         address: clinic?.address,
         phone: clinic?.phone,
@@ -160,11 +162,15 @@ export class HceExportService {
     };
   }
 
-  /** Logo de historia clínica del consultorio; si no tiene, el del panel de inicio. */
-  private async clinicLogoDataUrl(clinicId: string): Promise<string | null> {
+  /** Logo de historia clínica (si no tiene, el del panel de inicio) y hoja membretada opcional. */
+  private async clinicLogoDataUrls(clinicId: string) {
     const rows = await this.prisma.clinicLogo.findMany({ where: { clinicId } });
-    const row = rows.find((r) => r.kind === 'HC') ?? rows.find((r) => r.kind === 'HOME');
-    return row ? `data:${row.mimeType};base64,${Buffer.from(row.data).toString('base64')}` : null;
+    const dataUrl = (row?: (typeof rows)[number]) =>
+      row ? `data:${row.mimeType};base64,${Buffer.from(row.data).toString('base64')}` : null;
+    return {
+      logo: dataUrl(rows.find((r) => r.kind === 'HC') ?? rows.find((r) => r.kind === 'HOME')),
+      letterhead: dataUrl(rows.find((r) => r.kind === 'LETTERHEAD')),
+    };
   }
 
   /** Foto del paciente guardada en storage; el PDF solo admite JPG/PNG. Sin foto o con error, null. */

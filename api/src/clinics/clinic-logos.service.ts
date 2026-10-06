@@ -10,12 +10,13 @@ const SIGNATURES: Array<{ mime: string; bytes: number[] }> = [
   { mime: 'image/jpeg', bytes: [0xff, 0xd8, 0xff] },
 ];
 
-export type ClinicLogoSlot = 'home' | 'hc';
+export type ClinicLogoSlot = 'home' | 'hc' | 'membrete';
 
 export function logoKind(slot: string): ClinicLogoKind {
   if (slot === 'home') return ClinicLogoKind.HOME;
   if (slot === 'hc') return ClinicLogoKind.HC;
-  throw new BadRequestException('Tipo de logo inválido: use «home» o «hc».');
+  if (slot === 'membrete') return ClinicLogoKind.LETTERHEAD;
+  throw new BadRequestException('Tipo de logo inválido: use «home», «hc» o «membrete».');
 }
 
 @Injectable()
@@ -29,7 +30,11 @@ export class ClinicLogosService {
     });
     const at = (kind: ClinicLogoKind) =>
       rows.find((r) => r.kind === kind)?.updatedAt.toISOString() ?? null;
-    return { home: at(ClinicLogoKind.HOME), hc: at(ClinicLogoKind.HC) };
+    return {
+      home: at(ClinicLogoKind.HOME),
+      hc: at(ClinicLogoKind.HC),
+      membrete: at(ClinicLogoKind.LETTERHEAD),
+    };
   }
 
   async save(clinicId: string, kind: ClinicLogoKind, file?: Express.Multer.File) {
@@ -67,7 +72,7 @@ export class ClinicLogosService {
     const order =
       kind === ClinicLogoKind.HC
         ? [ClinicLogoKind.HC, ClinicLogoKind.HOME]
-        : [ClinicLogoKind.HOME];
+        : [kind];
     const rows = await this.prisma.clinicLogo.findMany({
       where: { clinicId, kind: { in: order } },
     });
