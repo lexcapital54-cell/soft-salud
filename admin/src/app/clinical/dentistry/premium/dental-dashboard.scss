@@ -1,0 +1,59 @@
+/* Odontología y ortodoncia: verde azulado sobre el diseño base del tablero premium. */
+:host {
+  --pd-navy: #0b4650;
+  --pd-navy-2: #0b5563;
+  --pd-soft: #e0f2f1;
+  --pd-gold: #26a69a;
+  --pd-gold-rgb: 38, 166, 154;
+  --pd-gold-soft: #80cbc4;
+  --pd-gold-ink: #00897b;
+  --pd-shadow-rgb: 11, 70, 80;
+  --pd-bg: #f4f9f9;
+  --pd-ink: #12343a;
+  --pd-muted: #567075;
+  --pd-line: #d6e9e7;
+}
+
+.od-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.od-chip {
+  padding: 4px 10px;
+  border: 1px solid #cfdcdc;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--pd-ink);
+
+  &[data-tone='danger'] {
+    border-color: #f2c4c4;
+    background: #fdf2f2;
+    color: #9b2c2c;
+  }
+
+  &[data-tone='warn'] {
+    border-color: #f1d9a4;
+    background: #fdf7e9;
+    color: #7a5212;
+  }
+
+  &[data-tone='info'] {
+    border-color: #b9dcd8;
+    background: var(--pd-soft);
+    color: var(--pd-navy-2);
+  }
+
+  &[data-tone='ok'] {
+    border-color: #bfe3cc;
+    background: #f0faf3;
+    color: #1d6b3c;
+  }
+}
+
+.od-ok {
+  color: #1d6b3c;
+}

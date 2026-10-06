@@ -13,3 +13,19 @@
   --pd-muted: #6e5d58;
   --pd-line: #eddcd6;
 }
+
+/* Medicina y medicina estética: paleta HABILISALUD (petróleo + aguamarina). */
+:host(.theme-petrol) {
+  --pd-navy: #003d4c;
+  --pd-navy-2: #0d5c66;
+  --pd-soft: #e6f4f3;
+  --pd-gold: #3aa6a0;
+  --pd-gold-rgb: 58, 166, 160;
+  --pd-gold-soft: #a8dedb;
+  --pd-gold-ink: #0d7377;
+  --pd-shadow-rgb: 0, 61, 76;
+  --pd-bg: #f5f9f9;
+  --pd-ink: #12303a;
+  --pd-muted: #587078;
+  --pd-line: #dcebea;
+}

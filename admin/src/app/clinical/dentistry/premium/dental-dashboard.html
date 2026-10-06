@@ -1,0 +1,264 @@
+<section class="pd" id="odo-resumen" aria-labelledby="odd-title">
+  <header class="pd-header">
+    <div>
+      <h1 id="odd-title" class="pd-title">Historia clínica <span>de {{ label().toLowerCase() }}</span></h1>
+      <p class="pd-subtitle">
+        {{ orthoClinic() ? 'Valoración, mecánica y seguimiento ortodóntico' : serviceLabel() ? 'Consulta de ' + serviceLabel() : 'Salud oral integral para cada sonrisa' }}
+      </p>
+    </div>
+    <button type="button" class="pd-btn ghost pd-toggle" [attr.aria-expanded]="!collapsed()" aria-controls="odd-body" (click)="toggle()">
+      {{ collapsed() ? 'Mostrar resumen' : 'Ocultar resumen' }}
+    </button>
+  </header>
+
+  @if (!collapsed()) {
+    <div id="odd-body">
+      @if (loading()) {
+        <div class="pd-skeleton" aria-label="Cargando historia clínica" aria-busy="true">
+          <span class="sk-hero"></span>
+          <div class="sk-row"><span></span><span></span></div>
+          <div class="sk-row"><span></span><span></span></div>
+        </div>
+      } @else {
+        @let s = summary();
+        <div class="pd-layout">
+          <div class="pd-main">
+            <app-physio-patient-card
+              [patient]="patient()"
+              [photo]="photo()"
+              [motive]="motive()"
+              [modality]="modality()"
+              [professional]="encounter()?.professional?.fullName || ''"
+              [sealed]="locked()"
+              [editable]="canWrite()"
+              (edit)="goto.emit('odo-identificacion')"
+            />
+
+            @if (dangerAlerts().length) {
+              <div class="pd-alert" role="alert">
+                <app-physio-icon name="alert" />
+                @for (a of dangerAlerts(); track a.text) {
+                  <span>{{ a.text }}</span>
+                }
+              </div>
+            }
+
+            <app-physio-section-card icon="chart" heading="Resumen del proceso">
+              <div class="pd-metrics">
+                @for (m of metrics(); track m.key) {
+                  <app-physio-metric-card [metric]="m" (open)="goto.emit($event)" />
+                }
+              </div>
+            </app-physio-section-card>
+
+            <div class="pd-row">
+              <app-physio-section-card
+                icon="message"
+                heading="Motivo de consulta"
+                [date]="attentionDate()"
+                [editable]="editable()"
+                [empty]="!motive() && !currentIllness()"
+                (edit)="goto.emit('odo-motivo')"
+              >
+                @if (motive()) {
+                  <p class="pd-text">{{ motive() }}</p>
+                }
+                @if (currentIllness()) {
+                  <h4 class="pd-sub">Enfermedad actual</h4>
+                  <p class="pd-text">{{ currentIllness() }}</p>
+                }
+              </app-physio-section-card>
+
+              <app-physio-section-card
+                icon="shield"
+                heading="Alertas médicas"
+                [editable]="editable()"
+                [empty]="!s.alerts.length"
+                emptyText="Sin alertas registradas"
+                (edit)="goto.emit('hce-section-3')"
+              >
+                <div class="od-chips">
+                  @for (c of s.alerts; track c.text) {
+                    <span class="od-chip" [attr.data-tone]="c.tone">{{ c.text }}</span>
+                  }
+                </div>
+              </app-physio-section-card>
+            </div>
+
+            <div class="pd-row">
+              <app-physio-section-card
+                icon="activity"
+                heading="Estado dental y periodontal"
+                [editable]="editable()"
+                [empty]="!s.dental.length && !s.perio && !s.kennedy.length"
+                emptyText="Odontograma sin hallazgos"
+                (edit)="goto.emit('odontograma')"
+              >
+                <div class="od-chips">
+                  @for (c of s.dental; track c.text) {
+                    <span class="od-chip" [attr.data-tone]="c.tone">{{ c.text }}</span>
+                  }
+                </div>
+                @if (s.perio) {
+                  <h4 class="pd-sub">Periodonto</h4>
+                  <div class="od-chips">
+                    <span class="od-chip" [attr.data-tone]="s.perio.tone">{{ s.perio.text.replace('Periodonto: ', '') }}</span>
+                  </div>
+                }
+                @if (s.kennedy.length) {
+                  <h4 class="pd-sub">Clasificación de Kennedy</h4>
+                  <div class="od-chips">
+                    @for (k of s.kennedy; track k) {
+                      <span class="od-chip" data-tone="info">{{ k }}</span>
+                    }
+                  </div>
+                }
+              </app-physio-section-card>
+
+              <app-physio-section-card
+                icon="diagnosis"
+                heading="Diagnóstico"
+                [editable]="editable()"
+                [empty]="!diagnoses().length"
+                (edit)="goto.emit('odo-diagnosticos')"
+              >
+                <ul class="pd-cie">
+                  @for (d of diagnoses(); track $index) {
+                    <li>
+                      <b>{{ d.code }}</b> {{ d.description }}
+                      @if (d.tooth) {
+                        <span>Pieza {{ d.tooth }}</span>
+                      }
+                      @if (d.main) {
+                        <span>Principal</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              </app-physio-section-card>
+            </div>
+
+            @if (ortho().length) {
+              <div class="pd-row one">
+                <app-physio-section-card
+                  icon="target"
+                  [heading]="orthoClinic() ? 'Evaluación ortodóntica' : 'Ortodoncia'"
+                  [editable]="editable()"
+                  (edit)="goto.emit('odo-ortodoncia')"
+                >
+                  <dl class="pd-dl">
+                    @for (r of ortho(); track r.label) {
+                      <div>
+                        <dt>{{ r.label }}</dt>
+                        <dd>{{ r.value }}</dd>
+                      </div>
+                    }
+                  </dl>
+                </app-physio-section-card>
+              </div>
+            }
+
+            <div class="pd-row">
+              <app-physio-section-card
+                icon="plan"
+                heading="Plan de tratamiento"
+                [editable]="editable()"
+                [empty]="!s.plan.count"
+                emptyText="Sin plan registrado"
+                (edit)="goto.emit('odo-plan')"
+              >
+                <div class="pd-progress" [attr.aria-label]="s.plan.done + ' de ' + s.plan.count + ' procedimientos terminados'">
+                  <span [style.width.%]="s.plan.count ? (s.plan.done / s.plan.count) * 100 : 0"></span>
+                </div>
+                <p class="pd-hint">
+                  {{ s.plan.done }} de {{ s.plan.count }} procedimientos terminados
+                  @if (s.plan.total) {
+                    · Total {{ '$' }}{{ s.plan.total | number: '1.0-0' }}
+                  }
+                  @if (s.plan.accepted) {
+                    · <b class="od-ok">presupuesto aceptado</b>
+                  }
+                </p>
+                @if (s.plan.next.length) {
+                  <h4 class="pd-sub">Próximos procedimientos</h4>
+                  <ol class="pd-steps small">
+                    @for (n of s.plan.next; track $index) {
+                      <li>{{ n }}</li>
+                    }
+                  </ol>
+                }
+              </app-physio-section-card>
+
+              <app-physio-section-card
+                icon="heart"
+                heading="Evolución y seguimiento"
+                [empty]="!entries().length"
+                emptyText="Aún no hay evoluciones firmadas."
+              >
+                <app-physio-evolution-timeline [entries]="entries()" />
+              </app-physio-section-card>
+            </div>
+          </div>
+
+          <aside class="pd-aside" aria-label="Panel de la atención">
+            <div class="pd-brand">
+              @if (clinicLogo() && !logoFailed()) {
+                <img [src]="clinicLogo()" [alt]="clinicName() || 'Logo del consultorio'" (error)="logoFailed.set(true)" />
+              } @else {
+                <strong>{{ clinicName() || 'Consultorio' }}</strong>
+              }
+              <span class="pd-brand-sp">{{ label() }}</span>
+              <span class="pd-brand-tags">{{ orthoClinic() ? 'Función · Estética · Estabilidad' : 'Prevención · Tratamiento · Sonrisa' }}</span>
+            </div>
+
+            <app-physio-next-session [patientId]="patient()?.id || encounter()?.patient?.id || null" [query]="patientQuery()" />
+
+            <section class="pd-side-card" aria-labelledby="odd-docs-title">
+              <header><app-physio-icon name="file" /><h3 id="odd-docs-title">Documentos y acciones</h3></header>
+              <div class="pd-actions">
+                @if (canWrite() && encounter()) {
+                  <button type="button" class="pd-btn ghost" [disabled]="downloading()" (click)="downloadPdf()">
+                    <app-physio-icon name="download" />{{ downloading() ? 'Generando PDF…' : 'Descargar historia (PDF)' }}
+                  </button>
+                }
+                @if (canWrite() && locked()) {
+                  <button type="button" class="pd-btn primary" (click)="newEvolution.emit()">
+                    <app-physio-icon name="pencil" />Nueva evolución
+                  </button>
+                }
+                <button type="button" class="pd-btn ghost" (click)="goto.emit('odo-imagenes')">
+                  <app-physio-icon name="search" />Fotos y radiografías
+                </button>
+                <button type="button" class="pd-btn ghost" (click)="goto.emit('consent-section')">
+                  <app-physio-icon name="clipboard" />Consentimientos y firmas
+                </button>
+                <button type="button" class="pd-btn ghost" (click)="goto.emit('anexos-section')">
+                  <app-physio-icon name="plan" />Anexos
+                </button>
+              </div>
+              @if (downloadError()) {
+                <p class="pd-error" role="alert">
+                  {{ downloadError() }}
+                  <button type="button" class="pd-link" (click)="downloadPdf()">Reintentar</button>
+                </p>
+              }
+            </section>
+
+            <section class="pd-side-card" aria-labelledby="odd-notes-title">
+              <header><app-physio-icon name="note" /><h3 id="odd-notes-title">Notas del profesional</h3></header>
+              @if (latestNote(); as n) {
+                <p class="pd-note-title">{{ n.title }}</p>
+                <p class="pd-note">{{ n.text }}</p>
+                @if (n.author) {
+                  <p class="pd-note-author">{{ n.author }}</p>
+                }
+              } @else {
+                <p class="pd-empty">Sin notas registradas</p>
+              }
+            </section>
+          </aside>
+        </div>
+      }
+    </div>
+  }
+</section>

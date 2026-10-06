@@ -4,6 +4,7 @@
   [class.specialty-psychology]="isPsychologyClinic()"
   [class.specialty-physiotherapy]="isPhysiotherapyClinic()"
   [class.specialty-dentistry]="isDentistryClinic()"
+  [class.specialty-general]="!!generalPremiumVariant()"
 >
   @if (!embedded()) {
   <header class="topbar">
@@ -304,6 +305,46 @@
       />
     } @else if (isPsychologyClinic() && encounter() && (!isAuditor() || !content._redacted)) {
       <app-psych-dashboard
+        variant="PSYCHOLOGY"
+        [patient]="patientForm"
+        [photo]="patientPhotoSrc()"
+        [encounter]="encounter()"
+        [content]="content"
+        [evolutions]="evolutions()"
+        [diagnoses]="diagnoses"
+        [soap]="isSoap()"
+        [canWrite]="canWrite()"
+        [formDisabled]="clinicalFormDisabled()"
+        [locked]="isLocked()"
+        [loading]="loading()"
+        [clinicName]="user()?.clinicName || ''"
+        [clinicLogo]="clinicLogo()"
+        (goto)="scrollToOdo($event)"
+        (newEvolution)="scrollToEvolutions()"
+      />
+    } @else if (isDentistryClinic() && encounter() && (!isAuditor() || !content._redacted)) {
+      <app-dental-dashboard
+        [patient]="patientForm"
+        [photo]="patientPhotoSrc()"
+        [encounter]="encounter()"
+        [content]="content"
+        [dental]="dental()"
+        [evolutions]="evolutions()"
+        [orthoClinic]="isOrthoClinic()"
+        [showOrtho]="showOrthoModule()"
+        [serviceLabel]="dental().service ? dentalServiceLabel(dental().service) : ''"
+        [canWrite]="canWrite()"
+        [formDisabled]="clinicalFormDisabled()"
+        [locked]="isLocked()"
+        [loading]="loading()"
+        [clinicName]="user()?.clinicName || ''"
+        [clinicLogo]="clinicLogo()"
+        (goto)="scrollToOdo($event)"
+        (newEvolution)="scrollToEvolutions()"
+      />
+    } @else if (generalPremiumVariant() && encounter() && (!isAuditor() || !content._redacted)) {
+      <app-psych-dashboard
+        [variant]="generalPremiumVariant()!"
         [patient]="patientForm"
         [photo]="patientPhotoSrc()"
         [encounter]="encounter()"

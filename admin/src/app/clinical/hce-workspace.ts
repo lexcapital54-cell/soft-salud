@@ -40,7 +40,26 @@ export class HceWorkspace implements OnInit, OnDestroy {
     const specialty = String(this.user()?.specialty || '').toUpperCase();
     if (specialty === 'PHYSIOTHERAPY') return 'physio';
     if (specialty === 'PSYCHOLOGY') return 'psych';
+    if (specialty === 'DENTISTRY' || specialty === 'ORTHODONTICS') return 'dental';
+    if (specialty === 'MEDICINE' || specialty === 'AESTHETIC') return 'general';
     return null;
+  });
+  readonly sidebar = computed(() => {
+    const specialty = String(this.user()?.specialty || '').toUpperCase();
+    switch (specialty) {
+      case 'PSYCHOLOGY':
+        return { label: 'Psicología', history: 'Historia de psicología', evolution: 'evoluciones-section', tagline: ['Escucha', 'Acompañamiento', 'Bienestar'] };
+      case 'DENTISTRY':
+        return { label: 'Odontología', history: 'Historia odontológica', evolution: 'odo-evoluciones-en-formulario', tagline: ['Prevención', 'Tratamiento', 'Sonrisa'] };
+      case 'ORTHODONTICS':
+        return { label: 'Ortodoncia', history: 'Historia de ortodoncia', evolution: 'odo-evoluciones-en-formulario', tagline: ['Función', 'Estética', 'Estabilidad'] };
+      case 'MEDICINE':
+        return { label: 'Medicina', history: 'Historia clínica', evolution: 'evoluciones-section', tagline: ['Prevención', 'Diagnóstico', 'Cuidado'] };
+      case 'AESTHETIC':
+        return { label: 'Medicina estética', history: 'Historia clínica', evolution: 'evoluciones-section', tagline: ['Armonía', 'Cuidado', 'Bienestar'] };
+      default:
+        return null;
+    }
   });
   readonly tabs = this.workspace.tabs;
   readonly activeKey = this.workspace.activeKey;

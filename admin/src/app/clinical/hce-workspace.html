@@ -1,14 +1,21 @@
-<div class="ws-shell" [class.ws-premium]="!!premium()" [class.ws-physio]="premium() === 'physio'" [class.ws-psych]="premium() === 'psych'">
+<div
+  class="ws-shell"
+  [class.ws-premium]="!!premium()"
+  [class.ws-physio]="premium() === 'physio'"
+  [class.ws-psych]="premium() === 'psych'"
+  [class.ws-dental]="premium() === 'dental'"
+  [class.ws-general]="premium() === 'general'"
+>
 @if (premium() === 'physio') {
   <app-physio-sidebar [clinicName]="user()?.clinicName || ''" [logo]="clinicLogo()" />
-} @else if (premium() === 'psych') {
+} @else if (sidebar(); as sb) {
   <app-physio-sidebar
     [clinicName]="user()?.clinicName || ''"
     [logo]="clinicLogo()"
-    specialtyLabel="Psicología"
-    historyLabel="Historia de psicología"
-    evolutionSection="evoluciones-section"
-    [tagline]="['Escucha', 'Acompañamiento', 'Bienestar']"
+    [specialtyLabel]="sb.label"
+    [historyLabel]="sb.history"
+    [evolutionSection]="sb.evolution"
+    [tagline]="sb.tagline"
   />
 }
 <section class="hce-workspace">

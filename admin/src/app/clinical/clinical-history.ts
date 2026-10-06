@@ -23,6 +23,7 @@ import { PhysioTherapies } from './physio/physio-therapies';
 import { PhysioIcon } from './physio/physio-icons';
 import { PhysioDashboard } from './physio/premium/physio-dashboard';
 import { PsychDashboard } from './psychology/premium/psych-dashboard';
+import { DentalDashboard } from './dentistry/premium/dental-dashboard';
 import { PsychPatientExtras } from './psychology/psych-patient-extras';
 import { NO_OTHER_SPECIALTY, type PatientExtras } from './patient-extras';
 import { physioIntakeSummary } from './physio/physio-intake.summary';
@@ -347,6 +348,7 @@ function emptyContent(): ClinicalContent {
   imports: [
     PhysioDashboard,
     PsychDashboard,
+    DentalDashboard,
     NgTemplateOutlet,
     DentalExamGroup,
     DentalPeriodontogram,
@@ -2331,6 +2333,13 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     if (this.isPhysiotherapyClinic() || this.isDentistryClinic()) return false;
     const specialty = String(this.user()?.specialty || '').toUpperCase();
     return specialty === 'PSYCHOLOGY';
+  }
+
+  /** Medicina y medicina estética usan el formulario general con el tablero premium. */
+  generalPremiumVariant(): 'MEDICINE' | 'AESTHETIC' | null {
+    if (this.isPhysiotherapyClinic() || this.isDentistryClinic() || this.isPsychologyClinic()) return null;
+    const specialty = String(this.user()?.specialty || '').toUpperCase();
+    return specialty === 'MEDICINE' || specialty === 'AESTHETIC' ? specialty : null;
   }
 
   /** Psicología no emite incapacidades. */

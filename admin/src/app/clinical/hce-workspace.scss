@@ -284,6 +284,28 @@
   --ws-bg: #faf6f4;
 }
 
+.ws-shell.ws-dental {
+  --pd-navy: #0b4650;
+  --pd-navy-2: #0b5563;
+  --sb-nav-2: #0d5560;
+  --pd-gold: #26a69a;
+  --pd-gold-rgb: 38, 166, 154;
+  --pd-gold-soft: #80cbc4;
+  --pd-shadow-rgb: 11, 70, 80;
+  --ws-bg: #f4f9f9;
+}
+
+.ws-shell.ws-general {
+  --pd-navy: #003d4c;
+  --pd-navy-2: #0d5c66;
+  --sb-nav-2: #0a4f5c;
+  --pd-gold: #3aa6a0;
+  --pd-gold-rgb: 58, 166, 160;
+  --pd-gold-soft: #a8dedb;
+  --pd-shadow-rgb: 0, 61, 76;
+  --ws-bg: #f5f9f9;
+}
+
 .ws-shell.ws-premium {
   display: flex;
   align-items: flex-start;

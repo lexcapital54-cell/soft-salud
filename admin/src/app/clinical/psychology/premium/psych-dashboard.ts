@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, inject, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { ClinicalApiService } from '../../clinical-api.service';
 import { ClinicalContent, ClinicalEvolution, DiagnosisRow, Encounter, Patient } from '../../clinical.models';
 import { PhysioIcon } from '../../physio/physio-icons';
@@ -28,8 +28,38 @@ import {
 
 const COLLAPSE_KEY = 'hce.ps.dashboard.collapsed';
 
+export type GeneralDashboardVariant = 'PSYCHOLOGY' | 'MEDICINE' | 'AESTHETIC';
+
+const VARIANTS: Record<GeneralDashboardVariant, { title: string; subtitle: string; label: string; tags: string; file: string; showPlan: boolean }> = {
+  PSYCHOLOGY: {
+    title: 'de psicología',
+    subtitle: 'Acompañamiento psicológico para el bienestar emocional',
+    label: 'Psicología',
+    tags: 'Escucha · Acompañamiento · Bienestar',
+    file: 'psicologia',
+    showPlan: true,
+  },
+  MEDICINE: {
+    title: 'de medicina',
+    subtitle: 'Atención médica integral centrada en el paciente',
+    label: 'Medicina',
+    tags: 'Prevención · Diagnóstico · Cuidado',
+    file: 'medicina',
+    showPlan: false,
+  },
+  AESTHETIC: {
+    title: 'de medicina estética',
+    subtitle: 'Cuidado estético con criterio médico',
+    label: 'Medicina estética',
+    tags: 'Armonía · Cuidado · Bienestar',
+    file: 'medicina-estetica',
+    showPlan: false,
+  },
+};
+
 /**
- * Tablero de la historia de psicología (solo lectura). Lee los mismos datos del
+ * Tablero de la historia clínica general (psicología, medicina y medicina
+ * estética comparten formulario). Solo lectura: lee los mismos datos del
  * formulario de abajo; cada «Editar» lleva a la sección donde se modifica.
  */
 @Component({
@@ -46,10 +76,13 @@ const COLLAPSE_KEY = 'hce.ps.dashboard.collapsed';
   ],
   templateUrl: './psych-dashboard.html',
   styleUrls: ['../../physio/premium/physio-dashboard.scss', './psych-dashboard.scss'],
+  host: { '[class.theme-petrol]': "variant() !== 'PSYCHOLOGY'" },
 })
 export class PsychDashboard {
   private readonly api = inject(ClinicalApiService);
 
+  readonly variant = input<GeneralDashboardVariant>('PSYCHOLOGY');
+  readonly cfg = computed(() => VARIANTS[this.variant()]);
   readonly patient = input<Partial<Patient> | null>(null);
   readonly photo = input<string | null>(null);
   readonly encounter = input<Encounter | null>(null);
@@ -131,7 +164,7 @@ export class PsychDashboard {
     const pr = this.progress();
     const cie = this.impression().cie.length;
     const pct = pr.count ? Math.round((pr.done / pr.count) * 100) : null;
-    return [
+    const all: FunctionalMetric[] = [
       {
         key: 'controls',
         label: 'Controles registrados',
@@ -176,6 +209,7 @@ export class PsychDashboard {
         pending: 'Sin diagnóstico',
       },
     ];
+    return this.cfg().showPlan ? all : all.filter((m) => m.key === 'controls' || m.key === 'cie');
   }
   latestNote() {
     const last = this.entries()[0];
@@ -206,7 +240,7 @@ export class PsychDashboard {
         const a = document.createElement('a');
         const p = this.patient();
         a.href = url;
-        a.download = `HC-psicologia-${p?.documentNumber || enc.id}.pdf`;
+        a.download = `HC-${this.cfg().file}-${p?.documentNumber || enc.id}.pdf`;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
         this.downloading.set(false);

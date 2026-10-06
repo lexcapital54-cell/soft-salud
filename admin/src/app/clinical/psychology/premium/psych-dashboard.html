@@ -1,8 +1,8 @@
 <section class="pd" id="ps-resumen" aria-labelledby="psd-title">
   <header class="pd-header">
     <div>
-      <h1 id="psd-title" class="pd-title">Historia clínica <span>de psicología</span></h1>
-      <p class="pd-subtitle">Acompañamiento psicológico para el bienestar emocional</p>
+      <h1 id="psd-title" class="pd-title">Historia clínica <span>{{ cfg().title }}</span></h1>
+      <p class="pd-subtitle">{{ cfg().subtitle }}</p>
     </div>
     <button type="button" class="pd-btn ghost pd-toggle" [attr.aria-expanded]="!collapsed()" aria-controls="psd-body" (click)="toggle()">
       {{ collapsed() ? 'Mostrar resumen' : 'Ocultar resumen' }}
@@ -67,6 +67,17 @@
                 </app-physio-section-card>
 
                 <ng-container *ngTemplateOutlet="impressionCard" />
+              </div>
+
+              @if (cfg().showPlan) {
+                <div class="pd-row">
+                  <ng-container *ngTemplateOutlet="planCard" />
+                  <ng-container *ngTemplateOutlet="proceduresCard" />
+                </div>
+              }
+
+              <div class="pd-row one">
+                <ng-container *ngTemplateOutlet="evolutionCard" />
               </div>
             } @else {
               <div class="pd-row">
@@ -141,80 +152,23 @@
                   }
                 </app-physio-section-card>
               </div>
-            }
 
-            <div class="pd-row">
-              @if (!soap()) {
+              <div class="pd-row">
                 <ng-container *ngTemplateOutlet="impressionCard" />
-              }
-
-              @let p = plan();
-              @let pr = progress();
-              <app-physio-section-card
-                icon="plan"
-                heading="Plan terapéutico"
-                [editable]="editable()"
-                [empty]="!p.objectives && !p.facts.length && !pr.count"
-                (edit)="goto.emit('ps-plan-valores')"
-              >
-                @for (g of objectives().groups; track $index) {
-                  <h4 class="pd-sub">{{ g.term || 'Objetivos terapéuticos' }}</h4>
-                  <ol class="pd-steps small">
-                    @for (o of g.items; track $index) {
-                      <li>{{ o }}</li>
-                    }
-                  </ol>
+                @if (cfg().showPlan) {
+                  <ng-container *ngTemplateOutlet="planCard" />
+                } @else {
+                  <ng-container *ngTemplateOutlet="evolutionCard" />
                 }
-                @if (p.facts.length) {
-                  <dl class="pd-inline">
-                    @for (f of p.facts; track f.label) {
-                      <div><dt>{{ f.label }}</dt><dd>{{ f.value }}</dd></div>
-                    }
-                  </dl>
-                }
-                @if (pr.count) {
-                  <div class="pd-progress" [attr.aria-label]="pr.done + ' de ' + pr.count + ' procedimientos terminados'">
-                    <span [style.width.%]="(pr.done / pr.count) * 100"></span>
-                  </div>
-                  <p class="pd-hint">{{ pr.done }} de {{ pr.count }} procedimientos terminados · {{ pr.sessions }} sesiones en el plan</p>
-                }
-              </app-physio-section-card>
+              </div>
 
-              @if (soap()) {
-                <app-physio-section-card
-                  icon="lotus"
-                  heading="Procedimientos del plan"
-                  [editable]="editable()"
-                  [empty]="!planRows().length"
-                  (edit)="goto.emit('ps-plan-valores')"
-                >
-                  <app-physio-interventions-table [rows]="planRows()" />
-                </app-physio-section-card>
+              @if (cfg().showPlan) {
+                <div class="pd-row">
+                  <ng-container *ngTemplateOutlet="proceduresCard" />
+                  <ng-container *ngTemplateOutlet="evolutionCard" />
+                </div>
               }
-            </div>
-
-            <div class="pd-row">
-              @if (!soap()) {
-                <app-physio-section-card
-                  icon="lotus"
-                  heading="Procedimientos del plan"
-                  [editable]="editable()"
-                  [empty]="!planRows().length"
-                  (edit)="goto.emit('ps-plan-valores')"
-                >
-                  <app-physio-interventions-table [rows]="planRows()" />
-                </app-physio-section-card>
-              }
-
-              <app-physio-section-card
-                icon="heart"
-                heading="Evolución y seguimiento"
-                [empty]="!entries().length"
-                emptyText="Aún no hay notas de evolución firmadas."
-              >
-                <app-physio-evolution-timeline [entries]="entries()" />
-              </app-physio-section-card>
-            </div>
+            }
           </div>
 
           <aside class="pd-aside" aria-label="Panel de la atención">
@@ -224,8 +178,8 @@
               } @else {
                 <strong>{{ clinicName() || 'Consultorio' }}</strong>
               }
-              <span class="pd-brand-sp">Psicología</span>
-              <span class="pd-brand-tags">Escucha · Acompañamiento · Bienestar</span>
+              <span class="pd-brand-sp">{{ cfg().label }}</span>
+              <span class="pd-brand-tags">{{ cfg().tags }}</span>
             </div>
 
             <app-physio-next-session [patientId]="patient()?.id || encounter()?.patient?.id || null" [query]="patientQuery()" />
@@ -302,5 +256,62 @@
         }
       </ul>
     }
+  </app-physio-section-card>
+</ng-template>
+
+<ng-template #planCard>
+  @let p = plan();
+  @let pr = progress();
+  <app-physio-section-card
+    icon="plan"
+    heading="Plan terapéutico"
+    [editable]="editable()"
+    [empty]="!p.objectives && !p.facts.length && !pr.count"
+    (edit)="goto.emit('ps-plan-valores')"
+  >
+    @for (g of objectives().groups; track $index) {
+      <h4 class="pd-sub">{{ g.term || 'Objetivos terapéuticos' }}</h4>
+      <ol class="pd-steps small">
+        @for (o of g.items; track $index) {
+          <li>{{ o }}</li>
+        }
+      </ol>
+    }
+    @if (p.facts.length) {
+      <dl class="pd-inline">
+        @for (f of p.facts; track f.label) {
+          <div><dt>{{ f.label }}</dt><dd>{{ f.value }}</dd></div>
+        }
+      </dl>
+    }
+    @if (pr.count) {
+      <div class="pd-progress" [attr.aria-label]="pr.done + ' de ' + pr.count + ' procedimientos terminados'">
+        <span [style.width.%]="(pr.done / pr.count) * 100"></span>
+      </div>
+      <p class="pd-hint">{{ pr.done }} de {{ pr.count }} procedimientos terminados · {{ pr.sessions }} sesiones en el plan</p>
+    }
+  </app-physio-section-card>
+</ng-template>
+
+<ng-template #proceduresCard>
+  <app-physio-section-card
+    icon="lotus"
+    heading="Procedimientos del plan"
+    [editable]="editable()"
+    [empty]="!planRows().length"
+    (edit)="goto.emit('ps-plan-valores')"
+  >
+    <app-physio-interventions-table [rows]="planRows()" />
+  </app-physio-section-card>
+</ng-template>
+
+<ng-template #evolutionCard>
+  <app-physio-section-card
+    icon="heart"
+    heading="Evolución y seguimiento"
+    [empty]="!entries().length"
+    emptyText="Aún no hay notas de evolución firmadas."
+  >
+    <app-physio-evolution-timeline [entries]="entries()" />
   </app-physio-section-card>
 </ng-template>
