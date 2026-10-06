@@ -62,6 +62,7 @@ import {
   signatureColumn,
   tableCell,
   tableHeaderCell,
+  useHcePalette,
   type MetricItem,
   type SummaryRow,
 } from './hce-pdf.layout';
@@ -216,8 +217,9 @@ export class HcePdfService {
     clinicLogo: string | null = null,
   ): TDocumentDefinitions {
     this.sectionNo = 0;
-    const theme = { title: P.navy as string };
     const isPsychology = specialty === ClinicSpecialty.PSYCHOLOGY;
+    useHcePalette(isPsychology ? 'psychology' : 'default');
+    const theme = { title: P.navy };
     const patient = encounter.patient;
     const record = encounter.clinicalRecord;
     const content = (record?.content || {}) as Record<string, unknown>;

@@ -4,7 +4,25 @@
  */
 import type { Content, CustomTableLayout } from 'pdfmake/interfaces';
 
-export const HCE_PALETTE = {
+type Palette = {
+  navy: string;
+  navy2: string;
+  gold: string;
+  goldSoft: string;
+  ink: string;
+  muted: string;
+  line: string;
+  soft: string;
+  soft2: string;
+  head: string;
+  /** Franja del membrete (solo psicología); null sin franja. */
+  rose: string | null;
+  success: string;
+  warning: string;
+  error: string;
+};
+
+const NAVY_PALETTE: Palette = {
   navy: '#0B2239',
   navy2: '#163A59',
   gold: '#C79A4B',
@@ -15,10 +33,36 @@ export const HCE_PALETTE = {
   soft: '#F6F8FA',
   soft2: '#F1F5F8',
   head: '#EAF0F5',
+  rose: null,
   success: '#1FA774',
   warning: '#D99A32',
   error: '#D45B5B',
-} as const;
+};
+
+/** Paleta original del membrete de psicología (café, rosa empolvado y dorado). */
+const PSYCH_PALETTE: Palette = {
+  navy: '#2A1F1C',
+  navy2: '#8E5B4F',
+  gold: '#C9A46A',
+  goldSoft: '#FBF4EA',
+  ink: '#1A1A1A',
+  muted: '#7A6A66',
+  line: '#E8DCD8',
+  soft: '#FBF6F4',
+  soft2: '#F7EDEA',
+  head: '#F3E4DF',
+  rose: '#E1B7AD',
+  success: '#1F8F65',
+  warning: '#B97A1E',
+  error: '#C24F4F',
+};
+
+/** Paleta activa del documento en construcción (la construcción y el render son síncronos). */
+export const HCE_PALETTE: Palette = { ...NAVY_PALETTE };
+
+export function useHcePalette(kind: 'psychology' | 'default') {
+  Object.assign(HCE_PALETTE, kind === 'psychology' ? PSYCH_PALETTE : NAVY_PALETTE);
+}
 
 const P = HCE_PALETTE;
 
@@ -528,6 +572,17 @@ export function runningHeader(left: Content, right: string): Content {
     stack: [
       {
         columns: [
+          ...(P.rose
+            ? [
+                {
+                  width: 16,
+                  canvas: [
+                    { type: 'rect', x: 0, y: 0, w: 8, h: 26, color: P.rose },
+                    { type: 'rect', x: 11, y: 0, w: 1.2, h: 26, color: P.gold },
+                  ],
+                },
+              ]
+            : []),
           { ...(left as object), width: '*' },
           { text: right, width: 'auto', fontSize: 7.4, color: P.muted, alignment: 'right', margin: [0, 6, 0, 0] },
         ],
