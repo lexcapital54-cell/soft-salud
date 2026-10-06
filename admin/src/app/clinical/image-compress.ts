@@ -1,8 +1,9 @@
-export const IMAGE_TARGET_MAX_BYTES = 300 * 1024;
+/** Ninguna imagen de la historia clínica debe superar 100 KB al subirse. */
+export const IMAGE_TARGET_MAX_BYTES = 100 * 1024;
 
-const START_MAX_DIMENSION = 2048;
-const MIN_DIMENSION = 720;
-const QUALITIES = [0.86, 0.78, 0.7, 0.62, 0.55, 0.48];
+const START_MAX_DIMENSION = 1600;
+const MIN_DIMENSION = 320;
+const QUALITIES = [0.82, 0.72, 0.62, 0.52, 0.44, 0.36];
 
 function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -25,8 +26,9 @@ function toBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob | null
 }
 
 /**
- * Reduce una imagen a JPEG de ~100–300 KB. Si el archivo no es una imagen que el
- * navegador pueda decodificar, o ya pesa menos del objetivo, se devuelve sin cambios.
+ * Reduce una imagen a JPEG de máximo 100 KB bajando calidad y, si hace falta, tamaño.
+ * Si el archivo no es una imagen que el navegador pueda decodificar, o ya pesa menos
+ * del objetivo, se devuelve sin cambios.
  */
 export async function compressImageForUpload(file: File): Promise<File> {
   if (!file.type.startsWith('image/') || file.type === 'image/gif' || file.type === 'image/svg+xml') return file;
@@ -71,4 +73,14 @@ export async function compressImageForUpload(file: File): Promise<File> {
   if (!best || best.size >= file.size) return file;
   const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
   return new File([best], name, { type: 'image/jpeg', lastModified: Date.now() });
+}
+
+/** Comprime la imagen del campo `field` de un formulario antes de enviarlo. */
+export async function compressFormImage(form: FormData, field = 'file'): Promise<FormData> {
+  const entry = form.get(field);
+  if (!(entry instanceof File) || !entry.type.startsWith('image/')) return form;
+  const compressed = await compressImageForUpload(entry);
+  if (compressed === entry) return form;
+  form.set(field, compressed, compressed.name);
+  return form;
 }

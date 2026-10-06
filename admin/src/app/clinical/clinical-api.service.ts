@@ -23,6 +23,8 @@ import {
 import { CiConsentDetails, ConsentTemplate, PatientConsentRecord } from './consent.models';
 import { OrthoControl, OrthoHistoryEntry } from './dentistry/ortho-controls';
 import { API } from '../api.config';
+import { from, switchMap } from 'rxjs';
+import { compressFormImage, compressImageForUpload } from './image-compress';
 
 @Injectable({ providedIn: 'root' })
 export class ClinicalApiService {
@@ -63,9 +65,13 @@ export class ClinicalApiService {
   }
 
   uploadPatientPhoto(patientId: string, file: File) {
-    const form = new FormData();
-    form.append('file', file, file.name || 'paciente.jpg');
-    return this.http.post<Patient>(`${API}/patients/${patientId}/photo`, form);
+    return from(compressImageForUpload(file)).pipe(
+      switchMap((photo) => {
+        const form = new FormData();
+        form.append('file', photo, photo.name || 'paciente.jpg');
+        return this.http.post<Patient>(`${API}/patients/${patientId}/photo`, form);
+      }),
+    );
   }
 
   downloadPatientPhoto(patientId: string) {
@@ -308,7 +314,9 @@ export class ClinicalApiService {
   }
 
   uploadAttachment(form: FormData) {
-    return this.http.post<ClinicalAttachment>(`${API}/clinical-attachments`, form);
+    return from(compressFormImage(form)).pipe(
+      switchMap((body) => this.http.post<ClinicalAttachment>(`${API}/clinical-attachments`, body)),
+    );
   }
 
   downloadAttachment(id: string) {

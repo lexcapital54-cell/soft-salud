@@ -338,14 +338,14 @@
   );
 }
 
-/* Psicología: paleta mocha (crema, durazno y café). */
+/* Psicología: paleta petróleo y mocha. */
 .hce-page.specialty-psychology {
   @include premium-hc(
-    $navy: #8c5e45, $navy-2: #7a4f3a, $gold: #9a6a4f, $shadow: #8c5e45,
-    $line: #eedfd3, $soft: #fbf1e8, $bg: #f6f0eb, $ink: #3a2622,
-    $field-border: #e6d3c4, $field-hover: #d1b29c, $readonly-bg: #f8efe7, $readonly-ink: #6b5a52, $placeholder: #ae9585, $arrow: '8c5e45',
-    $row-line: #f1e6dc, $row-even: #fcf8f4, $row-hover: #f8ece2, $ghost-border: #e8cdb8,
-    $chip-border: #e8cdb8, $chip-bg: #fcf1e7, $chip-ink: #6b4232
+    $navy: #1f3d47, $navy-2: #183843, $gold: #8a6a55, $shadow: #1f3d47,
+    $line: #e6dfd8, $soft: #f6f3f0, $bg: #f4f2f1, $ink: #1e2a2e,
+    $field-border: #e0d6cc, $field-hover: #cbb49a, $readonly-bg: #f5f1ed, $readonly-ink: #5f6b6e, $placeholder: #9aa3a6, $arrow: '1f3d47',
+    $row-line: #ece6e0, $row-even: #faf8f6, $row-hover: #f3eee9, $ghost-border: #cbb49a,
+    $chip-border: #cbb49a, $chip-bg: #f6f0e9, $chip-ink: #6b5040
   );
 }
 
