@@ -21,6 +21,7 @@ import {
   CreateReceiptDto,
 } from './dto/billing.dto';
 import { ReceiptPdfService } from './receipt-pdf.service';
+import { paletteFromLogo } from '../../common/logo-palette';
 import { BillingPlanService } from './billing-plan.service';
 
 const BILLING_ROLES: UserRole[] = [
@@ -303,6 +304,7 @@ export class BillingService {
       clinicPhone: receipt.clinic.phone,
       clinicNit: receipt.clinic.nit,
       clinicLogo: logo ? `data:${logo.mimeType};base64,${Buffer.from(logo.data).toString('base64')}` : null,
+      palette: paletteFromLogo(logo ? Buffer.from(logo.data) : null, logo?.mimeType),
       number: receipt.number,
       issuedAt: receipt.issuedAt ? new Date(receipt.issuedAt) : new Date(),
       patientName,

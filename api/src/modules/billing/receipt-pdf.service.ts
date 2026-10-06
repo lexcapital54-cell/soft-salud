@@ -7,6 +7,7 @@ const PdfPrinter = require('pdfmake') as new (fonts: Record<string, unknown>) =>
   };
 };
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
+import { DEFAULT_PALETTE, type DocumentPalette } from '../../common/logo-palette';
 
 export type ReceiptPdfInput = {
   clinicName: string;
@@ -15,6 +16,8 @@ export type ReceiptPdfInput = {
   clinicNit?: string | null;
   /** Logo propio del consultorio (data URL). Nunca el de HABILISALUD. */
   clinicLogo?: string | null;
+  /** Colores del consultorio (sacados de su logo). */
+  palette?: DocumentPalette;
   number: string;
   issuedAt: Date;
   patientName: string;
@@ -37,13 +40,6 @@ export type ReceiptPdfInput = {
   createdByName?: string | null;
 };
 
-const NAVY = '#0b4f8a';
-const TEAL = '#0d7c8c';
-const LINE = '#a9c8e2';
-const SOFT = '#eef5fb';
-const INK = '#1f3b57';
-const MUTED = '#5b7590';
-
 const PAGE_W = 792;
 const PAGE_H = 612;
 const MARGIN = 36;
@@ -62,6 +58,13 @@ export class ReceiptPdfService {
   });
 
   async build(input: ReceiptPdfInput): Promise<Buffer> {
+    const pal = input.palette ?? DEFAULT_PALETTE;
+    const NAVY = pal.primary;
+    const TEAL = pal.accent;
+    const LINE = pal.line;
+    const SOFT = pal.soft;
+    const INK = pal.ink;
+    const MUTED = pal.muted;
     const money = (n: number) =>
       `$ ${new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(n)}`;
     const date = input.issuedAt.toLocaleDateString('es-CO', {
@@ -182,7 +185,7 @@ export class ReceiptPdfService {
                 ],
               },
               { type: 'rect', x: 600, y: 70, w: 150, h: 26, r: 6, color: '#ffffff' },
-              { type: 'ellipse', x: PAGE_W - 30, y: PAGE_H - 40, r1: 70, r2: 70, lineColor: '#e3eef7', lineWidth: 14 },
+              { type: 'ellipse', x: PAGE_W - 30, y: PAGE_H - 40, r1: 70, r2: 70, lineColor: pal.decor, lineWidth: 14 },
             ],
             absolutePosition: { x: 0, y: 0 },
           } as Content,
