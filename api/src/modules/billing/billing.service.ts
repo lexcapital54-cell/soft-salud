@@ -262,7 +262,7 @@ export class BillingService {
         patient: true,
         items: true,
         transactions: true,
-        clinic: { select: { name: true, address: true, phone: true } },
+        clinic: { select: { name: true, address: true, phone: true, nit: true } },
       },
     });
     if (!inv) throw new NotFoundException('Recibo no encontrado');
@@ -295,14 +295,21 @@ export class BillingService {
     const patientName = [receipt.patient.firstName, receipt.patient.lastName]
       .filter(Boolean)
       .join(' ');
+    const logos = await this.prisma.clinicLogo.findMany({ where: { clinicId: this.requireClinicId(user) } });
+    const logo = logos.find((l) => l.kind === 'HOME') ?? logos.find((l) => l.kind === 'HC');
     const buffer = await this.pdfService.build({
       clinicName: receipt.clinic.name,
       clinicAddress: receipt.clinic.address,
       clinicPhone: receipt.clinic.phone,
+      clinicNit: receipt.clinic.nit,
+      clinicLogo: logo ? `data:${logo.mimeType};base64,${Buffer.from(logo.data).toString('base64')}` : null,
       number: receipt.number,
       issuedAt: receipt.issuedAt ? new Date(receipt.issuedAt) : new Date(),
       patientName,
       patientDocument: `${receipt.patient.documentType} ${receipt.patient.documentNumber}`,
+      patientPhone: receipt.patient.phone,
+      patientEmail: receipt.patient.email,
+      methodCode: receipt.method,
       method: this.methodLabel(receipt.method),
       notes: receipt.notes,
       items: receipt.items.map((it) => ({
