@@ -7,10 +7,12 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <title>Consultorio · HABILISALUD</title>
   <style>
+    /* Paleta base HABILISALUD (medicina, estética y demás especialidades) */
     :root {
-      --nav: #0b2239; --nav-2: #163a59; --accent: #c79a4b; --accent-soft: #e2c58e;
-      --bg: #f6f8fa; --card: #fff; --ink: #172033; --muted: #687386; --line: rgba(15, 35, 55, .08);
-      --soft: #eaf1f7; --ok: #1fa774; --warn: #d99a32; --danger: #d45b5b;
+      --nav: #003d4c; --nav-2: #0d5c66; --accent: #3aa6a0; --accent-soft: #a8dedb;
+      --bg: #f3f7f8; --card: #fff; --ink: #10262c; --muted: #5d7177; --line: rgba(15, 35, 55, .08);
+      --soft: #e8f6f6; --ok: #1fa774; --warn: #d99a32; --danger: #d45b5b;
+      --glow-rgb: 58, 166, 160; --cta: #0d7377; --tone-bg: #e0f2f1; --tone-ink: #0d6b6f;
       --brand: var(--nav-2);
       --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
       --shadow: 0 1px 2px rgba(11, 34, 57, .04), 0 12px 30px -24px rgba(11, 34, 57, .45);
@@ -24,7 +26,7 @@
     [hidden] { display: none !important; }
     .ico { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     a:focus-visible, button:focus-visible, select:focus-visible {
-      outline: 3px solid rgba(199, 154, 75, .6); outline-offset: 2px;
+      outline: 3px solid rgba(var(--glow-rgb), .6); outline-offset: 2px;
     }
 
     /* Estructura */
@@ -33,10 +35,10 @@
       position: sticky; top: 0; height: 100svh; width: 248px; flex: 0 0 248px; overflow-y: auto;
       display: flex; flex-direction: column; gap: 22px; padding: 26px 16px 20px; color: #fff; z-index: 40;
       background:
-        radial-gradient(280px 240px at 0% 100%, rgba(199, 154, 75, .16), transparent 70%),
-        linear-gradient(180deg, var(--nav) 0%, #10304d 100%);
+        radial-gradient(280px 240px at 0% 100%, rgba(var(--glow-rgb), .16), transparent 70%),
+        linear-gradient(180deg, var(--nav) 0%, color-mix(in srgb, var(--nav) 82%, var(--nav-2)) 100%);
     }
-    .sb-brand { display: grid; gap: 6px; padding: 0 10px 18px; border-bottom: 1px solid rgba(199, 154, 75, .35); }
+    .sb-brand { display: grid; gap: 6px; padding: 0 10px 18px; border-bottom: 1px solid rgba(var(--glow-rgb), .35); }
     .brand {
       font-family: var(--serif); font-size: 1.25rem; font-weight: 600; letter-spacing: .08em;
       color: #fff; text-decoration: none;
@@ -108,7 +110,7 @@
       position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between;
       gap: 24px; padding: 30px 32px; border-radius: 20px; color: #fff;
       background:
-        radial-gradient(420px 260px at 92% 0%, rgba(199, 154, 75, .26), transparent 70%),
+        radial-gradient(420px 260px at 92% 0%, rgba(var(--glow-rgb), .26), transparent 70%),
         linear-gradient(135deg, var(--nav) 0%, var(--nav-2) 100%);
       box-shadow: 0 20px 40px -28px rgba(11, 34, 57, .9);
     }
@@ -159,7 +161,7 @@
     .stat-ico .ico { width: 22px; height: 22px; }
     .stat[data-tone="ok"] .stat-ico { background: #e3f5ed; color: #13704d; }
     .stat[data-tone="warn"] .stat-ico { background: #fbefd9; color: #8a5b12; }
-    .stat[data-tone="gold"] .stat-ico { background: #f6ecda; color: #8a6420; }
+    .stat[data-tone="gold"] .stat-ico { background: var(--tone-bg); color: var(--tone-ink); }
     .stat-label { margin: 0; font-size: .8rem; color: var(--muted); }
     .stat-value { margin: 2px 0 0; font-family: var(--serif); font-size: 1.8rem; font-weight: 600; line-height: 1; color: var(--nav); }
     .stat-sub { margin: 4px 0 0; font-size: .76rem; color: var(--muted); }
@@ -201,7 +203,7 @@
 
     .next {
       position: relative; overflow: hidden; color: #fff; border: 0;
-      background: radial-gradient(260px 180px at 100% 0%, rgba(199, 154, 75, .25), transparent 70%), linear-gradient(150deg, var(--nav) 0%, var(--nav-2) 100%);
+      background: radial-gradient(260px 180px at 100% 0%, rgba(var(--glow-rgb), .25), transparent 70%), linear-gradient(150deg, var(--nav) 0%, var(--nav-2) 100%);
     }
     .next .panel-head h2 { color: #fff; }
     .next-time { margin: 0; font-family: var(--serif); font-size: 1.9rem; font-weight: 600; line-height: 1.1; }
@@ -234,18 +236,18 @@
     /* Módulos */
     .section-title { display: flex; align-items: center; gap: 12px; margin: 6px 0 -6px; }
     .section-title h2 { margin: 0; font-family: var(--serif); font-size: 1.2rem; font-weight: 600; color: var(--nav); }
-    .section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(199, 154, 75, .55), transparent); }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(var(--glow-rgb), .55), transparent); }
     .modules { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
     .module {
       display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-content: start;
       padding: 20px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow);
       color: inherit; text-decoration: none; transition: border-color .15s, box-shadow .15s, transform .15s;
     }
-    .module:hover { border-color: rgba(199, 154, 75, .7); box-shadow: 0 16px 34px -24px rgba(11, 34, 57, .55); transform: translateY(-2px); }
+    .module:hover { border-color: rgba(var(--glow-rgb), .7); box-shadow: 0 16px 34px -24px rgba(11, 34, 57, .55); transform: translateY(-2px); }
     .mod-ico { grid-row: span 3; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--soft); color: var(--nav-2); }
     .module h2 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--nav); }
     .module p { margin: 0; color: var(--muted); font-size: .86rem; }
-    .cta { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; color: #8a6420; font-size: .84rem; font-weight: 700; }
+    .cta { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; color: var(--cta); font-size: .84rem; font-weight: 700; }
     .cta .ico { width: 16px; height: 16px; }
 
     .receipts-folder { width: min(560px, calc(100vw - 32px)); max-height: 80vh; overflow: auto; padding: 20px 22px 22px; border-radius: 16px; border: 1px solid var(--line); background: #fff; box-shadow: 0 24px 60px rgba(11, 34, 57, .3); color: var(--ink); }
@@ -296,13 +298,22 @@
     }
     @media (prefers-reduced-motion: reduce) { .sb, .module { transition: none; } }
 
-    /* Psicología: conserva la paleta Dulcemente sobre la misma estructura */
+    /* Cada especialidad conserva los colores de su historia clínica sobre la misma estructura */
+    body.specialty-physiotherapy {
+      --nav: #0b2239; --nav-2: #163a59; --accent: #c79a4b; --accent-soft: #e2c58e;
+      --bg: #f6f8fa; --soft: #eaf1f7; --ink: #172033; --muted: #687386;
+      --glow-rgb: 199, 154, 75; --cta: #8a6420; --tone-bg: #f6ecda; --tone-ink: #8a6420;
+    }
+    body.specialty-dentistry {
+      --nav: #083f4a; --nav-2: #0b5563; --accent: #4db6ac; --accent-soft: #a7e0da;
+      --bg: #f3f9f8; --soft: #e0f2f1; --ink: #11292d; --muted: #4f6f73;
+      --glow-rgb: 77, 182, 172; --cta: #00796b; --tone-bg: #e0f2f1; --tone-ink: #00695c;
+    }
     body.specialty-psychology {
       --nav: #2a1f1c; --nav-2: #4a3631; --accent: #c48b7e; --accent-soft: #e1b7ad;
       --bg: #faf6f4; --soft: #f6ebe7; --ink: #2a1f1c; --muted: #7a6460;
+      --glow-rgb: 196, 139, 126; --cta: #9a5f52; --tone-bg: #f6ebe7; --tone-ink: #9a5f52;
     }
-    body.specialty-psychology .cta { color: #9a5f52; }
-    body.specialty-psychology .stat[data-tone="gold"] .stat-ico { background: #f6ebe7; color: #9a5f52; }
   </style>
 </head>
 <body>
@@ -610,6 +621,8 @@
         document.body.classList.add('specialty-psychology');
       } else if (user.specialty === 'PHYSIOTHERAPY') {
         document.body.classList.add('specialty-physiotherapy');
+      } else if (user.specialty === 'DENTISTRY' || user.specialty === 'ORTHODONTICS') {
+        document.body.classList.add('specialty-dentistry');
       }
 
       var isSecretaria = user.role === 'RECEPTIONIST';
