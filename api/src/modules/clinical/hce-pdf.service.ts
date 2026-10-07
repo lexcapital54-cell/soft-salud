@@ -27,15 +27,12 @@ import {
   DENTAL_SYMPTOM_LABELS,
   DENTAL_TOOTH_LABELS,
   DENTAL_TREATMENT_LABELS,
-  DENTAL_TREATMENT_PHASE_LABELS,
-  DENTAL_TREATMENT_STATUS_LABELS,
   ORTHO_APPLIANCE_LABELS,
   ORTHO_BRACKET_LABELS,
   ORTHO_HABIT_LABELS,
   ORTHO_ELASTIC_LABELS,
   ORTHO_PLAN_PHASE_LABELS,
 } from './dentistry-labels';
-import { num } from '../billing/treatment-plan-items';
 import { physioIntakeSections, physioMetricItems, physioPainFromText } from './physio-intake.pdf';
 import { psychAgeLabel, psychBirthLabel, psychPatientRows } from './psych-intake.pdf';
 import {
@@ -452,7 +449,6 @@ export class HcePdfService {
           theme.title,
           band,
         ),
-        this.physioPlanTable(physio.treatmentPlan, theme.title),
         this.section(
           'Impresión diagnóstica',
           assessment.impressionNarrative as string,
@@ -518,7 +514,6 @@ export class HcePdfService {
             .join(' · '),
           theme.title,
         ),
-        this.physioPlanTable(psych.treatmentPlan, theme.title),
       );
     }
 
@@ -1586,46 +1581,6 @@ export class HcePdfService {
       );
     }
 
-    const budget = obj(dental.orthoBudget);
-    const budgetItems = rows(budget.items).filter((r) => str(r.concept));
-    if (budgetItems.length) {
-      const toNum = (v: unknown) => {
-        let t = str(v).replace(/[^\d.,-]/g, '');
-        if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
-        else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
-        return Number(t) || 0;
-      };
-      const cop = (n: number) => `$ ${Math.round(n).toLocaleString('es-CO')}`;
-      const netOf = (r: Record<string, unknown>) =>
-        (toNum(r.qty) || 0) * toNum(r.unitValue) * (1 - Math.min(100, Math.max(0, toNum(r.discountPct))) / 100);
-      const total = budgetItems.filter((r) => str(r.status) !== 'Cancelado').reduce((s, r) => s + netOf(r), 0);
-      sections.push(
-        table(
-          `Presupuesto de ortodoncia · total ${cop(total)}`,
-          ['20%', '*', '8%', '15%', '8%', '15%', '12%'],
-          ['Concepto', 'Detalle', 'Cant.', 'Valor unitario', 'Desc.', 'Total', 'Estado'],
-          budgetItems.map((r) => [
-            str(r.concept),
-            str(r.description),
-            str(r.qty),
-            str(r.unitValue) ? cop(toNum(r.unitValue)) : '',
-            str(r.discountPct) ? `${str(r.discountPct)} %` : '',
-            cop(netOf(r)),
-            str(r.status),
-          ]),
-        ),
-      );
-      const installments = Math.floor(toNum(budget.installments));
-      const finText = lines([
-        ['Cuota inicial', str(budget.downPayment) ? cop(toNum(budget.downPayment)) : ''],
-        ['Cuotas', installments ? `${installments} de ${cop(Math.max(0, total - toNum(budget.downPayment)) / installments)}` : ''],
-        ['Primera cuota', budget.startDate],
-        ['Fecha de cotización', budget.quotedAt],
-        ['Condiciones', budget.notes],
-      ]);
-      if (finText) sections.push(this.section('Financiación del presupuesto', finText, titleColor, band));
-    }
-
     const mvLabels: Record<string, [string, string]> = {
       MESIALIZACION: ['Mesialización', 'mm'],
       DISTALIZACION: ['Distalización', 'mm'],
@@ -1703,65 +1658,6 @@ export class HcePdfService {
       );
     }
 
-    const plan = rows(dental.treatmentPlan).filter((r) => str(r.description) || str(r.code));
-    if (plan.length) {
-      const money = (v: unknown) => {
-        const n = Number(str(v).replace(/[^\d.]/g, ''));
-        return n ? `$${n.toLocaleString('es-CO')}` : '';
-      };
-      const num = (v: unknown) => Number(str(v).replace(',', '.').replace(/[^\d.]/g, '')) || 0;
-      const qty = (r: Record<string, unknown>) => num(r.quantity) || 1;
-      const net = (r: Record<string, unknown>) =>
-        Math.round(num(r.value) * qty(r) * (1 - Math.min(100, num(r.discount)) / 100));
-      const active = plan.filter((r) => r.status !== 'CANCELADO');
-      const gross = active.reduce((sum, r) => sum + num(r.value) * qty(r), 0);
-      const afterRows = active.reduce((sum, r) => sum + net(r), 0);
-      const budget = obj(dental.budget);
-      const dv = budget.discountType === 'AMOUNT' ? num(budget.discountValue) : Math.min(100, num(budget.discountValue));
-      const globalDiscount = Math.min(afterRows, Math.round(budget.discountType === 'AMOUNT' ? dv : (afterRows * dv) / 100));
-      const total = afterRows - globalDiscount;
-      sections.push(
-        table(
-          'Plan de tratamiento',
-          ['6%', '13%', '*', '9%', '11%', '12%', '5%', '9%', '9%', '9%'],
-          ['Pieza', 'Diagnóstico', 'Procedimiento', 'CUPS', 'Fase', 'Profesional', 'Cant.', 'Valor unit.', 'Neto', 'Estado'],
-          [
-            ...plan.map((r) => [
-              str(r.tooth),
-              str(r.diagnosis),
-              str(r.description),
-              str(r.code),
-              DENTAL_TREATMENT_PHASE_LABELS[str(r.phase)] || '',
-              str(r.professional),
-              str(r.quantity) && str(r.quantity) !== '1' ? str(r.quantity) : '',
-              money(r.value),
-              money(net(r)) + (num(r.discount) ? ` (−${num(r.discount)} %)` : ''),
-              DENTAL_TREATMENT_STATUS_LABELS[str(r.status)] || 'Pendiente',
-            ]),
-          ],
-        ),
-      );
-      if (gross) {
-        const budgetRows: string[][] = [['Subtotal (sin cancelados)', money(gross)]];
-        if (gross !== afterRows) budgetRows.push(['Descuentos por procedimiento', `−${money(gross - afterRows)}`]);
-        if (globalDiscount) {
-          const why = str(budget.discountReason);
-          budgetRows.push([`Descuento general${why ? ` (${why})` : ''}`, `−${money(globalDiscount)}`]);
-        }
-        budgetRows.push(['Total', money(total) || '$0']);
-        const installments = Math.floor(num(budget.installments));
-        if (str(budget.paymentMethod)) budgetRows.push(['Forma de pago', str(budget.paymentMethod)]);
-        if (installments > 1 && total) budgetRows.push([`Cuotas (${installments})`, money(Math.ceil(total / installments))]);
-        if (str(budget.validUntil)) budgetRows.push(['Válido hasta', str(budget.validUntil).split('-').reverse().join('/')]);
-        if (str(budget.notes)) budgetRows.push(['Observaciones', str(budget.notes)]);
-        if (str(budget.acceptedAt)) {
-          const when = new Date(str(budget.acceptedAt)).toLocaleDateString('es-CO');
-          budgetRows.push(['Aceptación del paciente', `${when}${str(budget.acceptedBy) ? ` · ${str(budget.acceptedBy)}` : ''}`]);
-        }
-        sections.push(table('Presupuesto', ['40%', '*'], ['Concepto', 'Valor'], budgetRows));
-      }
-    }
-
     const consents = Array.isArray(dental.requiredConsents)
       ? (dental.requiredConsents as unknown[]).map((c) => DENTAL_CONSENT_LABELS[str(c)] || str(c))
       : [];
@@ -1824,46 +1720,6 @@ export class HcePdfService {
       ),
     );
     return sections;
-  }
-
-  /** Plan de tratamiento de fisioterapia: procedimiento CUPS, sesiones y valores. */
-  private physioPlanTable(raw: unknown, titleColor: string): Content {
-    const rows = (Array.isArray(raw) ? raw : []).filter(
-      (r): r is Record<string, unknown> => !!r && typeof r === 'object' && !!(String(r.description ?? '').trim() || String(r.cupsCode ?? '').trim()),
-    );
-    if (!rows.length) return { text: '' };
-    const n = (v: unknown) => Math.max(0, num(v));
-    const money = (v: number) => (v ? `$${Math.round(v).toLocaleString('es-CO')}` : '');
-    const status: Record<string, string> = { PENDIENTE: 'Pendiente', EN_TRATAMIENTO: 'En tratamiento', TERMINADO: 'Terminado', CANCELADO: 'Cancelado' };
-    const net = (r: Record<string, unknown>) => (n(r.sessions) || 1) * n(r.unitValue) * (1 - Math.min(100, n(r.discountPct)) / 100);
-    const total = rows.filter((r) => r.status !== 'CANCELADO').reduce((s, r) => s + net(r), 0);
-    const cell = (text: string, bold = false) => tableCell(text, bold);
-    return {
-      unbreakable: rows.length <= 15,
-      stack: [
-        this.bandTitle('Plan de tratamiento', titleColor),
-        {
-          table: {
-            widths: ['10%', '*', '9%', '13%', '13%', '13%'],
-            headerRows: 1,
-            body: [
-              ['CUPS', 'Procedimiento', 'Sesiones', 'Valor sesión', 'Neto', 'Estado'].map((h) => tableHeaderCell(h)),
-              ...rows.map((r) => [
-                cell(String(r.cupsCode ?? '')),
-                cell([r.description, r.notes].map((v) => String(v ?? '').trim()).filter(Boolean).join(' — ')),
-                cell(String(n(r.sessions) || 1)),
-                cell(money(n(r.unitValue))),
-                cell(money(net(r)) + (n(r.discountPct) ? ` (−${n(r.discountPct)} %)` : '')),
-                cell(status[String(r.status)] || 'Pendiente'),
-              ]),
-              [cell(''), cell('Total del plan (sin cancelados)', true), cell(''), cell(''), cell(money(total), true), cell('')],
-            ],
-          },
-          layout: dataTableLayout,
-          margin: [0, 0, 0, 6],
-        },
-      ],
-    };
   }
 
   private bandTitle(title: string, _titleColor?: string): Content {
