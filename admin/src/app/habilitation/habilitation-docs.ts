@@ -445,7 +445,14 @@ export class HabilitationDocs {
 
   // ---------- Panel del documento ----------
 
+  /** Botón «Ver» de las listas: abre la ficha y, si hay archivo vigente, el visor. */
+  viewDoc(doc: RegistryDoc) {
+    this.openDoc(doc);
+    if (doc.current) this.viewFile(doc.current.id, doc.current.originalName, doc.current.mimeType);
+  }
+
   openDoc(doc: RegistryDoc, tab: 'detalle' | 'versiones' | 'historial' = 'detalle') {
+    this.closeViewer();
     this.drawer.set(doc);
     this.drawerTab.set(tab);
     this.drawerDetail.set(null);
@@ -471,6 +478,8 @@ export class HabilitationDocs {
   /** Visor dentro de la página: las pestañas nuevas con blob suelen bloquearse (Safari, bloqueadores de ventanas). */
   viewFile(fileId: string, name: string, mimeType: string) {
     this.closeViewer();
+    name = name || 'Documento';
+    mimeType = mimeType || '';
     const lower = name.toLowerCase();
     const isWord = mimeType.includes('word') || lower.endsWith('.docx') || lower.endsWith('.doc');
     this.viewer.set({ fileId, name, kind: 'loading', url: null, rawUrl: null, html: null });

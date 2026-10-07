@@ -191,7 +191,7 @@
                           <td data-label="Responsable">{{ d.responsibleName || d.responsibleArea || '—' }}</td>
                           <td data-label="Fecha">{{ date(d.lastUpdate) }}</td>
                           <td data-label="Estado"><span [class]="stateClass(d.state)">{{ d.stateLabel }}</span></td>
-                          <td class="td-act"><button type="button" class="icon-btn" (click)="openDoc(d)" [attr.aria-label]="'Ver ' + d.title"><hab-icon name="eye" [size]="16" /></button></td>
+                          <td class="td-act"><button type="button" class="icon-btn" (click)="viewDoc(d)" [attr.aria-label]="'Ver ' + d.title"><hab-icon name="eye" [size]="16" /></button></td>
                         </tr>
                       }
                     </tbody>
@@ -452,7 +452,7 @@
                       <td data-label="Vencimiento">{{ date(d.expiresAt) }}</td>
                       <td data-label="Días"><span class="days" [class.late]="d.daysLeft! < 0">{{ daysText(d.daysLeft) }}</span></td>
                       <td class="td-act">
-                        <button type="button" class="icon-btn" (click)="openDoc(d)" [attr.aria-label]="'Abrir ' + d.title"><hab-icon name="eye" [size]="16" /></button>
+                        <button type="button" class="icon-btn" (click)="viewDoc(d)" [attr.aria-label]="'Ver ' + d.title"><hab-icon name="eye" [size]="16" /></button>
                         @if (canWrite(d)) {
                           <button type="button" class="btn btn-soft sm" (click)="openUpload(d)">Registrar nueva vigencia</button>
                         }
@@ -652,7 +652,7 @@
                   <td data-label="Versión">{{ d.current ? 'v' + d.current.version : '—' }}</td>
                   <td data-label="Actualizado">{{ date(d.lastUpdate) }}</td>
                   <td class="td-act">
-                    <button type="button" class="icon-btn" (click)="openDoc(d)" [attr.aria-label]="'Ver ' + d.title" title="Ver"><hab-icon name="eye" [size]="16" /></button>
+                    <button type="button" class="icon-btn" (click)="viewDoc(d)" [attr.aria-label]="'Ver ' + d.title" title="Ver"><hab-icon name="eye" [size]="16" /></button>
                     @if (d.current && canDownload()) {
                       <button type="button" class="icon-btn" (click)="downloadFile(d.current.id, d.current.originalName)" [attr.aria-label]="'Descargar ' + d.title" title="Descargar"><hab-icon name="download" [size]="16" /></button>
                     }
