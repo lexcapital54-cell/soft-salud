@@ -683,8 +683,9 @@
       </header>
 
       <p class="muted small">
-        Cada archivo se carga como una versión nueva del requisito elegido; las versiones anteriores se conservan en el
-        historial. Se sugiere el requisito por el código o el nombre del archivo; revíselo antes de cargar. Máximo 25 MB por archivo.
+        Si el nombre o código del archivo coincide con un requisito, se carga ahí como versión nueva (las anteriores quedan en
+        el historial). Si no coincide, se crea un documento nuevo con el nombre del archivo; puede renombrarlo después con
+        «Modificar». Máximo 25 MB por archivo.
       </p>
 
       <label class="bulk-drop" [class.is-disabled]="bulkRunning()">
@@ -708,6 +709,16 @@
           Vence el (opcional)
           <input type="date" [(ngModel)]="bulkExpiry" [disabled]="bulkRunning()" />
         </label>
+        @if (!bulkPillar() && bulkNeedsNew()) {
+          <label>
+            Estándar de los documentos nuevos
+            <select [ngModel]="bulkNewPillar()" (ngModelChange)="bulkNewPillar.set($event)" [disabled]="bulkRunning()">
+              @for (p of bulkNewPillars(); track p.pillar) {
+                <option [value]="p.pillar">{{ p.label }}</option>
+              }
+            </select>
+          </label>
+        }
       </div>
 
       @if (bulkRows().length) {
@@ -726,7 +737,7 @@
                   (ngModelChange)="setBulkRequirement(i, $event)"
                   [disabled]="bulkRunning() || row.state === 'ok'"
                 >
-                  <option value="">Elija el requisito…</option>
+                  <option value="">Documento nuevo (nombre del archivo)</option>
                   @for (g of bulkOptions(); track g.pillar) {
                     <optgroup [label]="g.label">
                       @for (r of g.reqs; track r.id) {
@@ -739,9 +750,9 @@
               <span class="bulk-state" role="status">
                 @switch (row.state) {
                   @case ('subiendo') { Cargando… }
-                  @case ('ok') { <hab-icon name="check" [size]="14" /> Cargado }
+                  @case ('ok') { <hab-icon name="check" [size]="14" /> Cargado{{ row.message ? ' · ' + row.message : '' }} }
                   @case ('error') { {{ row.message }} }
-                  @default { {{ row.requirementId ? 'Listo' : 'Sin requisito' }} }
+                  @default { {{ row.requirementId ? 'Listo' : 'Se creará' }} }
                 }
               </span>
               <button

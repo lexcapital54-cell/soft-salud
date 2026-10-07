@@ -20,6 +20,8 @@ import { Clinic, ClinicSpecialty, DashboardType, SPECIALTY_LABELS } from '../mod
 import { ClinicLogoSettings } from '../clinic-settings/clinic-logo-settings';
 import { HabIcon } from '../habilitation/hab-icon';
 import { HabilitationDocs } from '../habilitation/habilitation-docs';
+import { HabilitationApiService } from '../habilitation/habilitation-api.service';
+import { DocCategory } from '../habilitation/habilitation.models';
 import { SaShell } from '../super-admin/sa-shell';
 import { DocumentsApiService } from './documents-api.service';
 import {
@@ -64,6 +66,12 @@ interface BulkRow {
 }
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+
+/** Título provisional de un documento nuevo a partir del nombre del archivo. */
+function titleFromFile(fileName: string): string {
+  const base = fileName.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return (base || 'Documento sin nombre').slice(0, 250);
+}
 
 const normalize = (text: string) =>
   text
@@ -123,6 +131,7 @@ function describeError(error: unknown): string {
 })
 export class DocumentsDashboard {
   private readonly api = inject(DocumentsApiService);
+  private readonly habApi = inject(HabilitationApiService);
   private readonly adminApi = inject(AdminApiService);
   private readonly clinicalApi = inject(ClinicalApiService);
   private readonly auth = inject(AuthService);
@@ -1087,9 +1096,17 @@ export class DocumentsDashboard {
   readonly bulkPendingCount = computed(() => this.bulkPending().length);
   readonly bulkDoneCount = computed(() => this.bulkRows().filter((r) => r.state === 'ok').length);
   readonly bulkErrorCount = computed(() => this.bulkRows().filter((r) => r.state === 'error').length);
-  readonly bulkReady = computed(
-    () => !this.bulkRunning() && this.bulkPendingCount() > 0 && this.bulkPending().every((r) => !!r.requirementId),
+  readonly bulkReady = computed(() => !this.bulkRunning() && this.bulkPendingCount() > 0);
+  /** Estándar donde se crean los documentos nuevos (archivos sin requisito). */
+  readonly bulkNewPillar = signal<DocumentPillar>(PILLAR_ORDER[0]);
+  readonly bulkNeedsNew = computed(() => this.bulkPending().some((r) => !r.requirementId));
+  readonly bulkNewPillars = computed(() =>
+    [...this.standardPillars(), ...this.otherPillars()].map((p) => ({
+      pillar: p.pillar,
+      label: (this.pillarNumber(p.pillar) ? this.pillarNumber(p.pillar) + '. ' : '') + p.label,
+    })),
   );
+  private bulkCategories: DocCategory[] = [];
 
   openBulk(pillar: DocumentPillar | null) {
     if (!this.api.clinicId) {
@@ -1097,6 +1114,7 @@ export class DocumentsDashboard {
       return;
     }
     this.bulkPillar.set(pillar);
+    this.bulkNewPillar.set(pillar ?? PILLAR_ORDER[0]);
     this.bulkRows.set([]);
     this.bulkPeriod = '';
     this.bulkExpiry = '';
@@ -1149,11 +1167,22 @@ export class DocumentsDashboard {
       this.bulkRows.update((rows) => rows.map((r) => (r.key === key ? { ...r, ...change } : r)));
     let ok = 0;
     let failed = 0;
+    let created = 0;
     for (const row of this.bulkPending()) {
       patch(row.key, { state: 'subiendo', message: '' });
       try {
+        let requirementId = row.requirementId;
+        if (!requirementId) {
+          // Sin requisito: se crea un documento con el nombre del archivo para renombrarlo después.
+          const categoryId = await this.bulkCategoryFor(this.bulkPillar() ?? this.bulkNewPillar());
+          this.habApi.clinicId = this.api.clinicId;
+          const doc = await firstValueFrom(this.habApi.createDocument({ categoryId, title: titleFromFile(row.file.name) }));
+          requirementId = doc.id;
+          created++;
+          patch(row.key, { requirementId, message: 'Documento nuevo ' + doc.code });
+        }
         await firstValueFrom(
-          this.api.upload(row.requirementId, row.file, {
+          this.api.upload(requirementId, row.file, {
             expiresAt: this.bulkExpiry || undefined,
             periodLabel: this.bulkPeriod || undefined,
           }),
@@ -1161,7 +1190,7 @@ export class DocumentsDashboard {
         patch(row.key, { state: 'ok' });
         ok++;
       } catch (err) {
-        patch(row.key, { state: 'error', message: describeError(err) });
+        patch(row.key, { state: 'error', message: err instanceof Error ? err.message : describeError(err) });
         failed++;
       }
     }
@@ -1169,9 +1198,21 @@ export class DocumentsDashboard {
     this.load();
     this.notice.set(
       `Carga múltiple: ${ok} archivo${ok === 1 ? '' : 's'} cargado${ok === 1 ? '' : 's'}` +
+        (created ? ` (${created} como documento${created === 1 ? '' : 's'} nuevo${created === 1 ? '' : 's'} con el nombre del archivo; puede renombrarlo${created === 1 ? '' : 's'} con «Modificar»)` : '') +
         (failed ? `, ${failed} con error (revise la lista).` : '. Las versiones anteriores quedan en el historial.'),
     );
-    if (ok) this.habRefresh.update((n) => n + 1);
+    if (ok || created) this.habRefresh.update((n) => n + 1);
+  }
+
+  /** Tipo documental activo del estándar donde se crean los documentos nuevos. */
+  private async bulkCategoryFor(pillar: DocumentPillar): Promise<string> {
+    if (!this.bulkCategories.length) this.bulkCategories = await firstValueFrom(this.habApi.categories());
+    const options = this.bulkCategories
+      .filter((c) => c.pillar === pillar && c.isActive)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    const pick = options.find((c) => /otro|general|soporte/i.test(c.name)) ?? options[0];
+    if (!pick) throw new Error('Este estándar no tiene tipos documentales activos; cree uno o elija el requisito.');
+    return pick.id;
   }
 
   isOpen(pillar: string) {
