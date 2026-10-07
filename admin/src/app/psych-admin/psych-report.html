@@ -1,0 +1,374 @@
+<div class="rp">
+  <header class="rp-bar no-print">
+    <a class="rp-back" routerLink="/consultorio"><hab-icon name="arrowLeft" [size]="16" /> Inicio</a>
+    <div class="rp-heading">
+      <h1>Informe psicológico</h1>
+      <p class="rp-state" aria-live="polite">
+        @if (busy() === 'load') {
+          Cargando…
+        } @else if (dirty()) {
+          <span class="dot dirty" aria-hidden="true"></span> Cambios sin guardar
+        } @else if (savedAt()) {
+          <span class="dot ok" aria-hidden="true"></span> Guardado {{ savedLabel() }}
+        } @else {
+          Informe nuevo
+        }
+      </p>
+    </div>
+    <div class="rp-actions" role="toolbar" aria-label="Acciones del informe">
+      <button type="button" class="btn ghost" (click)="newReport()" [disabled]="!canWrite() || !!busy()"><hab-icon name="filePlus" [size]="16" /> Nuevo informe</button>
+      <button type="button" class="btn ghost" (click)="showOpen()" [disabled]="!canWrite() || !!busy()"><hab-icon name="folder" [size]="16" /> Abrir</button>
+      <button type="button" class="btn ghost" (click)="exportData()" [disabled]="!!busy()"><hab-icon name="download" [size]="16" /> Exportar datos</button>
+      <label class="btn ghost file-btn" [class.disabled]="!canWrite() || !!busy()">
+        <hab-icon name="upload" [size]="16" /> Importar datos
+        <input type="file" accept="application/json,.json" (change)="onImportFile($event)" [disabled]="!canWrite() || !!busy()" aria-label="Importar datos desde un archivo JSON" />
+      </label>
+      <button type="button" class="btn ghost" (click)="togglePreview()" [attr.aria-pressed]="preview()">
+        <hab-icon [name]="preview() ? 'pencil' : 'eye'" [size]="16" /> {{ preview() ? 'Editar' : 'Vista previa' }}
+      </button>
+      <button type="button" class="btn ghost" (click)="print()" [disabled]="!!busy()">
+        <hab-icon name="printer" [size]="16" /> {{ busy() === 'print' ? 'Preparando…' : 'Imprimir' }}
+      </button>
+      <button type="button" class="btn ghost" (click)="downloadPdf()" [disabled]="!!busy()">
+        <hab-icon name="download" [size]="16" /> {{ busy() === 'pdf' ? 'Generando…' : 'Descargar PDF' }}
+      </button>
+      @if (canWrite()) {
+        <button type="button" class="btn primary" (click)="save()" [disabled]="!!busy()">
+          <hab-icon name="save" [size]="16" /> {{ busy() === 'save' ? 'Guardando…' : 'Guardar' }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (user() && !isPsychology()) {
+    <p class="banner warn no-print" role="alert">El informe psicológico está disponible solo para los consultorios de psicología.</p>
+  } @else if (user() && !canWrite()) {
+    <p class="banner warn no-print" role="alert">Solo el profesional o el administrador del consultorio pueden diligenciar informes psicológicos.</p>
+  }
+
+  <section class="rp-tools no-print" aria-label="Datos para diligenciar">
+    @if (canWrite()) {
+      <div class="tool patient">
+        <label for="rp-patient">Paciente: el informe se llena con sus datos de identificación</label>
+        <div class="search">
+          <hab-icon name="search" [size]="16" />
+          <input
+            id="rp-patient"
+            type="search"
+            placeholder="Nombre o documento del paciente"
+            autocomplete="off"
+            [value]="patientQuery()"
+            (input)="onPatientQuery($any($event.target).value)"
+            (keydown.escape)="patientHits.set([])"
+            aria-describedby="rp-patient-hint"
+          />
+        </div>
+        <p id="rp-patient-hint" class="hint">
+          @if (searching()) {
+            Buscando…
+          } @else if (patientQuery().trim().length >= 2 && !patientHits().length) {
+            Sin resultados.
+          } @else if (!patientId()) {
+            Busque y elija al paciente para llenar la identificación automáticamente.
+          } @else {
+            Escriba al menos dos letras o números para cambiar de paciente.
+          }
+        </p>
+        @if (patientHits().length) {
+          <ul class="hits" role="listbox" aria-label="Pacientes encontrados">
+            @for (p of patientHits(); track p.id) {
+              <li>
+                <button type="button" role="option" aria-selected="false" (click)="pickPatient(p)">
+                  <strong>{{ p.fullName }}</strong>
+                  <span>{{ p.document || 'Sin documento' }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+    <div class="tool logo">
+      <span class="tool-label">Logo del consultorio</span>
+      <div class="logo-row">
+        <div class="logo-thumb">
+          @if (logoUrl(); as src) {
+            <img [src]="src" alt="Logo actual de los formatos" (error)="onLogoError()" />
+          } @else {
+            <hab-icon name="image" [size]="22" />
+          }
+        </div>
+        @if (canWrite()) {
+          <label class="btn ghost sm file-btn">
+            <hab-icon name="upload" [size]="15" /> {{ logoOwn() ? 'Reemplazar' : logoUrl() ? 'Usar otro' : 'Cargar' }}
+            <input type="file" accept="image/png,image/jpeg" (change)="onLogoFile($event)" [disabled]="!!busy()" aria-label="Cargar logo del consultorio" />
+          </label>
+          @if (logoOwn()) {
+            <button type="button" class="btn ghost sm" (click)="removeLogo()" [disabled]="!!busy()"><hab-icon name="trash" [size]="15" /> Quitar</button>
+          }
+        }
+      </div>
+      <p class="hint">
+        @if (logoUrl() && !logoOwn()) {
+          Se usa el logo del consultorio (el de la historia clínica o el del inicio).
+        }
+        PNG o JPG de hasta 2 MB. Aplica a todos los formatos del consultorio.
+      </p>
+    </div>
+  </section>
+
+  @if (error()) {
+    <p class="banner err no-print" role="alert">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="banner ok no-print" role="status">{{ message() }}</p>
+  }
+
+  <main class="sheet-wrap">
+    <article class="sheet" [class.is-preview]="preview()" aria-label="Informe psicológico">
+      <div class="print-frame" aria-hidden="true"></div>
+
+      <header class="doc-head">
+        @if (logoUrl(); as src) {
+          <div class="doc-logo"><img [src]="src" alt="Logo del consultorio" (error)="onLogoError()" /></div>
+        }
+        <div class="doc-brand">
+          @if (preview()) {
+            <span class="doc-clinic">{{ form.clinicName || 'Consultorio' }}</span>
+          } @else {
+            <label class="sr-only" for="f-clinicName">Nombre del consultorio o del profesional</label>
+            <input
+              id="f-clinicName"
+              class="doc-clinic-input"
+              [(ngModel)]="form.clinicName"
+              (ngModelChange)="onChange()"
+              [readonly]="!canWrite()"
+              maxlength="160"
+              placeholder="Nombre del consultorio o del profesional"
+              autocomplete="off"
+            />
+          }
+          <span class="doc-area"><span>PSICOLOGÍA</span></span>
+        </div>
+      </header>
+
+      <h2 class="doc-title"><span>INFORME PSICOLÓGICO</span></h2>
+
+      <div class="doc-meta">
+        <div class="meta-num">
+          <label for="f-reportNumber">N.º de informe:</label>
+          @if (preview()) {
+            <span class="box">{{ form.reportNumber }}</span>
+          } @else {
+            <input id="f-reportNumber" class="box" [(ngModel)]="form.reportNumber" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="40" autocomplete="off" />
+          }
+        </div>
+        <div class="meta-date">
+          <label for="f-issuedAt">Fecha:</label>
+          @if (preview()) {
+            <span class="date-boxes" aria-label="Fecha de emisión {{ fmtDate(form.issuedAt) || 'sin diligenciar' }}">
+              <span class="box sm">{{ datePieces(form.issuedAt).d }}</span><span class="sl" aria-hidden="true">/</span>
+              <span class="box sm">{{ datePieces(form.issuedAt).m }}</span><span class="sl" aria-hidden="true">/</span>
+              <span class="box md">{{ datePieces(form.issuedAt).y }}</span>
+            </span>
+          } @else {
+            <input id="f-issuedAt" class="box" type="date" [(ngModel)]="form.issuedAt" (ngModelChange)="onChange()" [readonly]="!canWrite()" />
+          }
+        </div>
+      </div>
+
+      <!-- 01 · Identificación del paciente -->
+      <section class="doc-sec" aria-labelledby="sec-1">
+        <h3 class="sec-h" id="sec-1"><span class="num">01</span><span class="tag"><span>• Identificación del paciente</span></span><span class="rule" aria-hidden="true"></span></h3>
+        <div class="grid g1">
+          <div class="field" [class.invalid]="err('patient.fullName')">
+            <label for="f-patient-fullName">Nombres y apellidos</label>
+            @if (preview()) {
+              <span class="box">{{ form.patient.fullName }}</span>
+            } @else {
+              <input id="f-patient-fullName" class="box" [(ngModel)]="form.patient.fullName" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="160" autocomplete="off" [attr.aria-invalid]="!!err('patient.fullName')" aria-describedby="e-patient-fullName" />
+            }
+            @if (err('patient.fullName')) {
+              <p class="f-err" id="e-patient-fullName">{{ err('patient.fullName') }}</p>
+            }
+          </div>
+        </div>
+        <div class="grid g3">
+          <div class="field">
+            <label for="f-patient-documentType">Tipo de documento</label>
+            @if (preview()) {
+              <span class="box">{{ form.patient.documentType }}</span>
+            } @else {
+              <input id="f-patient-documentType" class="box" [(ngModel)]="form.patient.documentType" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="60" autocomplete="off" list="rp-doc-types" />
+            }
+          </div>
+          <div class="field">
+            <label for="f-patient-documentNumber">Número de documento</label>
+            @if (preview()) {
+              <span class="box">{{ form.patient.documentNumber }}</span>
+            } @else {
+              <input id="f-patient-documentNumber" class="box" [(ngModel)]="form.patient.documentNumber" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="40" autocomplete="off" />
+            }
+          </div>
+          <div class="field">
+            <label for="f-patient-age">Edad</label>
+            @if (preview()) {
+              <span class="box">{{ form.patient.age }}</span>
+            } @else {
+              <input id="f-patient-age" class="box" [(ngModel)]="form.patient.age" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="30" autocomplete="off" />
+            }
+          </div>
+        </div>
+        <div class="grid g2">
+          <div class="field">
+            <label for="f-patient-birthDate">Fecha de nacimiento</label>
+            @if (preview()) {
+              <span class="box">{{ fmtDate(form.patient.birthDate) }}</span>
+            } @else {
+              <input id="f-patient-birthDate" class="box" type="date" [(ngModel)]="form.patient.birthDate" (ngModelChange)="onBirthDate()" [readonly]="!canWrite()" aria-describedby="h-birth" />
+              <span class="sr-only" id="h-birth">Al cambiarla se calcula la edad; puede corregirla.</span>
+            }
+          </div>
+          <div class="field">
+            <label for="f-patient-phone">Teléfono</label>
+            @if (preview()) {
+              <span class="box">{{ form.patient.phone }}</span>
+            } @else {
+              <input id="f-patient-phone" class="box" type="tel" [(ngModel)]="form.patient.phone" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="40" autocomplete="off" />
+            }
+          </div>
+        </div>
+        <div class="grid g1">
+          <div class="field">
+            <label for="f-patient-institution">Institución / entidad solicitante</label>
+            @if (preview()) {
+              <span class="box">{{ form.patient.institution }}</span>
+            } @else {
+              <input id="f-patient-institution" class="box" [(ngModel)]="form.patient.institution" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="200" autocomplete="off" />
+            }
+          </div>
+        </div>
+        <datalist id="rp-doc-types">
+          <option value="Cédula de ciudadanía"></option>
+          <option value="Tarjeta de identidad"></option>
+          <option value="Registro civil"></option>
+          <option value="Cédula de extranjería"></option>
+          <option value="Pasaporte"></option>
+          <option value="Permiso por protección temporal"></option>
+        </datalist>
+      </section>
+
+      @for (s of textSections; track s.key) {
+        <section class="doc-sec text-sec" [attr.aria-labelledby]="'sec-' + s.key">
+          <h3 class="sec-h" [id]="'sec-' + s.key"><span class="num">{{ s.no }}</span><span class="tag"><span>• {{ s.title }}</span></span><span class="rule" aria-hidden="true"></span></h3>
+          @if (preview()) {
+            <div class="box area-view">{{ form[s.key] }}</div>
+          } @else {
+            <label class="sr-only" [for]="'f-' + s.key">{{ s.title }}</label>
+            <textarea
+              class="box area grow"
+              [id]="'f-' + s.key"
+              [ngModel]="form[s.key]"
+              (ngModelChange)="setText(s.key, $event)"
+              (input)="autosize($event.target)"
+              [readonly]="!canWrite()"
+              [attr.maxlength]="textMax"
+              [attr.aria-describedby]="'c-' + s.key"
+              rows="4"
+            ></textarea>
+            <p class="count no-print" [id]="'c-' + s.key">{{ form[s.key].length }} / {{ textMax }} caracteres</p>
+          }
+        </section>
+      }
+
+      <!-- 05 · Profesional responsable -->
+      <section class="doc-sec pro-sec" aria-labelledby="sec-5">
+        <h3 class="sec-h" id="sec-5"><span class="num">05</span><span class="tag"><span>• Profesional responsable</span></span><span class="rule" aria-hidden="true"></span></h3>
+        <div class="signature">
+          <div class="sig-space">
+            @if (signature(); as sig) {
+              <img [src]="sig" alt="Firma del profesional" />
+            }
+          </div>
+          <span class="sig-line" aria-hidden="true"></span>
+          <span class="sig-caption">Firma del profesional</span>
+          @if (canWrite() && !preview()) {
+            <div class="sig-tools no-print">
+              <label class="btn ghost sm file-btn">
+                <hab-icon name="upload" [size]="15" /> {{ signature() ? 'Cambiar firma' : 'Cargar firma' }}
+                <input type="file" accept="image/png,image/jpeg" (change)="onSignatureFile($event)" [disabled]="!!busy()" aria-label="Cargar imagen de la firma" />
+              </label>
+              <button type="button" class="btn ghost sm" (click)="useRegisteredSignature()" [disabled]="!!busy()"><hab-icon name="pencil" [size]="15" /> Usar mi firma registrada</button>
+              @if (signature()) {
+                <button type="button" class="btn ghost sm" (click)="removeSignature()" [disabled]="!!busy()"><hab-icon name="trash" [size]="15" /> Quitar firma</button>
+              }
+            </div>
+            <p class="hint center no-print">Opcional. Si no carga una firma, el informe muestra la línea en blanco para firmar a mano.</p>
+          }
+        </div>
+        <div class="grid g3">
+          <div class="field">
+            <label for="f-pro-fullName">Nombre completo</label>
+            @if (preview()) {
+              <span class="box">{{ form.professional.fullName }}</span>
+            } @else {
+              <input id="f-pro-fullName" class="box" [(ngModel)]="form.professional.fullName" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="160" autocomplete="off" />
+            }
+          </div>
+          <div class="field">
+            <label for="f-pro-title">Título profesional</label>
+            @if (preview()) {
+              <span class="box">{{ form.professional.title }}</span>
+            } @else {
+              <input id="f-pro-title" class="box" [(ngModel)]="form.professional.title" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="160" autocomplete="off" />
+            }
+          </div>
+          <div class="field">
+            <label for="f-pro-card">Tarjeta profesional / registro</label>
+            @if (preview()) {
+              <span class="box">{{ form.professional.card }}</span>
+            } @else {
+              <input id="f-pro-card" class="box" [(ngModel)]="form.professional.card" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="80" autocomplete="off" />
+            }
+          </div>
+        </div>
+      </section>
+
+      <footer class="doc-foot">{{ footer }}</footer>
+    </article>
+  </main>
+
+  @if (openDialog()) {
+    <div class="overlay no-print" (click)="openDialog.set(false)"></div>
+    <div class="dialog no-print" role="dialog" aria-modal="true" aria-labelledby="open-title" (keydown.escape)="openDialog.set(false)">
+      <header class="dialog-head">
+        <h2 id="open-title">Abrir informe guardado</h2>
+        <button type="button" class="icon-btn" (click)="openDialog.set(false)" aria-label="Cerrar"><hab-icon name="x" /></button>
+      </header>
+      @if (patientId()) {
+        <label class="only-patient">
+          <input type="checkbox" [checked]="onlyThisPatient()" (change)="toggleOnlyPatient($any($event.target).checked)" />
+          Solo informes de este paciente
+        </label>
+      }
+      <div class="dialog-body">
+        @if (busy() === 'list') {
+          <p class="hint">Cargando…</p>
+        } @else if (!savedList().length) {
+          <p class="hint">No hay informes guardados{{ patientId() && onlyThisPatient() ? ' para este paciente' : '' }}.</p>
+        } @else {
+          <ul class="saved">
+            @for (s of savedList(); track s.id) {
+              <li>
+                <button type="button" (click)="openSaved(s)" [class.current]="s.id === docId()">
+                  <strong>{{ s.patientName }}</strong>
+                  <span>{{ s.reportNumber ? 'N.º ' + s.reportNumber + ' · ' : '' }}Actualizado {{ listDate(s.updatedAt) }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+  }
+</div>

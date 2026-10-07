@@ -201,6 +201,9 @@
                   <a class="pd-btn ghost" style="text-decoration: none" routerLink="/consultorio/control-citas" [queryParams]="{ patientId: pid }">
                     <app-physio-icon name="calendar" />Control de citas y asistencia
                   </a>
+                  <a class="pd-btn ghost" style="text-decoration: none" routerLink="/consultorio/informe-psicologico" [queryParams]="{ patientId: pid }">
+                    <app-physio-icon name="file" />Informe psicológico
+                  </a>
                 }
                 <button type="button" class="pd-btn ghost" (click)="goto.emit('consent-section')">
                   <app-physio-icon name="clipboard" />Consentimientos y firmas

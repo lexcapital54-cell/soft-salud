@@ -365,6 +365,7 @@ model Clinic {
   platformReceipts     PlatformReceipt[]
   logos                ClinicLogo[]
   attendanceControls   AttendanceControl[]
+  psychReports         PsychReport[]
 
   @@map("clinics")
 }
@@ -496,6 +497,7 @@ model Patient {
   reportExports    ClinicalReportExport[]
   orthoTracking    OrthoTracking?
   attendanceControls AttendanceControl[]
+  psychReports       PsychReport[]
 
   @@unique([clinicId, documentType, documentNumber])
   @@index([clinicId, lastName])
@@ -1538,4 +1540,26 @@ model AttendanceControl {
   @@index([clinicId, updatedAt])
   @@index([patientId])
   @@map("attendance_controls")
+}
+
+/// Informe psicológico editable. La firma es una imagen opcional que carga el profesional.
+model PsychReport {
+  id            String   @id @default(uuid()) @db.Uuid
+  clinicId      String   @map("clinic_id") @db.Uuid
+  clinic        Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patientId     String?  @map("patient_id") @db.Uuid
+  patient       Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  patientName   String   @map("patient_name") @db.VarChar(160)
+  reportNumber  String   @default("") @map("report_number") @db.VarChar(40)
+  data          Json
+  signatureData Bytes?   @map("signature_data")
+  signatureMime String?  @map("signature_mime") @db.VarChar(20)
+  createdById   String   @map("created_by_id") @db.Uuid
+  updatedById   String?  @map("updated_by_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([clinicId, updatedAt])
+  @@index([patientId])
+  @@map("psych_reports")
 }

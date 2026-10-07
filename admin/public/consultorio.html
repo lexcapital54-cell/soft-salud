@@ -435,6 +435,7 @@
           <li><a href="/consultorio/pacientes" data-for="modPacientes" title="Pacientes"><svg class="ico"><use href="#i-users"/></svg><span>Pacientes</span></a></li>
           <li><a href="/consultorio/historia-clinica" data-for="hce" title="Historia clínica"><svg class="ico"><use href="#i-clipboard"/></svg><span>Historia clínica</span></a></li>
           <li><a href="/consultorio/control-citas" data-for="attendanceMod" title="Control de citas"><svg class="ico"><use href="#i-check"/></svg><span>Control de citas</span></a></li>
+          <li><a href="/consultorio/informe-psicologico" data-for="reportMod" title="Informe psicológico"><svg class="ico"><use href="#i-file"/></svg><span>Informe psicológico</span></a></li>
           <li><a href="/consultorio/historias-pdf" data-for="hcePdf" title="Historias en PDF"><svg class="ico"><use href="#i-download"/></svg><span>Historias en PDF</span></a></li>
           <li><a href="/consultorio/habilitacion" data-for="docs" title="Gestión documental"><svg class="ico"><use href="#i-file"/></svg><span>Gestión documental</span></a></li>
           <li><a href="/consultorio/recibos" data-for="billing" title="Recibos de caja"><svg class="ico"><use href="#i-receipt"/></svg><span>Recibos de caja</span></a></li>
@@ -619,6 +620,12 @@
             <p>Elija al paciente y el formato se llena con sus citas programadas y atendidas. Guárdelo, imprímalo o descárguelo en PDF.</p>
             <span class="cta">Abrir formato<svg class="ico"><use href="#i-chevron"/></svg></span>
           </a>
+          <a class="module" id="reportMod" href="/consultorio/informe-psicologico" hidden>
+            <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-file"/></svg></span>
+            <h2>Informe psicológico</h2>
+            <p>Plantilla editable que se llena con los datos de identificación del paciente. Guárdela, imprímala o descárguela en PDF.</p>
+            <span class="cta">Crear informe<svg class="ico"><use href="#i-chevron"/></svg></span>
+          </a>
           <a class="module" id="hcePdf" href="/consultorio/historias-pdf">
             <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-download"/></svg></span>
             <h2>Descargar historias (PDF)</h2>
@@ -760,6 +767,7 @@
       var canWriteClinical = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
       document.getElementById('assistantsMod').hidden = !canWriteClinical;
       document.getElementById('attendanceMod').hidden = !(canWriteClinical && user.specialty === 'PSYCHOLOGY');
+      document.getElementById('reportMod').hidden = !(canWriteClinical && user.specialty === 'PSYCHOLOGY');
       if (!canWriteClinical) {
         var pdfMod = document.getElementById('hcePdf');
         if (pdfMod) pdfMod.hidden = true;

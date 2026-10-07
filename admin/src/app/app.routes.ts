@@ -105,6 +105,12 @@ export const routes: Routes = [
     canActivate: [authGuard, documentsReadGuard, agendaOnlyGuard],
   },
   {
+    path: 'consultorio/informe-psicologico',
+    loadComponent: () => import('./psych-admin/psych-report').then((m) => m.PsychReportPage),
+    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard],
+    canDeactivate: [(page: { canLeave?: () => boolean }) => page.canLeave?.() ?? true],
+  },
+  {
     path: 'consultorio/control-citas',
     loadComponent: () => import('./psych-admin/attendance-control').then((m) => m.AttendanceControlPage),
     canActivate: [authGuard, clinicStaffGuard],
