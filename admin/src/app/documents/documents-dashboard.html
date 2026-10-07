@@ -567,6 +567,7 @@
       [embeddedClinicId]="selectedClinicId()"
       [embeddedRefresh]="habRefresh()"
       (changed)="load()"
+      (bulkUpload)="openBulk($any($event))"
     />
   } @else if (loading()) {
     <p class="muted">Cargando expediente…</p>

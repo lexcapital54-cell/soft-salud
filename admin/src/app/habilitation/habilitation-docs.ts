@@ -104,6 +104,8 @@ export class HabilitationDocs implements OnInit {
   readonly embeddedRefresh = input(0);
   /** Avisa al contenedor (Documentos del superadmin) que el expediente cambió. */
   readonly changed = output<void>();
+  /** Pide al contenedor abrir la carga múltiple de un estándar. */
+  readonly bulkUpload = output<PillarKey>();
 
   private readonly api = inject(HabilitationApiService);
   private readonly docsApi = inject(DocumentsApiService);

@@ -328,6 +328,11 @@
                 <li><hab-icon name="history" [size]="14" /> Última actualización: {{ p.lastUpdate ? date(p.lastUpdate) : 'sin cargas' }}</li>
               </ul>
               <button type="button" class="btn btn-soft btn-block" (click)="go('estandar', p.key)">Ver documentos</button>
+              @if (embedded()) {
+                <button type="button" class="btn btn-primary btn-block" (click)="bulkUpload.emit(p.key)" [attr.aria-label]="'Cargar archivos de ' + p.label">
+                  <hab-icon name="upload" [size]="16" /> Cargar archivos
+                </button>
+              }
             </article>
           }
         </section>
@@ -358,6 +363,9 @@
                 <h2>{{ p.isStandard ? pillarIndex(p.key) + '. ' : '' }}{{ p.label }}</h2>
                 <p>{{ p.description }}</p>
               </div>
+              @if (embedded()) {
+                <button type="button" class="btn btn-soft" (click)="bulkUpload.emit(p.key)" [attr.aria-label]="'Cargar archivos de ' + p.label"><hab-icon name="upload" [size]="16" /> Cargar archivos</button>
+              }
               @if (canManage()) {
                 <button type="button" class="btn btn-primary" (click)="openCreate(p.key)"><hab-icon name="plus" [size]="16" /> Nuevo documento</button>
               }
