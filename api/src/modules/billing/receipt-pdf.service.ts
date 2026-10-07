@@ -40,7 +40,6 @@ export type ReceiptPdfInput = {
   createdByName?: string | null;
   /** Profesional que emitió el recibo y firma con la misma firma de su historia clínica. */
   signerName?: string | null;
-  signerCard?: string | null;
   signerTitle?: string | null;
   /** Firma manuscrita del perfil (data URL). Si no tiene, la línea queda en blanco. */
   signatureImage?: string | null;
@@ -324,12 +323,9 @@ export class ReceiptPdfService {
                 ...(input.signerName
                   ? [
                       { text: input.signerName, fontSize: 9, bold: true, color: INK, margin: [0, 5, 0, 0], alignment: 'center' } as Content,
-                      {
-                        text: [input.signerTitle, input.signerCard ? `TP ${input.signerCard}` : null].filter(Boolean).join(' · '),
-                        fontSize: 8,
-                        color: MUTED,
-                        alignment: 'center',
-                      } as Content,
+                      ...(input.signerTitle
+                        ? [{ text: input.signerTitle, fontSize: 8, color: MUTED, alignment: 'center' } as Content]
+                        : []),
                     ]
                   : []),
                 {

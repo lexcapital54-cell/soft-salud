@@ -305,7 +305,7 @@ export class BillingService {
         orderBy: { createdAt: 'asc' },
         select: {
           createdBy: {
-            select: { fullName: true, professionalCard: true, professionalTitle: true, professionalSignatureBase64: true },
+            select: { fullName: true, professionalTitle: true, professionalSignatureBase64: true },
           },
         },
       })
@@ -340,7 +340,6 @@ export class BillingService {
       total: receipt.total,
       createdByName: issuer?.fullName ?? user.fullName,
       signerName: issuer?.fullName ?? null,
-      signerCard: issuer?.professionalCard ?? null,
       signerTitle: issuer?.professionalTitle ?? null,
       signatureImage: signature,
     });
