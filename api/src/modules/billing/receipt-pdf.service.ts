@@ -38,6 +38,12 @@ export type ReceiptPdfInput = {
   tax: number;
   total: number;
   createdByName?: string | null;
+  /** Profesional que emitió el recibo y firma con la misma firma de su historia clínica. */
+  signerName?: string | null;
+  signerCard?: string | null;
+  signerTitle?: string | null;
+  /** Firma manuscrita del perfil (data URL). Si no tiene, la línea queda en blanco. */
+  signatureImage?: string | null;
 };
 
 const PAGE_W = 792;
@@ -311,13 +317,26 @@ export class ReceiptPdfService {
               width: 260,
               stack: [
                 { text: 'Recibí conforme:', margin: [0, 4, 0, 0] },
-                { text: ' ', margin: [0, 0, 0, 34] },
+                input.signatureImage
+                  ? { image: input.signatureImage, fit: [200, 46], alignment: 'center', margin: [0, 0, 0, 2] }
+                  : { text: ' ', margin: [0, 0, 0, 34] },
                 { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 260, y2: 0, lineColor: INK, lineWidth: 0.8 }] },
+                ...(input.signerName
+                  ? [
+                      { text: input.signerName, fontSize: 9, bold: true, color: INK, margin: [0, 5, 0, 0], alignment: 'center' } as Content,
+                      {
+                        text: [input.signerTitle, input.signerCard ? `TP ${input.signerCard}` : null].filter(Boolean).join(' · '),
+                        fontSize: 8,
+                        color: MUTED,
+                        alignment: 'center',
+                      } as Content,
+                    ]
+                  : []),
                 {
                   text: input.clinicName,
                   fontSize: 8,
                   color: MUTED,
-                  margin: [0, 8, 0, 0],
+                  margin: [0, input.signerName ? 2 : 8, 0, 0],
                   alignment: 'center',
                 },
               ],

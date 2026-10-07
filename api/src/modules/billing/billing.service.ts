@@ -298,6 +298,21 @@ export class BillingService {
       .join(' ');
     const logos = await this.prisma.clinicLogo.findMany({ where: { clinicId: this.requireClinicId(user) } });
     const logo = logos.find((l) => l.kind === 'HOME') ?? logos.find((l) => l.kind === 'HC');
+    // Firma: la misma que el profesional que emitió el recibo usa en su historia clínica.
+    const issuer = (
+      await this.prisma.transaction.findFirst({
+        where: { invoiceId: receipt.id },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          createdBy: {
+            select: { fullName: true, professionalCard: true, professionalTitle: true, professionalSignatureBase64: true },
+          },
+        },
+      })
+    )?.createdBy;
+    const signature = issuer?.professionalSignatureBase64?.startsWith('data:image/')
+      ? issuer.professionalSignatureBase64
+      : null;
     const buffer = await this.pdfService.build({
       clinicName: receipt.clinic.name,
       clinicAddress: receipt.clinic.address,
@@ -323,7 +338,11 @@ export class BillingService {
       subtotal: receipt.subtotal,
       tax: receipt.tax,
       total: receipt.total,
-      createdByName: user.fullName,
+      createdByName: issuer?.fullName ?? user.fullName,
+      signerName: issuer?.fullName ?? null,
+      signerCard: issuer?.professionalCard ?? null,
+      signerTitle: issuer?.professionalTitle ?? null,
+      signatureImage: signature,
     });
     return { buffer, filename: `${receipt.number}.pdf` };
   }
