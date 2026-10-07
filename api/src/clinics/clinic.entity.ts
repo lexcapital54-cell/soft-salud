@@ -29,6 +29,9 @@ export class Clinic {
   })
   dashboardType: DashboardType | null;
 
+  @Column({ name: 'sgsst_enabled', default: false })
+  sgsstEnabled: boolean;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   address: string | null;
 

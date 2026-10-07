@@ -755,8 +755,16 @@
         return;
       }
 
-      if (user.dashboardType === 'CLINICAL_HISTORY_WITH_DOCS') {
-        document.getElementById('docs').hidden = false;
+      if (user.dashboardType === 'CLINICAL_HISTORY_WITH_DOCS' || user.sgsstEnabled) {
+        var docsMod = document.getElementById('docs');
+        docsMod.hidden = false;
+        if (user.dashboardType !== 'CLINICAL_HISTORY_WITH_DOCS') {
+          // Solo el módulo SG-SST.
+          docsMod.querySelector('h2').textContent = 'SG-SST';
+          docsMod.querySelector('p').textContent = 'Seguridad y salud en el trabajo (Decreto 1072 de 2015): documentos, actas y firmas.';
+        } else if (user.sgsstEnabled) {
+          docsMod.querySelector('p').textContent = 'Requisitos de habilitación y SG-SST: documentación, evidencias y firmas alineadas a la normativa vigente.';
+        }
       }
 
       var billingOk = ['PSYCHOLOGY', 'PHYSIOTHERAPY', 'DENTISTRY', 'ORTHODONTICS'].indexOf(user.specialty) !== -1;

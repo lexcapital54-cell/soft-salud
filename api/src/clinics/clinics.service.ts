@@ -117,6 +117,7 @@ export class ClinicsService {
       address: dto.address ?? null,
       phone: dto.phone ?? null,
       dashboardType: null,
+      sgsstEnabled: dto.sgsstEnabled ?? false,
       isActive: true,
     });
     const saved = await this.clinicsRepository.save(clinic);
@@ -135,7 +136,38 @@ export class ClinicsService {
       await this.usersRepository.save(admin);
     }
 
+    if (dto.dashboardType) {
+      return this.assignDashboard(saved.id, { dashboardType: dto.dashboardType });
+    }
+    if (saved.sgsstEnabled) {
+      await this.provisionDocuments(saved.id, null);
+    }
     return this.findOne(saved.id);
+  }
+
+  /**
+   * Activa o desactiva el módulo SG-SST. Al desactivarlo no se borra ningún
+   * documento: solo deja de mostrarse hasta que se active de nuevo.
+   */
+  async setSgsst(id: string, sgsstEnabled: boolean) {
+    const clinic = await this.clinicsRepository.findOne({ where: { id } });
+    if (!clinic) {
+      throw new NotFoundException('El consultorio no existe');
+    }
+    clinic.sgsstEnabled = sgsstEnabled;
+    await this.clinicsRepository.save(clinic);
+    if (sgsstEnabled) {
+      await this.provisionDocuments(clinic.id, clinic.dashboardType);
+    }
+    return this.findOne(id);
+  }
+
+  private async provisionDocuments(clinicId: string, dashboardType: string | null) {
+    try {
+      await this.documentProvision.ensureForClinic(clinicId, dashboardType);
+    } catch (error) {
+      console.error('No se pudo aprovisionar gestión documental', error);
+    }
   }
 
   async createDashboard(id: string, dto: CreateDashboardDto) {
@@ -171,14 +203,7 @@ export class ClinicsService {
       console.error('No se pudo aprovisionar plantillas de consentimiento', error);
     }
 
-    try {
-      await this.documentProvision.ensureForClinic(
-        clinic.id,
-        clinic.dashboardType,
-      );
-    } catch (error) {
-      console.error('No se pudo aprovisionar gestión documental', error);
-    }
+    await this.provisionDocuments(clinic.id, clinic.dashboardType);
 
     return this.findOne(id);
   }
@@ -324,6 +349,7 @@ export class ClinicsService {
       name: clinic.name,
       specialty: clinic.specialty,
       dashboardType: clinic.dashboardType,
+      sgsstEnabled: clinic.sgsstEnabled,
       address: clinic.address,
       phone: clinic.phone,
       nit: clinic.nit,

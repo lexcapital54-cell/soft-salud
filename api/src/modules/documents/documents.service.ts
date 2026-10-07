@@ -240,6 +240,31 @@ export class DocumentsService {
     return this.requireClinicId(user);
   }
 
+  /**
+   * Pilares visibles según los módulos activos del consultorio: habilitación con
+   * la gestión documental y SG-SST con su propio módulo.
+   */
+  private async enabledPillars(clinicId: string) {
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+      select: { dashboardType: true, sgsstEnabled: true },
+    });
+    const withDocs = clinic?.dashboardType === 'CLINICAL_HISTORY_WITH_DOCS';
+    return PILLAR_ORDER.filter((p) =>
+      p === DocumentPillar.SG_SST ? !!clinic?.sgsstEnabled : withDocs,
+    );
+  }
+
+  private async assertPillarEnabled(user: User, clinicId: string, pillar: DocumentPillar) {
+    if (user.role === UserRole.SUPER_ADMIN) return;
+    if ((await this.enabledPillars(clinicId)).includes(pillar)) return;
+    throw new ForbiddenException(
+      pillar === DocumentPillar.SG_SST
+        ? 'El módulo SG-SST no está activo para este consultorio.'
+        : 'La gestión documental no está activa para este consultorio.',
+    );
+  }
+
   /** Solo SUPER_ADMIN: habilitar requisitos, asignar catálogo, replicar, descargar. */
   private assertDocumentWriter(user: User) {
     if (user.role !== UserRole.SUPER_ADMIN) {
@@ -699,8 +724,10 @@ export class DocumentsService {
     });
     const now = new Date();
 
+    const allowed = await this.enabledPillars(clinicId);
+    const shownPillars = pillar ? allowed.filter((p) => p === pillar) : allowed;
     const requirements = await this.prisma.documentRequirement.findMany({
-      where: { clinicId, archivedAt: null, ...(pillar ? { category: { pillar } } : {}) },
+      where: { clinicId, archivedAt: null, category: { pillar: { in: shownPillars } } },
       include: {
         category: true,
         files: {
@@ -1011,6 +1038,7 @@ export class DocumentsService {
       requirement.category.pillar,
       requirement.code,
     );
+    await this.assertPillarEnabled(user, clinicId, requirement.category.pillar);
     if (requirement.isEnabled === false && user.role !== UserRole.SUPER_ADMIN) {
       if (isClinicLandUseOrSanitaryCode(requirement.code)) {
         await this.prisma.documentRequirement.update({
@@ -1204,6 +1232,7 @@ export class DocumentsService {
         'Solo los documentos del pilar SG-SST se pueden diligenciar desde este flujo.',
       );
     }
+    await this.assertPillarEnabled(user, clinicId, requirement.category.pillar);
 
     const roles = requiredRoles(requirement.code);
     const provided = new Map(

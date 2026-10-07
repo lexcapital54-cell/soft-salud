@@ -161,10 +161,21 @@ export class HabilitationRegistryService {
   async registry(user: User, clinicIdParam?: string) {
     const clinicId = this.scope(user, clinicIdParam);
     const isSuper = user.role === UserRole.SUPER_ADMIN;
-    const [clinic, requirements, categories] = await Promise.all([
-      this.prisma.clinic.findUnique({ where: { id: clinicId }, select: { id: true, name: true } }),
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+      select: { id: true, name: true, dashboardType: true, sgsstEnabled: true },
+    });
+    if (!clinic) throw new NotFoundException('Consultorio no encontrado');
+    // Habilitación con la gestión documental; SG-SST con su propio módulo.
+    const withDocs = clinic.dashboardType === 'CLINICAL_HISTORY_WITH_DOCS';
+    const pillars = PILLARS.filter((p) => (p.key === DocumentPillar.SG_SST ? clinic.sgsstEnabled : withDocs));
+    const [requirements, categories] = await Promise.all([
       this.prisma.documentRequirement.findMany({
-        where: { clinicId, ...(isSuper ? {} : { isEnabled: true }) },
+        where: {
+          clinicId,
+          category: { pillar: { in: pillars.map((p) => p.key) } },
+          ...(isSuper ? {} : { isEnabled: true }),
+        },
         include: {
           category: true,
           files: {
@@ -193,7 +204,6 @@ export class HabilitationRegistryService {
         select: { id: true, code: true, name: true, pillar: true, sortOrder: true, isActive: true },
       }),
     ]);
-    if (!clinic) throw new NotFoundException('Consultorio no encontrado');
 
     const now = Date.now();
     const documents = requirements.map((r) => {
@@ -256,10 +266,10 @@ export class HabilitationRegistryService {
     });
 
     return {
-      clinic,
+      clinic: { id: clinic.id, name: clinic.name },
       generatedAt: new Date(),
       canManage: isSuper,
-      pillars: PILLARS,
+      pillars,
       categories,
       documents,
     };

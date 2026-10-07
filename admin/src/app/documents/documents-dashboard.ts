@@ -737,6 +737,7 @@ export class DocumentsDashboard {
         specialty: this.masterPackNew.specialty,
         address: this.masterPackNew.address.trim() || undefined,
         phone: this.masterPackNew.phone.trim() || undefined,
+        sgsstEnabled: true,
         admin: adminReady
           ? {
               fullName: this.masterPackNew.adminFullName.trim(),

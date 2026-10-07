@@ -28,6 +28,7 @@ export interface AuthUser {
   clinicPhone?: string | null;
   specialty?: ClinicSpecialty | null;
   dashboardType?: DashboardType | null;
+  sgsstEnabled?: boolean;
   ripsEnabled?: boolean;
   repsExpirationDate?: string | null;
   isActive: boolean;
@@ -71,6 +72,8 @@ export interface Clinic {
   name: string;
   specialty: ClinicSpecialty;
   dashboardType: DashboardType | null;
+  /** Módulo SG-SST, independiente de la gestión documental. */
+  sgsstEnabled?: boolean;
   address: string | null;
   phone: string | null;
   nit?: string | null;

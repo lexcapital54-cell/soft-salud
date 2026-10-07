@@ -128,7 +128,7 @@ export class PhysioSidebar {
   readonly items = computed<NavItem[]>(() => {
     const user = this.auth.user();
     const canWrite = this.auth.canWriteClinical();
-    const withDocs = user?.dashboardType === 'CLINICAL_HISTORY_WITH_DOCS';
+    const withDocs = user?.dashboardType === 'CLINICAL_HISTORY_WITH_DOCS' || !!user?.sgsstEnabled;
     const items: Array<NavItem | false> = [
       { label: 'Inicio', icon: 'home', href: '/consultorio.html' },
       { label: this.historyLabel(), icon: 'clipboard', href: '/consultorio/historia-clinica', active: true },

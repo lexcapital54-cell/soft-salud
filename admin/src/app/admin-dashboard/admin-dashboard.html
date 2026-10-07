@@ -182,7 +182,7 @@
                 <th scope="col">Admins</th>
                 <th scope="col">Estado</th>
                 <th scope="col">RIPS</th>
-                <th scope="col">Documentación</th>
+                <th scope="col">Módulos</th>
                 <th scope="col"><span class="sr-only">Acciones</span></th>
               </tr>
             </thead>
@@ -214,21 +214,37 @@
                   <td data-label="RIPS">
                     <span class="pill" [class.info]="clinic.ripsEnabled" [class.off]="!clinic.ripsEnabled">{{ clinic.ripsEnabled ? 'Activo' : 'Inactivo' }}</span>
                   </td>
-                  <td data-label="Documentación">
-                    <button
-                      type="button"
-                      class="switch"
-                      role="switch"
-                      [class.on]="hasDocs(clinic)"
-                      [attr.aria-checked]="hasDocs(clinic)"
-                      [attr.aria-label]="'Gestión documental de ' + clinic.name"
-                      [title]="hasDocs(clinic) ? 'Tiene gestión documental. Pulse para desactivarla (no se borran documentos).' : 'Sin gestión documental. Pulse para activarla.'"
-                      [disabled]="busyClinicId() === clinic.id"
-                      (click)="toggleDocs(clinic)"
-                    >
-                      <span class="track" aria-hidden="true"><span class="thumb"></span></span>
-                      <span class="switch-text" aria-hidden="true">{{ hasDocs(clinic) ? 'Con documentación' : 'Sin documentación' }}</span>
-                    </button>
+                  <td data-label="Módulos">
+                    <div class="modules">
+                      <button
+                        type="button"
+                        class="switch"
+                        role="switch"
+                        [class.on]="hasDocs(clinic)"
+                        [attr.aria-checked]="hasDocs(clinic)"
+                        [attr.aria-label]="'Documentación de ' + clinic.name"
+                        [title]="hasDocs(clinic) ? 'Con gestión documental. Pulse para desactivarla (no se borran documentos).' : 'Sin gestión documental. Pulse para activarla.'"
+                        [disabled]="busyClinicId() === clinic.id"
+                        (click)="toggleDocs(clinic)"
+                      >
+                        <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+                        <span class="switch-text" aria-hidden="true">Documentación</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="switch"
+                        role="switch"
+                        [class.on]="!!clinic.sgsstEnabled"
+                        [attr.aria-checked]="!!clinic.sgsstEnabled"
+                        [attr.aria-label]="'SG-SST de ' + clinic.name"
+                        [title]="clinic.sgsstEnabled ? 'Con SG-SST. Pulse para desactivarlo (no se borran documentos).' : 'Sin SG-SST. Pulse para activarlo.'"
+                        [disabled]="busyClinicId() === clinic.id"
+                        (click)="toggleSgsst(clinic)"
+                      >
+                        <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+                        <span class="switch-text" aria-hidden="true">SG-SST</span>
+                      </button>
+                    </div>
                   </td>
                   <td class="row-actions">
                     <a class="btn sm ghost" [routerLink]="['/admin/documentos']" [queryParams]="{ clinicId: clinic.id }"><hab-icon name="folder" [size]="16" />Documentos</a>
@@ -470,6 +486,27 @@
                   <input id="nc-phone" formControlName="phone" autocomplete="off" />
                 </div>
               </div>
+            </fieldset>
+            <fieldset>
+              <legend>Módulos</legend>
+              <fieldset class="choice">
+                <legend>Gestión documental de habilitación <span class="req" aria-hidden="true">*</span></legend>
+                <label class="opt-card">
+                  <input type="radio" formControlName="dashboardType" value="CLINICAL_HISTORY_WITH_DOCS" (change)="error.set('')" />
+                  <span><b>Con documentación</b><small>Historia clínica y requisitos de habilitación (Res. 3100 de 2019)</small></span>
+                </label>
+                <label class="opt-card">
+                  <input type="radio" formControlName="dashboardType" value="CLINICAL_HISTORY" (change)="error.set('')" />
+                  <span><b>Sin documentación</b><small>Solo historia clínica</small></span>
+                </label>
+                @if (clinicForm.controls.dashboardType.touched && clinicForm.controls.dashboardType.invalid) {
+                  <p class="field-error">Elija una opción</p>
+                }
+              </fieldset>
+              <label class="opt-card">
+                <input type="checkbox" formControlName="sgsstEnabled" />
+                <span><b>SG-SST</b><small>Seguridad y salud en el trabajo (Decreto 1072 de 2015), módulo aparte</small></span>
+              </label>
             </fieldset>
             <fieldset>
               <legend>Admin inicial <span class="opt">(opcional)</span></legend>

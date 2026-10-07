@@ -22,14 +22,19 @@ export class DocumentProvisionService {
     dashboardType: string | null,
     options: { importPack?: boolean } = {},
   ) {
-    if (dashboardType !== DashboardType.CLINICAL_HISTORY_WITH_DOCS) {
-      return { skipped: true as const };
-    }
-
     const clinic = await this.prisma.clinic.findUnique({
       where: { id: clinicId },
-      select: { specialty: true, name: true },
+      select: { specialty: true, name: true, sgsstEnabled: true },
     });
+
+    // SG-SST es un módulo aparte: aplica a cualquier especialidad si está activo.
+    const sgsst = clinic?.sgsstEnabled
+      ? await seedSgsstRequirementsForClinic(this.prisma, clinicId)
+      : null;
+
+    if (dashboardType !== DashboardType.CLINICAL_HISTORY_WITH_DOCS) {
+      return { skipped: true as const, sgsst };
+    }
 
     if (clinic?.specialty === ClinicSpecialty.PHYSIOTHERAPY) {
       // Sin checklist ni pack de psicología: el SUPER_ADMIN carga y replica.
@@ -63,9 +68,9 @@ export class DocumentProvisionService {
       clinicId,
       excelPath,
     );
-    const sgsst = await seedSgsstRequirementsForClinic(this.prisma, clinicId);
     this.logger.log(
-      `Gestión documental lista para ${clinicId}: ${excel.upserted} requisitos de habilitación + ${sgsst.upserted} SG-SST`,
+      `Gestión documental lista para ${clinicId}: ${excel.upserted} requisitos de habilitación` +
+        (sgsst ? ` + ${sgsst.upserted} SG-SST` : ''),
     );
 
     if (options.importPack === false) {

@@ -126,6 +126,8 @@ export class AdminDashboard implements OnDestroy {
     specialty: ['MEDICINE' as ClinicSpecialty, Validators.required],
     address: [''],
     phone: [''],
+    dashboardType: ['' as DashboardType | '', Validators.required],
+    sgsstEnabled: [false],
     adminFullName: [''],
     adminEmail: [''],
     adminPassword: [''],
@@ -170,6 +172,33 @@ export class AdminDashboard implements OnDestroy {
         ? `Gestión documental activada en «${clinic.name}».`
         : `Gestión documental desactivada en «${clinic.name}». Sus documentos se conservan.`,
     );
+  }
+
+  /** Activa o desactiva el módulo SG-SST; al desactivar no se borra ningún documento. */
+  toggleSgsst(clinic: Clinic) {
+    const next = !clinic.sgsstEnabled;
+    const question = next
+      ? `¿Activar el módulo SG-SST en «${clinic.name}»? Se preparan sus requisitos de seguridad y salud en el trabajo.`
+      : `¿Desactivar el módulo SG-SST en «${clinic.name}»? Los documentos ya cargados se conservan; el consultorio deja de verlos hasta que se active de nuevo.`;
+    if (!window.confirm(question)) return;
+    this.busyClinicId.set(clinic.id);
+    this.api.setClinicSgsst(clinic.id, next).subscribe({
+      next: () => {
+        this.busyClinicId.set(null);
+        this.error.set('');
+        this.message.set(
+          next
+            ? `SG-SST activado en «${clinic.name}».`
+            : `SG-SST desactivado en «${clinic.name}». Sus documentos se conservan.`,
+        );
+        this.refresh();
+      },
+      error: (err) => {
+        this.busyClinicId.set(null);
+        this.message.set('');
+        this.error.set(this.readError(err, 'No se pudo cambiar el módulo SG-SST.'));
+      },
+    });
   }
 
   toggleDashboardMenu(clinicId: string) {
@@ -527,7 +556,11 @@ export class AdminDashboard implements OnDestroy {
     if (this.clinicForm.invalid) {
       this.clinicForm.markAllAsTouched();
       this.message.set('');
-      this.error.set('Complete el nombre y la especialidad del consultorio.');
+      this.error.set(
+        this.clinicForm.controls.dashboardType.invalid
+          ? 'Elija si el consultorio se crea con o sin gestión documental.'
+          : 'Complete el nombre y la especialidad del consultorio.',
+      );
       return;
     }
 
@@ -555,6 +588,8 @@ export class AdminDashboard implements OnDestroy {
       specialty: value.specialty,
       address: value.address || undefined,
       phone: value.phone || undefined,
+      dashboardType: value.dashboardType as DashboardType,
+      sgsstEnabled: value.sgsstEnabled,
       admin:
         value.adminFullName && value.adminEmail && value.adminPassword
           ? {
@@ -580,6 +615,8 @@ export class AdminDashboard implements OnDestroy {
           specialty: 'MEDICINE',
           address: '',
           phone: '',
+          dashboardType: '',
+          sgsstEnabled: false,
           adminFullName: '',
           adminEmail: '',
           adminPassword: '',

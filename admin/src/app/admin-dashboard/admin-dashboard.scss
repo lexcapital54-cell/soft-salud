@@ -1150,6 +1150,64 @@ tbody tr:last-child td {
   }
 }
 
+.drawer-body .choice {
+  gap: 8px;
+  padding: 0;
+  border: 0;
+
+  legend {
+    padding: 0;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--ink);
+  }
+}
+
+.drawer-body .opt-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #c8d2de;
+  border-radius: 10px;
+  font-weight: 400;
+  cursor: pointer;
+
+  input {
+    flex: none;
+    width: 18px;
+    min-height: 18px;
+    height: 18px;
+    margin: 2px 0 0;
+    padding: 0;
+    accent-color: var(--navy);
+  }
+
+  b {
+    display: block;
+    font-weight: 700;
+  }
+
+  small {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  &:has(input:checked) {
+    border-color: var(--navy);
+    background: #f2f6fb;
+    box-shadow: inset 0 0 0 1px var(--navy);
+  }
+}
+
+.modules {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+}
+
 .two {
   display: grid;
   grid-template-columns: 1fr 1fr;

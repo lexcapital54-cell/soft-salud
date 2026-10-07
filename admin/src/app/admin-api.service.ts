@@ -24,6 +24,8 @@ export class AdminApiService {
     specialty: ClinicSpecialty;
     address?: string;
     phone?: string;
+    dashboardType?: DashboardType;
+    sgsstEnabled?: boolean;
     admin?: {
       fullName: string;
       email: string;
@@ -67,6 +69,10 @@ export class AdminApiService {
 
   setClinicActive(clinicId: string, isActive: boolean) {
     return this.http.post<Clinic>(`${API}/clinics/${clinicId}/update`, { isActive });
+  }
+
+  setClinicSgsst(clinicId: string, sgsstEnabled: boolean) {
+    return this.http.post<Clinic>(`${API}/clinics/${clinicId}/sgsst`, { sgsstEnabled });
   }
 
   setClinicRips(clinicId: string, ripsEnabled: boolean) {

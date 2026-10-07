@@ -134,10 +134,10 @@ export class DemoService {
     const withFiles = options.files !== false;
     const clinic = await this.prisma.clinic.findFirst({ where: { id, isDemo: true } });
     if (!clinic) throw new NotFoundException('Consultorio demo no encontrado');
-    if (clinic.dashboardType !== DashboardType.CLINICAL_HISTORY_WITH_DOCS) {
+    if (clinic.dashboardType !== DashboardType.CLINICAL_HISTORY_WITH_DOCS || !clinic.sgsstEnabled) {
       await this.prisma.clinic.update({
         where: { id },
-        data: { dashboardType: DashboardType.CLINICAL_HISTORY_WITH_DOCS },
+        data: { dashboardType: DashboardType.CLINICAL_HISTORY_WITH_DOCS, sgsstEnabled: true },
       });
     }
     await this.provision.ensureForClinic(id, DashboardType.CLINICAL_HISTORY_WITH_DOCS, { importPack: withFiles });

@@ -321,6 +321,8 @@ model Clinic {
   name          String          @db.VarChar(160)
   specialty     ClinicSpecialty
   dashboardType DashboardType?  @map("dashboard_type")
+  /// Módulo SG-SST (Dec. 1072 de 2015), independiente de la gestión documental de habilitación.
+  sgsstEnabled  Boolean         @default(false) @map("sgsst_enabled")
   billingMode   BillingMode     @default(RECEIPT_ONLY) @map("billing_mode")
   address       String?         @db.VarChar(255)
   phone         String?         @db.VarChar(40)

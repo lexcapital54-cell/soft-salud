@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsEmail,
   IsEnum,
   IsOptional,
@@ -7,7 +8,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { ClinicSpecialty } from '../../common/enums';
+import { ClinicSpecialty, DashboardType } from '../../common/enums';
 
 export class NewClinicAdminDto {
   @IsString()
@@ -41,6 +42,15 @@ export class CreateClinicDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  /** Con o sin gestión documental de habilitación. */
+  @IsOptional()
+  @IsEnum(DashboardType)
+  dashboardType?: DashboardType;
+
+  @IsOptional()
+  @IsBoolean()
+  sgsstEnabled?: boolean;
 
   @IsOptional()
   @ValidateNested()
