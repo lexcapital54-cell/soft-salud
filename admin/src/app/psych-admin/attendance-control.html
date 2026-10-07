@@ -1,6 +1,6 @@
 <div class="ac">
   <header class="ac-bar no-print">
-    <a class="ac-back" routerLink="/consultorio/agenda"><hab-icon name="arrowLeft" [size]="16" /> Agenda</a>
+    <a class="ac-back" routerLink="/consultorio"><hab-icon name="arrowLeft" [size]="16" /> Inicio</a>
     <div class="ac-heading">
       <h1>Control de citas y asistencia</h1>
       <p class="ac-state" aria-live="polite">
@@ -40,7 +40,7 @@
   <section class="ac-tools no-print" aria-label="Datos para diligenciar">
     @if (canWrite()) {
       <div class="tool patient">
-        <label for="ac-patient">Traer datos de un paciente (agenda e historia)</label>
+        <label for="ac-patient">Paciente: el formato se llena con sus citas programadas y su historia</label>
         <div class="search">
           <hab-icon name="search" [size]="16" />
           <input
@@ -59,8 +59,10 @@
             Buscando…
           } @else if (patientQuery().trim().length >= 2 && !patientHits().length) {
             Sin resultados.
+          } @else if (!patientId()) {
+            Busque y elija al paciente para llenar el formato automáticamente.
           } @else {
-            Escriba al menos dos letras o números.
+            Escriba al menos dos letras o números para cambiar de paciente.
           }
         </p>
         @if (patientHits().length) {

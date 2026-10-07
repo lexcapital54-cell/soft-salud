@@ -197,6 +197,11 @@
                     <app-physio-icon name="pencil" />Nueva nota de evolución
                   </button>
                 }
+                @if (canWrite() && variant() === 'PSYCHOLOGY' && (patient()?.id || encounter()?.patient?.id); as pid) {
+                  <a class="pd-btn ghost" style="text-decoration: none" routerLink="/consultorio/control-citas" [queryParams]="{ patientId: pid }">
+                    <app-physio-icon name="calendar" />Control de citas y asistencia
+                  </a>
+                }
                 <button type="button" class="pd-btn ghost" (click)="goto.emit('consent-section')">
                   <app-physio-icon name="clipboard" />Consentimientos y firmas
                 </button>

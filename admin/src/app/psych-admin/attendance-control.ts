@@ -121,7 +121,10 @@ export class AttendanceControlPage implements OnInit, OnDestroy {
     const docId = this.route.snapshot.queryParamMap.get('id');
     if (docId) this.loadSaved(docId);
     else if (patientId) this.loadDraft(this.api.prefill(patientId));
-    else this.loadDraft(this.api.blank());
+    else {
+      this.loadDraft(this.api.blank());
+      setTimeout(() => document.getElementById('ac-patient')?.focus());
+    }
     this.api.logoStatus().subscribe({
       next: (s) => {
         this.logoClinicId.set(s.clinicId);

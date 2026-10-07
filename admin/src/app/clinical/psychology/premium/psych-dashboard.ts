@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ClinicalApiService } from '../../clinical-api.service';
 import { ClinicalContent, ClinicalEvolution, DiagnosisRow, Encounter, Patient } from '../../clinical.models';
 import { PhysioIcon } from '../../physio/physio-icons';
@@ -73,6 +74,7 @@ const VARIANTS: Record<GeneralDashboardVariant, { title: string; subtitle: strin
     PhysioNextSession,
     PhysioEvolutionTimeline,
     PhysioInterventionsTable,
+    RouterLink,
   ],
   templateUrl: './psych-dashboard.html',
   styleUrls: ['../../physio/premium/physio-dashboard.scss', './psych-dashboard.scss'],
