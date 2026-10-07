@@ -640,7 +640,7 @@
           <table class="tbl tbl-cards">
             <thead>
               <tr>
-                <th>Documento</th><th>Código</th><th>Estándar</th><th>Categoría</th><th>Responsable</th>
+                <th>Documento</th><th>Código</th>@if (!embedded()) {<th>Estándar</th>}<th>Categoría</th><th>Responsable</th>
                 <th>Emisión</th><th>Vencimiento</th><th>Estado</th><th>Versión</th><th>Actualizado</th><th>Acciones</th>
               </tr>
             </thead>
@@ -654,7 +654,7 @@
                     </button>
                   </td>
                   <td data-label="Código" class="mono">{{ d.code }}</td>
-                  <td data-label="Estándar">{{ d.pillarLabel }}</td>
+                  @if (!embedded()) {<td data-label="Estándar">{{ d.pillarLabel }}</td>}
                   <td data-label="Categoría">{{ d.categoryName }}</td>
                   <td data-label="Responsable">{{ d.responsibleName || '—' }}@if (d.responsibleArea) {<small class="block">{{ d.responsibleArea }}</small>}</td>
                   <td data-label="Emisión">{{ date(d.current?.issuedAt) }}</td>
@@ -663,11 +663,19 @@
                   <td data-label="Versión">{{ d.current ? 'v' + d.current.version : '—' }}</td>
                   <td data-label="Actualizado">{{ date(d.lastUpdate) }}</td>
                   <td class="td-act">
+                    @if (embedded() && d.canEdit && writerRole()) {
+                      <button type="button" class="act-btn act-main" (click)="openUpload(d)" [attr.aria-label]="(d.current ? 'Reemplazar archivo de ' : 'Subir archivo de ') + d.title">
+                        <hab-icon [name]="d.current ? 'replace' : 'upload'" [size]="14" /> {{ d.current ? 'Reemplazar' : 'Subir' }}
+                      </button>
+                      <button type="button" class="act-btn" (click)="openEdit(d)" [attr.aria-label]="'Modificar datos de ' + d.title">
+                        <hab-icon name="pencil" [size]="14" /> Modificar
+                      </button>
+                    }
                     <button type="button" class="icon-btn" (click)="viewDoc(d)" [attr.aria-label]="'Ver ' + d.title" title="Ver"><hab-icon name="eye" [size]="16" /></button>
                     @if (d.current && canDownload()) {
                       <button type="button" class="icon-btn" (click)="downloadFile(d.current.id, d.current.originalName)" [attr.aria-label]="'Descargar ' + d.title" title="Descargar"><hab-icon name="download" [size]="16" /></button>
                     }
-                    @if (d.canEdit && writerRole()) {
+                    @if (!embedded() && d.canEdit && writerRole()) {
                       <button type="button" class="icon-btn" (click)="openEdit(d)" [attr.aria-label]="'Editar metadatos de ' + d.title" title="Editar metadatos"><hab-icon name="pencil" [size]="16" /></button>
                       <button type="button" class="icon-btn" (click)="openUpload(d)" [attr.aria-label]="(d.current ? 'Reemplazar archivo de ' : 'Cargar archivo de ') + d.title" [title]="d.current ? 'Reemplazar archivo' : 'Cargar archivo'"><hab-icon [name]="d.current ? 'replace' : 'upload'" [size]="16" /></button>
                     }

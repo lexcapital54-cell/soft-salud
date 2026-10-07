@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, HostListener, OnInit, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, HostListener, OnInit, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -102,6 +102,8 @@ export class HabilitationDocs implements OnInit {
   readonly embeddedClinicId = input('');
   /** Al cambiar, recarga el registro (p. ej. tras una carga múltiple hecha fuera). */
   readonly embeddedRefresh = input(0);
+  /** Avisa al contenedor (Documentos del superadmin) que el expediente cambió. */
+  readonly changed = output<void>();
 
   private readonly api = inject(HabilitationApiService);
   private readonly docsApi = inject(DocumentsApiService);
@@ -389,15 +391,16 @@ export class HabilitationDocs implements OnInit {
     this.docsApi.clinicId = id;
     this.closeDrawer();
     if (syncUrl) this.syncUrl({ clinicId: id });
-    this.load();
+    this.load(false);
   }
 
-  load() {
+  load(notify = true) {
     this.loading.set(true);
     this.error.set('');
     this.api.registry().subscribe({
       next: (data) => {
         this.registry.set(data);
+        if (notify && this.embedded()) this.changed.emit();
         this.loading.set(false);
         const docId = this.route.snapshot.queryParamMap.get('doc');
         if (docId && !this.drawer()) {

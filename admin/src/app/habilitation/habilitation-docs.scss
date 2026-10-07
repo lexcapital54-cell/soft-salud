@@ -296,6 +296,22 @@ button { font: inherit; color: inherit; }
   .skeleton { background: linear-gradient(90deg, #e9eef4 0%, #f5f8fb 50%, #e9eef4 100%); background-size: 200% 100%; }
   .overlay { background: rgba(0, 26, 58, 0.4); }
   .search:focus-within, .filters select:focus, .form input:focus, .form select:focus { border-color: var(--petrol); box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.35); }
+
+  /* Acciones siempre visibles aunque la tabla se desplace */
+  .tbl th:last-child, .tbl .td-act { position: sticky; right: 0; z-index: 1; background: #fff; box-shadow: -6px 0 8px -6px rgba(10, 31, 61, 0.18); }
+  .tbl th:last-child { background: #f7f9fc; z-index: 2; }
+  .tbl tbody tr:hover .td-act { background: #f7f9fc; }
+  .act-btn {
+    display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 10px; border: 1px solid #bfe9e3; border-radius: 999px;
+    background: #fff; color: var(--petrol); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+    &:hover { background: var(--beige); }
+    &:focus-visible { outline: 2px solid var(--petrol); outline-offset: 2px; }
+  }
+  .act-main { background: var(--petrol); border-color: var(--petrol); color: #fff; &:hover { background: #001a3a; } }
+  @media (max-width: 640px) {
+    .tbl .td-act { position: static; box-shadow: none; background: transparent; gap: 6px; padding-top: 8px; }
+    .tbl tbody tr:hover .td-act { background: transparent; }
+  }
 }
 
 /* ---------- Adaptable ---------- */

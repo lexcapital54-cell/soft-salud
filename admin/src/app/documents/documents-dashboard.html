@@ -566,6 +566,7 @@
       [embedded]="true"
       [embeddedClinicId]="selectedClinicId()"
       [embeddedRefresh]="habRefresh()"
+      (changed)="load()"
     />
   } @else if (loading()) {
     <p class="muted">Cargando expediente…</p>
