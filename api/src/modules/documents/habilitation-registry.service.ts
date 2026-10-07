@@ -1,3 +1,4 @@
+import { uploaderLabel } from './uploader-label';
 import {
   BadRequestException,
   ConflictException,
@@ -181,7 +182,7 @@ export class HabilitationRegistryService {
               periodLabel: true,
               notes: true,
               createdAt: true,
-              uploadedBy: { select: { fullName: true } },
+              uploadedBy: { select: { fullName: true, role: true } },
             },
           },
         },
@@ -247,7 +248,7 @@ export class HabilitationRegistryService {
               changeReason: current.changeReason,
               periodLabel: current.periodLabel,
               notes: current.notes,
-              uploadedBy: current.uploadedBy?.fullName ?? null,
+              uploadedBy: uploaderLabel(current.uploadedBy),
               createdAt: current.createdAt,
             }
           : null,
@@ -301,7 +302,7 @@ export class HabilitationRegistryService {
         entityId: true,
         metadata: true,
         createdAt: true,
-        user: { select: { fullName: true } },
+        user: { select: { fullName: true, role: true } },
       },
     });
 
@@ -325,7 +326,7 @@ export class HabilitationRegistryService {
       return {
         id: r.id,
         at: r.createdAt,
-        user: r.user?.fullName ?? null,
+        user: uploaderLabel(r.user),
         requirementId: req?.id ?? null,
         documentTitle: req?.title ?? (typeof m.title === 'string' ? m.title : null),
         version: typeof m.version === 'number' ? m.version : null,

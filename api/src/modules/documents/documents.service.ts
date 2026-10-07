@@ -37,6 +37,7 @@ import {
 } from 'fs';
 import { dirname, join, normalize as pathNormalize, sep } from 'path';
 import { tmpdir } from 'os';
+import { uploaderLabel } from './uploader-label';
 
 export type ComplianceStatus = 'GREEN' | 'YELLOW' | 'RED' | 'OPTIONAL';
 
@@ -188,7 +189,7 @@ const PILLAR_ORDER: DocumentPillar[] = [
 type AuditContext = { ipAddress?: string; userAgent?: string };
 
 const fileInclude = {
-  uploadedBy: { select: { id: true, fullName: true } },
+  uploadedBy: { select: { id: true, fullName: true, role: true } },
   signatures: {
     orderBy: { signedAt: 'asc' as const },
     include: { signerUser: { select: { id: true, fullName: true } } },
@@ -478,7 +479,7 @@ export class DocumentsService {
       formData: file.formData,
       retiredAt: file.retiredAt,
       createdAt: file.createdAt,
-      uploadedBy: file.uploadedBy?.fullName ?? null,
+      uploadedBy: uploaderLabel(file.uploadedBy),
       requiredRoles: needed,
       contentRoles: content,
       requiresClinicSignature: false,
