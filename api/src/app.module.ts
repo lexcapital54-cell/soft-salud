@@ -14,6 +14,7 @@ import { DemoModule } from './modules/demo/demo.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { PsychAdminModule } from './modules/psych-admin/psych-admin.module';
 import { UserClinicAccess } from './users/user-clinic-access.entity';
 import { User } from './users/user.entity';
 import { UsersModule } from './users/users.module';
@@ -50,6 +51,7 @@ import { UsersModule } from './users/users.module';
     BillingModule,
     PlatformBillingModule,
     DemoModule,
+    PsychAdminModule,
   ],
   providers: [SeedService],
 })

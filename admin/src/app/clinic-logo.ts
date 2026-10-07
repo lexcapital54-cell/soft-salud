@@ -1,6 +1,6 @@
 import { API } from './api.config';
 
-export type ClinicLogoSlot = 'home' | 'hc';
+export type ClinicLogoSlot = 'home' | 'hc' | 'formatos';
 
 /**
  * Logo propio del consultorio, guardado en la base de datos desde Configuración.

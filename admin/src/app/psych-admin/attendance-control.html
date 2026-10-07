@@ -1,0 +1,445 @@
+<div class="ac">
+  <header class="ac-bar no-print">
+    <a class="ac-back" routerLink="/consultorio/agenda"><hab-icon name="arrowLeft" [size]="16" /> Agenda</a>
+    <div class="ac-heading">
+      <h1>Control de citas y asistencia</h1>
+      <p class="ac-state" aria-live="polite">
+        @if (busy() === 'load') {
+          Cargando…
+        } @else if (dirty()) {
+          <span class="dot dirty" aria-hidden="true"></span> Cambios sin guardar
+        } @else if (savedAt()) {
+          <span class="dot ok" aria-hidden="true"></span> Guardado {{ savedLabel() }}
+        } @else {
+          Formato nuevo
+        }
+      </p>
+    </div>
+    <div class="ac-actions" role="toolbar" aria-label="Acciones del formato">
+      <button type="button" class="btn ghost" (click)="newForm()" [disabled]="!canWrite() || !!busy()"><hab-icon name="filePlus" [size]="16" /> Nuevo</button>
+      <button type="button" class="btn ghost" (click)="showOpen()" [disabled]="!!busy()"><hab-icon name="folder" [size]="16" /> Abrir</button>
+      <button type="button" class="btn ghost" (click)="preview.set(!preview())" [attr.aria-pressed]="preview()">
+        <hab-icon [name]="preview() ? 'pencil' : 'eye'" [size]="16" /> {{ preview() ? 'Editar' : 'Vista previa' }}
+      </button>
+      <button type="button" class="btn ghost" (click)="print()" [disabled]="!!busy()"><hab-icon name="printer" [size]="16" /> Imprimir</button>
+      <button type="button" class="btn ghost" (click)="downloadPdf()" [disabled]="!!busy()">
+        <hab-icon name="download" [size]="16" /> {{ busy() === 'pdf' ? 'Generando…' : 'Descargar PDF' }}
+      </button>
+      @if (canWrite()) {
+        <button type="button" class="btn primary" (click)="save()" [disabled]="!!busy()">
+          <hab-icon name="save" [size]="16" /> {{ busy() === 'save' ? 'Guardando…' : 'Guardar' }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (user() && !isPsychology()) {
+    <p class="banner warn no-print" role="alert">Este formato está disponible solo para los consultorios de psicología.</p>
+  }
+
+  <section class="ac-tools no-print" aria-label="Datos para diligenciar">
+    @if (canWrite()) {
+      <div class="tool patient">
+        <label for="ac-patient">Traer datos de un paciente (agenda e historia)</label>
+        <div class="search">
+          <hab-icon name="search" [size]="16" />
+          <input
+            id="ac-patient"
+            type="search"
+            placeholder="Nombre o documento del paciente"
+            autocomplete="off"
+            [value]="patientQuery()"
+            (input)="onPatientQuery($any($event.target).value)"
+            (keydown.escape)="patientHits.set([])"
+            aria-describedby="ac-patient-hint"
+          />
+        </div>
+        <p id="ac-patient-hint" class="hint">
+          @if (searching()) {
+            Buscando…
+          } @else if (patientQuery().trim().length >= 2 && !patientHits().length) {
+            Sin resultados.
+          } @else {
+            Escriba al menos dos letras o números.
+          }
+        </p>
+        @if (patientHits().length) {
+          <ul class="hits" role="listbox" aria-label="Pacientes encontrados">
+            @for (p of patientHits(); track p.id) {
+              <li>
+                <button type="button" role="option" aria-selected="false" (click)="pickPatient(p)">
+                  <strong>{{ p.fullName }}</strong>
+                  <span>{{ p.document || 'Sin documento' }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+    <div class="tool logo">
+      <span class="tool-label">Logo del consultorio</span>
+      <div class="logo-row">
+        <div class="logo-thumb">
+          @if (logoUrl(); as src) {
+            <img [src]="src" alt="Logo actual de los formatos" (error)="onLogoError()" />
+          } @else {
+            <hab-icon name="image" [size]="22" />
+          }
+        </div>
+        @if (canEditLogo()) {
+          <label class="btn ghost sm file-btn">
+            <hab-icon name="upload" [size]="15" /> {{ logoUrl() ? 'Reemplazar' : 'Cargar' }}
+            <input type="file" accept="image/png,image/jpeg" (change)="onLogoFile($event)" [disabled]="!!busy()" />
+          </label>
+          @if (logoUrl()) {
+            <button type="button" class="btn ghost sm" (click)="removeLogo()" [disabled]="!!busy()"><hab-icon name="trash" [size]="15" /> Quitar</button>
+          }
+        } @else {
+          <span class="hint">{{ logoUrl() ? 'Logo configurado.' : 'Sin logo.' }}</span>
+        }
+      </div>
+      <p class="hint">PNG o JPG de hasta 2 MB. Se guarda al elegir el archivo y aplica a todos los formatos del consultorio.</p>
+    </div>
+  </section>
+
+  @if (error()) {
+    <p class="banner err no-print" role="alert">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="banner ok no-print" role="status">{{ message() }}</p>
+  }
+
+  <main class="sheet-wrap">
+    <article class="sheet" [class.is-preview]="preview()" aria-label="Formato control de citas y asistencia">
+      <div class="print-frame" aria-hidden="true"></div>
+
+      <header class="doc-head">
+        <div class="doc-brand">
+          @if (logoUrl(); as src) {
+            <img class="doc-logo" [src]="src" alt="Logo del consultorio" />
+          }
+          @if (preview()) {
+            <span class="doc-clinic">{{ form.clinicName || 'Consultorio' }}</span>
+          } @else {
+            <label class="sr-only" for="f-clinicName">Nombre del consultorio</label>
+            <input
+              id="f-clinicName"
+              class="doc-clinic-input"
+              [(ngModel)]="form.clinicName"
+              (ngModelChange)="onChange()"
+              [readonly]="!canWrite()"
+              maxlength="160"
+              placeholder="Nombre del consultorio"
+              autocomplete="off"
+            />
+          }
+        </div>
+        <div class="doc-area">
+          <span>PSICOLOGÍA</span>
+          <hab-icon name="calendar" [size]="30" />
+        </div>
+      </header>
+
+      <h2 class="doc-title">CONTROL DE CITAS Y ASISTENCIA</h2>
+      <p class="doc-sub"><span>Asignación de citas y constancia administrativa</span></p>
+
+      <div class="doc-meta">
+        <div><b>Código:</b> {{ code }}</div>
+        <div><b>Versión:</b> {{ version }}</div>
+        <div class="meta-date">
+          <label for="f-registeredAt"><b>Fecha de registro:</b></label>
+          @if (preview()) {
+            <span>{{ fmtDate(form.registeredAt) || '____ / ____ / ______' }}</span>
+          } @else {
+            <input id="f-registeredAt" type="date" [(ngModel)]="form.registeredAt" (ngModelChange)="onChange()" [readonly]="!canWrite()" />
+          }
+        </div>
+      </div>
+
+      <!-- 01 · Datos generales -->
+      <section class="doc-sec keep" aria-labelledby="sec-1">
+        <h3 class="sec-h" id="sec-1"><span class="num">01</span><span class="name">· Datos generales</span></h3>
+        <div class="fields">
+          <div class="field" [class.invalid]="err('general.userName')">
+            <label for="f-general-userName">Nombre del usuario:</label>
+            <div class="val">
+              @if (preview()) {
+                <span>{{ form.general.userName }}</span>
+              } @else {
+                <input id="f-general-userName" [(ngModel)]="form.general.userName" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="160" autocomplete="off" [attr.aria-invalid]="!!err('general.userName')" aria-describedby="e-general-userName" />
+              }
+              @if (err('general.userName')) {
+                <p class="f-err" id="e-general-userName">{{ err('general.userName') }}</p>
+              }
+            </div>
+          </div>
+          <div class="field" [class.invalid]="err('general.identification')">
+            <label for="f-general-identification">Identificación o código:</label>
+            <div class="val">
+              @if (preview()) {
+                <span>{{ form.general.identification }}</span>
+              } @else {
+                <input id="f-general-identification" [(ngModel)]="form.general.identification" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="120" autocomplete="off" [attr.aria-invalid]="!!err('general.identification')" aria-describedby="e-general-identification" />
+              }
+              @if (err('general.identification')) {
+                <p class="f-err" id="e-general-identification">{{ err('general.identification') }}</p>
+              }
+            </div>
+          </div>
+          <div class="field" [class.invalid]="err('general.professional')">
+            <label for="f-general-professional">Profesional:</label>
+            <div class="val">
+              @if (preview()) {
+                <span>{{ form.general.professional }}</span>
+              } @else {
+                <input id="f-general-professional" [(ngModel)]="form.general.professional" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="160" autocomplete="off" [attr.aria-invalid]="!!err('general.professional')" aria-describedby="e-general-professional" />
+              }
+              @if (err('general.professional')) {
+                <p class="f-err" id="e-general-professional">{{ err('general.professional') }}</p>
+              }
+            </div>
+          </div>
+          <div class="field" [class.invalid]="err('general.site')">
+            <label for="f-general-site">Consultorio / sede:</label>
+            <div class="val">
+              @if (preview()) {
+                <span>{{ form.general.site }}</span>
+              } @else {
+                <input id="f-general-site" [(ngModel)]="form.general.site" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="200" autocomplete="off" [attr.aria-invalid]="!!err('general.site')" aria-describedby="e-general-site" />
+              }
+              @if (err('general.site')) {
+                <p class="f-err" id="e-general-site">{{ err('general.site') }}</p>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 · Programación y asistencia -->
+      <section class="doc-sec" aria-labelledby="sec-2">
+        <h3 class="sec-h" id="sec-2"><span class="num">02</span><span class="name">· Programación y asistencia</span></h3>
+        <div class="tbl-wrap">
+          <table class="sched">
+            <thead>
+              <tr>
+                <th scope="col">Fecha</th>
+                <th scope="col">Hora</th>
+                <th scope="col">Modalidad</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Próxima cita</th>
+                @if (!preview() && canWrite()) {
+                  <th scope="col" class="col-act no-print"><span class="sr-only">Acciones</span></th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of form.rows; track $index; let i = $index) {
+                <tr>
+                  <td data-label="Fecha">
+                    @if (preview()) {
+                      {{ fmtDate(r.date) }}
+                    } @else {
+                      <input type="date" [id]="'row-date-' + i" [attr.aria-label]="'Fecha, fila ' + (i + 1)" [(ngModel)]="r.date" (ngModelChange)="onChange()" [readonly]="!canWrite()" />
+                    }
+                  </td>
+                  <td data-label="Hora">
+                    @if (preview()) {
+                      {{ fmtTime(r.time) }}
+                    } @else {
+                      <input type="time" [attr.aria-label]="'Hora, fila ' + (i + 1)" [(ngModel)]="r.time" (ngModelChange)="onChange()" [readonly]="!canWrite()" />
+                    }
+                  </td>
+                  <td data-label="Modalidad">
+                    @if (preview()) {
+                      {{ label(modalities, r.modality) }}
+                    } @else {
+                      <select [attr.aria-label]="'Modalidad, fila ' + (i + 1)" [(ngModel)]="r.modality" (ngModelChange)="onChange()" [disabled]="!canWrite()">
+                        <option value="">—</option>
+                        @for (m of modalities; track m.key) {
+                          <option [value]="m.key">{{ m.label }}</option>
+                        }
+                      </select>
+                    }
+                  </td>
+                  <td data-label="Estado">
+                    @if (preview()) {
+                      {{ label(statuses, r.status) }}
+                    } @else {
+                      <select [attr.aria-label]="'Estado, fila ' + (i + 1)" [(ngModel)]="r.status" (ngModelChange)="onChange()" [disabled]="!canWrite()">
+                        <option value="">—</option>
+                        @for (s of statuses; track s.key) {
+                          <option [value]="s.key">{{ s.label }}</option>
+                        }
+                      </select>
+                    }
+                  </td>
+                  <td data-label="Próxima cita">
+                    @if (preview()) {
+                      {{ fmtDate(r.nextDate) }}
+                    } @else {
+                      <input type="date" [attr.aria-label]="'Próxima cita, fila ' + (i + 1)" [(ngModel)]="r.nextDate" (ngModelChange)="onChange()" [readonly]="!canWrite()" />
+                    }
+                  </td>
+                  @if (!preview() && canWrite()) {
+                    <td class="col-act no-print">
+                      <button type="button" class="icon-btn" (click)="removeRow(i)" [attr.aria-label]="'Eliminar fila ' + (i + 1)" title="Eliminar fila">
+                        <hab-icon name="trash" [size]="16" />
+                      </button>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (!preview() && canWrite()) {
+          <div class="sched-tools no-print">
+            <button type="button" class="btn ghost sm" (click)="addRow()" [disabled]="form.rows.length >= maxRows"><hab-icon name="plus" [size]="15" /> Agregar fila</button>
+            <span class="hint">{{ form.rows.length }} {{ form.rows.length === 1 ? 'fila' : 'filas' }}</span>
+          </div>
+        }
+        <p class="legend"><b>Modalidad:</b> presencial / virtual. <b>Estado:</b> asignada / asistió / no asistió / reprogramada.</p>
+      </section>
+
+      <!-- 03 · Constancia -->
+      <section class="doc-sec keep" aria-labelledby="sec-3">
+        <h3 class="sec-h" id="sec-3"><span class="num">03</span><span class="name">· Constancia</span></h3>
+        <div class="checks">
+          <label class="chk">
+            <input type="checkbox" [(ngModel)]="form.certificate.assigned" (ngModelChange)="onChange()" [disabled]="preview() || !canWrite()" />
+            <span class="box" aria-hidden="true"></span> Cita asignada
+          </label>
+          <label class="chk">
+            <input type="checkbox" [(ngModel)]="form.certificate.attended" (ngModelChange)="onChange()" [disabled]="preview() || !canWrite()" />
+            <span class="box" aria-hidden="true"></span> Asistencia registrada
+          </label>
+        </div>
+        <div class="fields">
+          <div class="field" [class.invalid]="err('certificate.date')">
+            <label for="f-certificate-date">Fecha de la cita:</label>
+            <div class="val">
+              @if (preview()) {
+                <span>{{ fmtDate(form.certificate.date) }}</span>
+              } @else {
+                <input id="f-certificate-date" type="date" [(ngModel)]="form.certificate.date" (ngModelChange)="onChange()" [readonly]="!canWrite()" [attr.aria-invalid]="!!err('certificate.date')" aria-describedby="e-certificate-date" />
+              }
+              @if (err('certificate.date')) {
+                <p class="f-err" id="e-certificate-date">{{ err('certificate.date') }}</p>
+              }
+            </div>
+          </div>
+          <div class="field" [class.invalid]="err('certificate.time')">
+            <label for="f-certificate-time">Hora:</label>
+            <div class="val">
+              @if (preview()) {
+                <span>{{ fmtTime(form.certificate.time) }}</span>
+              } @else {
+                <input id="f-certificate-time" type="time" [(ngModel)]="form.certificate.time" (ngModelChange)="onChange()" [readonly]="!canWrite()" [attr.aria-invalid]="!!err('certificate.time')" aria-describedby="e-certificate-time" />
+              }
+              @if (err('certificate.time')) {
+                <p class="f-err" id="e-certificate-time">{{ err('certificate.time') }}</p>
+              }
+            </div>
+          </div>
+          <div class="field" [class.invalid]="err('certificate.place')">
+            <label for="f-certificate-place">Lugar o enlace:</label>
+            <div class="val">
+              @if (preview()) {
+                <span class="wrap">{{ form.certificate.place }}</span>
+              } @else {
+                <input id="f-certificate-place" [(ngModel)]="form.certificate.place" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="300" autocomplete="off" [attr.aria-invalid]="!!err('certificate.place')" aria-describedby="e-certificate-place" />
+              }
+              @if (err('certificate.place')) {
+                <p class="f-err" id="e-certificate-place">{{ err('certificate.place') }}</p>
+              }
+            </div>
+          </div>
+          <div class="field" [class.invalid]="err('certificate.issuedAt')">
+            <label for="f-certificate-issuedAt">Fecha de emisión:</label>
+            <div class="val">
+              @if (preview()) {
+                <span>{{ fmtDate(form.certificate.issuedAt) }}</span>
+              } @else {
+                <input id="f-certificate-issuedAt" type="date" [(ngModel)]="form.certificate.issuedAt" (ngModelChange)="onChange()" [readonly]="!canWrite()" [attr.aria-invalid]="!!err('certificate.issuedAt')" aria-describedby="e-certificate-issuedAt" />
+              }
+              @if (err('certificate.issuedAt')) {
+                <p class="f-err" id="e-certificate-issuedAt">{{ err('certificate.issuedAt') }}</p>
+              }
+            </div>
+          </div>
+          <div class="field" [class.invalid]="err('certificate.responsible')">
+            <label for="f-certificate-responsible">Responsable del registro:</label>
+            <div class="val">
+              @if (preview()) {
+                <span>{{ form.certificate.responsible }}</span>
+              } @else {
+                <input id="f-certificate-responsible" [(ngModel)]="form.certificate.responsible" (ngModelChange)="onChange()" [readonly]="!canWrite()" maxlength="160" autocomplete="off" [attr.aria-invalid]="!!err('certificate.responsible')" aria-describedby="e-certificate-responsible" />
+              }
+              @if (err('certificate.responsible')) {
+                <p class="f-err" id="e-certificate-responsible">{{ err('certificate.responsible') }}</p>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 · Observaciones administrativas -->
+      <section class="doc-sec keep" aria-labelledby="sec-4">
+        <h3 class="sec-h" id="sec-4"><span class="num">04</span><span class="name">· Observaciones administrativas</span></h3>
+        @if (preview()) {
+          <p class="notes-view">{{ form.notes }}</p>
+        } @else {
+          <label class="sr-only" for="f-notes">Observaciones administrativas</label>
+          <textarea
+            id="f-notes"
+            class="notes"
+            rows="4"
+            maxlength="3000"
+            [(ngModel)]="form.notes"
+            (ngModelChange)="onChange()"
+            [readonly]="!canWrite()"
+            aria-describedby="notes-hint"
+          ></textarea>
+          <p id="notes-hint" class="hint no-print">Solo asuntos administrativos (asistencia, cambios de horario, constancias). No escriba diagnósticos ni contenido de las sesiones.</p>
+        }
+      </section>
+
+      <footer class="doc-foot">{{ footer }}</footer>
+    </article>
+  </main>
+
+  @if (openDialog()) {
+    <div class="overlay no-print" (click)="openDialog.set(false)"></div>
+    <div class="dialog no-print" role="dialog" aria-modal="true" aria-labelledby="open-title" (keydown.escape)="openDialog.set(false)">
+      <header class="dialog-head">
+        <h2 id="open-title">Abrir formato guardado</h2>
+        <button type="button" class="icon-btn" (click)="openDialog.set(false)" aria-label="Cerrar"><hab-icon name="x" /></button>
+      </header>
+      @if (patientId()) {
+        <label class="only">
+          <input type="checkbox" [checked]="onlyThisPatient()" (change)="toggleOnlyPatient($any($event.target).checked)" />
+          Solo los de este paciente
+        </label>
+      }
+      <div class="dialog-body">
+        @if (busy() === 'list') {
+          <p class="hint" aria-busy="true">Cargando formatos…</p>
+        } @else if (!savedList().length) {
+          <p class="hint">No hay formatos guardados{{ onlyThisPatient() && patientId() ? ' para este paciente' : '' }}.</p>
+        } @else {
+          <ul class="saved">
+            @for (s of savedList(); track s.id) {
+              <li>
+                <button type="button" (click)="openSaved(s)" [class.current]="s.id === docId()">
+                  <hab-icon name="file" [size]="18" />
+                  <span><strong>{{ s.patientName }}</strong><small>Actualizado {{ listDate(s.updatedAt) }}</small></span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+  }
+</div>

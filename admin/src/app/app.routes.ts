@@ -105,6 +105,12 @@ export const routes: Routes = [
     canActivate: [authGuard, documentsReadGuard, agendaOnlyGuard],
   },
   {
+    path: 'consultorio/control-citas',
+    loadComponent: () => import('./psych-admin/attendance-control').then((m) => m.AttendanceControlPage),
+    canActivate: [authGuard, clinicStaffGuard],
+    canDeactivate: [(page: { canLeave?: () => boolean }) => page.canLeave?.() ?? true],
+  },
+  {
     path: 'consultorio/recibos',
     component: BillingDashboard,
     canActivate: [authGuard, clinicStaffGuard],

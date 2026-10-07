@@ -49,7 +49,7 @@ export class ClinicLogoSettings implements OnDestroy {
     const target = this.targetClinicId();
     return target ? `${API}/clinics/${target}/logos` : `${API}/me/clinic-logos`;
   });
-  readonly status = signal<LogoStatus>({ home: null, hc: null });
+  readonly status = signal<LogoStatus>({ home: null, hc: null, formatos: null });
   readonly pending = signal<Partial<Record<ClinicLogoSlot, { file: File; preview: string }>>>({});
   readonly busy = signal<ClinicLogoSlot | null>(null);
   readonly message = signal('');
@@ -58,7 +58,7 @@ export class ClinicLogoSettings implements OnDestroy {
   constructor() {
     effect(() => {
       this.base();
-      this.status.set({ home: null, hc: null });
+      this.status.set({ home: null, hc: null, formatos: null });
       this.message.set('');
       this.error.set('');
       if (this.clinicId()) this.load();

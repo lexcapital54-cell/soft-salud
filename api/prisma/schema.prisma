@@ -364,6 +364,7 @@ model Clinic {
   remoteConsentInvites RemoteConsentInvite[]
   platformReceipts     PlatformReceipt[]
   logos                ClinicLogo[]
+  attendanceControls   AttendanceControl[]
 
   @@map("clinics")
 }
@@ -494,6 +495,7 @@ model Patient {
   notifications    NotificationLog[]
   reportExports    ClinicalReportExport[]
   orthoTracking    OrthoTracking?
+  attendanceControls AttendanceControl[]
 
   @@unique([clinicId, documentType, documentNumber])
   @@index([clinicId, lastName])
@@ -1501,6 +1503,8 @@ enum ClinicLogoKind {
   HC
   /// Hoja membretada A4 completa que se usa como fondo del PDF de la historia.
   LETTERHEAD
+  /// Logo de los formatos administrativos (p. ej. control de citas de psicología).
+  FORMS
 }
 
 /// Logo propio del consultorio. Tabla aparte de Clinic: copiar o replicar un consultorio no lo arrastra.
@@ -1514,4 +1518,24 @@ model ClinicLogo {
 
   @@id([clinicId, kind])
   @@map("clinic_logos")
+}
+
+/// Formato PSI-ADM-01 «Control de citas y asistencia». Documento administrativo: no guarda diagnósticos ni contenido de sesiones.
+model AttendanceControl {
+  id          String   @id @default(uuid()) @db.Uuid
+  clinicId    String   @map("clinic_id") @db.Uuid
+  clinic      Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patientId   String?  @map("patient_id") @db.Uuid
+  patient     Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  /// Nombre del usuario tal como quedó en el formato (para listar sin abrir el JSON).
+  patientName String   @map("patient_name") @db.VarChar(160)
+  data        Json
+  createdById String   @map("created_by_id") @db.Uuid
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([clinicId, updatedAt])
+  @@index([patientId])
+  @@map("attendance_controls")
 }

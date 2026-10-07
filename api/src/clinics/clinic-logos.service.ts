@@ -10,13 +10,14 @@ const SIGNATURES: Array<{ mime: string; bytes: number[] }> = [
   { mime: 'image/jpeg', bytes: [0xff, 0xd8, 0xff] },
 ];
 
-export type ClinicLogoSlot = 'home' | 'hc' | 'membrete';
+export type ClinicLogoSlot = 'home' | 'hc' | 'membrete' | 'formatos';
 
 export function logoKind(slot: string): ClinicLogoKind {
   if (slot === 'home') return ClinicLogoKind.HOME;
   if (slot === 'hc') return ClinicLogoKind.HC;
   if (slot === 'membrete') return ClinicLogoKind.LETTERHEAD;
-  throw new BadRequestException('Tipo de logo inválido: use «home», «hc» o «membrete».');
+  if (slot === 'formatos') return ClinicLogoKind.FORMS;
+  throw new BadRequestException('Tipo de logo inválido: use «home», «hc», «membrete» o «formatos».');
 }
 
 @Injectable()
@@ -34,6 +35,7 @@ export class ClinicLogosService {
       home: at(ClinicLogoKind.HOME),
       hc: at(ClinicLogoKind.HC),
       membrete: at(ClinicLogoKind.LETTERHEAD),
+      formatos: at(ClinicLogoKind.FORMS),
     };
   }
 

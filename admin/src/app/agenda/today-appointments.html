@@ -17,6 +17,9 @@
       @if (isReceptionist() && billingEnabled()) {
         <a class="ghost topbar-link" routerLink="/consultorio/recibos">Recibos de caja</a>
       }
+      @if (isPsychology() && (canWriteClinical() || isReceptionist())) {
+        <a class="ghost topbar-link" routerLink="/consultorio/control-citas">Control de citas</a>
+      }
       @if (canManage()) {
         <button type="button" class="primary" (click)="toggleBooking()">
           {{ showBooking() ? 'Cerrar' : 'Nueva cita' }}
@@ -716,6 +719,15 @@
                   {{ hcLinkLabel(appt) }}
                 </a>
               }
+              @if (!isBlock(appt) && appt.patient && isPsychology() && (canWriteClinical() || isReceptionist())) {
+                <a
+                  class="linkish"
+                  routerLink="/consultorio/control-citas"
+                  [queryParams]="{ patientId: appt.patient.id }"
+                >
+                  Control de citas
+                </a>
+              }
               @if (canManage()) {
                 @for (target of appt.allowedTransitions; track target) {
                   <button
@@ -893,6 +905,15 @@
               [queryParams]="hcQuery(appt)"
             >
               {{ hcLinkLabel(appt) }}
+            </a>
+          }
+          @if (!isBlock(appt) && appt.patient && isPsychology() && (canWriteClinical() || isReceptionist())) {
+            <a
+              class="linkish"
+              routerLink="/consultorio/control-citas"
+              [queryParams]="{ patientId: appt.patient.id }"
+            >
+              Control de citas
             </a>
           }
 
