@@ -94,6 +94,7 @@ export interface ProcedureRow {
   id?: string;
   cupsCode: string;
   description: string;
+  quantity?: number;
 }
 
 export interface ConsentRow {

@@ -5,12 +5,15 @@ import {
   IsDateString,
   IsEnum,
   IsIn,
+  IsInt,
   IsObject,
   IsOptional,
   IsString,
   IsUUID,
   Matches,
+  Max,
   MaxLength,
+  Min,
   MinLength,
   ValidateIf,
   ValidateNested,
@@ -114,6 +117,12 @@ export class ProcedureInputDto {
 
   @IsString()
   description: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(999)
+  quantity?: number;
 }
 
 export class ConsentInputDto {

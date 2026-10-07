@@ -4140,6 +4140,7 @@
                 <tr>
                   <th>CUPS</th>
                   <th>Procedimiento</th>
+                  <th style="width: 5rem; text-align: center">Cant.</th>
                   <th></th>
                 </tr>
               </thead>
@@ -4178,6 +4179,22 @@
                         [disabled]="cupsFieldsDisabled()"
                       />
                     </td>
+                    <td style="text-align: center">
+                      <input
+                        class="desc-cell"
+                        style="width: 4.25rem; padding: 6px 4px; text-align: center"
+                        type="number"
+                        inputmode="numeric"
+                        min="1"
+                        max="999"
+                        step="1"
+                        [ngModel]="p.quantity ?? 1"
+                        (ngModelChange)="p.quantity = $event"
+                        (blur)="normalizeProcedureQuantity(p)"
+                        [attr.aria-label]="'Cantidad de ' + (p.cupsCode || 'procedimiento')"
+                        [disabled]="cupsFieldsDisabled()"
+                      />
+                    </td>
                     <td>
                       @if (!cupsFieldsDisabled()) {
                         <button type="button" class="linkish" (click)="removeProcedure($index)">
@@ -4188,7 +4205,7 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="3" class="empty">
+                    <td colspan="4" class="empty">
                       Sin procedimientos — agregue un CUPS arriba (ej. 890208 consulta psicología)
                     </td>
                   </tr>

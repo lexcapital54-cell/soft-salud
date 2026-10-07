@@ -1629,7 +1629,11 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     const existing = new Set(this.procedures.map((p) => p.cupsCode.trim()));
     const added = this.activePlanRows()
       .filter((r) => r.code.trim() && !existing.has(r.code.trim()))
-      .map((r) => ({ cupsCode: r.code.trim(), description: r.description.trim() }));
+      .map((r) => ({
+        cupsCode: r.code.trim(),
+        description: r.description.trim(),
+        quantity: this.procedureQuantity({ quantity: Number((r as { quantity?: unknown }).quantity) }),
+      }));
     if (!added.length) {
       this.message.set('Los procedimientos del plan ya están en la lista de CUPS.');
       return;
@@ -4717,8 +4721,19 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     this.notifyDiagnosisChange();
   }
 
+  /** Cantidad entera entre 1 y 999; vacía o inválida cuenta como 1. */
+  procedureQuantity(p: { quantity?: number | null }) {
+    const n = Math.floor(Number(p.quantity));
+    return Number.isFinite(n) && n >= 1 ? Math.min(999, n) : 1;
+  }
+
+  normalizeProcedureQuantity(p: ProcedureRow) {
+    p.quantity = this.procedureQuantity(p);
+    this.notifyProcedureChange();
+  }
+
   addProcedure(item: CatalogCode) {
-    this.procedures = [...this.procedures, { cupsCode: item.code, description: item.description }];
+    this.procedures = [...this.procedures, { cupsCode: item.code, description: item.description, quantity: 1 }];
     this.cupsQuery = '';
     this.cupsResults.set([]);
     this.cupsOpen.set(false);
@@ -5636,6 +5651,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       procedures: this.procedures.map((p) => ({
         cupsCode: p.cupsCode,
         description: p.description,
+        quantity: this.procedureQuantity(p),
       })),
       consents: this.consents.map((c) => ({
         consentType: c.consentType,

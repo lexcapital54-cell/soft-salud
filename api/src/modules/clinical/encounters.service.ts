@@ -712,6 +712,7 @@ export class EncountersService {
               encounterId,
               cupsCode: p.cupsCode,
               description: p.description,
+              quantity: p.quantity ?? 1,
               cupsVersion: versions.get(p.cupsCode.trim()) ?? CUPS_CATALOG_VERSION,
             })),
           });
@@ -883,6 +884,7 @@ export class EncountersService {
             encounterId,
             cupsCode: p.cupsCode.trim(),
             description: p.description.trim(),
+            quantity: p.quantity ?? 1,
             cupsVersion: versions.get(p.cupsCode.trim()) ?? CUPS_CATALOG_VERSION,
           })),
         });
