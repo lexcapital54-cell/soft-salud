@@ -614,6 +614,106 @@
       }
     </div>
 
+    @if (canManage() && !filtering()) {
+      <!-- Superadmin: estándares en tarjetas, como la vista «7 estándares» -->
+      @if (activePillar(); as pillar) {
+        <section class="std-detail">
+          <div class="std-toolbar">
+            <button type="button" class="ghost back" (click)="selectedPillar.set(null)">
+              <hab-icon name="arrowLeft" [size]="16" /> Todos los estándares
+            </button>
+            <button type="button" class="primary with-icon" (click)="openBulk(pillar.pillar)">
+              <hab-icon name="upload" [size]="16" /> Cargar varios archivos
+            </button>
+          </div>
+          <header class="std-detail-head">
+            <span class="std-ico lg"><hab-icon [name]="pillarIcon(pillar.pillar)" [size]="26" /></span>
+            <div>
+              <h2>{{ pillar.label }}</h2>
+              <p class="muted">{{ pillarDescription(pillar.pillar) }}</p>
+            </div>
+            <span class="std-pct" [class]="'std-pct st-' + pillar.summary.status">{{ pillar.summary.compliance }}%</span>
+          </header>
+          <ul class="std-mini">
+            <li><strong>{{ pillar.summary.total }}</strong> requisitos</li>
+            <li class="g"><strong>{{ pillar.summary.green }}</strong> vigentes</li>
+            <li class="y"><strong>{{ pillar.summary.yellow }}</strong> por vencer</li>
+            <li class="r"><strong>{{ pillar.summary.red }}</strong> pendientes o vencidos</li>
+          </ul>
+          <ng-container *ngTemplateOutlet="pillarBody; context: { $implicit: pillar }" />
+        </section>
+      } @else {
+        <div class="std-toolbar">
+          <div class="seg" role="group" aria-label="Forma de ver los documentos">
+            <button type="button" [class.on]="docsLayout() === 'tarjetas'" [attr.aria-pressed]="docsLayout() === 'tarjetas'" (click)="docsLayout.set('tarjetas')">
+              <hab-icon name="dashboard" [size]="16" /> Tarjetas
+            </button>
+            <button type="button" [class.on]="docsLayout() === 'lista'" [attr.aria-pressed]="docsLayout() === 'lista'" (click)="docsLayout.set('lista')">
+              <hab-icon name="list" [size]="16" /> Agrupado por estándar
+            </button>
+          </div>
+          <button type="button" class="primary with-icon" (click)="openBulk(null)">
+            <hab-icon name="upload" [size]="16" /> Cargar varios archivos
+          </button>
+        </div>
+        @if (docsLayout() === 'lista') {
+          @for (p of standardPillars(); track p.pillar) {
+            <ng-container *ngTemplateOutlet="stdGroup; context: { $implicit: p }" />
+          } @empty {
+            <p class="muted">Este consultorio no tiene estándares asignados.</p>
+          }
+          @if (otherPillars().length) {
+            <h2 class="std-others-title">Otros grupos documentales</h2>
+            @for (p of otherPillars(); track p.pillar) {
+              <ng-container *ngTemplateOutlet="stdGroup; context: { $implicit: p }" />
+            }
+          }
+        } @else {
+        <section class="std-grid" aria-label="Estándares de habilitación">
+          @for (p of standardPillars(); track p.pillar; let i = $index) {
+            <article class="std">
+              <header>
+                <span class="std-num">{{ i + 1 }}.</span>
+                <h3>{{ p.label }}</h3>
+              </header>
+              <span class="std-ico"><hab-icon [name]="pillarIcon(p.pillar)" [size]="22" /></span>
+              <p class="std-desc">{{ pillarDescription(p.pillar) }}</p>
+              <p class="std-count"><strong>{{ p.summary.total }}</strong> requisitos</p>
+              <div class="std-bar" role="img" [attr.aria-label]="p.summary.compliance + '% firmado y vigente'">
+                <span [class]="'st-' + p.summary.status" [style.width.%]="p.summary.compliance"></span>
+              </div>
+              <ul>
+                <li><hab-icon name="shield" [size]="14" /> {{ p.summary.green }} vigentes</li>
+                <li><hab-icon name="clock" [size]="14" /> {{ p.summary.yellow }} próximos a vencer</li>
+                <li><hab-icon name="upload" [size]="14" /> {{ p.summary.red }} pendientes o vencidos</li>
+                <li><hab-icon name="check" [size]="14" /> {{ p.summary.compliance }}% firmado y vigente</li>
+              </ul>
+              <button type="button" class="std-btn" (click)="selectedPillar.set(p.pillar)">Ver documentos</button>
+            </article>
+          } @empty {
+            <p class="muted">Este consultorio no tiene estándares asignados.</p>
+          }
+        </section>
+        @if (otherPillars().length) {
+          <section class="std-others">
+            <h2>Otros grupos documentales</h2>
+            <div class="support-grid">
+              @for (p of otherPillars(); track p.pillar) {
+                <button type="button" class="support" (click)="selectedPillar.set(p.pillar)">
+                  <span class="std-ico sm"><hab-icon [name]="pillarIcon(p.pillar)" /></span>
+                  <span>
+                    <strong>{{ p.label }}</strong>
+                    <small>{{ p.summary.total }} requisitos · {{ p.summary.red }} pendientes · {{ p.summary.compliance }}%</small>
+                  </span>
+                  <hab-icon name="chevronRight" [size]="16" />
+                </button>
+              }
+            </div>
+          </section>
+        }
+        }
+      }
+    } @else {
     @for (pillar of visiblePillars(); track pillar.pillar) {
       <article class="pillar">
         <button type="button" class="pillar-head" (click)="togglePillar(pillar.pillar)">
@@ -628,6 +728,148 @@
         </button>
 
         @if (isOpen(pillar.pillar)) {
+          <ng-container *ngTemplateOutlet="pillarBody; context: { $implicit: pillar }" />
+        }
+      </article>
+    } @empty {
+      <p class="muted">Ningún requisito coincide con la búsqueda.</p>
+    }
+    }
+  }
+</ng-template>
+
+<!-- Grupo de un estándar con sus documentos (vista «Agrupado por estándar») -->
+<ng-template #stdGroup let-p>
+  <section class="std-group">
+    <header class="std-group-head">
+      <span class="std-ico sm"><hab-icon [name]="pillarIcon(p.pillar)" /></span>
+      <div>
+        <h2>{{ pillarNumber(p.pillar) ? pillarNumber(p.pillar) + '. ' : '' }}{{ p.label }}</h2>
+        <p class="muted">
+          {{ p.summary.total }} requisitos · {{ p.summary.green }} vigentes · {{ p.summary.yellow }} por vencer ·
+          {{ p.summary.red }} pendientes o vencidos
+        </p>
+      </div>
+      <span [class]="'std-pct st-' + p.summary.status">{{ p.summary.compliance }}%</span>
+      <button type="button" class="ghost with-icon" (click)="openBulk(p.pillar)">
+        <hab-icon name="upload" [size]="15" /> Cargar varios
+      </button>
+    </header>
+    <ng-container *ngTemplateOutlet="pillarBody; context: { $implicit: p }" />
+  </section>
+</ng-template>
+
+<!-- Carga múltiple de archivos para el consultorio elegido -->
+@if (bulkOpen()) {
+  <div class="modal-backdrop" (click)="closeBulk()">
+    <div class="modal bulk" role="dialog" aria-modal="true" aria-labelledby="bulkTitle" (click)="$event.stopPropagation()">
+      <header class="bulk-head">
+        <div>
+          <h2 id="bulkTitle">Cargar varios archivos</h2>
+          <p class="muted">
+            {{ selectedClinicName() || 'Consultorio seleccionado' }}
+            @if (bulkPillar(); as bp) { · {{ pillarLabel(bp) }} }
+          </p>
+        </div>
+        <button type="button" class="close" (click)="closeBulk()" [disabled]="bulkRunning()">Cerrar</button>
+      </header>
+
+      <p class="muted small">
+        Cada archivo se carga como una versión nueva del requisito elegido; las versiones anteriores se conservan en el
+        historial. Se sugiere el requisito por el código o el nombre del archivo; revíselo antes de cargar. Máximo 25 MB por archivo.
+      </p>
+
+      <label class="bulk-drop" [class.is-disabled]="bulkRunning()">
+        <hab-icon name="filePlus" [size]="22" />
+        <span><strong>Seleccionar archivos</strong> (PDF, Word o imagen). Puede elegir varios a la vez.</span>
+        <input
+          type="file"
+          multiple
+          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
+          [disabled]="bulkRunning()"
+          (change)="onBulkFiles($event)"
+        />
+      </label>
+
+      <div class="bulk-common">
+        <label>
+          Periodo (opcional)
+          <input type="month" [(ngModel)]="bulkPeriod" [disabled]="bulkRunning()" />
+        </label>
+        <label>
+          Vence el (opcional)
+          <input type="date" [(ngModel)]="bulkExpiry" [disabled]="bulkRunning()" />
+        </label>
+      </div>
+
+      @if (bulkRows().length) {
+        <ul class="bulk-list">
+          @for (row of bulkRows(); track row.key; let i = $index) {
+            <li [class]="'bulk-row is-' + row.state">
+              <div class="bulk-file">
+                <hab-icon name="file" [size]="16" />
+                <span class="bulk-name" [title]="row.file.name">{{ row.file.name }}</span>
+                <small>{{ fileSize(row.file.size) }}</small>
+              </div>
+              <label class="bulk-req">
+                <span class="sr-only">Requisito para {{ row.file.name }}</span>
+                <select
+                  [ngModel]="row.requirementId"
+                  (ngModelChange)="setBulkRequirement(i, $event)"
+                  [disabled]="bulkRunning() || row.state === 'ok'"
+                >
+                  <option value="">Elija el requisito…</option>
+                  @for (g of bulkOptions(); track g.pillar) {
+                    <optgroup [label]="g.label">
+                      @for (r of g.reqs; track r.id) {
+                        <option [value]="r.id">{{ r.code }} · {{ r.title }}{{ r.enabled ? '' : ' (deshabilitado)' }}</option>
+                      }
+                    </optgroup>
+                  }
+                </select>
+              </label>
+              <span class="bulk-state" role="status">
+                @switch (row.state) {
+                  @case ('subiendo') { Cargando… }
+                  @case ('ok') { <hab-icon name="check" [size]="14" /> Cargado }
+                  @case ('error') { {{ row.message }} }
+                  @default { {{ row.requirementId ? 'Listo' : 'Sin requisito' }} }
+                }
+              </span>
+              <button
+                type="button"
+                class="icon-only"
+                [attr.aria-label]="'Quitar ' + row.file.name"
+                [disabled]="bulkRunning() || row.state === 'ok'"
+                (click)="removeBulkRow(i)"
+              >
+                <hab-icon name="x" [size]="16" />
+              </button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="empty-box">Aún no ha seleccionado archivos.</p>
+      }
+
+      <footer class="bulk-foot">
+        <span class="muted small">
+          {{ bulkPendingCount() }} por cargar · {{ bulkDoneCount() }} cargados
+          @if (bulkErrorCount()) { · {{ bulkErrorCount() }} con error }
+        </span>
+        @if (bulkDoneCount() && !bulkPendingCount()) {
+          <button type="button" class="primary" (click)="closeBulk()">Listo</button>
+        } @else {
+          <button type="button" class="primary" [disabled]="!bulkReady()" (click)="runBulk()">
+            {{ bulkRunning() ? 'Cargando…' : 'Cargar ' + bulkPendingCount() + ' archivo' + (bulkPendingCount() === 1 ? '' : 's') }}
+          </button>
+        }
+      </footer>
+    </div>
+  </div>
+}
+
+<ng-template #pillarBody let-pillar>
           <div class="pillar-body">
             @for (category of pillar.categories; track category.id) {
               <h3 class="category">{{ category.name }}</h3>
@@ -771,12 +1013,6 @@
               </ul>
             }
           </div>
-        }
-      </article>
-    } @empty {
-      <p class="muted">Ningún requisito coincide con la búsqueda.</p>
-    }
-  }
 </ng-template>
 
 @if (detail(); as info) {

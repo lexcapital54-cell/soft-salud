@@ -272,43 +272,6 @@ button { font: inherit; color: inherit; }
 .viewer-html { margin: 20px auto; padding: 32px; max-width: 820px; width: 100%; background: #fff; box-shadow: var(--shadow); font-size: 14px; line-height: 1.55; }
 .viewer-msg { margin: auto; padding: 24px; text-align: center; color: var(--muted); }
 
-/* ---------- Superadmin: misma vista con la paleta del panel de administración ---------- */
-:host(.sa) {
-  --petrol: #002b5c;
-  --petrol-2: #0a3d73;
-  --slate: #4a5d72;
-  --bg: #f4f7fb;
-  --beige: #dff5f2;
-  --taupe: #0b6f68;
-  --gold: #2ec4b6;
-  --ink: #0a1f3d;
-  --muted: #5a6b7d;
-  --line: #e4eaf0;
-  --shadow: 0 1px 2px rgba(10, 31, 61, 0.06), 0 6px 20px rgba(10, 31, 61, 0.06);
-
-  .side { background: linear-gradient(180deg, #002b5c 0%, #001a3a 100%); color: #d9e4f2; }
-  .side-brand { border-bottom-color: rgba(255, 255, 255, 0.1); small { color: #a8ebe4; } }
-  .sa-mark { border: 0; border-radius: 10px; background: linear-gradient(135deg, #2ec4b6, #1a9e92); color: #fff; font-weight: 700; font-size: 18px; }
-  .side-group { color: #8fa6c4; }
-  .side-link {
-    color: #c3d3e8;
-    &:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
-    &.active { background: rgba(46, 196, 182, 0.22); color: #fff; box-shadow: inset 3px 0 0 var(--gold); }
-  }
-  .side-foot { border-top-color: rgba(255, 255, 255, 0.1); }
-  .side-user { color: #a9bbd3; }
-  .top-title p { color: var(--muted); }
-  .btn-primary, .quick-btn.primary { background: var(--petrol); border-color: var(--petrol); &:hover:not(:disabled) { background: #001a3a; } }
-  .btn-soft { border-color: #bfe9e3; }
-  .std, .support, .due-list button, .quick-btn:hover { background: #fff; }
-  .tbl th { background: #f7f9fc; }
-  .tbl td, .cat-list li { border-bottom-color: #eef2f6; }
-  .tbl tbody tr:hover { background: #f7f9fc; }
-  .skeleton { background: linear-gradient(90deg, #e9eef4 0%, #f5f8fb 50%, #e9eef4 100%); background-size: 200% 100%; }
-  .overlay { background: rgba(0, 26, 58, 0.4); }
-  .search:focus-within, .clinic-pick select:focus { border-color: var(--petrol); box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.35); }
-}
-
 /* ---------- Adaptable ---------- */
 @media (max-width: 1300px) {
   .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }

@@ -42,11 +42,7 @@ export const routes: Routes = [
     component: DocumentsDashboard,
     canActivate: [authGuard, superAdminGuard],
   },
-  {
-    path: 'admin/habilitacion',
-    loadComponent: () => import('./habilitation/habilitation-docs').then((m) => m.HabilitationDocs),
-    canActivate: [authGuard, superAdminGuard],
-  },
+  { path: 'admin/habilitacion', redirectTo: 'admin/documentos', pathMatch: 'full' },
   {
     path: 'admin/ingresos',
     component: PlatformBillingPage,

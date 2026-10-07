@@ -9,7 +9,6 @@ import { AuthService } from '../auth.service';
 import { Clinic } from '../models';
 import { DocumentsApiService } from '../documents/documents-api.service';
 import { DocumentFileRow, RequirementDetail } from '../documents/documents.models';
-import { SA_NAV } from '../super-admin/sa-shell';
 import { HabIcon } from './hab-icon';
 import { HabilitationApiService } from './habilitation-api.service';
 import {
@@ -95,7 +94,6 @@ const emptyDocForm = (): DocForm => ({
   imports: [FormsModule, RouterLink, HabIcon, NgTemplateOutlet],
   templateUrl: './habilitation-docs.html',
   styleUrl: './habilitation-docs.scss',
-  host: { '[class.sa]': 'isSuper' },
 })
 export class HabilitationDocs {
   private readonly api = inject(HabilitationApiService);
@@ -125,28 +123,6 @@ export class HabilitationDocs {
   readonly view = signal<View>('dashboard');
   readonly pillar = signal<PillarKey | ''>('');
   readonly navOpen = signal(false);
-  /** Accesos a los demás módulos del superadmin desde el menú lateral. */
-  readonly adminLinks = SA_NAV.filter((n) => n.link !== '/admin/habilitacion');
-  readonly viewTitle = computed(() => {
-    switch (this.view()) {
-      case 'estandares':
-        return '7 estándares de habilitación';
-      case 'estandar':
-        return this.currentPillar()?.label || 'Estándar';
-      case 'documentos':
-        return 'Documentos de habilitación';
-      case 'maestra':
-        return 'Lista maestra';
-      case 'vencimientos':
-        return 'Vencimientos';
-      case 'archivo':
-        return 'Archivo histórico';
-      case 'tipos':
-        return 'Tipos documentales';
-      default:
-        return 'Dashboard documental de habilitación';
-    }
-  });
   readonly dueWindow = signal<DueWindow>('30');
   readonly dueWindows: DueWindow[] = ['7', '15', '30', 'vencidos'];
 

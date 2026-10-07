@@ -16,7 +16,6 @@ const NAV = [
   { label: 'Panel', icon: 'dashboard', link: '/admin' },
   { label: 'Contraseñas', icon: 'key', link: '/admin/contrasenas' },
   { label: 'Recibos de caja', icon: 'receipt', link: '/admin/ingresos' },
-  { label: 'Habilitación', icon: 'shield', link: '/admin/habilitacion' },
   { label: 'Documentos', icon: 'folder', link: '/admin/documentos' },
   { label: 'Consultorios demo', icon: 'monitor', link: '/admin/demos' },
 ] as const;

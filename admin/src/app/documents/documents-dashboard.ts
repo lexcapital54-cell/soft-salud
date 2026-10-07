@@ -10,6 +10,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import SignaturePad from 'signature_pad';
 import { WEBSITE_URL } from '../api.config';
 import { AdminApiService } from '../admin-api.service';
@@ -17,12 +18,14 @@ import { AuthService } from '../auth.service';
 import { ClinicalApiService } from '../clinical/clinical-api.service';
 import { Clinic, ClinicSpecialty, DashboardType, SPECIALTY_LABELS } from '../models';
 import { ClinicLogoSettings } from '../clinic-settings/clinic-logo-settings';
+import { HabIcon } from '../habilitation/hab-icon';
 import { SaShell } from '../super-admin/sa-shell';
 import { DocumentsApiService } from './documents-api.service';
 import {
   ComplianceStatus,
   DocumentFileRow,
   DocumentFileStatus,
+  DocumentPillar,
   DocumentSignerRole,
   DocumentsOverview,
   PendingCountersign,
@@ -34,6 +37,97 @@ import {
 
 type StatusFilter = 'ALL' | 'RED' | 'YELLOW' | 'GREEN';
 type MainTab = 'expediente' | 'historico';
+
+/** Icono, descripción y tipo de cada grupo (los 7 estándares de la Res. 3100 de 2019 + grupos de apoyo). */
+const PILLAR_INFO: Record<DocumentPillar, { icon: string; description: string; isStandard: boolean }> = {
+  TALENTO_HUMANO: {
+    icon: 'users',
+    description: 'Hojas de vida, títulos, tarjetas profesionales, RETHUS, formación, inducción y contratos del personal.',
+    isStandard: true,
+  },
+  INFRAESTRUCTURA: {
+    icon: 'building',
+    description: 'Planos, mantenimiento locativo, señalización, rutas de evacuación y certificados técnicos.',
+    isStandard: true,
+  },
+  DOTACION: {
+    icon: 'package',
+    description: 'Inventario, hojas de vida de equipos, fichas técnicas, mantenimientos y calibraciones.',
+    isStandard: true,
+  },
+  MEDICAMENTOS_INSUMOS: {
+    icon: 'pill',
+    description: 'Inventarios, almacenamiento, control de fechas, trazabilidad y soportes de proveedores.',
+    isStandard: true,
+  },
+  PROCESOS_PRIORITARIOS: {
+    icon: 'clipboard',
+    description: 'Protocolos, guías, manuales, bioseguridad, limpieza y desinfección, seguridad del paciente y residuos.',
+    isStandard: true,
+  },
+  HISTORIA_CLINICA: {
+    icon: 'file',
+    description: 'Formatos de historia clínica, consentimientos, custodia, confidencialidad y conservación documental.',
+    isStandard: true,
+  },
+  INTERDEPENDENCIA: {
+    icon: 'link',
+    description: 'Contratos, convenios y servicios de apoyo con terceros, y sus soportes de habilitación.',
+    isStandard: true,
+  },
+  DOCUMENTACION_LEGAL: {
+    icon: 'scale',
+    description: 'Documentos legales e institucionales del prestador.',
+    isStandard: false,
+  },
+  SG_SST: {
+    icon: 'shield',
+    description: 'Documentos del sistema de gestión de seguridad y salud en el trabajo.',
+    isStandard: false,
+  },
+};
+const PILLAR_ORDER = Object.keys(PILLAR_INFO) as DocumentPillar[];
+
+interface BulkRow {
+  key: number;
+  file: File;
+  requirementId: string;
+  state: 'pendiente' | 'subiendo' | 'ok' | 'error';
+  message: string;
+  /** Supera 25 MB: se muestra pero no se carga. */
+  tooBig: boolean;
+}
+
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+
+const normalize = (text: string) =>
+  text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\.[a-z0-9]+$/, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+/** Sugiere el requisito por código (p. ej. «TH-01») o por coincidencia de palabras del título. */
+function suggestRequirement(fileName: string, options: { id: string; code: string; title: string }[]): string {
+  const name = normalize(fileName);
+  const compact = name.replace(/ /g, '');
+  const byCode = options
+    .filter((o) => o.code && compact.includes(normalize(o.code).replace(/ /g, '')))
+    .sort((a, b) => b.code.length - a.code.length)[0];
+  if (byCode) return byCode.id;
+  const words = new Set(name.split(' ').filter((w) => w.length > 3));
+  let best = { id: '', score: 0 };
+  for (const o of options) {
+    const titleWords = normalize(o.title).split(' ').filter((w) => w.length > 3);
+    if (!titleWords.length) continue;
+    const hits = titleWords.filter((w) => words.has(w)).length;
+    const score = hits / titleWords.length;
+    if (hits >= 2 && score > best.score) best = { id: o.id, score };
+  }
+  return best.score >= 0.5 ? best.id : '';
+}
 
 const ROLE_LABELS: Record<DocumentSignerRole, string> = {
   ELABORO: 'Elaboró',
@@ -57,9 +151,9 @@ function describeError(error: unknown): string {
 
 @Component({
   selector: 'app-documents-dashboard',
-  imports: [RouterLink, FormsModule, DatePipe, NgTemplateOutlet, ClinicLogoSettings, SaShell],
+  imports: [RouterLink, FormsModule, DatePipe, NgTemplateOutlet, ClinicLogoSettings, SaShell, HabIcon],
   templateUrl: './documents-dashboard.html',
-  styleUrl: './documents-dashboard.scss',
+  styleUrls: ['./documents-dashboard.scss', './documents-dashboard-sa.scss'],
   host: { '[class.sa]': 'canManage()' },
 })
 export class DocumentsDashboard {
@@ -348,6 +442,7 @@ export class DocumentsDashboard {
 
   selectClinic(clinicId: string) {
     this.selectedClinicId.set(clinicId);
+    this.selectedPillar.set(null);
     this.api.clinicId = clinicId;
     const clinic = this.clinics().find((c) => c.id === clinicId);
     this.selectedClinicName.set(clinic?.name || '');
@@ -974,6 +1069,157 @@ export class DocumentsDashboard {
 
   readonly filtering = computed(() => this.query().trim() !== '' || this.statusFilter() !== 'ALL');
 
+  /** Vista en tarjetas del superadmin: estándar abierto (null = todas las tarjetas). */
+  readonly selectedPillar = signal<DocumentPillar | null>(null);
+  readonly activePillar = computed(
+    () => this.overview()?.pillars.find((p) => p.pillar === this.selectedPillar()) ?? null,
+  );
+  readonly standardPillars = computed(() =>
+    (this.overview()?.pillars ?? [])
+      .filter((p) => PILLAR_INFO[p.pillar].isStandard)
+      .sort((a, b) => PILLAR_ORDER.indexOf(a.pillar) - PILLAR_ORDER.indexOf(b.pillar)),
+  );
+  readonly otherPillars = computed(() =>
+    (this.overview()?.pillars ?? []).filter((p) => !PILLAR_INFO[p.pillar].isStandard),
+  );
+
+  readonly docsLayout = signal<'tarjetas' | 'lista'>('tarjetas');
+
+  pillarIcon(pillar: DocumentPillar) {
+    return PILLAR_INFO[pillar].icon;
+  }
+
+  /** Número del estándar (1 a 7); los grupos de apoyo no llevan número. */
+  pillarNumber(pillar: DocumentPillar) {
+    const i = this.standardPillars().findIndex((p) => p.pillar === pillar);
+    return i >= 0 ? i + 1 : null;
+  }
+
+  pillarLabel(pillar: DocumentPillar) {
+    return this.overview()?.pillars.find((p) => p.pillar === pillar)?.label ?? '';
+  }
+
+  // ---------- Carga múltiple (superadmin, consultorio elegido) ----------
+  readonly bulkOpen = signal(false);
+  readonly bulkPillar = signal<DocumentPillar | null>(null);
+  readonly bulkRows = signal<BulkRow[]>([]);
+  readonly bulkRunning = signal(false);
+  bulkPeriod = '';
+  bulkExpiry = '';
+  private bulkSeq = 0;
+
+  /** Requisitos agrupados por estándar para elegir el destino de cada archivo. */
+  readonly bulkOptions = computed(() => {
+    const only = this.bulkPillar();
+    return [...this.standardPillars(), ...this.otherPillars()]
+      .filter((p) => !only || p.pillar === only)
+      .map((p) => {
+        const n = this.pillarNumber(p.pillar);
+        return {
+          pillar: p.pillar,
+          label: (n ? n + '. ' : '') + p.label,
+          reqs: p.categories.flatMap((c) =>
+            c.requirements.map((r) => ({ id: r.id, code: r.code, title: r.title, enabled: r.isEnabled !== false })),
+          ),
+        };
+      })
+      .filter((g) => g.reqs.length > 0);
+  });
+
+  private readonly bulkPending = computed(() => this.bulkRows().filter((r) => r.state !== 'ok' && !r.tooBig));
+  readonly bulkPendingCount = computed(() => this.bulkPending().length);
+  readonly bulkDoneCount = computed(() => this.bulkRows().filter((r) => r.state === 'ok').length);
+  readonly bulkErrorCount = computed(() => this.bulkRows().filter((r) => r.state === 'error').length);
+  readonly bulkReady = computed(
+    () => !this.bulkRunning() && this.bulkPendingCount() > 0 && this.bulkPending().every((r) => !!r.requirementId),
+  );
+
+  openBulk(pillar: DocumentPillar | null) {
+    if (!this.api.clinicId) {
+      this.error.set('Seleccione un consultorio antes de cargar archivos.');
+      return;
+    }
+    this.bulkPillar.set(pillar);
+    this.bulkRows.set([]);
+    this.bulkPeriod = '';
+    this.bulkExpiry = '';
+    this.bulkOpen.set(true);
+  }
+
+  closeBulk() {
+    if (this.bulkRunning()) return;
+    this.bulkOpen.set(false);
+    this.bulkRows.set([]);
+  }
+
+  onBulkFiles(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    if (!files.length) return;
+    const options = this.bulkOptions().flatMap((g) => g.reqs);
+    const rows: BulkRow[] = files.map((file) => {
+      const tooBig = file.size > MAX_UPLOAD_BYTES;
+      return {
+        key: ++this.bulkSeq,
+        file,
+        requirementId: tooBig ? '' : suggestRequirement(file.name, options),
+        state: tooBig ? 'error' : 'pendiente',
+        message: tooBig ? 'Supera 25 MB; no se cargará' : '',
+        tooBig,
+      };
+    });
+    this.bulkRows.update((prev) => [...prev, ...rows]);
+  }
+
+  setBulkRequirement(index: number, requirementId: string) {
+    this.bulkRows.update((rows) =>
+      rows.map((r, i) => (i === index && !r.tooBig ? { ...r, requirementId, state: 'pendiente', message: '' } : r)),
+    );
+  }
+
+  removeBulkRow(index: number) {
+    this.bulkRows.update((rows) => rows.filter((_, i) => i !== index));
+  }
+
+  /** Carga los archivos uno a uno; si uno falla, se marca y se sigue con los demás. */
+  async runBulk() {
+    if (!this.bulkReady()) return;
+    this.bulkRunning.set(true);
+    this.error.set('');
+    this.notice.set('');
+    const patch = (key: number, change: Partial<BulkRow>) =>
+      this.bulkRows.update((rows) => rows.map((r) => (r.key === key ? { ...r, ...change } : r)));
+    let ok = 0;
+    let failed = 0;
+    for (const row of this.bulkPending()) {
+      patch(row.key, { state: 'subiendo', message: '' });
+      try {
+        await firstValueFrom(
+          this.api.upload(row.requirementId, row.file, {
+            expiresAt: this.bulkExpiry || undefined,
+            periodLabel: this.bulkPeriod || undefined,
+          }),
+        );
+        patch(row.key, { state: 'ok' });
+        ok++;
+      } catch (err) {
+        patch(row.key, { state: 'error', message: describeError(err) });
+        failed++;
+      }
+    }
+    this.bulkRunning.set(false);
+    this.load();
+    this.notice.set(
+      `Carga múltiple: ${ok} archivo${ok === 1 ? '' : 's'} cargado${ok === 1 ? '' : 's'}` +
+        (failed ? `, ${failed} con error (revise la lista).` : '. Las versiones anteriores quedan en el historial.'),
+    );
+  }
+
+  pillarDescription(pillar: DocumentPillar) {
+    return PILLAR_INFO[pillar].description;
+  }
+
   isOpen(pillar: string) {
     return this.filtering() || this.openPillars().has(pillar);
   }
@@ -987,6 +1233,7 @@ export class DocumentsDashboard {
 
   focusSgsstPillar() {
     this.openPillars.set(new Set(['SG_SST']));
+    this.selectedPillar.set('SG_SST');
     this.query.set('');
     this.statusFilter.set('ALL');
     this.mainTab.set('expediente');

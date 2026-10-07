@@ -1,27 +1,15 @@
-<!-- Misma vista para consultorio y superadmin; el superadmin usa la paleta del panel (:host.sa) -->
 <div class="hab" [class.nav-open]="navOpen()">
   <!-- Menú lateral -->
   <aside class="side" aria-label="Menú de habilitación">
     <div class="side-brand">
-      @if (isSuper) {
-        <span class="side-mark sa-mark" aria-hidden="true">H</span>
-      } @else {
-        <span class="side-mark"><hab-icon name="folder" [size]="20" /></span>
-      }
+      <span class="side-mark"><hab-icon name="folder" [size]="20" /></span>
       <div>
         <strong>HABILISALUD</strong>
         <small>{{ isSuper ? 'Superadministrador' : 'Consultorio' }}</small>
       </div>
     </div>
     <nav>
-      @if (isSuper) {
-        <p class="side-group">Administración</p>
-        @for (l of adminLinks; track l.link) {
-          <a class="side-link" [routerLink]="l.link"><hab-icon [name]="l.icon" /> <span>{{ l.label }}</span></a>
-        }
-      } @else {
-        <a class="side-link" [routerLink]="homeLink"><hab-icon name="home" /> <span>Inicio</span></a>
-      }
+      <a class="side-link" [routerLink]="homeLink"><hab-icon name="home" /> <span>Inicio</span></a>
       <p class="side-group">Habilitación</p>
       <button type="button" class="side-link" [class.active]="view() === 'dashboard'" (click)="go('dashboard')">
         <hab-icon name="dashboard" /> <span>Dashboard documental</span>
@@ -65,7 +53,18 @@
         <hab-icon name="menu" />
       </button>
       <div class="top-title">
-        <h1>{{ viewTitle() }}</h1>
+        <h1>
+          @switch (view()) {
+            @case ('estandares') { 7 estándares de habilitación }
+            @case ('estandar') { {{ currentPillar()?.label || 'Estándar' }} }
+            @case ('documentos') { Documentos de habilitación }
+            @case ('maestra') { Lista maestra }
+            @case ('vencimientos') { Vencimientos }
+            @case ('archivo') { Archivo histórico }
+            @case ('tipos') { Tipos documentales }
+            @default { Dashboard documental de habilitación }
+          }
+        </h1>
         <p>Gestión centralizada de documentos y evidencias por estándares de habilitación.</p>
       </div>
       <div class="top-tools">
@@ -92,11 +91,7 @@
         <div class="today"><hab-icon name="calendar" [size]="16" /> <span>{{ todayLabel() }}</span></div>
       </div>
     </header>
-    <ng-container *ngTemplateOutlet="habBody" />
-  </main>
-</div>
 
-<ng-template #habBody>
     @if (error()) {
       <div class="banner banner-error" role="alert">
         <span>{{ error() }}</span>
@@ -562,7 +557,7 @@
         </section>
       }
     }
-</ng-template>
+  </main>
 
   <!-- ===================== Tabla de documentos reutilizable ===================== -->
   <ng-template #filtersBar>
@@ -926,3 +921,4 @@
       </form>
     </div>
   }
+</div>
