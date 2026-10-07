@@ -548,6 +548,9 @@ export class PatientsService {
     if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(mime)) {
       throw new BadRequestException('Solo se permiten imágenes JPG, PNG o WebP.');
     }
+    if (file.size > 300 * 1024) {
+      throw new BadRequestException('La foto supera 300 KB. Intente con una foto de menor resolución.');
+    }
 
     const patient = await this.prisma.patient.findFirst({
       where: { id: patientId, clinicId },

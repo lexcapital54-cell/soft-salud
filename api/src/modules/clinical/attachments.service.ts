@@ -12,6 +12,11 @@ import { PrismaService } from '../../prisma/prisma.module';
 import { ClinicalStorageService } from './clinical-storage.service';
 import { UploadAttachmentMetaDto } from './dto/attachment.dto';
 
+/** Fotos y documentos de la historia: máximo 300 KB (el navegador comprime las imágenes). */
+export const ATTACHMENT_MAX_BYTES = 300 * 1024;
+/** Los modelos 3D no se pueden comprimir sin dañar la malla; conservan su límite propio. */
+const MODEL_3D_EXT = /\.(stl|obj|ply)$/i;
+
 @Injectable()
 export class AttachmentsService {
   constructor(
@@ -48,6 +53,11 @@ export class AttachmentsService {
     const clinicId = this.requireClinicId(user);
     if (!file?.buffer?.length) {
       throw new BadRequestException('Archivo requerido');
+    }
+    if (file.size > ATTACHMENT_MAX_BYTES && !MODEL_3D_EXT.test(file.originalname || '')) {
+      throw new BadRequestException(
+        `${file.originalname || 'El archivo'} pesa ${Math.round(file.size / 1024)} KB; el máximo es 300 KB. Redúzcalo o expórtelo con menor calidad.`,
+      );
     }
 
     const encounter = await this.prisma.encounter.findFirst({

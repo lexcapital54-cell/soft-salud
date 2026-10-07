@@ -23,8 +23,8 @@ import {
 import { CiConsentDetails, ConsentTemplate, PatientConsentRecord } from './consent.models';
 import { OrthoControl, OrthoHistoryEntry } from './dentistry/ortho-controls';
 import { API } from '../api.config';
-import { from, switchMap } from 'rxjs';
-import { compressFormImage, compressImageForUpload } from './image-compress';
+import { from, switchMap, throwError } from 'rxjs';
+import { compressFormImage, compressImageForUpload, oversizeMessage } from './image-compress';
 
 @Injectable({ providedIn: 'root' })
 export class ClinicalApiService {
@@ -67,6 +67,8 @@ export class ClinicalApiService {
   uploadPatientPhoto(patientId: string, file: File) {
     return from(compressImageForUpload(file)).pipe(
       switchMap((photo) => {
+        const tooBig = oversizeMessage(photo);
+        if (tooBig) return throwError(() => ({ error: { message: tooBig } }));
         const form = new FormData();
         form.append('file', photo, photo.name || 'paciente.jpg');
         return this.http.post<Patient>(`${API}/patients/${patientId}/photo`, form);
