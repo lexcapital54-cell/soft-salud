@@ -6,9 +6,9 @@ const PdfPrinter = require('pdfmake') as new (fonts: Record<string, unknown>) =>
   createPdfKitDocument: (doc: unknown) => NodeJS.EventEmitter & { end: () => void };
 };
 
-const NAVY = '#062540';
+const NAVY = '#1F3D47';
 const GOLD = '#C99A2E';
-const BOX = '#2E4A70';
+const BOX = '#24434D';
 const INK = '#1B2433';
 const MUTED = '#5B6472';
 
