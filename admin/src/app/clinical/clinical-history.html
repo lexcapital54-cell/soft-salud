@@ -3450,8 +3450,9 @@
                             <input
                               [(ngModel)]="row.code"
                               (ngModelChange)="onDentalCupsInput(i, $event)"
-                              (focus)="openDentalCups(i)"
+                              (focus)="openDentalCups(i, $any($event.target))"
                               (click)="openDentalCups(i)"
+                              title="Para cambiar el CUPS escriba otro código o nombre"
                               (blur)="closeDentalSuggestions()"
                               [readonly]="clinicalFormDisabled()"
                               placeholder="Buscar CUPS ▾"
@@ -4153,7 +4154,8 @@
                         [(ngModel)]="p.cupsCode"
                         placeholder="Ej. 890208"
                         [disabled]="cupsFieldsDisabled()"
-                        (focus)="openCupsForRow($index)"
+                        (focus)="openCupsForRow($index, $any($event.target))"
+                        title="Para cambiar el CUPS escriba otro código o nombre"
                         (ngModelChange)="onProcedureCodeChange($index)"
                       />
                       @if (cupsRowOpen() === $index && cupsRowResults().length) {

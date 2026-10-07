@@ -2195,10 +2195,12 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     this.searchDentalCups(index, value, 200);
   }
 
-  openDentalCups(index: number) {
+  /** Al entrar al campo se muestra el catálogo completo para poder cambiar el código elegido. */
+  openDentalCups(index: number, input?: HTMLInputElement) {
     if (this.clinicalFormDisabled()) return;
     this.dentalCieResults.set([]);
-    this.searchDentalCups(index, this.dental().treatmentPlan[index]?.code || '', 0);
+    input?.select();
+    this.searchDentalCups(index, '', 0);
   }
 
   private searchDentalCups(index: number, value: string, delay: number) {
@@ -2218,8 +2220,10 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   pickDentalCups(index: number, item: CatalogCode) {
     const row = this.dental().treatmentPlan[index];
     if (!row) return;
+    const replacing = !!row.code.trim() && row.code.trim() !== item.code;
     row.code = item.code;
-    if (!row.description.trim()) row.description = item.description;
+    // Al corregir un CUPS equivocado, la descripción del anterior ya no aplica.
+    if (replacing || !row.description.trim()) row.description = item.description;
     if (!row.phase) row.phase = suggestPhase(`${row.description} ${item.description}`);
     this.dentalCupsResults.set([]);
     this.dentalCupsRow.set(null);
@@ -4623,9 +4627,15 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  openCupsForRow(index: number) {
+  /** Al entrar al campo se muestra el catálogo completo para poder cambiar el código elegido. */
+  openCupsForRow(index: number, input?: HTMLInputElement) {
     this.cupsRowOpen.set(index);
-    this.onProcedureCodeChange(index);
+    input?.select();
+    if (this.cupsRowTimer) clearTimeout(this.cupsRowTimer);
+    this.api.searchCups('').subscribe({
+      next: (rows) => this.cupsRowResults.set(rows),
+      error: () => this.cupsRowResults.set([]),
+    });
   }
 
   onProcedureCodeChange(index: number) {

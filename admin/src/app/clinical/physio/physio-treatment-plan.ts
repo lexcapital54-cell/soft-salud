@@ -29,7 +29,8 @@ import { PHYSIO_PLAN_STATUSES, ensurePlanRows, newPlanRow, planNum, planTotals, 
             <label class="cups">
               CUPS
               <input [value]="r.cupsCode" [readOnly]="disabled()" placeholder="Buscar código o nombre" autocomplete="off"
-                (input)="onCups(i, $any($event.target).value)" (focus)="onCups(i, r.cupsCode)" (blur)="closeSoon()" />
+                (input)="onCups(i, $any($event.target).value)" (focus)="openCups(i, $any($event.target))" (blur)="closeSoon()"
+                title="Para cambiar el CUPS escriba otro código o nombre" />
               @if (cupsRow() === i && cupsResults().length) {
                 <ul class="ftp-sugg">
                   @for (c of cupsResults(); track c.code) {
@@ -136,6 +137,8 @@ export class PhysioTreatmentPlan {
 
   readonly statuses = PHYSIO_PLAN_STATUSES;
   readonly cupsRow = signal<number | null>(null);
+  /** Código que tenía la fila al entrar al campo (para saber si se está corrigiendo). */
+  codeOnFocus = '';
   readonly cupsResults = signal<CatalogCode[]>([]);
   private readonly tick = signal(0);
   private timer?: ReturnType<typeof setTimeout>;
@@ -235,6 +238,18 @@ export class PhysioTreatmentPlan {
       r.cupsCode = value;
       this.touch();
     }
+    this.searchCups(i, value);
+  }
+
+  /** Al entrar al campo se muestra el catálogo completo para poder elegir otro código. */
+  openCups(i: number, input: HTMLInputElement) {
+    if (this.disabled()) return;
+    this.codeOnFocus = (this.rows()[i]?.cupsCode || '').trim();
+    input.select();
+    this.searchCups(i, '');
+  }
+
+  private searchCups(i: number, value: string) {
     clearTimeout(this.timer);
     this.timer = setTimeout(() => {
       const q = value.trim().toLowerCase();
@@ -253,8 +268,10 @@ export class PhysioTreatmentPlan {
   }
 
   pickCups(r: PhysioPlanRow, c: CatalogCode) {
+    const replacing = !!this.codeOnFocus && this.codeOnFocus !== c.code;
     r.cupsCode = c.code;
-    if (!r.description.trim()) r.description = c.description;
+    // Al corregir un CUPS equivocado, la descripción del anterior ya no aplica.
+    if (replacing || !r.description.trim()) r.description = c.description;
     this.cupsResults.set([]);
     this.cupsRow.set(null);
     this.touch();
