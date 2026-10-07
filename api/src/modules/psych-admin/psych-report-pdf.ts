@@ -6,11 +6,13 @@ const PdfPrinter = require('pdfmake') as new (fonts: Record<string, unknown>) =>
   createPdfKitDocument: (doc: unknown) => NodeJS.EventEmitter & { end: () => void };
 };
 
-const NAVY = '#062540';
-const GOLD = '#C99A2E';
-const BOX = '#2E4A70';
-const INK = '#1B2433';
-const MUTED = '#5B6472';
+const NAVY = '#1F3D47';
+const GOLD = '#8A6A55';
+// Moca clara de la historia clínica: textos y filetes sobre el fondo petróleo.
+const GOLD_ON_NAVY = '#CBB49A';
+const BOX = '#5F6B6E';
+const INK = '#1E2A2E';
+const MUTED = '#5F6B6E';
 
 const PAGE_W = 595.28;
 const MARGIN_X = 40;
@@ -80,11 +82,11 @@ function sectionHeader(no: number, title: string): Content {
   const shape = [
     { type: 'rect', x: 14, y: 1, w: pillEnd - 14, h: H - 2, color: NAVY },
     ...tipFill,
-    { type: 'line', x1: 14, y1: 1, x2: pillEnd, y2: 1, lineWidth: 1, lineColor: GOLD },
-    { type: 'line', x1: 14, y1: H - 1, x2: pillEnd, y2: H - 1, lineWidth: 1, lineColor: GOLD },
-    { type: 'line', x1: pillEnd, y1: 1, x2: pillEnd + tip, y2: mid, lineWidth: 1, lineColor: GOLD, lineCap: 'round' },
-    { type: 'line', x1: pillEnd + tip, y1: mid, x2: pillEnd, y2: H - 1, lineWidth: 1, lineColor: GOLD, lineCap: 'round' },
-    { type: 'ellipse', x: mid, y: mid, r1: mid - 0.5, r2: mid - 0.5, color: NAVY, lineColor: GOLD, lineWidth: 1.2 },
+    { type: 'line', x1: 14, y1: 1, x2: pillEnd, y2: 1, lineWidth: 1, lineColor: GOLD_ON_NAVY },
+    { type: 'line', x1: 14, y1: H - 1, x2: pillEnd, y2: H - 1, lineWidth: 1, lineColor: GOLD_ON_NAVY },
+    { type: 'line', x1: pillEnd, y1: 1, x2: pillEnd + tip, y2: mid, lineWidth: 1, lineColor: GOLD_ON_NAVY, lineCap: 'round' },
+    { type: 'line', x1: pillEnd + tip, y1: mid, x2: pillEnd, y2: H - 1, lineWidth: 1, lineColor: GOLD_ON_NAVY, lineCap: 'round' },
+    { type: 'ellipse', x: mid, y: mid, r1: mid - 0.5, r2: mid - 0.5, color: NAVY, lineColor: GOLD_ON_NAVY, lineWidth: 1.2 },
     { type: 'line', x1: pillEnd + tip + 4, y1: mid, x2: CONTENT_W - 4, y2: mid, lineWidth: 0.8, lineColor: GOLD },
     { type: 'ellipse', x: CONTENT_W - 3, y: mid, r1: 2.2, r2: 2.2, color: GOLD },
   ] as ContentCanvas['canvas'];
@@ -94,8 +96,8 @@ function sectionHeader(no: number, title: string): Content {
     margin: [0, 10, 0, 7],
     stack: [
       { canvas: shape },
-      { text: String(no).padStart(2, '0'), font: 'Times', bold: true, fontSize: 12.5, color: GOLD, relativePosition: { x: no < 10 ? 6.2 : 6, y: -(H - 6) } },
-      { text: label, font: 'Times', bold: true, fontSize: 11, color: GOLD, characterSpacing: 0.9, relativePosition: { x: H + 8, y: -(H - 7) } },
+      { text: String(no).padStart(2, '0'), font: 'Times', bold: true, fontSize: 12.5, color: GOLD_ON_NAVY, relativePosition: { x: no < 10 ? 6.2 : 6, y: -(H - 6) } },
+      { text: label, font: 'Times', bold: true, fontSize: 11, color: GOLD_ON_NAVY, characterSpacing: 0.9, relativePosition: { x: H + 8, y: -(H - 7) } },
     ],
   } as Content;
 }
@@ -132,16 +134,16 @@ export function psychReportDefinition(data: PsychReportData, logo: string | null
   const pro = data.professional;
   const issued = datePieces(data.issuedAt);
 
-  const goldRule = (w: number): Content => ({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: w, y2: 0, lineWidth: 0.8, lineColor: GOLD }] });
+  const goldRule = (w: number): Content => ({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: w, y2: 0, lineWidth: 0.8, lineColor: GOLD_ON_NAVY }] });
 
   const brand: Content = {
     stack: [
-      { text: clinicName.toUpperCase(), font: 'Times', fontSize: clinicName.length > 36 ? 12.5 : 15, color: GOLD, alignment: 'center', characterSpacing: 1.4 },
+      { text: clinicName.toUpperCase(), font: 'Times', fontSize: clinicName.length > 36 ? 12.5 : 15, color: GOLD_ON_NAVY, alignment: 'center', characterSpacing: 1.4 },
       {
         margin: [0, 6, 0, 0],
         columns: [
           { width: '*', stack: [{ ...(goldRule(70) as object), alignment: 'right', margin: [0, 5, 0, 0] } as Content] },
-          { width: 'auto', text: 'PSICOLOGÍA', font: 'Times', fontSize: 10, color: GOLD, characterSpacing: 3.2, margin: [10, 0, 10, 0] },
+          { width: 'auto', text: 'PSICOLOGÍA', font: 'Times', fontSize: 10, color: GOLD_ON_NAVY, characterSpacing: 3.2, margin: [10, 0, 10, 0] },
           { width: '*', stack: [{ ...(goldRule(70) as object), margin: [0, 5, 0, 0] } as Content] },
         ],
       },
@@ -161,8 +163,8 @@ export function psychReportDefinition(data: PsychReportData, logo: string | null
       fillColor: () => NAVY,
       hLineWidth: () => 1.4,
       vLineWidth: (i: number) => (i === 0 || i === (logo ? 2 : 1) ? 1.4 : 0.8),
-      hLineColor: () => GOLD,
-      vLineColor: () => GOLD,
+      hLineColor: () => GOLD_ON_NAVY,
+      vLineColor: () => GOLD_ON_NAVY,
       paddingLeft: () => 10,
       paddingRight: () => 10,
       paddingTop: () => 8,
@@ -253,7 +255,7 @@ export function psychReportDefinition(data: PsychReportData, logo: string | null
                   color: '#FFFFFF',
                   characterSpacing: 0.6,
                 },
-                { text: p.fullName || clinicName, font: 'Times', fontSize: 9, color: GOLD, alignment: 'right', characterSpacing: 0.4, maxHeight: 12 },
+                { text: p.fullName || clinicName, font: 'Times', fontSize: 9, color: GOLD_ON_NAVY, alignment: 'right', characterSpacing: 0.4, maxHeight: 12 },
               ],
             ],
           },
@@ -261,8 +263,8 @@ export function psychReportDefinition(data: PsychReportData, logo: string | null
             fillColor: () => NAVY,
             hLineWidth: () => 1,
             vLineWidth: (i: number) => (i === 1 ? 0 : 1),
-            hLineColor: () => GOLD,
-            vLineColor: () => GOLD,
+            hLineColor: () => GOLD_ON_NAVY,
+            vLineColor: () => GOLD_ON_NAVY,
             paddingLeft: () => 9,
             paddingRight: () => 9,
             paddingTop: () => 5,
