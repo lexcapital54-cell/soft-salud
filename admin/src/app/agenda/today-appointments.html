@@ -692,7 +692,22 @@
                   Cobrar
                 </a>
               }
-              @if (!isBlock(appt) && (appt.encounterId || appt.clinicalPending) && appt.patient && !isReceptionist()) {
+              @if (!isBlock(appt) && appt.patient && canWriteClinical()) {
+                <a
+                  class="linkish"
+                  routerLink="/consultorio/historia-clinica"
+                  [queryParams]="{ patientId: appt.patient.id }"
+                >
+                  Consulta de primera vez
+                </a>
+                <a
+                  class="linkish"
+                  routerLink="/consultorio/historia-clinica"
+                  [queryParams]="{ patientId: appt.patient.id, fechaSesion: appt.startsAt }"
+                >
+                  Nota de evolución
+                </a>
+              } @else if (!isBlock(appt) && (appt.encounterId || appt.clinicalPending) && appt.patient && !isReceptionist()) {
                 <a
                   class="linkish"
                   routerLink="/consultorio/historia-clinica"
@@ -856,7 +871,22 @@
             </a>
           }
 
-          @if (!isBlock(appt) && (appt.encounterId || appt.clinicalPending) && appt.patient && !isReceptionist()) {
+          @if (!isBlock(appt) && appt.patient && canWriteClinical()) {
+            <a
+              class="linkish"
+              routerLink="/consultorio/historia-clinica"
+              [queryParams]="{ patientId: appt.patient.id }"
+            >
+              Consulta de primera vez
+            </a>
+            <a
+              class="linkish"
+              routerLink="/consultorio/historia-clinica"
+              [queryParams]="{ patientId: appt.patient.id, fechaSesion: appt.startsAt }"
+            >
+              Nota de evolución
+            </a>
+          } @else if (!isBlock(appt) && (appt.encounterId || appt.clinicalPending) && appt.patient && !isReceptionist()) {
             <a
               class="linkish"
               routerLink="/consultorio/historia-clinica"

@@ -5294,7 +5294,13 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   private applySessionDate(at: string) {
     this.workspace.sessionDateRequest.set(null);
     const when = new Date(at);
-    if (Number.isNaN(when.getTime()) || !this.isLocked()) return;
+    if (Number.isNaN(when.getTime())) return;
+    if (!this.isLocked()) {
+      this.message.set(
+        'Este paciente aún no tiene la consulta de primera vez sellada. Complétela y séllela para poder registrar notas de evolución.',
+      );
+      return;
+    }
     this.evolutionAttentionDate = this.toLocalInputValue(when);
     this.message.set(
       `Nota de evolución de la cita del ${when.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}: la fecha de atención ya quedó con la fecha de la cita.`,

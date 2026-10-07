@@ -117,6 +117,8 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
   readonly user = this.auth.user;
   readonly canManage = this.auth.canManageAgenda;
   readonly isReceptionist = this.auth.isReceptionist;
+  /** Solo profesional o administrador del consultorio abren la HC desde la agenda (no el asistente). */
+  readonly canWriteClinical = this.auth.canWriteClinical;
   /** Solo doctoras/profesionales bloquean; secretaría recibe aviso. */
   readonly canBlockAgenda = computed(() => {
     const role = this.user()?.role;
