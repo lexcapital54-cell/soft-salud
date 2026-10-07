@@ -1,334 +1,525 @@
-<div class="shell">
-  <aside>
-    <div>
+<div class="shell" [class.nav-open]="navOpen()">
+  <aside class="side" id="sa-nav" aria-label="Navegación del superadmin">
+    <div class="side-top">
       <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()">
-        HABILISALUD
+        <span class="brand-mark" aria-hidden="true">H</span>
+        <span class="brand-text">HABILISALUD</span>
       </a>
-      <p class="role">Superadmin</p>
+      <span class="role-badge"><hab-icon name="shield" [size]="14" />Superadmin</span>
+      <button type="button" class="side-close" (click)="navOpen.set(false)" aria-label="Cerrar menú">
+        <hab-icon name="x" />
+      </button>
     </div>
     <nav>
-      <a class="active">Administración</a>
-      <a routerLink="/admin/contrasenas">Contraseñas</a>
-      <a routerLink="/admin/ingresos">Recibos de caja</a>
-      <a routerLink="/admin/habilitacion">Habilitación</a>
-      <a routerLink="/admin/documentos">Documentos</a>
-      <a routerLink="/admin/demos">Consultorios demo</a>
+      <p class="nav-title">Administración</p>
+      <ul>
+        @for (item of nav; track item.link; let first = $first) {
+          <li>
+            @if (first) {
+              <a class="active" aria-current="page" [routerLink]="item.link" (click)="navOpen.set(false)">
+                <hab-icon [name]="item.icon" /><span>{{ item.label }}</span>
+              </a>
+            } @else {
+              <a [routerLink]="item.link" (click)="navOpen.set(false)"><hab-icon [name]="item.icon" /><span>{{ item.label }}</span></a>
+            }
+          </li>
+        }
+      </ul>
     </nav>
-    <div class="session">
-      <div class="session-user">
-        <p class="session-name">{{ user()?.fullName }}</p>
-        <p class="session-email">{{ user()?.email }}</p>
+    <div class="side-user">
+      <span class="avatar" aria-hidden="true">{{ initials(user()?.fullName || '') }}</span>
+      <div class="side-user-text">
+        <p class="su-name">{{ user()?.fullName }}</p>
+        <p class="su-mail">{{ user()?.email }}</p>
       </div>
-      <button type="button" class="ghost" (click)="logout()">Cerrar sesión</button>
+      <button type="button" class="icon-btn on-dark" (click)="logout()" aria-label="Cerrar sesión" title="Cerrar sesión">
+        <hab-icon name="logout" />
+      </button>
     </div>
   </aside>
+  @if (navOpen()) {
+    <div class="scrim nav-scrim" (click)="navOpen.set(false)" aria-hidden="true"></div>
+  }
 
   <main>
-    <header class="topbar">
-      <div>
+    <div class="mobile-bar">
+      <button type="button" class="icon-btn" (click)="navOpen.set(true)" aria-controls="sa-nav" [attr.aria-expanded]="navOpen()">
+        <hab-icon name="menu" /><span class="sr-only">Menú</span>
+      </button>
+      <span class="mobile-brand">HABILISALUD</span>
+      <span class="role-badge light">Superadmin</span>
+    </div>
+
+    <header class="hero">
+      <div class="hero-text">
         <p class="eyebrow">Panel de administración</p>
-        <h1>Consultorios y usuarios</h1>
-        <p class="welcome">Hola, {{ user()?.fullName }}</p>
+        <h1>Hola, {{ (user()?.fullName || '').split(' ')[0] }}</h1>
+        <p class="hero-sub">Consultorios, administradores y estado de la plataforma · <span class="date">{{ today }}</span></p>
       </div>
-      <div class="topbar-user">
-        <div>
-          <p class="session-name">{{ user()?.fullName }}</p>
-          <p class="session-email">{{ user()?.email }}</p>
-        </div>
-        <button type="button" class="ghost compact" (click)="logout()">Cerrar sesión</button>
+      <div class="hero-actions">
+        <button type="button" class="btn primary" (click)="openPanel('clinic', $event)"><hab-icon name="plus" />Nuevo consultorio</button>
+        <button type="button" class="btn light" (click)="openPanel('admin', $event)"><hab-icon name="userPlus" />Nuevo admin</button>
       </div>
     </header>
 
-    @if (message()) {
-      <p class="ok">{{ message() }}</p>
-    }
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
+    <section class="kpis" aria-label="Resumen">
+      @if (loading()) {
+        @for (i of [1, 2, 3, 4, 5]; track i) {
+          <div class="kpi skeleton" aria-hidden="true"></div>
+        }
+      } @else {
+        <article class="kpi">
+          <span class="kpi-ico tone-a"><hab-icon name="building" /></span>
+          <p class="kpi-label">Consultorios activos</p>
+          <p class="kpi-value">{{ kpis().active }}<small> de {{ kpis().total }}</small></p>
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico tone-b"><hab-icon name="users" /></span>
+          <p class="kpi-label">Usuarios admin</p>
+          <p class="kpi-value">{{ kpis().admins }}</p>
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico tone-c"><hab-icon name="activity" /></span>
+          <p class="kpi-label">RIPS activo</p>
+          <p class="kpi-value">{{ kpis().rips }}<small> consultorios</small></p>
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico tone-d"><hab-icon name="alert" /></span>
+          <p class="kpi-label">Por configurar</p>
+          <p class="kpi-value">{{ kpis().pending }}</p>
+          <p class="kpi-hint">Sin dashboard o sin admin</p>
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico tone-e"><hab-icon name="power" /></span>
+          <p class="kpi-label">Inactivos</p>
+          <p class="kpi-value">{{ kpis().inactive }}</p>
+          <p class="kpi-hint">Datos conservados</p>
+        </article>
+      }
+    </section>
+
+    @if (!loading() && bySpecialty().length) {
+      <section class="card spec-card" aria-labelledby="spec-title">
+        <div class="card-head">
+          <h2 id="spec-title">Consultorios activos por especialidad</h2>
+        </div>
+        <div class="spec-bar" aria-hidden="true">
+          @for (s of bySpecialty(); track s.key) {
+            <span [class]="'seg-fill sp-' + s.key" [style.flex-grow]="s.count"></span>
+          }
+        </div>
+        <ul class="spec-legend">
+          @for (s of bySpecialty(); track s.key) {
+            <li>
+              <span [class]="'dot sp-' + s.key" aria-hidden="true"></span>{{ s.label }}
+              <b>{{ s.count }}</b><span class="muted">· {{ s.pct }} %</span>
+            </li>
+          }
+        </ul>
+      </section>
     }
 
-    <section class="grid">
-      <article class="card">
-        <h2>Crear consultorio</h2>
-        <p>Define la plantilla de historia clínica: Psicología, Fisioterapia, Odontología, Ortodoncia, Medicina o Medicina estética.</p>
-        <form [formGroup]="clinicForm" (ngSubmit)="createClinic()">
-          <label>
-            Nombre del consultorio
-            <input formControlName="name" />
+    <section class="card" aria-labelledby="clinics-title">
+      <div class="card-head">
+        <div>
+          <h2 id="clinics-title">Consultorios</h2>
+          @if (!loading() && !loadError()) {
+            <p class="card-sub">{{ filteredClinics().length }} de {{ clinics().length }} consultorios</p>
+          }
+        </div>
+        <div class="toolbar">
+          <label class="search">
+            <hab-icon name="search" [size]="16" />
+            <span class="sr-only">Buscar consultorio</span>
+            <input id="clinic-search" type="search" placeholder="Buscar consultorio o NIT" [ngModel]="query()" (ngModelChange)="query.set($event)" autocomplete="off" />
           </label>
-          <label>
-            Especialidad
-            <select formControlName="specialty">
+          <div class="seg" role="group" aria-label="Estado">
+            <button type="button" [class.on]="statusFilter() === 'ALL'" [attr.aria-pressed]="statusFilter() === 'ALL'" (click)="setStatus('ALL')">Todos</button>
+            <button type="button" [class.on]="statusFilter() === 'ACTIVE'" [attr.aria-pressed]="statusFilter() === 'ACTIVE'" (click)="setStatus('ACTIVE')">Activos</button>
+            <button type="button" [class.on]="statusFilter() === 'INACTIVE'" [attr.aria-pressed]="statusFilter() === 'INACTIVE'" (click)="setStatus('INACTIVE')">Inactivos</button>
+          </div>
+          <label class="select">
+            <span class="sr-only">Especialidad</span>
+            <select id="clinic-specialty" [ngModel]="specialtyFilter()" (ngModelChange)="specialtyFilter.set($event)">
+              <option value="">Todas las especialidades</option>
               @for (item of specialties; track item[0]) {
                 <option [value]="item[0]">{{ item[1] }}</option>
               }
             </select>
           </label>
-          <label>
-            Dirección
-            <input formControlName="address" />
-          </label>
-          <label>
-            Teléfono
-            <input formControlName="phone" />
-          </label>
-          <h3>Admin inicial (opcional)</h3>
-          <label>
-            Nombre del admin
-            <input formControlName="adminFullName" />
-          </label>
-          <label>
-            Correo del admin
-            <input type="email" formControlName="adminEmail" />
-          </label>
-          <label>
-            Contraseña del admin
-            <div class="password-field">
-              <input
-                [type]="showClinicAdminPassword() ? 'text' : 'password'"
-                formControlName="adminPassword"
-              />
-              <button type="button" class="toggle" (click)="toggleClinicAdminPassword()">
-                {{ showClinicAdminPassword() ? 'Ocultar' : 'Ver' }}
-              </button>
-            </div>
-          </label>
-          <button type="submit">Crear consultorio</button>
-        </form>
-        @if (createdClinic(); as created) {
-          <div class="created-logo">
-            <app-clinic-logo-settings [targetClinicId]="created.id" [targetClinicName]="created.name" />
-            <button type="button" class="action-btn" (click)="createdClinic.set(null)">Listo</button>
-          </div>
-        }
-      </article>
+        </div>
+      </div>
 
-      <article class="card">
-        <h2>Crear usuario admin</h2>
-        <p>Asigna un administrador a un consultorio existente.</p>
-        <form [formGroup]="adminForm" (ngSubmit)="createAdmin()">
-          <label>
-            Consultorio
-            <select formControlName="clinicId">
-              <option value="">Seleccione</option>
-              @for (clinic of clinics(); track clinic.id) {
-                <option [value]="clinic.id">
-                  {{ clinic.name }} · {{ specialtyLabel(clinic.specialty) }}
-                </option>
-              }
-            </select>
-          </label>
-          <label>
-            Nombre completo
-            <input formControlName="fullName" />
-          </label>
-          <label>
-            Correo
-            <input type="email" formControlName="email" />
-          </label>
-          <label>
-            Contraseña
-            <div class="password-field">
-              <input
-                [type]="showAdminPassword() ? 'text' : 'password'"
-                formControlName="password"
-                placeholder="Mínimo 8 caracteres"
-              />
-              <button type="button" class="toggle" (click)="toggleAdminPassword()">
-                {{ showAdminPassword() ? 'Ocultar' : 'Ver' }}
-              </button>
-            </div>
-          </label>
-          @if (adminForm.controls.clinicId.touched && adminForm.controls.clinicId.invalid) {
-            <p class="field-error">Seleccione un consultorio</p>
+      @if (loading()) {
+        <div class="rows-skeleton" aria-busy="true" aria-label="Cargando consultorios">
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div class="skeleton row-sk"></div>
           }
-          @if (adminForm.controls.password.touched && adminForm.controls.password.invalid) {
-            <p class="field-error">La contraseña debe tener mínimo 8 caracteres</p>
-          }
-          <button type="submit">Crear usuario admin</button>
-        </form>
-      </article>
-    </section>
-
-    <section class="card list">
-      <h2>Consultorios</h2>
-      @if (!clinics().length) {
-        <p class="empty">Aún no hay consultorios.</p>
+        </div>
+      } @else if (loadError()) {
+        <div class="load-error" role="alert">
+          <hab-icon name="alert" [size]="22" />
+          <p>{{ loadError() }}</p>
+          <button type="button" class="btn ghost" (click)="retry()"><hab-icon name="refresh" />Reintentar</button>
+        </div>
+      } @else if (!clinics().length) {
+        <div class="empty-state">
+          <hab-icon name="building" [size]="28" />
+          <p><b>Aún no hay consultorios.</b> Cree el primero con «Nuevo consultorio».</p>
+        </div>
+      } @else if (!filteredClinics().length) {
+        <div class="empty-state">
+          <hab-icon name="search" [size]="28" />
+          <p><b>Ningún consultorio coincide con la búsqueda.</b></p>
+          <button type="button" class="btn ghost" (click)="clearFilters()">Limpiar filtros</button>
+        </div>
       } @else {
-        <table>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Especialidad</th>
-              <th>Admins</th>
-              <th>Dashboard</th>
-              <th>Estado</th>
-              <th>RIPS</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (clinic of clinics(); track clinic.id) {
+        <div class="table-wrap">
+          <table class="clinics">
+            <thead>
               <tr>
-                <td>{{ clinic.name }}</td>
-                <td>{{ specialtyLabel(clinic.specialty) }}</td>
-                <td>{{ clinic.admins?.length || 0 }}</td>
-                <td>{{ dashboardLabel(clinic.dashboardType) }}</td>
-                <td>{{ clinic.isActive ? 'Activo' : 'Inactivo' }}</td>
-                <td>{{ clinic.ripsEnabled ? 'Activo' : 'Inactivo' }}</td>
-                <td class="actions">
-                  <div class="menu-wrap">
-                    <a
-                      class="action-btn"
-                      [routerLink]="['/admin/documentos']"
-                      [queryParams]="{ clinicId: clinic.id }"
-                    >
-                      Documentos
-                    </a>
-                    <button type="button" class="action-btn" (click)="startEditProvider(clinic)">
-                      Datos del prestador
-                    </button>
-                    <button
-                      type="button"
-                      class="action-btn"
-                      [class.active]="logoClinicId() === clinic.id"
-                      (click)="toggleLogo(clinic.id)"
-                    >
-                      Logo
-                    </button>
-                    <button
-                      type="button"
-                      class="action-btn"
-                      (click)="toggleDashboardMenu(clinic.id)"
-                    >
-                      {{ clinic.dashboardType ? 'Cambiar dashboard' : 'Crear dashboard consultorio' }}
-                    </button>
-                    @if (openDashboardMenuId() === clinic.id) {
-                      <div class="menu">
-                        <button
-                          type="button"
-                          (click)="
-                            clinic.dashboardType
-                              ? changeDashboard(clinic.id, 'CLINICAL_HISTORY')
-                              : createDashboard(clinic.id, 'CLINICAL_HISTORY')
-                          "
-                        >
-                          1. Historia clínica
-                        </button>
-                        <button
-                          type="button"
-                          (click)="
-                            clinic.dashboardType
-                              ? changeDashboard(clinic.id, 'CLINICAL_HISTORY_WITH_DOCS')
-                              : createDashboard(clinic.id, 'CLINICAL_HISTORY_WITH_DOCS')
-                          "
-                        >
-                          2. Historia clínica con gestión documental
-                        </button>
-                      </div>
-                    }
-                    <button
-                      type="button"
-                      class="action-btn"
-                      [disabled]="busyClinicId() === clinic.id"
-                      (click)="toggleClinicRips(clinic)"
-                    >
-                      {{ clinic.ripsEnabled ? 'Desactivar RIPS' : 'Activar RIPS' }}
-                    </button>
-                    @if (clinic.hasClinicalData || !clinic.isActive) {
-                      <button
-                        type="button"
-                        class="action-btn"
-                        [disabled]="busyClinicId() === clinic.id"
-                        [title]="
-                          clinic.hasClinicalData
-                            ? 'Tiene historias clínicas: se conserva y solo se puede desactivar'
-                            : ''
-                        "
-                        (click)="toggleClinicActive(clinic)"
-                      >
-                        {{ clinic.isActive ? 'Desactivar' : 'Reactivar' }}
-                      </button>
-                    }
-                    @if (!clinic.hasClinicalData) {
-                      <button
-                        type="button"
-                        class="action-btn action-danger"
-                        [disabled]="busyClinicId() === clinic.id"
-                        title="Sin historias clínicas: se puede eliminar"
-                        (click)="deleteClinic(clinic)"
-                      >
-                        Eliminar
-                      </button>
-                    }
-                  </div>
-                </td>
+                <th scope="col">Consultorio</th>
+                <th scope="col">Dashboard</th>
+                <th scope="col">Admins</th>
+                <th scope="col">Estado</th>
+                <th scope="col">RIPS</th>
+                <th scope="col"><span class="sr-only">Acciones</span></th>
               </tr>
-              @if (logoClinicId() === clinic.id) {
-                <tr class="logo-edit">
-                  <td colspan="6">
-                    <app-clinic-logo-settings [targetClinicId]="clinic.id" [targetClinicName]="clinic.name" />
-                    <div class="provider-edit-actions">
-                      <button type="button" class="action-btn" (click)="logoClinicId.set(null)">Cerrar</button>
+            </thead>
+            <tbody>
+              @for (clinic of filteredClinics(); track clinic.id) {
+                <tr class="clinic-row" [class.inactive]="!clinic.isActive">
+                  <td>
+                    <div class="c-id">
+                      <span [class]="'c-avatar sp-' + clinic.specialty" aria-hidden="true">{{ initials(clinic.name) }}</span>
+                      <div>
+                        <p class="c-name">{{ clinic.name }}</p>
+                        <p class="c-meta">{{ specialtyLabel(clinic.specialty) }}@if (clinic.nit) { · NIT {{ clinic.nit }} }</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td data-label="Dashboard">
+                    @if (clinic.dashboardType) {
+                      <span class="c-dash">{{ dashboardLabel(clinic.dashboardType) }}</span>
+                    } @else {
+                      <span class="pill warn">Sin dashboard</span>
+                    }
+                  </td>
+                  <td data-label="Admins">
+                    @if (clinic.admins?.length) {
+                      <span class="count">{{ clinic.admins?.length }}</span>
+                    } @else {
+                      <span class="pill warn">Sin admin</span>
+                    }
+                  </td>
+                  <td data-label="Estado">
+                    <span class="pill" [class.ok]="clinic.isActive" [class.off]="!clinic.isActive"><span class="pdot" aria-hidden="true"></span>{{ clinic.isActive ? 'Activo' : 'Inactivo' }}</span>
+                  </td>
+                  <td data-label="RIPS">
+                    <span class="pill" [class.info]="clinic.ripsEnabled" [class.off]="!clinic.ripsEnabled">{{ clinic.ripsEnabled ? 'Activo' : 'Inactivo' }}</span>
+                  </td>
+                  <td class="row-actions">
+                    <a class="btn sm ghost" [routerLink]="['/admin/documentos']" [queryParams]="{ clinicId: clinic.id }"><hab-icon name="folder" [size]="16" />Documentos</a>
+                    <div class="menu-wrap">
+                      <button
+                        type="button"
+                        class="icon-btn more-btn"
+                        [attr.data-menu-btn]="clinic.id"
+                        aria-haspopup="menu"
+                        [attr.aria-expanded]="openMenuId() === clinic.id"
+                        [attr.aria-label]="'Más acciones para ' + clinic.name"
+                        [disabled]="busyClinicId() === clinic.id"
+                        (click)="toggleMenu(clinic.id, $event)"
+                      >
+                        <hab-icon name="more" />
+                      </button>
+                      @if (openMenuId() === clinic.id) {
+                        <div class="row-menu" role="menu" [attr.aria-label]="'Acciones de ' + clinic.name" (click)="$event.stopPropagation()" (keydown)="menuKey($event)">
+                          <button type="button" role="menuitem" (click)="closeMenu(false); startEditProvider(clinic)"><hab-icon name="pencil" [size]="16" />Datos del prestador</button>
+                          <button type="button" role="menuitem" (click)="closeMenu(false); toggleLogo(clinic.id)"><hab-icon name="image" [size]="16" />Logo</button>
+                          <button type="button" role="menuitem" [attr.aria-expanded]="openDashboardMenuId() === clinic.id" (click)="toggleDashboardMenu(clinic.id)">
+                            <hab-icon name="dashboard" [size]="16" />{{ clinic.dashboardType ? 'Cambiar dashboard' : 'Crear dashboard' }}
+                            <hab-icon class="chev" name="chevronDown" [size]="14" />
+                          </button>
+                          @if (openDashboardMenuId() === clinic.id) {
+                            <div class="sub" role="group" aria-label="Tipo de dashboard">
+                              <button
+                                type="button"
+                                role="menuitem"
+                                [class.current]="clinic.dashboardType === 'CLINICAL_HISTORY'"
+                                (click)="closeMenu(false); clinic.dashboardType ? changeDashboard(clinic.id, 'CLINICAL_HISTORY') : createDashboard(clinic.id, 'CLINICAL_HISTORY')"
+                              >
+                                Historia clínica
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                [class.current]="clinic.dashboardType === 'CLINICAL_HISTORY_WITH_DOCS'"
+                                (click)="closeMenu(false); clinic.dashboardType ? changeDashboard(clinic.id, 'CLINICAL_HISTORY_WITH_DOCS') : createDashboard(clinic.id, 'CLINICAL_HISTORY_WITH_DOCS')"
+                              >
+                                Historia clínica con gestión documental
+                              </button>
+                            </div>
+                          }
+                          <button type="button" role="menuitem" (click)="closeMenu(false); toggleClinicRips(clinic)"><hab-icon name="activity" [size]="16" />{{ clinic.ripsEnabled ? 'Desactivar RIPS' : 'Activar RIPS' }}</button>
+                          @if (clinic.hasClinicalData || !clinic.isActive) {
+                            <button
+                              type="button"
+                              role="menuitem"
+                              [title]="clinic.hasClinicalData ? 'Tiene historias clínicas: se conserva y solo se puede desactivar' : ''"
+                              (click)="closeMenu(false); toggleClinicActive(clinic)"
+                            >
+                              <hab-icon name="power" [size]="16" />{{ clinic.isActive ? 'Desactivar' : 'Reactivar' }}
+                            </button>
+                          }
+                          @if (!clinic.hasClinicalData) {
+                            <span class="sep" role="separator"></span>
+                            <button type="button" role="menuitem" class="danger" title="Sin historias clínicas: se puede eliminar" (click)="closeMenu(false); deleteClinic(clinic)">
+                              <hab-icon name="trash" [size]="16" />Eliminar
+                            </button>
+                          }
+                        </div>
+                      }
                     </div>
                   </td>
                 </tr>
-              }
-              @if (providerEdit(); as p) {
-                @if (p.id === clinic.id) {
-                  <tr class="provider-edit">
+                @if (logoClinicId() === clinic.id) {
+                  <tr class="inline-edit">
                     <td colspan="6">
-                      <p class="provider-edit-title">
-                        Datos del prestador para epicrisis y documentos · {{ clinic.name }}
-                      </p>
-                      <div class="provider-edit-grid">
-                        <label>Dirección <input [(ngModel)]="p.address" maxlength="255" /></label>
-                        <label>Teléfono <input [(ngModel)]="p.phone" maxlength="40" /></label>
-                        <label>NIT <input [(ngModel)]="p.nit" maxlength="20" placeholder="900123456-7" /></label>
-                        <label
-                          >Código de habilitación (REPS)
-                          <input [(ngModel)]="p.habilitationCode" maxlength="20" placeholder="050010123401" />
-                        </label>
-                      </div>
-                      <div class="provider-edit-actions">
-                        <button type="button" [disabled]="busyClinicId() === clinic.id" (click)="saveProvider()">Guardar</button>
-                        <button type="button" class="action-btn" (click)="providerEdit.set(null)">Cancelar</button>
+                      <div class="inline-card">
+                        <p class="inline-title"><hab-icon name="image" [size]="16" />Logo · {{ clinic.name }}</p>
+                        <app-clinic-logo-settings [targetClinicId]="clinic.id" [targetClinicName]="clinic.name" />
+                        <div class="inline-actions">
+                          <button type="button" class="btn sm ghost" (click)="logoClinicId.set(null)">Cerrar</button>
+                        </div>
                       </div>
                     </td>
                   </tr>
                 }
+                @if (providerEdit(); as p) {
+                  @if (p.id === clinic.id) {
+                    <tr class="inline-edit provider-edit">
+                      <td colspan="6">
+                        <div class="inline-card">
+                          <p class="inline-title"><hab-icon name="pencil" [size]="16" />Datos del prestador para epicrisis y documentos · {{ clinic.name }}</p>
+                          <div class="provider-grid">
+                            <label>Dirección <input [(ngModel)]="p.address" maxlength="255" /></label>
+                            <label>Teléfono <input [(ngModel)]="p.phone" maxlength="40" /></label>
+                            <label>NIT <input [(ngModel)]="p.nit" maxlength="20" placeholder="900123456-7" /></label>
+                            <label>Código de habilitación (REPS) <input [(ngModel)]="p.habilitationCode" maxlength="20" placeholder="050010123401" /></label>
+                          </div>
+                          <div class="inline-actions">
+                            <button type="button" class="btn sm primary" [disabled]="busyClinicId() === clinic.id" (click)="saveProvider()"><hab-icon name="save" [size]="16" />Guardar</button>
+                            <button type="button" class="btn sm ghost" (click)="providerEdit.set(null)">Cancelar</button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                }
               }
-            }
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       }
     </section>
 
-    <section class="card list">
-      <h2>Usuarios admin</h2>
-      @if (!admins().length) {
-        <p class="empty">Aún no hay usuarios admin de consultorio.</p>
+    <section class="card" aria-labelledby="admins-title">
+      <div class="card-head">
+        <div>
+          <h2 id="admins-title">Usuarios admin</h2>
+          <p class="card-sub">Administradores de cada consultorio</p>
+        </div>
+        <div class="toolbar">
+          <label class="search">
+            <hab-icon name="search" [size]="16" />
+            <span class="sr-only">Buscar usuario admin</span>
+            <input id="admin-search" type="search" placeholder="Buscar nombre o correo" [ngModel]="adminQuery()" (ngModelChange)="adminQuery.set($event)" autocomplete="off" />
+          </label>
+        </div>
+      </div>
+      @if (loading()) {
+        <div class="rows-skeleton" aria-hidden="true">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="skeleton row-sk"></div>
+          }
+        </div>
+      } @else if (!admins().length) {
+        <div class="empty-state">
+          <hab-icon name="users" [size]="28" />
+          <p><b>Aún no hay usuarios admin de consultorio.</b></p>
+        </div>
+      } @else if (!filteredAdmins().length) {
+        <div class="empty-state">
+          <hab-icon name="search" [size]="28" />
+          <p><b>Ningún usuario coincide con la búsqueda.</b></p>
+        </div>
       } @else {
-        <table>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Correo</th>
-              <th>Consultorio</th>
-              <th>Especialidad</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (admin of admins(); track admin.id) {
+        <div class="table-wrap">
+          <table class="admins">
+            <thead>
               <tr>
-                <td>{{ admin.fullName }}</td>
-                <td>{{ admin.email }}</td>
-                <td>{{ admin.clinicName || '—' }}</td>
-                <td>{{ admin.specialty ? specialtyLabel(admin.specialty) : '—' }}</td>
+                <th scope="col">Nombre</th>
+                <th scope="col">Correo</th>
+                <th scope="col">Consultorio</th>
+                <th scope="col">Especialidad</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (admin of filteredAdmins(); track admin.id) {
+                <tr>
+                  <td>
+                    <div class="c-id">
+                      <span class="u-avatar" aria-hidden="true">{{ initials(admin.fullName) }}</span>
+                      <p class="c-name">{{ admin.fullName }}</p>
+                    </div>
+                  </td>
+                  <td data-label="Correo" class="mail">{{ admin.email }}</td>
+                  <td data-label="Consultorio">{{ admin.clinicName || '—' }}</td>
+                  <td data-label="Especialidad">
+                    @if (admin.specialty) {
+                      <span class="spec-tag"><span [class]="'dot sp-' + admin.specialty" aria-hidden="true"></span>{{ specialtyLabel(admin.specialty) }}</span>
+                    } @else {
+                      —
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </section>
   </main>
 </div>
+
+<div class="toasts" aria-live="polite">
+  @if (message()) {
+    <div class="toast ok" role="status">
+      <hab-icon name="check" />
+      <p>{{ message() }}</p>
+      <button type="button" class="icon-btn" (click)="message.set('')" aria-label="Cerrar aviso"><hab-icon name="x" [size]="16" /></button>
+    </div>
+  }
+  @if (error()) {
+    <div class="toast err" role="alert">
+      <hab-icon name="alert" />
+      <p>{{ error() }}</p>
+      <button type="button" class="icon-btn" (click)="error.set('')" aria-label="Cerrar aviso"><hab-icon name="x" [size]="16" /></button>
+    </div>
+  }
+</div>
+
+@if (panel(); as kind) {
+  <div class="scrim" (click)="closePanel()" aria-hidden="true"></div>
+  <aside class="drawer" role="dialog" aria-modal="true" [attr.aria-labelledby]="'drawer-title'" (keydown)="trapFocus($event)">
+    <header class="drawer-head">
+      <span class="drawer-ico"><hab-icon [name]="kind === 'clinic' ? 'building' : 'userPlus'" /></span>
+      <div>
+        <h2 id="drawer-title">{{ kind === 'clinic' ? 'Nuevo consultorio' : 'Nuevo usuario admin' }}</h2>
+        <p>
+          {{
+            kind === 'clinic'
+              ? 'Define la plantilla de historia clínica según la especialidad.'
+              : 'Asigna un administrador a un consultorio existente.'
+          }}
+        </p>
+      </div>
+      <button type="button" class="icon-btn" (click)="closePanel()" aria-label="Cerrar"><hab-icon name="x" /></button>
+    </header>
+
+    <div class="drawer-body">
+      @if (kind === 'clinic') {
+        @if (createdClinic(); as created) {
+          <div class="created">
+            <p class="created-ok"><hab-icon name="check" />Consultorio «{{ created.name }}» creado. Puede cargar su logo ahora.</p>
+            <app-clinic-logo-settings [targetClinicId]="created.id" [targetClinicName]="created.name" />
+            <button type="button" class="btn primary" (click)="closePanel()">Listo</button>
+          </div>
+        } @else {
+          <form [formGroup]="clinicForm" (ngSubmit)="createClinic()">
+            <fieldset>
+              <legend>Consultorio</legend>
+              <label for="nc-name">Nombre del consultorio <span class="req" aria-hidden="true">*</span></label>
+              <input id="nc-name" formControlName="name" autocomplete="off" required />
+              <label for="nc-specialty">Especialidad <span class="req" aria-hidden="true">*</span></label>
+              <select id="nc-specialty" formControlName="specialty">
+                @for (item of specialties; track item[0]) {
+                  <option [value]="item[0]">{{ item[1] }}</option>
+                }
+              </select>
+              <div class="two">
+                <div>
+                  <label for="nc-address">Dirección</label>
+                  <input id="nc-address" formControlName="address" autocomplete="off" />
+                </div>
+                <div>
+                  <label for="nc-phone">Teléfono</label>
+                  <input id="nc-phone" formControlName="phone" autocomplete="off" />
+                </div>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Admin inicial <span class="opt">(opcional)</span></legend>
+              <label for="nc-admin-name">Nombre del admin</label>
+              <input id="nc-admin-name" formControlName="adminFullName" autocomplete="off" />
+              <label for="nc-admin-email">Correo del admin</label>
+              <input id="nc-admin-email" type="email" formControlName="adminEmail" autocomplete="off" />
+              <label for="nc-admin-password">Contraseña del admin</label>
+              <div class="password-field">
+                <input id="nc-admin-password" [type]="showClinicAdminPassword() ? 'text' : 'password'" formControlName="adminPassword" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+                <button type="button" class="toggle" (click)="toggleClinicAdminPassword()" [attr.aria-pressed]="showClinicAdminPassword()">
+                  {{ showClinicAdminPassword() ? 'Ocultar' : 'Ver' }}
+                </button>
+              </div>
+            </fieldset>
+            @if (error()) {
+              <p class="form-error" role="alert">{{ error() }}</p>
+            }
+            <div class="drawer-actions">
+              <button type="button" class="btn ghost" (click)="closePanel()">Cancelar</button>
+              <button type="submit" class="btn primary"><hab-icon name="plus" />Crear consultorio</button>
+            </div>
+          </form>
+        }
+      } @else {
+        <form [formGroup]="adminForm" (ngSubmit)="createAdmin()">
+          <fieldset>
+            <legend>Usuario</legend>
+            <label for="na-clinic">Consultorio <span class="req" aria-hidden="true">*</span></label>
+            <select id="na-clinic" formControlName="clinicId">
+              <option value="">Seleccione</option>
+              @for (clinic of clinics(); track clinic.id) {
+                <option [value]="clinic.id">{{ clinic.name }} · {{ specialtyLabel(clinic.specialty) }}</option>
+              }
+            </select>
+            @if (adminForm.controls.clinicId.touched && adminForm.controls.clinicId.invalid) {
+              <p class="field-error">Seleccione un consultorio</p>
+            }
+            <label for="na-name">Nombre completo <span class="req" aria-hidden="true">*</span></label>
+            <input id="na-name" formControlName="fullName" autocomplete="off" />
+            <label for="na-email">Correo <span class="req" aria-hidden="true">*</span></label>
+            <input id="na-email" type="email" formControlName="email" autocomplete="off" />
+            <label for="na-password">Contraseña <span class="req" aria-hidden="true">*</span></label>
+            <div class="password-field">
+              <input id="na-password" [type]="showAdminPassword() ? 'text' : 'password'" formControlName="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+              <button type="button" class="toggle" (click)="toggleAdminPassword()" [attr.aria-pressed]="showAdminPassword()">
+                {{ showAdminPassword() ? 'Ocultar' : 'Ver' }}
+              </button>
+            </div>
+            @if (adminForm.controls.password.touched && adminForm.controls.password.invalid) {
+              <p class="field-error">La contraseña debe tener mínimo 8 caracteres</p>
+            }
+          </fieldset>
+          @if (error()) {
+            <p class="form-error" role="alert">{{ error() }}</p>
+          }
+          <div class="drawer-actions">
+            <button type="button" class="btn ghost" (click)="closePanel()">Cancelar</button>
+            <button type="submit" class="btn primary"><hab-icon name="userPlus" />Crear usuario admin</button>
+          </div>
+        </form>
+      }
+    </div>
+  </aside>
+}

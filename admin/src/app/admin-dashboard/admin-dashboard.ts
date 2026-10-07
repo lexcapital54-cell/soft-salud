@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AdminApiService } from '../admin-api.service';
@@ -7,14 +7,35 @@ import { AuthService } from '../auth.service';
 import { Clinic, ClinicAdmin, ClinicSpecialty, DashboardType, DASHBOARD_TYPE_LABELS, SPECIALTY_LABELS } from '../models';
 import { WEBSITE_URL } from '../api.config';
 import { ClinicLogoSettings } from '../clinic-settings/clinic-logo-settings';
+import { HabIcon } from '../habilitation/hab-icon';
+
+type StatusFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
+type Panel = 'clinic' | 'admin' | null;
+
+const NAV = [
+  { label: 'Panel', icon: 'dashboard', link: '/admin' },
+  { label: 'Contraseñas', icon: 'key', link: '/admin/contrasenas' },
+  { label: 'Recibos de caja', icon: 'receipt', link: '/admin/ingresos' },
+  { label: 'Habilitación', icon: 'shield', link: '/admin/habilitacion' },
+  { label: 'Documentos', icon: 'folder', link: '/admin/documentos' },
+  { label: 'Consultorios demo', icon: 'monitor', link: '/admin/demos' },
+] as const;
+
+/** Iniciales para el distintivo de cada consultorio o usuario. */
+function initials(name: string) {
+  const parts = (name || '').trim().split(/\s+/).filter((w) => w.length > 2 || /^[A-ZÁÉÍÓÚÑ]/.test(w));
+  return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '—';
+}
+
+const norm = (v: string) => (v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, ClinicLogoSettings],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, ClinicLogoSettings, HabIcon],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
-export class AdminDashboard {
+export class AdminDashboard implements OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(AdminApiService);
   private readonly auth = inject(AuthService);
@@ -30,6 +51,75 @@ export class AdminDashboard {
   readonly showAdminPassword = signal(false);
   readonly openDashboardMenuId = signal<string | null>(null);
   readonly busyClinicId = signal<string | null>(null);
+  private readonly host: ElementRef<HTMLElement> = inject(ElementRef);
+
+  readonly nav = NAV;
+  readonly initials = initials;
+  readonly today = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    .format(new Date())
+    .replace(/^./, (c) => c.toUpperCase());
+
+  readonly loading = signal(true);
+  readonly loadError = signal('');
+  readonly navOpen = signal(false);
+  readonly panel = signal<Panel>(null);
+  readonly openMenuId = signal<string | null>(null);
+
+  readonly query = signal('');
+  readonly statusFilter = signal<StatusFilter>('ALL');
+  readonly specialtyFilter = signal<ClinicSpecialty | ''>('');
+  readonly adminQuery = signal('');
+
+  readonly kpis = computed(() => {
+    const list = this.clinics();
+    const active = list.filter((c) => c.isActive);
+    return {
+      total: list.length,
+      active: active.length,
+      inactive: list.length - active.length,
+      admins: this.admins().length,
+      rips: active.filter((c) => c.ripsEnabled).length,
+      pending: active.filter((c) => !c.dashboardType || !(c.admins?.length)).length,
+    };
+  });
+
+  /** Consultorios activos por especialidad, de mayor a menor. */
+  readonly bySpecialty = computed(() => {
+    const active = this.clinics().filter((c) => c.isActive);
+    const total = active.length || 1;
+    return this.specialties
+      .map(([key, label]) => {
+        const count = active.filter((c) => c.specialty === key).length;
+        return { key, label, count, pct: Math.round((count / total) * 100) };
+      })
+      .filter((s) => s.count)
+      .sort((a, b) => b.count - a.count);
+  });
+
+  readonly filteredClinics = computed(() => {
+    const q = norm(this.query().trim());
+    const st = this.statusFilter();
+    const sp = this.specialtyFilter();
+    return this.clinics().filter(
+      (c) =>
+        (st === 'ALL' || (st === 'ACTIVE') === c.isActive) &&
+        (!sp || c.specialty === sp) &&
+        (!q || norm(`${c.name} ${this.specialtyLabel(c.specialty)} ${c.nit || ''}`).includes(q)),
+    );
+  });
+
+  readonly filteredAdmins = computed(() => {
+    const q = norm(this.adminQuery().trim());
+    return q ? this.admins().filter((a) => norm(`${a.fullName} ${a.email} ${a.clinicName || ''}`).includes(q)) : this.admins();
+  });
+
+  private toastTimer?: ReturnType<typeof setTimeout>;
+  private readonly autoHide = effect(() => {
+    if (!this.message()) return;
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => this.message.set(''), 6000);
+  });
+  private returnFocus: HTMLElement | null = null;
 
   readonly clinicForm = this.fb.nonNullable.group({
     name: ['', Validators.required],
@@ -286,14 +376,124 @@ export class AdminDashboard {
   }
 
   refresh() {
+    this.loadError.set('');
     this.api.listClinics().subscribe({
-      next: (clinics) => this.clinics.set(clinics),
-      error: () => this.error.set('No se pudieron cargar los consultorios.'),
+      next: (clinics) => {
+        this.clinics.set(clinics);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.loadError.set('No se pudieron cargar los consultorios. Revise la conexión e intente de nuevo.');
+      },
     });
     this.api.listClinicAdmins().subscribe({
       next: (admins) => this.admins.set(admins),
       error: () => this.error.set('No se pudieron cargar los usuarios admin.'),
     });
+  }
+
+  retry() {
+    this.loading.set(true);
+    this.refresh();
+  }
+
+  ngOnDestroy() {
+    clearTimeout(this.toastTimer);
+  }
+
+  // ---------- Paneles laterales ----------
+  openPanel(kind: Exclude<Panel, null>, ev?: Event) {
+    this.returnFocus = (ev?.currentTarget as HTMLElement) ?? (document.activeElement as HTMLElement | null);
+    this.closeMenu(false);
+    this.navOpen.set(false);
+    this.panel.set(kind);
+    setTimeout(() => this.host.nativeElement.querySelector<HTMLElement>('.drawer input, .drawer select')?.focus());
+  }
+
+  closePanel() {
+    if (!this.panel()) return;
+    this.panel.set(null);
+    this.createdClinic.set(null);
+    this.returnFocus?.focus();
+    this.returnFocus = null;
+  }
+
+  /** Mantiene el foco dentro del panel lateral abierto. */
+  trapFocus(ev: KeyboardEvent) {
+    if (ev.key !== 'Tab') return;
+    const root = ev.currentTarget as HTMLElement;
+    const items = [...root.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(
+      (el) => !el.hasAttribute('disabled') && el.offsetParent !== null,
+    );
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (ev.shiftKey && document.activeElement === first) {
+      ev.preventDefault();
+      last.focus();
+    } else if (!ev.shiftKey && document.activeElement === last) {
+      ev.preventDefault();
+      first.focus();
+    }
+  }
+
+  // ---------- Menú de acciones por consultorio ----------
+  toggleMenu(id: string, ev: Event) {
+    ev.stopPropagation();
+    if (this.openMenuId() === id) return this.closeMenu(true);
+    this.openDashboardMenuId.set(null);
+    this.openMenuId.set(id);
+    setTimeout(() => this.menuItems()[0]?.focus());
+  }
+
+  closeMenu(restore: boolean) {
+    const id = this.openMenuId();
+    if (!id) return;
+    this.openMenuId.set(null);
+    this.openDashboardMenuId.set(null);
+    if (restore) this.host.nativeElement.querySelector<HTMLElement>(`[data-menu-btn="${id}"]`)?.focus();
+  }
+
+  menuKey(ev: KeyboardEvent) {
+    const items = this.menuItems();
+    const i = items.indexOf(document.activeElement as HTMLElement);
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      const next = ev.key === 'ArrowDown' ? (i + 1) % items.length : (i - 1 + items.length) % items.length;
+      items[next]?.focus();
+    } else if (ev.key === 'Home' || ev.key === 'End') {
+      ev.preventDefault();
+      items[ev.key === 'Home' ? 0 : items.length - 1]?.focus();
+    } else if (ev.key === 'Tab') {
+      this.closeMenu(false);
+    }
+  }
+
+  private menuItems() {
+    return [...this.host.nativeElement.querySelectorAll<HTMLElement>('.row-menu [role="menuitem"]:not([disabled])')];
+  }
+
+  @HostListener('document:click')
+  onDocClick() {
+    this.closeMenu(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.openMenuId()) return this.closeMenu(true);
+    if (this.panel()) return this.closePanel();
+    if (this.navOpen()) this.navOpen.set(false);
+  }
+
+  setStatus(v: StatusFilter) {
+    this.statusFilter.set(v);
+  }
+
+  clearFilters() {
+    this.query.set('');
+    this.statusFilter.set('ALL');
+    this.specialtyFilter.set('');
   }
 
   createClinic() {
@@ -391,6 +591,7 @@ export class AdminDashboard {
           password: '',
         });
         this.showAdminPassword.set(false);
+        this.closePanel();
         this.refresh();
       },
       error: (err: { status?: number; error?: { message?: string | string[] } }) => {
