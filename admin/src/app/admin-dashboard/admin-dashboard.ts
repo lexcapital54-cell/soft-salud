@@ -150,6 +150,28 @@ export class AdminDashboard implements OnDestroy {
     return type ? DASHBOARD_TYPE_LABELS[type] : 'Sin dashboard';
   }
 
+  hasDocs(clinic: Clinic) {
+    return clinic.dashboardType === 'CLINICAL_HISTORY_WITH_DOCS';
+  }
+
+  /** Activa o desactiva la gestión documental; al desactivar no se borra ningún documento. */
+  toggleDocs(clinic: Clinic) {
+    const next = !this.hasDocs(clinic);
+    const question = next
+      ? `¿Activar la gestión documental en «${clinic.name}»? Se preparan sus requisitos de habilitación y el plan sugerido de cobro pasa a «con gestión documental».`
+      : `¿Desactivar la gestión documental en «${clinic.name}»? Los documentos ya cargados se conservan; el consultorio deja de ver el módulo hasta que se active de nuevo.`;
+    if (!window.confirm(question)) return;
+    this.busyClinicId.set(clinic.id);
+    this.assignDashboard(
+      clinic.id,
+      next ? 'CLINICAL_HISTORY_WITH_DOCS' : 'CLINICAL_HISTORY',
+      clinic.dashboardType ? 'actualizado' : 'creado',
+      next
+        ? `Gestión documental activada en «${clinic.name}».`
+        : `Gestión documental desactivada en «${clinic.name}». Sus documentos se conservan.`,
+    );
+  }
+
   toggleDashboardMenu(clinicId: string) {
     this.openDashboardMenuId.update((current) => (current === clinicId ? null : clinicId));
   }
@@ -168,6 +190,7 @@ export class AdminDashboard implements OnDestroy {
     clinicId: string,
     dashboardType: DashboardType,
     actionLabel: 'creado' | 'actualizado',
+    okMessage?: string,
   ) {
     const request$ = this.clinics()
       .find((c) => c.id === clinicId)
@@ -178,8 +201,9 @@ export class AdminDashboard implements OnDestroy {
     request$.subscribe({
       next: (clinic) => {
         this.message.set(
-          `Dashboard ${actionLabel} para ${clinic.name}: ${this.dashboardLabel(clinic.dashboardType)}`,
+          okMessage || `Dashboard ${actionLabel} para ${clinic.name}: ${this.dashboardLabel(clinic.dashboardType)}`,
         );
+        this.busyClinicId.set(null);
         this.error.set('');
         this.refresh();
       },
@@ -191,16 +215,19 @@ export class AdminDashboard implements OnDestroy {
               this.message.set(
                 `Dashboard actualizado para ${clinic.name}: ${this.dashboardLabel(clinic.dashboardType)}`,
               );
+              this.busyClinicId.set(null);
               this.error.set('');
               this.refresh();
             },
             error: (retryErr) => {
+              this.busyClinicId.set(null);
               this.message.set('');
               this.error.set(this.readError(retryErr, 'No se pudo actualizar el dashboard.'));
             },
           });
           return;
         }
+        this.busyClinicId.set(null);
         this.message.set('');
         this.error.set(
           this.readError(

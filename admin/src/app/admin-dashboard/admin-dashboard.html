@@ -179,10 +179,10 @@
             <thead>
               <tr>
                 <th scope="col">Consultorio</th>
-                <th scope="col">Dashboard</th>
                 <th scope="col">Admins</th>
                 <th scope="col">Estado</th>
                 <th scope="col">RIPS</th>
+                <th scope="col">Documentación</th>
                 <th scope="col"><span class="sr-only">Acciones</span></th>
               </tr>
             </thead>
@@ -195,15 +195,11 @@
                       <div>
                         <p class="c-name">{{ clinic.name }}</p>
                         <p class="c-meta">{{ specialtyLabel(clinic.specialty) }}@if (clinic.nit) { · NIT {{ clinic.nit }} }</p>
+                        @if (!clinic.dashboardType) {
+                          <span class="pill warn sm">Sin dashboard</span>
+                        }
                       </div>
                     </div>
-                  </td>
-                  <td data-label="Dashboard">
-                    @if (clinic.dashboardType) {
-                      <span class="c-dash">{{ dashboardLabel(clinic.dashboardType) }}</span>
-                    } @else {
-                      <span class="pill warn">Sin dashboard</span>
-                    }
                   </td>
                   <td data-label="Admins">
                     @if (clinic.admins?.length) {
@@ -217,6 +213,22 @@
                   </td>
                   <td data-label="RIPS">
                     <span class="pill" [class.info]="clinic.ripsEnabled" [class.off]="!clinic.ripsEnabled">{{ clinic.ripsEnabled ? 'Activo' : 'Inactivo' }}</span>
+                  </td>
+                  <td data-label="Documentación">
+                    <button
+                      type="button"
+                      class="switch"
+                      role="switch"
+                      [class.on]="hasDocs(clinic)"
+                      [attr.aria-checked]="hasDocs(clinic)"
+                      [attr.aria-label]="'Gestión documental de ' + clinic.name"
+                      [title]="hasDocs(clinic) ? 'Tiene gestión documental. Pulse para desactivarla (no se borran documentos).' : 'Sin gestión documental. Pulse para activarla.'"
+                      [disabled]="busyClinicId() === clinic.id"
+                      (click)="toggleDocs(clinic)"
+                    >
+                      <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+                      <span class="switch-text" aria-hidden="true">{{ hasDocs(clinic) ? 'Con documentación' : 'Sin documentación' }}</span>
+                    </button>
                   </td>
                   <td class="row-actions">
                     <a class="btn sm ghost" [routerLink]="['/admin/documentos']" [queryParams]="{ clinicId: clinic.id }"><hab-icon name="folder" [size]="16" />Documentos</a>
