@@ -1,3 +1,9 @@
+<!-- Incrustado (Documentos del superadmin): solo el contenido, sin menú ni cabecera propios -->
+@if (embedded()) {
+  <div class="hab-embed">
+    <ng-container *ngTemplateOutlet="habBody" />
+  </div>
+} @else {
 <div class="hab" [class.nav-open]="navOpen()">
   <!-- Menú lateral -->
   <aside class="side" aria-label="Menú de habilitación">
@@ -91,7 +97,12 @@
         <div class="today"><hab-icon name="calendar" [size]="16" /> <span>{{ todayLabel() }}</span></div>
       </div>
     </header>
+    <ng-container *ngTemplateOutlet="habBody" />
+  </main>
+</div>
+}
 
+<ng-template #habBody>
     @if (error()) {
       <div class="banner banner-error" role="alert">
         <span>{{ error() }}</span>
@@ -557,7 +568,7 @@
         </section>
       }
     }
-  </main>
+</ng-template>
 
   <!-- ===================== Tabla de documentos reutilizable ===================== -->
   <ng-template #filtersBar>
@@ -921,4 +932,3 @@
       </form>
     </div>
   }
-</div>

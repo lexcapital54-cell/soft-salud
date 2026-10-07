@@ -19,6 +19,7 @@ import { ClinicalApiService } from '../clinical/clinical-api.service';
 import { Clinic, ClinicSpecialty, DashboardType, SPECIALTY_LABELS } from '../models';
 import { ClinicLogoSettings } from '../clinic-settings/clinic-logo-settings';
 import { HabIcon } from '../habilitation/hab-icon';
+import { HabilitationDocs } from '../habilitation/habilitation-docs';
 import { SaShell } from '../super-admin/sa-shell';
 import { DocumentsApiService } from './documents-api.service';
 import {
@@ -38,55 +39,19 @@ import {
 type StatusFilter = 'ALL' | 'RED' | 'YELLOW' | 'GREEN';
 type MainTab = 'expediente' | 'historico';
 
-/** Icono, descripción y tipo de cada grupo (los 7 estándares de la Res. 3100 de 2019 + grupos de apoyo). */
-const PILLAR_INFO: Record<DocumentPillar, { icon: string; description: string; isStandard: boolean }> = {
-  TALENTO_HUMANO: {
-    icon: 'users',
-    description: 'Hojas de vida, títulos, tarjetas profesionales, RETHUS, formación, inducción y contratos del personal.',
-    isStandard: true,
-  },
-  INFRAESTRUCTURA: {
-    icon: 'building',
-    description: 'Planos, mantenimiento locativo, señalización, rutas de evacuación y certificados técnicos.',
-    isStandard: true,
-  },
-  DOTACION: {
-    icon: 'package',
-    description: 'Inventario, hojas de vida de equipos, fichas técnicas, mantenimientos y calibraciones.',
-    isStandard: true,
-  },
-  MEDICAMENTOS_INSUMOS: {
-    icon: 'pill',
-    description: 'Inventarios, almacenamiento, control de fechas, trazabilidad y soportes de proveedores.',
-    isStandard: true,
-  },
-  PROCESOS_PRIORITARIOS: {
-    icon: 'clipboard',
-    description: 'Protocolos, guías, manuales, bioseguridad, limpieza y desinfección, seguridad del paciente y residuos.',
-    isStandard: true,
-  },
-  HISTORIA_CLINICA: {
-    icon: 'file',
-    description: 'Formatos de historia clínica, consentimientos, custodia, confidencialidad y conservación documental.',
-    isStandard: true,
-  },
-  INTERDEPENDENCIA: {
-    icon: 'link',
-    description: 'Contratos, convenios y servicios de apoyo con terceros, y sus soportes de habilitación.',
-    isStandard: true,
-  },
-  DOCUMENTACION_LEGAL: {
-    icon: 'scale',
-    description: 'Documentos legales e institucionales del prestador.',
-    isStandard: false,
-  },
-  SG_SST: {
-    icon: 'shield',
-    description: 'Documentos del sistema de gestión de seguridad y salud en el trabajo.',
-    isStandard: false,
-  },
-};
-const PILLAR_ORDER = Object.keys(PILLAR_INFO) as DocumentPillar[];
+/** Orden de los grupos: los 7 estándares de la Res. 3100 de 2019 y luego los grupos de apoyo. */
+const PILLAR_ORDER: DocumentPillar[] = [
+  'TALENTO_HUMANO',
+  'INFRAESTRUCTURA',
+  'DOTACION',
+  'MEDICAMENTOS_INSUMOS',
+  'PROCESOS_PRIORITARIOS',
+  'HISTORIA_CLINICA',
+  'INTERDEPENDENCIA',
+  'DOCUMENTACION_LEGAL',
+  'SG_SST',
+];
+const SUPPORT_PILLARS = new Set<DocumentPillar>(['DOCUMENTACION_LEGAL', 'SG_SST']);
 
 interface BulkRow {
   key: number;
@@ -151,7 +116,7 @@ function describeError(error: unknown): string {
 
 @Component({
   selector: 'app-documents-dashboard',
-  imports: [RouterLink, FormsModule, DatePipe, NgTemplateOutlet, ClinicLogoSettings, SaShell, HabIcon],
+  imports: [RouterLink, FormsModule, DatePipe, NgTemplateOutlet, ClinicLogoSettings, SaShell, HabIcon, HabilitationDocs],
   templateUrl: './documents-dashboard.html',
   styleUrls: ['./documents-dashboard.scss', './documents-dashboard-sa.scss'],
   host: { '[class.sa]': 'canManage()' },
@@ -442,7 +407,6 @@ export class DocumentsDashboard {
 
   selectClinic(clinicId: string) {
     this.selectedClinicId.set(clinicId);
-    this.selectedPillar.set(null);
     this.api.clinicId = clinicId;
     const clinic = this.clinics().find((c) => c.id === clinicId);
     this.selectedClinicName.set(clinic?.name || '');
@@ -1069,25 +1033,18 @@ export class DocumentsDashboard {
 
   readonly filtering = computed(() => this.query().trim() !== '' || this.statusFilter() !== 'ALL');
 
-  /** Vista en tarjetas del superadmin: estándar abierto (null = todas las tarjetas). */
-  readonly selectedPillar = signal<DocumentPillar | null>(null);
-  readonly activePillar = computed(
-    () => this.overview()?.pillars.find((p) => p.pillar === this.selectedPillar()) ?? null,
-  );
+  /** Superadmin: «7 estándares» (vista de habilitación) o el expediente con firmas. */
+  readonly superView = signal<'estandares' | 'expediente'>('estandares');
+  /** Fuerza la recarga de la vista «7 estándares» tras cambios hechos desde aquí. */
+  readonly habRefresh = signal(0);
   readonly standardPillars = computed(() =>
     (this.overview()?.pillars ?? [])
-      .filter((p) => PILLAR_INFO[p.pillar].isStandard)
+      .filter((p) => !SUPPORT_PILLARS.has(p.pillar))
       .sort((a, b) => PILLAR_ORDER.indexOf(a.pillar) - PILLAR_ORDER.indexOf(b.pillar)),
   );
   readonly otherPillars = computed(() =>
-    (this.overview()?.pillars ?? []).filter((p) => !PILLAR_INFO[p.pillar].isStandard),
+    (this.overview()?.pillars ?? []).filter((p) => SUPPORT_PILLARS.has(p.pillar)),
   );
-
-  readonly docsLayout = signal<'tarjetas' | 'lista'>('tarjetas');
-
-  pillarIcon(pillar: DocumentPillar) {
-    return PILLAR_INFO[pillar].icon;
-  }
 
   /** Número del estándar (1 a 7); los grupos de apoyo no llevan número. */
   pillarNumber(pillar: DocumentPillar) {
@@ -1214,10 +1171,7 @@ export class DocumentsDashboard {
       `Carga múltiple: ${ok} archivo${ok === 1 ? '' : 's'} cargado${ok === 1 ? '' : 's'}` +
         (failed ? `, ${failed} con error (revise la lista).` : '. Las versiones anteriores quedan en el historial.'),
     );
-  }
-
-  pillarDescription(pillar: DocumentPillar) {
-    return PILLAR_INFO[pillar].description;
+    if (ok) this.habRefresh.update((n) => n + 1);
   }
 
   isOpen(pillar: string) {
@@ -1233,7 +1187,7 @@ export class DocumentsDashboard {
 
   focusSgsstPillar() {
     this.openPillars.set(new Set(['SG_SST']));
-    this.selectedPillar.set('SG_SST');
+    this.superView.set('expediente');
     this.query.set('');
     this.statusFilter.set('ALL');
     this.mainTab.set('expediente');

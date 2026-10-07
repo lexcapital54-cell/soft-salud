@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -94,8 +94,15 @@ const emptyDocForm = (): DocForm => ({
   imports: [FormsModule, RouterLink, HabIcon, NgTemplateOutlet],
   templateUrl: './habilitation-docs.html',
   styleUrl: './habilitation-docs.scss',
+  host: { '[class.sa]': 'embedded()' },
 })
-export class HabilitationDocs {
+export class HabilitationDocs implements OnInit {
+  /** Incrustado en Documentos del superadmin: sin menú propio y con el consultorio que llega por entrada. */
+  readonly embedded = input(false);
+  readonly embeddedClinicId = input('');
+  /** Al cambiar, recarga el registro (p. ej. tras una carga múltiple hecha fuera). */
+  readonly embeddedRefresh = input(0);
+
   private readonly api = inject(HabilitationApiService);
   private readonly docsApi = inject(DocumentsApiService);
   private readonly adminApi = inject(AdminApiService);
@@ -339,6 +346,19 @@ export class HabilitationDocs {
     const qp = params.get('q');
     if (qp) this.q.set(qp);
 
+    effect(() => {
+      const id = this.embeddedClinicId();
+      this.embeddedRefresh();
+      if (this.embedded() && id) untracked(() => this.selectClinic(id, false));
+    });
+  }
+
+  ngOnInit() {
+    if (this.embedded()) {
+      if (this.view() === 'dashboard') this.view.set('estandares');
+      return;
+    }
+    const params = this.route.snapshot.queryParamMap;
     if (this.isSuper) {
       const fromQuery = params.get('clinicId') || '';
       this.adminApi.listClinics().subscribe({
@@ -401,6 +421,7 @@ export class HabilitationDocs {
   }
 
   private syncUrl(params: Record<string, string | null>) {
+    if (this.embedded()) return;
     this.router.navigate([], { relativeTo: this.route, queryParams: params, queryParamsHandling: 'merge', replaceUrl: true });
   }
 
