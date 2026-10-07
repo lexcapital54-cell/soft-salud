@@ -26,6 +26,7 @@ const exportInclude = {
       id: true,
       fullName: true,
       professionalCard: true,
+      professionalTitle: true,
       email: true,
     },
   },

@@ -377,6 +377,8 @@ model User {
   fullName                    String   @map("full_name") @db.VarChar(160)
   role                        UserRole
   professionalCard            String?  @map("professional_card") @db.VarChar(80)
+  /// Título que se imprime bajo el nombre en la firma del PDF (ej. «Psicóloga Clínica e Infantil»).
+  professionalTitle           String?  @map("professional_title") @db.VarChar(120)
   professionalSignatureBase64 String?  @map("professional_signature_base64")
   /// Res. 2275: módulo RIPS de facturación a EPS. false = consulta particular.
   ripsEnabled                 Boolean  @default(false) @map("rips_enabled")

@@ -68,7 +68,7 @@ import {
 
 type EncounterPdfRow = Encounter & {
   patient: Patient;
-  professional: Pick<User, 'id' | 'fullName' | 'professionalCard' | 'email'>;
+  professional: Pick<User, 'id' | 'fullName' | 'professionalCard' | 'email'> & Partial<Pick<User, 'professionalTitle'>>;
   clinicalRecord: {
     id: string;
     status: string;
@@ -633,6 +633,7 @@ export class HcePdfService {
               image: signature.signatureBase64 ? String(signature.signatureBase64) : null,
               name: professionalName,
               details: [
+                encounter.professional.professionalTitle || '',
                 professionalCard ? `Tarjeta profesional: ${professionalCard}` : '',
                 specialtyName,
                 sealedAt ? `Fecha de sellado: ${sealedAt}` : '',
