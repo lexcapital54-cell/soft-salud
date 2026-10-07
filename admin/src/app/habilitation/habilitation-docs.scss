@@ -261,6 +261,18 @@ button { font: inherit; color: inherit; }
 .hint { margin: 0 0 8px; font-size: 12.5px; color: var(--muted); }
 .modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding-top: 6px; }
 
+/* Visor (por encima del panel del documento) */
+.viewer-overlay { z-index: 60; background: rgba(18, 36, 44, 0.6); }
+.viewer { position: fixed; z-index: 61; inset: 24px; display: flex; flex-direction: column; background: var(--card); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); }
+.viewer-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.viewer-name { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-weight: 600; color: var(--petrol); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.viewer-tools { display: flex; align-items: center; gap: 6px; flex: none; }
+.viewer-body { flex: 1; min-height: 0; display: flex; background: #eef0f1; overflow: auto; }
+.viewer-body iframe { flex: 1; width: 100%; border: 0; background: #fff; }
+.viewer-body img { max-width: 100%; max-height: 100%; margin: auto; object-fit: contain; }
+.viewer-html { margin: 20px auto; padding: 32px; max-width: 820px; width: 100%; background: #fff; box-shadow: var(--shadow); font-size: 14px; line-height: 1.55; }
+.viewer-msg { margin: auto; padding: 24px; text-align: center; color: var(--muted); }
+
 /* ---------- Adaptable ---------- */
 @media (max-width: 1300px) {
   .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -304,4 +316,5 @@ button { font: inherit; color: inherit; }
   .tbl-cards .td-act { justify-content: flex-end; flex-wrap: wrap; }
   .loc, .notes { max-width: none; }
   .doc-name { min-width: 0; }
+  .viewer { inset: 0; border-radius: 0; }
 }

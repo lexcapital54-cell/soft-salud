@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AdminApiService } from '../admin-api.service';
@@ -100,6 +101,7 @@ export class HabilitationDocs {
   private readonly adminApi = inject(AdminApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly sanitizer = inject(DomSanitizer);
   readonly auth = inject(AuthService);
 
   readonly stateLabels = STATE_LABELS;
@@ -141,6 +143,15 @@ export class HabilitationDocs {
   readonly drawerTab = signal<'detalle' | 'versiones' | 'historial'>('detalle');
   readonly drawerDetail = signal<RequirementDetail | null>(null);
   readonly drawerActivity = signal<ActivityItem[]>([]);
+  readonly viewer = signal<{
+    fileId: string;
+    name: string;
+    kind: 'loading' | 'pdf' | 'image' | 'html' | 'other' | 'error';
+    url: SafeResourceUrl | null;
+    rawUrl: string | null;
+    html: SafeHtml | null;
+    message?: string;
+  } | null>(null);
 
   // Formularios.
   readonly formMode = signal<'create' | 'edit' | null>(null);
@@ -456,21 +467,44 @@ export class HabilitationDocs {
     this.syncUrl({ doc: null });
   }
 
-  viewFile(fileId: string) {
-    // Se abre la pestaña antes de la petición para que el navegador no la bloquee.
-    const win = window.open('', '_blank');
+  /** Visor dentro de la página: las pestañas nuevas con blob suelen bloquearse (Safari, bloqueadores de ventanas). */
+  viewFile(fileId: string, name: string, mimeType: string) {
+    this.closeViewer();
+    const lower = name.toLowerCase();
+    const isWord = mimeType.includes('word') || lower.endsWith('.docx') || lower.endsWith('.doc');
+    this.viewer.set({ fileId, name, kind: 'loading', url: null, rawUrl: null, html: null });
+
+    if (isWord) {
+      this.docsApi.previewHtml(fileId).subscribe({
+        next: (res) => this.viewer.set({ fileId, name, kind: 'html', url: null, rawUrl: null, html: this.sanitizer.bypassSecurityTrustHtml(res.html) }),
+        error: (err) => this.viewer.set({ fileId, name, kind: 'error', url: null, rawUrl: null, html: null, message: describeError(err) }),
+      });
+      return;
+    }
+
     this.docsApi.viewBlob(fileId).subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        if (win) win.location.href = url;
-        else window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        const type = blob.type || mimeType;
+        const kind = type.startsWith('image/') ? 'image' : type.includes('pdf') ? 'pdf' : 'other';
+        const rawUrl = URL.createObjectURL(blob);
+        this.viewer.set({ fileId, name, kind, rawUrl, url: this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl), html: null });
       },
-      error: (err) => {
-        win?.close();
-        this.error.set(describeError(err));
-      },
+      error: (err) => this.viewer.set({ fileId, name, kind: 'error', url: null, rawUrl: null, html: null, message: describeError(err) }),
     });
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.viewer()) this.closeViewer();
+    else if (this.uploadFor()) this.closeUpload();
+    else if (this.formMode()) this.closeForm();
+    else this.closeDrawer();
+  }
+
+  closeViewer() {
+    const v = this.viewer();
+    if (v?.rawUrl) URL.revokeObjectURL(v.rawUrl);
+    this.viewer.set(null);
   }
 
   downloadFile(fileId: string, name: string) {
