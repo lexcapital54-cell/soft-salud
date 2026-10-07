@@ -633,9 +633,9 @@ export class HabilitationRegistryService {
     const body: Content[][] = [
       pdfHeader.map((h) => ({ text: h, bold: true, color: '#FFFFFF', fillColor: NAVY, fontSize: 7.5 })),
       ...rows.map((r) =>
-        [r[0], r[1], r[2], r[3], r[4], r[5], r[6], [r[7], r[8]].filter(Boolean).join(' · '), r[9]].map((v) => ({
+        [r[0], r[1], r[2], r[3], r[4], r[5], r[6], [r[7], r[8]].filter(Boolean).join(' · '), r[9]].map((v, i) => ({
           text: String(v || '—'),
-          fontSize: 7,
+          fontSize: i === 0 ? 6.3 : 7,
         })),
       ),
     ];
@@ -660,7 +660,7 @@ export class HabilitationRegistryService {
       }),
       content: [
         {
-          table: { headerRows: 1, widths: [54, '*', 74, 82, 30, 46, 50, 88, 56], body },
+          table: { headerRows: 1, widths: [104, '*', 70, 74, 30, 46, 50, 70, 54], body },
           layout: {
             hLineColor: () => '#E6DFD8',
             vLineColor: () => '#E6DFD8',
