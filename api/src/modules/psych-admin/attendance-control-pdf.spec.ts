@@ -1,4 +1,4 @@
-import { writeFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import type { AttendanceControlData } from './attendance-control.dto';
 import { fmtDate, fmtTime, renderAttendanceControlPdf } from './attendance-control-pdf';
 import { certificateErrors } from './attendance-control.service';
@@ -26,6 +26,15 @@ describe('PDF control de citas y asistencia', () => {
     expect(pdf.subarray(0, 4).toString()).toBe('%PDF');
     expect(pages(pdf)).toBe(1);
     if (process.env.ATTENDANCE_PDF_OUT) writeFileSync(`${process.env.ATTENDANCE_PDF_OUT}/control-1.pdf`, pdf);
+  });
+
+  it('con el logo del consultorio sigue cabiendo en una hoja', async () => {
+    const png = process.env.ATTENDANCE_LOGO
+      ? readFileSync(process.env.ATTENDANCE_LOGO)
+      : Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+    const pdf = await renderAttendanceControlPdf(base(6), `data:image/png;base64,${png.toString('base64')}`);
+    expect(pages(pdf)).toBe(1);
+    if (process.env.ATTENDANCE_PDF_OUT) writeFileSync(`${process.env.ATTENDANCE_PDF_OUT}/control-logo.pdf`, pdf);
   });
 
   it('con muchas filas agrega páginas', async () => {

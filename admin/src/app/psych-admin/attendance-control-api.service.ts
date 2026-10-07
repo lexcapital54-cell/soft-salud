@@ -47,16 +47,16 @@ export class AttendanceControlApiService {
   }
 
   logoStatus() {
-    return this.http.get<{ clinicId: string; updatedAt: string | null }>(`${this.base}/logo`);
+    return this.http.get<{ clinicId: string; updatedAt: string | null; own: boolean }>(`${this.base}/logo`);
   }
 
   uploadLogo(file: File) {
     const form = new FormData();
     form.append('file', file);
-    return this.http.post<{ clinicId: string; updatedAt: string | null }>(`${this.base}/logo`, form);
+    return this.http.post<{ clinicId: string; updatedAt: string | null; own: boolean }>(`${this.base}/logo`, form);
   }
 
   removeLogo() {
-    return this.http.delete<{ clinicId: string; updatedAt: string | null }>(`${this.base}/logo`);
+    return this.http.delete<{ clinicId: string; updatedAt: string | null; own: boolean }>(`${this.base}/logo`);
   }
 }

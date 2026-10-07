@@ -110,6 +110,8 @@ export class AttendanceControlPage implements OnInit, OnDestroy {
 
   readonly logoVersion = signal<string | null>(null);
   readonly logoClinicId = signal<string | null>(null);
+  /** true: logo cargado solo para los formatos; false: se usa el del consultorio. */
+  readonly logoOwn = signal(false);
   readonly logoUrl = computed(() =>
     this.logoVersion() ? clinicLogoUrl(this.logoClinicId(), 'formatos', this.logoVersion()) : null,
   );
@@ -126,10 +128,7 @@ export class AttendanceControlPage implements OnInit, OnDestroy {
       setTimeout(() => document.getElementById('ac-patient')?.focus());
     }
     this.api.logoStatus().subscribe({
-      next: (s) => {
-        this.logoClinicId.set(s.clinicId);
-        this.logoVersion.set(s.updatedAt);
-      },
+      next: (s) => this.applyLogo(s),
       error: () => this.logoVersion.set(null),
     });
   }
@@ -438,8 +437,7 @@ export class AttendanceControlPage implements OnInit, OnDestroy {
     this.api.uploadLogo(file).subscribe({
       next: (s) => {
         this.busy.set('');
-        this.logoClinicId.set(s.clinicId);
-        this.logoVersion.set(s.updatedAt);
+        this.applyLogo(s);
         this.message.set('Logo guardado para los formatos del consultorio.');
       },
       error: async (err) => {
@@ -450,19 +448,25 @@ export class AttendanceControlPage implements OnInit, OnDestroy {
   }
 
   removeLogo() {
-    if (!confirm('¿Quitar el logo de los formatos del consultorio?')) return;
+    if (!confirm('¿Quitar el logo propio de los formatos? Se usará el logo del consultorio si existe.')) return;
     this.busy.set('logo');
     this.api.removeLogo().subscribe({
       next: (s) => {
         this.busy.set('');
-        this.logoVersion.set(s.updatedAt);
-        this.message.set('Logo quitado.');
+        this.applyLogo(s);
+        this.message.set(s.updatedAt ? 'Logo propio quitado: se usa el logo del consultorio.' : 'Logo quitado.');
       },
       error: async (err) => {
         this.busy.set('');
         this.error.set((await describeError(err)).message);
       },
     });
+  }
+
+  private applyLogo(s: { clinicId: string; updatedAt: string | null; own: boolean }) {
+    this.logoClinicId.set(s.clinicId);
+    this.logoVersion.set(s.updatedAt);
+    this.logoOwn.set(!!s.own);
   }
 
   onLogoError() {

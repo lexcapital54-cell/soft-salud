@@ -91,17 +91,22 @@
         </div>
         @if (canEditLogo()) {
           <label class="btn ghost sm file-btn">
-            <hab-icon name="upload" [size]="15" /> {{ logoUrl() ? 'Reemplazar' : 'Cargar' }}
+            <hab-icon name="upload" [size]="15" /> {{ logoOwn() ? 'Reemplazar' : logoUrl() ? 'Usar otro' : 'Cargar' }}
             <input type="file" accept="image/png,image/jpeg" (change)="onLogoFile($event)" [disabled]="!!busy()" />
           </label>
-          @if (logoUrl()) {
+          @if (logoOwn()) {
             <button type="button" class="btn ghost sm" (click)="removeLogo()" [disabled]="!!busy()"><hab-icon name="trash" [size]="15" /> Quitar</button>
           }
         } @else {
           <span class="hint">{{ logoUrl() ? 'Logo configurado.' : 'Sin logo.' }}</span>
         }
       </div>
-      <p class="hint">PNG o JPG de hasta 2 MB. Se guarda al elegir el archivo y aplica a todos los formatos del consultorio.</p>
+      <p class="hint">
+        @if (logoUrl() && !logoOwn()) {
+          Se usa el logo del consultorio (el de la historia clínica o el del inicio).
+        }
+        PNG o JPG de hasta 2 MB. Se guarda al elegir el archivo y aplica a todos los formatos del consultorio.
+      </p>
     </div>
   </section>
 

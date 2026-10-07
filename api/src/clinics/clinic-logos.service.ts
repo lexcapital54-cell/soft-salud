@@ -69,12 +69,17 @@ export class ClinicLogosService {
     return this.status(clinicId);
   }
 
-  /** El logo de historia clínica es opcional: si falta se usa el del panel de inicio. */
+  /**
+   * El logo de historia clínica es opcional: si falta se usa el del panel de inicio.
+   * Los formatos usan su logo propio y, si no hay, el de la historia o el del inicio.
+   */
   async find(clinicId: string, kind: ClinicLogoKind) {
     const order =
       kind === ClinicLogoKind.HC
         ? [ClinicLogoKind.HC, ClinicLogoKind.HOME]
-        : [kind];
+        : kind === ClinicLogoKind.FORMS
+          ? [ClinicLogoKind.FORMS, ClinicLogoKind.HC, ClinicLogoKind.HOME]
+          : [kind];
     const rows = await this.prisma.clinicLogo.findMany({
       where: { clinicId, kind: { in: order } },
     });

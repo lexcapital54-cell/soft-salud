@@ -287,11 +287,12 @@ export class AttendanceControlService {
 
   async logoStatus(user: User) {
     const clinic = await this.clinicOf(user);
-    const row = await this.prisma.clinicLogo.findUnique({
-      where: { clinicId_kind: { clinicId: clinic.id, kind: ClinicLogoKind.FORMS } },
-      select: { updatedAt: true },
-    });
-    return { clinicId: clinic.id, updatedAt: row?.updatedAt.toISOString() ?? null };
+    const row = await this.logos.find(clinic.id, ClinicLogoKind.FORMS);
+    return {
+      clinicId: clinic.id,
+      updatedAt: row ? `${row.kind}-${row.updatedAt.getTime()}` : null,
+      own: row?.kind === ClinicLogoKind.FORMS,
+    };
   }
 
   async saveLogo(user: User, file: Express.Multer.File | undefined, ctx: AuditContext) {
