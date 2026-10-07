@@ -541,10 +541,11 @@
         </div>
 
         <section class="stats" id="stats" aria-label="Indicadores de hoy" hidden>
-          <div class="stat">
+          <a class="stat stat-link" href="/consultorio/agenda" aria-label="Citas de hoy: ver en la agenda">
             <span class="stat-ico" aria-hidden="true"><svg class="ico"><use href="#i-calendar"/></svg></span>
             <div><p class="stat-label">Citas de hoy</p><p class="stat-value" id="statToday">—</p><p class="stat-sub" id="statTodaySub">Sin información</p></div>
-          </div>
+            <svg class="ico stat-go" aria-hidden="true"><use href="#i-chevron"/></svg>
+          </a>
           <a class="stat stat-link" data-tone="ok" href="/consultorio/agenda?estado=COMPLETED" aria-label="Pacientes atendidos hoy: ver en la agenda">
             <span class="stat-ring" aria-hidden="true">
               <svg viewBox="0 0 44 44"><circle class="ring-bg" cx="22" cy="22" r="18" /><circle class="ring-val" id="statDoneRing" cx="22" cy="22" r="18" pathLength="100" stroke-dasharray="0 100" /></svg>

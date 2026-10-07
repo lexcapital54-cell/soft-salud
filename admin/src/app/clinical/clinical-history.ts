@@ -3199,6 +3199,11 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     this.retryPendingSync();
   }
 
+  @HostListener('window:online')
+  onOnline() {
+    this.retryPendingSync();
+  }
+
   private buildLocalDraftPayload(): HceLocalDraft {
     const enc = this.encounter();
     this.collectContent();

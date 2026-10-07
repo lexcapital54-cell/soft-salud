@@ -25,6 +25,8 @@ export type AutosavePayloadFactory = () => {
 export const AUTOSAVE_DEBOUNCE_MS = 2000;
 /** Una petición colgada no puede bloquear la cola de guardados. */
 export const AUTOSAVE_TIMEOUT_MS = 20000;
+/** Espera antes de reintentar solo tras un fallo de red o del servidor. */
+const AUTOSAVE_RETRY_MS = 15000;
 
 /**
  * Autoguardado con debounce para borradores HCE y ficha del paciente.
@@ -59,6 +61,7 @@ export class ClinicalAutosaveService {
   private onDirtyChange: ((dirty: boolean) => void) | null = null;
   /** Sube con cada edición; si cambió durante la petición, el guardado no queda "limpio". */
   private revision = 0;
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     merge(
@@ -104,6 +107,8 @@ export class ClinicalAutosaveService {
   }
 
   unbind() {
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+    this.retryTimer = null;
     this.factory = null;
     this.isEnabled = null;
     this.onSaved = null;
@@ -246,6 +251,7 @@ export class ClinicalAutosaveService {
       return saved;
     } catch (err) {
       this.fail(this.describeError(err, 'No se pudo autoguardar el borrador clínico.'));
+      if (this.isTransient(err)) this.scheduleRetry();
       return null;
     }
   }
@@ -278,10 +284,40 @@ export class ClinicalAutosaveService {
       return 'El servidor tardó demasiado en responder.';
     }
     const http = err as { status?: number; error?: { message?: string | string[] } };
-    if (http?.status === 0) return 'Sin conexión con el servidor.';
+    switch (http?.status) {
+      case 0:
+        return 'Sin conexión con el servidor.';
+      case 401:
+        return 'Su sesión expiró. Inicie sesión de nuevo para seguir guardando.';
+      case 413:
+        return 'La historia es demasiado pesada para guardarse. Reduzca imágenes o textos pegados.';
+      case 502:
+      case 503:
+      case 504:
+        return 'El servidor no está disponible en este momento.';
+    }
     const msg = http?.error?.message;
-    if (Array.isArray(msg)) return msg.join(' ');
-    return msg || fallback;
+    const text = Array.isArray(msg) ? msg.join(' ') : msg;
+    // Los mensajes técnicos del servidor (en inglés) no le sirven al profesional.
+    if (!text || (/^[\x00-\x7F]*$/.test(text) && /entity|internal server|bad request|forbidden/i.test(text))) {
+      return fallback;
+    }
+    return text;
+  }
+
+  /** Fallos pasajeros (red, tiempo de espera, servidor caído) se reintentan solos. */
+  private isTransient(err: unknown) {
+    if (err instanceof TimeoutError) return true;
+    const status = (err as { status?: number })?.status;
+    return status === 0 || (typeof status === 'number' && status >= 500);
+  }
+
+  private scheduleRetry() {
+    if (this.retryTimer) return;
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
+      this.retryPendingSave();
+    }, AUTOSAVE_RETRY_MS);
   }
 
   private safely(fn: () => void) {
