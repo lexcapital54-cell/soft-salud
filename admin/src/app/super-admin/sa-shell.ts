@@ -4,7 +4,7 @@ import { WEBSITE_URL } from '../api.config';
 import { AuthService } from '../auth.service';
 import { HabIcon } from '../habilitation/hab-icon';
 
-const NAV = [
+export const SA_NAV = [
   { label: 'Panel', icon: 'dashboard', link: '/admin' },
   { label: 'Contraseñas', icon: 'key', link: '/admin/contrasenas' },
   { label: 'Recibos de caja', icon: 'receipt', link: '/admin/ingresos' },
@@ -46,7 +46,7 @@ export class SaShell {
   readonly initials = initials;
   readonly navOpen = signal(false);
   /** El equipo comercial solo ve los consultorios demo. */
-  readonly nav = computed(() => (this.auth.isCommercial() ? NAV.filter((n) => n.link === '/admin/demos') : NAV));
+  readonly nav = computed(() => (this.auth.isCommercial() ? SA_NAV.filter((n) => n.link === '/admin/demos') : SA_NAV));
   readonly roleLabel = computed(() => (this.auth.isCommercial() ? 'Comercial' : 'Superadmin'));
 
   goHome() {

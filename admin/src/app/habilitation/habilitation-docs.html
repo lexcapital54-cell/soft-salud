@@ -1,63 +1,27 @@
-<!-- El superadmin usa el mismo marco del panel de administración; el consultorio conserva su diseño -->
-@if (isSuper) {
-  <app-sa-shell
-    eyebrow="Habilitación"
-    [heading]="viewTitle()"
-    subtitle="Gestión centralizada de documentos y evidencias por estándares de habilitación."
-  >
-    <div class="sa-tools" saHeroActions>
-      <label class="clinic-pick">
-        <span class="sr-only">Consultorio</span>
-        <select [ngModel]="selectedClinicId()" (ngModelChange)="selectClinic($event)">
-          @for (c of clinics(); track c.id) {
-            <option [value]="c.id">{{ c.name }}</option>
-          }
-        </select>
-      </label>
-    </div>
-    <nav class="sa-tabs" aria-label="Secciones de habilitación">
-      @for (t of saTabs; track t.view) {
-        <button
-          type="button"
-          [class.on]="view() === t.view || (t.view === 'estandares' && view() === 'estandar')"
-          [attr.aria-current]="view() === t.view ? 'page' : null"
-          (click)="go(t.view)"
-        >
-          <hab-icon [name]="t.icon" [size]="16" /> <span>{{ t.label }}</span>
-        </button>
-      }
-      <a class="sa-tab-link" [routerLink]="expedienteLink" [queryParams]="selectedClinicId() ? { clinicId: selectedClinicId() } : {}">
-        <hab-icon name="folder" [size]="16" /> <span>Expediente y firmas</span>
-      </a>
-    </nav>
-    <div class="sa-bar">
-      <label class="search">
-        <hab-icon name="search" [size]="16" />
-        <span class="sr-only">Buscar documento</span>
-        <input
-          type="search"
-          placeholder="Buscar por nombre, código, responsable o archivo"
-          [ngModel]="q()"
-          (ngModelChange)="globalSearch($event)"
-        />
-      </label>
-      <div class="today"><hab-icon name="calendar" [size]="16" /> <span>{{ todayLabel() }}</span></div>
-    </div>
-    <ng-container *ngTemplateOutlet="habBody" />
-  </app-sa-shell>
-} @else {
+<!-- Misma vista para consultorio y superadmin; el superadmin usa la paleta del panel (:host.sa) -->
 <div class="hab" [class.nav-open]="navOpen()">
   <!-- Menú lateral -->
   <aside class="side" aria-label="Menú de habilitación">
     <div class="side-brand">
-      <span class="side-mark"><hab-icon name="folder" [size]="20" /></span>
+      @if (isSuper) {
+        <span class="side-mark sa-mark" aria-hidden="true">H</span>
+      } @else {
+        <span class="side-mark"><hab-icon name="folder" [size]="20" /></span>
+      }
       <div>
         <strong>HABILISALUD</strong>
         <small>{{ isSuper ? 'Superadministrador' : 'Consultorio' }}</small>
       </div>
     </div>
     <nav>
-      <a class="side-link" [routerLink]="homeLink"><hab-icon name="home" /> <span>Inicio</span></a>
+      @if (isSuper) {
+        <p class="side-group">Administración</p>
+        @for (l of adminLinks; track l.link) {
+          <a class="side-link" [routerLink]="l.link"><hab-icon [name]="l.icon" /> <span>{{ l.label }}</span></a>
+        }
+      } @else {
+        <a class="side-link" [routerLink]="homeLink"><hab-icon name="home" /> <span>Inicio</span></a>
+      }
       <p class="side-group">Habilitación</p>
       <button type="button" class="side-link" [class.active]="view() === 'dashboard'" (click)="go('dashboard')">
         <hab-icon name="dashboard" /> <span>Dashboard documental</span>
@@ -115,13 +79,22 @@
             (ngModelChange)="globalSearch($event)"
           />
         </label>
+        @if (isSuper) {
+          <label class="clinic-pick">
+            <span class="sr-only">Consultorio</span>
+            <select [ngModel]="selectedClinicId()" (ngModelChange)="selectClinic($event)">
+              @for (c of clinics(); track c.id) {
+                <option [value]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </label>
+        }
         <div class="today"><hab-icon name="calendar" [size]="16" /> <span>{{ todayLabel() }}</span></div>
       </div>
     </header>
     <ng-container *ngTemplateOutlet="habBody" />
   </main>
 </div>
-}
 
 <ng-template #habBody>
     @if (error()) {
