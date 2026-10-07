@@ -48,6 +48,16 @@ export function ageAt(birth: string, at: string): string {
   return `${years} ${years === 1 ? 'año' : 'años'}`;
 }
 
+const personKey = (v: string) =>
+  (v || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\b(dra?|ps|psic|lic)\.?\s+/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+const samePerson = (a: string, b: string) => !!personKey(a) && personKey(a) === personKey(b);
+
 const emptyData = (clinicName: string): PsychReportData => ({
   clinicName,
   reportNumber: '',
@@ -128,18 +138,36 @@ export class PsychReportService {
     }));
   }
 
-  /** Plantilla vacía: solo el nombre del consultorio para el encabezado. */
+  /** Datos del profesional según su perfil (nombre, título, tarjeta y firma registrada). */
+  private async profileOf(user: User) {
+    const me = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { fullName: true, professionalTitle: true, professionalCard: true, professionalSignatureBase64: true },
+    });
+    const sig = me?.professionalSignatureBase64 || null;
+    return {
+      fullName: (me?.fullName || user.fullName || '').trim(),
+      title: (me?.professionalTitle || '').trim(),
+      card: (me?.professionalCard || '').trim(),
+      signature: sig && /^data:image\/(png|jpeg);base64,/.test(sig) ? sig : null,
+    };
+  }
+
+  /** Plantilla vacía: nombre del consultorio y datos del profesional que la diligencia. */
   async blank(user: User) {
     const clinic = await this.clinicOf(user);
-    return { patientId: null, data: emptyData(clinic.name) };
+    const pro = await this.profileOf(user);
+    const data = emptyData(clinic.name);
+    data.professional = { fullName: pro.fullName, title: pro.title, card: pro.card };
+    return { patientId: null, data };
   }
 
   /** Identificación real del paciente y datos del profesional que diligencia (no se guarda nada). */
   async prefill(user: User, patientId: string) {
     const clinic = await this.clinicOf(user);
-    const [patient, me, count] = await Promise.all([
+    const [patient, pro, count] = await Promise.all([
       this.prisma.patient.findFirst({ where: { id: patientId, clinicId: clinic.id } }),
-      this.prisma.user.findUnique({ where: { id: user.id }, select: { fullName: true, professionalTitle: true, professionalCard: true } }),
+      this.profileOf(user),
       this.prisma.psychReport.count({ where: { clinicId: clinic.id, createdAt: { gte: new Date(`${dateKey(new Date()).slice(0, 4)}-01-01T05:00:00Z`) } } }),
     ]);
     if (!patient) throw new NotFoundException('Paciente no encontrado en este consultorio.');
@@ -159,11 +187,7 @@ export class PsychReportService {
       phone: patient.phone || '',
       institution: '',
     };
-    data.professional = {
-      fullName: me?.fullName || user.fullName,
-      title: me?.professionalTitle || '',
-      card: me?.professionalCard || '',
-    };
+    data.professional = { fullName: pro.fullName, title: pro.title, card: pro.card };
     return { patientId: patient.id, data };
   }
 
@@ -195,11 +219,9 @@ export class PsychReportService {
     return new StreamableFile(Buffer.from(row.signatureData), { type: row.signatureMime });
   }
 
-  /** Firma registrada en el perfil del profesional; solo se usa si él la elige explícitamente. */
+  /** Firma registrada en el perfil del profesional que tiene la sesión. */
   async mySignature(user: User) {
-    const row = await this.prisma.user.findUnique({ where: { id: user.id }, select: { professionalSignatureBase64: true } });
-    const value = row?.professionalSignatureBase64 || null;
-    return { dataUrl: value && /^data:image\/(png|jpeg);base64,/.test(value) ? value : null };
+    return { dataUrl: (await this.profileOf(user)).signature };
   }
 
   async create(user: User, dto: SavePsychReportDto, file: Express.Multer.File | undefined, ctx: AuditContext) {
@@ -272,7 +294,15 @@ export class PsychReportService {
     const sig = this.checkSignature(file);
     const logoRow = await this.logos.find(clinic.id, ClinicLogoKind.FORMS);
     const logo = logoRow ? `data:${logoRow.mimeType};base64,${Buffer.from(logoRow.data).toString('base64')}` : null;
-    const signature = sig ? `data:${sig.mime};base64,${Buffer.from(sig.data).toString('base64')}` : null;
+    let signature = sig ? `data:${sig.mime};base64,${Buffer.from(sig.data).toString('base64')}` : null;
+    // Lo que falte del profesional se completa con el perfil de quien genera el PDF, solo si el informe es suyo
+    // (sin nombre o con su mismo nombre): nunca se pone la firma de un profesional en el informe de otro.
+    const pro = await this.profileOf(user);
+    const given = dto.data.professional;
+    if (!given.fullName.trim() || samePerson(given.fullName, pro.fullName)) {
+      dto.data.professional = { fullName: given.fullName.trim() || pro.fullName, title: given.title.trim() || pro.title, card: given.card.trim() || pro.card };
+      if (!signature && !dto.withoutSignature) signature = pro.signature;
+    }
     const buffer = await renderPsychReportPdf(dto.data, logo, signature);
     await this.prisma.auditLog.create({
       data: { clinicId: clinic.id, userId: user.id, action: AuditAction.EXPORT, entityType: ENTITY, ...ctx, metadata: { format: 'pdf' } },

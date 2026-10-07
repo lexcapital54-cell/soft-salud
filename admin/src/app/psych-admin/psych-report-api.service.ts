@@ -45,9 +45,9 @@ export class PsychReportApiService {
     return this.http.post<PsychReportSaved>(id ? `${this.base}/${id}/update` : this.base, form);
   }
 
-  pdf(data: PsychReportData, signature: Blob | null) {
+  pdf(data: PsychReportData, signature: Blob | null, withoutSignature = false) {
     const form = new FormData();
-    form.append('payload', JSON.stringify({ data }));
+    form.append('payload', JSON.stringify({ data, withoutSignature }));
     if (signature) form.append('signature', signature, signature.type === 'image/jpeg' ? 'firma.jpg' : 'firma.png');
     return this.http.post(`${this.base}/pdf`, form, { responseType: 'blob' });
   }

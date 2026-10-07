@@ -51,6 +51,9 @@ export class SavePsychReportDto {
 export class RenderPsychReportDto {
   @ValidateNested() @Type(() => PsychReportDataDto)
   data: PsychReportDataDto;
+
+  /** true: el profesional quitó la firma a propósito (firma a mano); no se agrega la registrada. */
+  @IsOptional() @IsBoolean() withoutSignature?: boolean;
 }
 
 export type PsychReportData = PsychReportDataDto;

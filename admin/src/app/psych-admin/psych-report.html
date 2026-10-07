@@ -332,6 +332,9 @@
             }
           </div>
         </div>
+        @if (!preview() && canWrite() && (!form.professional.title.trim() || !form.professional.card.trim())) {
+          <p class="hint center no-print">Su perfil no tiene registrado el título o la tarjeta profesional. Escríbalos aquí o complételos en su perfil para que salgan solos en los próximos informes.</p>
+        }
       </section>
 
       <footer class="doc-foot">{{ footer }}</footer>

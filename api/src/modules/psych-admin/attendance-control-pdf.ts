@@ -6,14 +6,12 @@ const PdfPrinter = require('pdfmake') as new (fonts: Record<string, unknown>) =>
   createPdfKitDocument: (doc: unknown) => NodeJS.EventEmitter & { end: () => void };
 };
 
-const NAVY = '#1F3D47';
-const GOLD = '#8A6A55';
-// Moca clara de la historia clínica: textos y filetes sobre el fondo petróleo.
-const GOLD_ON_NAVY = '#CBB49A';
-const CREAM = '#F6F0E9';
-const INK = '#1E2A2E';
-const RULE = '#5F6B6E';
-const MUTED = '#5F6B6E';
+const NAVY = '#092542';
+const GOLD = '#B58A2A';
+const CREAM = '#F7F0E1';
+const INK = '#1B2433';
+const RULE = '#2F4A6B';
+const MUTED = '#5B6472';
 
 const PAGE_W = 595.28;
 const MARGIN_X = 40;
@@ -64,7 +62,7 @@ function sectionHeader(no: number, title: string): Content {
           widths: [24, '*'],
           body: [
             [
-              { text: String(no).padStart(2, '0'), font: 'Times', bold: true, fontSize: 12, color: GOLD_ON_NAVY, alignment: 'center', margin: [0, 2, 0, 0] },
+              { text: String(no).padStart(2, '0'), font: 'Times', bold: true, fontSize: 12, color: GOLD, alignment: 'center', margin: [0, 2, 0, 0] },
               { text: label, bold: true, fontSize: 9, color: '#FFFFFF', characterSpacing: 1.2, margin: [2, 4, 6, 2] },
             ],
           ],
@@ -73,8 +71,8 @@ function sectionHeader(no: number, title: string): Content {
           fillColor: () => NAVY,
           hLineWidth: () => 0.8,
           vLineWidth: (i: number) => (i === 1 ? 0.8 : 0.8),
-          hLineColor: () => GOLD_ON_NAVY,
-          vLineColor: () => GOLD_ON_NAVY,
+          hLineColor: () => GOLD,
+          vLineColor: () => GOLD,
           paddingLeft: () => 4,
           paddingRight: () => 4,
           paddingTop: () => 2,
@@ -152,7 +150,7 @@ export function attendanceControlDefinition(data: AttendanceControlData, logo: s
                 text: clinicName.toUpperCase(),
                 font: 'Times',
                 fontSize: clinicName.length > 34 ? 11 : 13,
-                color: GOLD_ON_NAVY,
+                color: GOLD,
                 characterSpacing: 1.4,
                 margin: [0, logo ? 9 : 4, 0, 0],
               },
@@ -161,8 +159,8 @@ export function attendanceControlDefinition(data: AttendanceControlData, logo: s
           },
           {
             stack: [
-              { text: 'PSICOLOGÍA', bold: true, fontSize: 9, color: GOLD_ON_NAVY, characterSpacing: 1.6, alignment: 'center', margin: [0, 6, 0, 3] },
-              { canvas: [{ type: 'line', x1: 26, y1: 0, x2: 76, y2: 0, lineWidth: 0.7, lineColor: GOLD_ON_NAVY }] },
+              { text: 'PSICOLOGÍA', bold: true, fontSize: 9, color: GOLD, characterSpacing: 1.6, alignment: 'center', margin: [0, 6, 0, 3] },
+              { canvas: [{ type: 'line', x1: 26, y1: 0, x2: 76, y2: 0, lineWidth: 0.7, lineColor: GOLD }] },
             ],
           },
         ],
@@ -172,8 +170,8 @@ export function attendanceControlDefinition(data: AttendanceControlData, logo: s
       fillColor: () => NAVY,
       hLineWidth: () => 1.2,
       vLineWidth: (i: number) => (i === 1 ? 0.8 : 1.2),
-      hLineColor: () => GOLD_ON_NAVY,
-      vLineColor: () => GOLD_ON_NAVY,
+      hLineColor: () => GOLD,
+      vLineColor: () => GOLD,
       paddingLeft: () => 14,
       paddingRight: () => 10,
       paddingTop: () => 10,

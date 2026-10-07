@@ -132,6 +132,8 @@ export class PsychReportPage implements OnInit, OnDestroy {
 
   form: PsychReportData = emptyReport();
   readonly signature = signal<string | null>(null);
+  /** El profesional quitó la firma para firmar a mano: el PDF no agrega la registrada. */
+  private signatureRemoved = false;
   private savedSnapshot = this.snapshot();
 
   readonly docId = signal<string | null>(null);
@@ -229,6 +231,7 @@ export class PsychReportPage implements OnInit, OnDestroy {
       professional: { ...base.professional, ...d.professional },
     };
     this.signature.set(opts.signature);
+    this.signatureRemoved = false;
     this.patientId.set(draft.patientId ?? null);
     this.docId.set(opts.id);
     this.savedAt.set(opts.savedAt);
@@ -249,6 +252,7 @@ export class PsychReportPage implements OnInit, OnDestroy {
       next: (draft) => {
         this.busy.set('');
         this.apply(draft, { id: null, savedAt: null, signature: null, clean: !fromPatient });
+        this.attachRegisteredSignature(!fromPatient);
         if (fromPatient) this.message.set('Datos de identificación del paciente y del profesional cargados. Complete el informe y guárdelo.');
         else setTimeout(() => this.host.nativeElement.querySelector<HTMLInputElement>('#rp-patient')?.focus());
       },
@@ -267,6 +271,8 @@ export class PsychReportPage implements OnInit, OnDestroy {
           this.busy.set('');
           this.apply({ patientId: row.patientId, data: row.data }, { id: row.id, savedAt: row.updatedAt, signature, clean: true });
           this.message.set(`Informe de ${row.patientName} abierto.`);
+          // Informe propio guardado sin firma: se muestra la registrada, igual que saldrá en el PDF.
+          if (!signature && this.isMine()) this.attachRegisteredSignature(true);
         };
         if (!row.hasSignature) return done(null);
         this.api.signature(row.id).subscribe({
@@ -283,7 +289,7 @@ export class PsychReportPage implements OnInit, OnDestroy {
 
   private confirmDiscard(): boolean {
     if (!reportHasContent(this.form, this.signature())) return true;
-    if (!this.dirty() && this.docId()) return true;
+    if (!this.dirty()) return true;
     return confirm('El informe actual tiene información sin guardar. ¿Desea borrarla?');
   }
 
@@ -434,7 +440,7 @@ export class PsychReportPage implements OnInit, OnDestroy {
     this.busy.set(kind);
     this.error.set('');
     const sig = this.signature();
-    this.api.pdf(this.form, sig ? dataUrlToBlob(sig) : null).subscribe({
+    this.api.pdf(this.form, sig ? dataUrlToBlob(sig) : null, !sig && this.signatureRemoved).subscribe({
       next: (blob) => {
         this.busy.set('');
         next(blob);
@@ -524,6 +530,7 @@ export class PsychReportPage implements OnInit, OnDestroy {
       const out = await compressSignature(file);
       if (out.length > SIGNATURE_MAX_DATAURL) throw new Error('La firma sigue siendo muy pesada. Use una imagen más pequeña.');
       this.signature.set(out);
+      this.signatureRemoved = false;
       this.error.set('');
       this.onChange();
       this.message.set('Firma cargada en este informe.');
@@ -544,6 +551,7 @@ export class PsychReportPage implements OnInit, OnDestroy {
             this.error.set('No tiene una firma registrada en su perfil. Puede cargar una imagen de la firma.');
             return;
           }
+          this.signatureRemoved = false;
           this.signature.set(await compressSignature(dataUrlToBlob(dataUrl)));
           this.error.set('');
           this.onChange();
@@ -560,9 +568,42 @@ export class PsychReportPage implements OnInit, OnDestroy {
   }
 
   removeSignature() {
-    if (!confirm('¿Quitar la firma de este informe?')) return;
+    if (!confirm('¿Quitar la firma de este informe? El PDF saldrá con la línea en blanco para firmar a mano.')) return;
     this.signature.set(null);
+    this.signatureRemoved = true;
     this.onChange();
+  }
+
+  /** El informe es del profesional con la sesión (sin nombre o con su mismo nombre). */
+  private isMine(): boolean {
+    const key = (v: string) =>
+      (v || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\b(dra?|ps|psic|lic)\.?\s+/g, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+    const name = key(this.form.professional.fullName);
+    return !name || name === key(String(this.user()?.fullName || ''));
+  }
+
+  /** Pone la firma registrada en el perfil; `keepClean` evita marcar cambios sin guardar. */
+  private attachRegisteredSignature(keepClean: boolean) {
+    if (!this.canWrite() || this.signature()) return;
+    this.api.mySignature().subscribe({
+      next: async ({ dataUrl }) => {
+        if (!dataUrl || this.signature() || this.signatureRemoved) return;
+        try {
+          this.signature.set(await compressSignature(dataUrlToBlob(dataUrl)));
+          if (keepClean && !this.dirty()) this.markClean();
+          else this.onChange();
+        } catch {
+          // Sin firma legible: queda la línea en blanco para firmar a mano.
+        }
+      },
+      error: () => undefined,
+    });
   }
 
   // ---------- Logo ----------
