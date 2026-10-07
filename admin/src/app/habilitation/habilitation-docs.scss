@@ -261,9 +261,8 @@ button { font: inherit; color: inherit; }
 .hint { margin: 0 0 8px; font-size: 12.5px; color: var(--muted); }
 .modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding-top: 6px; }
 
-/* Visor (por encima del panel del documento) */
-.viewer-overlay { z-index: 60; background: rgba(18, 36, 44, 0.6); }
-.viewer { position: fixed; z-index: 61; inset: 24px; display: flex; flex-direction: column; background: var(--card); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); }
+/* Visor: ocupa el espacio a la izquierda del panel del documento */
+.viewer { position: fixed; z-index: 42; top: 0; bottom: 0; left: 0; right: min(520px, 100%); display: flex; flex-direction: column; background: var(--card); overflow: hidden; box-shadow: 12px 0 32px rgba(24, 54, 66, 0.18); border-right: 1px solid var(--line); }
 .viewer-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
 .viewer-name { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-weight: 600; color: var(--petrol); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .viewer-tools { display: flex; align-items: center; gap: 6px; flex: none; }
@@ -316,5 +315,5 @@ button { font: inherit; color: inherit; }
   .tbl-cards .td-act { justify-content: flex-end; flex-wrap: wrap; }
   .loc, .notes { max-width: none; }
   .doc-name { min-width: 0; }
-  .viewer { inset: 0; border-radius: 0; }
+  .viewer { right: 0; }
 }

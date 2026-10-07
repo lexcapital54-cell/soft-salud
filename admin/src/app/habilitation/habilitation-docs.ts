@@ -463,6 +463,7 @@ export class HabilitationDocs {
 
   closeDrawer() {
     if (!this.drawer()) return;
+    this.closeViewer();
     this.drawer.set(null);
     this.syncUrl({ doc: null });
   }

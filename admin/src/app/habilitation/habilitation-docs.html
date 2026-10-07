@@ -806,7 +806,6 @@
 
   <!-- ===================== Visor de archivos ===================== -->
   @if (viewer(); as v) {
-    <div class="overlay viewer-overlay" (click)="closeViewer()"></div>
     <div class="viewer" role="dialog" aria-modal="true" [attr.aria-label]="'Vista de ' + v.name">
       <header class="viewer-head">
         <span class="viewer-name"><hab-icon name="file" [size]="16" /> {{ v.name }}</span>
