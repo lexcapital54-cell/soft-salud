@@ -192,6 +192,12 @@
     }
     .tp-row input:focus-visible { outline: 2px solid var(--nav-2); outline-offset: 1px; border-color: var(--nav-2); }
     .tp-row .btn:disabled { opacity: .6; cursor: progress; }
+    .tp-row input[readonly] { background: var(--bg); color: var(--muted); cursor: default; }
+    .tp-confirm { width: min(440px, calc(100vw - 32px)); padding: 20px 22px; border-radius: 16px; border: 1px solid var(--line); background: #fff; box-shadow: 0 24px 60px rgba(11, 34, 57, .3); color: var(--ink); }
+    .tp-confirm::backdrop { background: rgba(11, 34, 57, .5); }
+    .tp-panel .tp-confirm h2 { margin: 0 0 8px; font-size: 1.05rem; color: var(--nav); }
+    .tp-panel .tp-confirm p { margin: 0 0 16px; color: var(--muted); font-size: .9rem; }
+    .tp-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
     .tp-status { margin: 4px 0 0 !important; font-size: .82rem !important; }
     .tp-status.ok { color: #1f7a55 !important; }
     .tp-status.err { color: #a33a3a !important; }
@@ -534,10 +540,20 @@
                 <div class="tp-row">
                   <input id="tpInput" name="professionalCard" type="text" maxlength="40" autocomplete="off" inputmode="text" aria-describedby="tpNote tpStatus" />
                   <button type="submit" class="btn btn-primary" id="tpSave">Guardar</button>
+                  <button type="button" class="btn" id="tpEdit" hidden>Cambiar</button>
+                  <button type="button" class="btn" id="tpCancel" hidden>Cancelar</button>
                 </div>
                 <p class="reps-note" id="tpNote">Aparece junto a su firma en la historia clínica y en el PDF.</p>
                 <p class="tp-status" id="tpStatus" role="status" aria-live="polite"></p>
               </form>
+              <dialog class="tp-confirm" id="tpConfirm" aria-labelledby="tpConfirmTitle" aria-describedby="tpConfirmText">
+                <h2 id="tpConfirmTitle">¿Está seguro de cambiar su tarjeta profesional?</h2>
+                <p id="tpConfirmText">—</p>
+                <div class="tp-confirm-actions">
+                  <button type="button" class="btn" id="tpConfirmNo">No, dejarla igual</button>
+                  <button type="button" class="btn btn-primary" id="tpConfirmYes">Sí, cambiarla</button>
+                </div>
+              </dialog>
             </div>
           </section>
         </div>
@@ -1136,16 +1152,56 @@
         var input = document.getElementById('tpInput');
         var save = document.getElementById('tpSave');
         var status = document.getElementById('tpStatus');
+        var edit = document.getElementById('tpEdit');
+        var cancel = document.getElementById('tpCancel');
+        var confirmBox = document.getElementById('tpConfirm');
+        var saved = '';
+
+        // Con TP guardada el campo queda bloqueado; para cambiarla se pide confirmación.
+        function setEditing(on) {
+          var locked = !!saved && !on;
+          input.readOnly = locked;
+          save.hidden = locked;
+          edit.hidden = !locked;
+          cancel.hidden = !(saved && on);
+        }
 
         function render(card) {
+          saved = card || '';
           panel.hidden = false;
           panel.className = 'reps-panel tp-panel' + (card ? '' : ' warn');
           input.value = card || '';
           document.getElementById('tpTitle').textContent = card ? 'Tarjeta profesional' : 'Registre su tarjeta profesional';
           document.getElementById('tpMsg').textContent = card
-            ? 'Registrada: TP ' + card + '. Puede corregirla si cambió.'
+            ? 'Registrada: TP ' + card + '. Está bloqueada para evitar cambios por error.'
             : 'Aún no tiene tarjeta profesional registrada; sin ella su firma en la historia clínica queda incompleta.';
+          setEditing(false);
         }
+
+        edit.addEventListener('click', function () {
+          document.getElementById('tpConfirmText').textContent =
+            'Su tarjeta profesional actual es TP ' + saved + '. Si la cambia, la nueva aparecerá junto a su firma en las historias clínicas y PDF que genere desde ahora.';
+          setStatus('');
+          if (typeof confirmBox.showModal === 'function') confirmBox.showModal();
+          else if (window.confirm('¿Está seguro de cambiar su tarjeta profesional?')) unlock();
+        });
+
+        function unlock() {
+          setEditing(true);
+          document.getElementById('tpMsg').textContent =
+            'Escriba la nueva tarjeta profesional y pulse «Guardar», o «Cancelar» para dejar TP ' + saved + '.';
+          input.focus();
+          input.select();
+        }
+
+        document.getElementById('tpConfirmNo').addEventListener('click', function () { confirmBox.close(); edit.focus(); });
+        document.getElementById('tpConfirmYes').addEventListener('click', function () { confirmBox.close(); unlock(); });
+
+        cancel.addEventListener('click', function () {
+          render(saved);
+          setStatus('');
+          edit.focus();
+        });
 
         function setStatus(text, tone) {
           status.textContent = text;
@@ -1159,7 +1215,13 @@
 
         form.addEventListener('submit', function (ev) {
           ev.preventDefault();
+          if (input.readOnly) return;
           var value = input.value.replace(/\s+/g, ' ').trim();
+          if (saved && value === saved) {
+            render(saved);
+            setStatus('Sin cambios: la tarjeta profesional sigue siendo la misma.');
+            return;
+          }
           if (!/^[\p{L}\p{N} .\-/]{2,40}$/u.test(value)) {
             setStatus('Use solo letras, números, espacios, punto, guion o barra (2 a 40 caracteres).', 'err');
             input.focus();
