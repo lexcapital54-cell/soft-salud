@@ -1,126 +1,89 @@
-<div class="shell">
-  <aside>
-    <div>
-      <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()">HABILISALUD</a>
-      <p class="role">{{ readOnly() ? 'Comercial' : 'Superadmin' }}</p>
-    </div>
-    <nav>
-      @if (!readOnly()) {
-        <a routerLink="/admin">Administración</a>
-        <a routerLink="/admin/contrasenas">Contraseñas</a>
-        <a routerLink="/admin/ingresos">Recibos de caja</a>
-        <a routerLink="/admin/habilitacion">Habilitación</a>
-        <a routerLink="/admin/documentos">Documentos</a>
-      }
-      <a class="active">Consultorios demo</a>
-    </nav>
-    <div class="session">
-      <div class="session-user">
-        <p class="session-name">{{ user()?.fullName }}</p>
-        <p class="session-email">{{ user()?.email }}</p>
-      </div>
-      <button type="button" class="ghost" (click)="logout()">Cerrar sesión</button>
-    </div>
-  </aside>
+<app-sa-shell eyebrow="Módulo comercial" heading="Consultorios demo" subtitle="Consultorios de prueba con pacientes ficticios, agenda del día e historias clínicas ya diligenciadas y firmadas para mostrar cada especialidad. No aparecen en la lista de consultorios reales, no generan cobros y no envían mensajes a pacientes.">
 
-  <main>
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">Módulo comercial</p>
-        <h1>Consultorios demo</h1>
-        <p class="welcome">
-          Consultorios de prueba con pacientes ficticios, agenda del día e historias clínicas ya
-          diligenciadas y firmadas para mostrar cada especialidad. No aparecen en la lista de
-          consultorios reales, no generan cobros y no envían mensajes a pacientes.
-        </p>
-      </div>
-    </header>
+  @if (notice()) {
+    <p class="ok">{{ notice() }}</p>
+  }
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
 
-    @if (notice()) {
-      <p class="ok">{{ notice() }}</p>
-    }
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
-    }
-
-    @if (!readOnly()) {
-    <section class="card demo-create">
-      <h2>Crear demo</h2>
-      <div class="demo-create-row">
-        <label>
-          Especialidad
-          <select [(ngModel)]="specialty" name="specialty">
-            @for (s of specialties; track s[0]) {
-              <option [value]="s[0]">{{ s[1] }}</option>
-            }
-          </select>
-        </label>
-        <button type="button" class="primary" [disabled]="!!creating()" (click)="create()">
-          {{ creating() === specialty ? 'Creando…' : 'Crear demo' }}
+  @if (!readOnly()) {
+  <section class="card demo-create">
+    <h2>Crear demo</h2>
+    <div class="demo-create-row">
+      <label>
+        Especialidad
+        <select [(ngModel)]="specialty" name="specialty">
+          @for (s of specialties; track s[0]) {
+            <option [value]="s[0]">{{ s[1] }}</option>
+          }
+        </select>
+      </label>
+      <button type="button" class="primary" [disabled]="!!creating()" (click)="create()">
+        {{ creating() === specialty ? 'Creando…' : 'Crear demo' }}
+      </button>
+      @if (missingSpecialties().length) {
+        <button type="button" class="ghost compact" [disabled]="!!creating()" (click)="createMissing()">
+          Crear las que faltan ({{ missingSpecialties().length }})
         </button>
-        @if (missingSpecialties().length) {
-          <button type="button" class="ghost compact" [disabled]="!!creating()" (click)="createMissing()">
-            Crear las que faltan ({{ missingSpecialties().length }})
-          </button>
-        }
-      </div>
-      @if (creating(); as s) {
-        <p class="hint">Preparando {{ specialtyLabel(s) }}: pacientes, agenda, historias firmadas y documentación…</p>
       }
-    </section>
+    </div>
+    @if (creating(); as s) {
+      <p class="hint">Preparando {{ specialtyLabel(s) }}: pacientes, agenda, historias firmadas y documentación…</p>
     }
+  </section>
+  }
 
-    @if (loading() && !demos().length) {
-      <p class="empty">Cargando…</p>
-    } @else if (!demos().length) {
-      <p class="empty">Aún no hay consultorios demo.</p>
-    }
+  @if (loading() && !demos().length) {
+    <p class="empty">Cargando…</p>
+  } @else if (!demos().length) {
+    <p class="empty">Aún no hay consultorios demo.</p>
+  }
 
-    <section class="demo-grid">
-      @for (demo of demos(); track demo.id) {
-        <article class="card demo-card" [class.off]="!demo.isActive">
-          <header>
-            <div>
-              <p class="eyebrow">{{ specialtyLabel(demo.specialty) }}</p>
-              <h2>{{ demo.name }}</h2>
+  <section class="demo-grid">
+    @for (demo of demos(); track demo.id) {
+      <article class="card demo-card" [class.off]="!demo.isActive">
+        <header>
+          <div>
+            <p class="eyebrow">{{ specialtyLabel(demo.specialty) }}</p>
+            <h2>{{ demo.name }}</h2>
+          </div>
+          <span class="badge" [class.off]="!demo.isActive">{{ demo.isActive ? 'Activa' : 'Desactivada' }}</span>
+        </header>
+
+        <ul class="demo-stats">
+          <li><strong>{{ demo.patients }}</strong> pacientes</li>
+          <li><strong>{{ demo.signedRecords }}</strong> historias firmadas</li>
+          <li><strong>{{ demo.appointmentsToday }}</strong> citas hoy</li>
+          <li><strong>{{ demo.documents }}</strong> documentos ({{ demo.documentsWithFiles }} con soporte)</li>
+        </ul>
+
+        <div class="demo-access">
+          <p class="box-label">Ingreso: <a [href]="loginUrl" target="_blank" rel="noopener">{{ loginUrl }}</a></p>
+          @for (u of demo.users; track u.email) {
+            <div class="demo-user">
+              <span class="demo-role">{{ u.roleLabel }}</span>
+              <code>{{ u.email }}</code>
+              <code>{{ u.password || '—' }}</code>
             </div>
-            <span class="badge" [class.off]="!demo.isActive">{{ demo.isActive ? 'Activa' : 'Desactivada' }}</span>
-          </header>
+          }
+        </div>
 
-          <ul class="demo-stats">
-            <li><strong>{{ demo.patients }}</strong> pacientes</li>
-            <li><strong>{{ demo.signedRecords }}</strong> historias firmadas</li>
-            <li><strong>{{ demo.appointmentsToday }}</strong> citas hoy</li>
-            <li><strong>{{ demo.documents }}</strong> documentos ({{ demo.documentsWithFiles }} con soporte)</li>
-          </ul>
-
-          <div class="demo-access">
-            <p class="box-label">Ingreso: <a [href]="loginUrl" target="_blank" rel="noopener">{{ loginUrl }}</a></p>
-            @for (u of demo.users; track u.email) {
-              <div class="demo-user">
-                <span class="demo-role">{{ u.roleLabel }}</span>
-                <code>{{ u.email }}</code>
-                <code>{{ u.password || '—' }}</code>
-              </div>
-            }
-          </div>
-
-          <div class="demo-actions">
-            <button type="button" class="ghost compact" (click)="copyAccess(demo)">Copiar accesos</button>
-            @if (!readOnly()) {
-              <button type="button" class="ghost compact" [disabled]="!!loadingDocs()" (click)="loadDocuments(demo)">
-                {{ loadingDocs() === demo.id ? 'Cargando…' : 'Cargar documentación' }}
-              </button>
-              <button type="button" class="ghost compact" [disabled]="!!loadingDocs()" (click)="loadDocuments(demo, false)">
-                Solo estructura
-              </button>
-              <button type="button" class="ghost compact" (click)="toggleActive(demo)">
-                {{ demo.isActive ? 'Desactivar' : 'Reactivar' }}
-              </button>
-            }
-          </div>
-        </article>
-      }
-    </section>
-  </main>
-</div>
+        <div class="demo-actions">
+          <button type="button" class="ghost compact" (click)="copyAccess(demo)">Copiar accesos</button>
+          @if (!readOnly()) {
+            <button type="button" class="ghost compact" [disabled]="!!loadingDocs()" (click)="loadDocuments(demo)">
+              {{ loadingDocs() === demo.id ? 'Cargando…' : 'Cargar documentación' }}
+            </button>
+            <button type="button" class="ghost compact" [disabled]="!!loadingDocs()" (click)="loadDocuments(demo, false)">
+              Solo estructura
+            </button>
+            <button type="button" class="ghost compact" (click)="toggleActive(demo)">
+              {{ demo.isActive ? 'Desactivar' : 'Reactivar' }}
+            </button>
+          }
+        </div>
+      </article>
+    }
+  </section>
+</app-sa-shell>

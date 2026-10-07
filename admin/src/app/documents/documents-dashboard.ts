@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   ElementRef,
@@ -17,6 +17,7 @@ import { AuthService } from '../auth.service';
 import { ClinicalApiService } from '../clinical/clinical-api.service';
 import { Clinic, ClinicSpecialty, DashboardType, SPECIALTY_LABELS } from '../models';
 import { ClinicLogoSettings } from '../clinic-settings/clinic-logo-settings';
+import { SaShell } from '../super-admin/sa-shell';
 import { DocumentsApiService } from './documents-api.service';
 import {
   ComplianceStatus,
@@ -56,9 +57,10 @@ function describeError(error: unknown): string {
 
 @Component({
   selector: 'app-documents-dashboard',
-  imports: [RouterLink, FormsModule, DatePipe, ClinicLogoSettings],
+  imports: [RouterLink, FormsModule, DatePipe, NgTemplateOutlet, ClinicLogoSettings, SaShell],
   templateUrl: './documents-dashboard.html',
   styleUrl: './documents-dashboard.scss',
+  host: { '[class.sa]': 'canManage()' },
 })
 export class DocumentsDashboard {
   private readonly api = inject(DocumentsApiService);

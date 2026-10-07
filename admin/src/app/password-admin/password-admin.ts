@@ -1,26 +1,19 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
 import { AdminApiService, StaffUser } from '../admin-api.service';
-import { WEBSITE_URL } from '../api.config';
-import { AuthService } from '../auth.service';
 import { Clinic, ROLE_LABELS, UserRole } from '../models';
+import { SaShell } from '../super-admin/sa-shell';
 
 type StaffRole = Exclude<UserRole, 'SUPER_ADMIN'>;
 
 @Component({
   selector: 'app-password-admin',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, SaShell],
   templateUrl: './password-admin.html',
-  styleUrl: './password-admin.scss',
+  styleUrls: ['../super-admin/sa-page.scss', './password-admin.scss'],
 })
 export class PasswordAdminPage implements OnInit {
   private readonly api = inject(AdminApiService);
-  private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
-
-  readonly websiteUrl = WEBSITE_URL;
-  readonly user = this.auth.user;
   readonly roleLabels = ROLE_LABELS;
 
   readonly loading = signal(false);
@@ -160,14 +153,5 @@ export class PasswordAdminPage implements OnInit {
       () => this.notice.set('Contraseña copiada al portapapeles.'),
       () => this.error.set('No se pudo copiar la contraseña.'),
     );
-  }
-
-  goHome() {
-    window.location.href = this.websiteUrl;
-  }
-
-  logout() {
-    this.auth.logout();
-    void this.router.navigateByUrl('/login');
   }
 }

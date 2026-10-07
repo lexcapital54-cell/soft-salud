@@ -1,0 +1,73 @@
+<div class="shell" [class.nav-open]="navOpen()">
+  <aside class="side" id="sa-nav" aria-label="Navegación del superadmin">
+    <div class="side-top">
+      <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()">
+        <span class="brand-mark" aria-hidden="true">H</span>
+        <span>HABILISALUD</span>
+      </a>
+      <span class="role-badge"><hab-icon name="shield" [size]="14" />{{ roleLabel() }}</span>
+      <button type="button" class="side-close" (click)="navOpen.set(false)" aria-label="Cerrar menú">
+        <hab-icon name="x" />
+      </button>
+    </div>
+    <nav class="sa-nav">
+      <p class="nav-title">Administración</p>
+      <ul>
+        @for (item of nav(); track item.link) {
+          <li>
+            <a
+              [routerLink]="item.link"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="exact"
+              ariaCurrentWhenActive="page"
+              (click)="navOpen.set(false)"
+            >
+              <hab-icon [name]="item.icon" /><span>{{ item.label }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+    <div class="side-user">
+      <span class="avatar" aria-hidden="true">{{ initials(user()?.fullName || '') }}</span>
+      <div class="side-user-text">
+        <p class="su-name">{{ user()?.fullName }}</p>
+        <p class="su-mail">{{ user()?.email }}</p>
+      </div>
+      <button type="button" class="icon-btn" (click)="logout()" aria-label="Cerrar sesión" title="Cerrar sesión">
+        <hab-icon name="logout" />
+      </button>
+    </div>
+  </aside>
+  @if (navOpen()) {
+    <div class="scrim" (click)="navOpen.set(false)" aria-hidden="true"></div>
+  }
+
+  <main>
+    <div class="mobile-bar">
+      <button type="button" class="menu-btn" (click)="navOpen.set(true)" aria-controls="sa-nav" [attr.aria-expanded]="navOpen()">
+        <hab-icon name="menu" /><span class="sr-only">Menú</span>
+      </button>
+      <span class="mobile-brand">HABILISALUD</span>
+      <span class="role-badge light">{{ roleLabel() }}</span>
+    </div>
+
+    <header class="hero">
+      <div class="hero-text">
+        @if (eyebrow()) {
+          <p class="eyebrow">{{ eyebrow() }}</p>
+        }
+        <h1>{{ heading() }}</h1>
+        @if (subtitle()) {
+          <p class="hero-sub">{{ subtitle() }}</p>
+        }
+        <ng-content select="[saHeroText]" />
+      </div>
+      <div class="hero-actions">
+        <ng-content select="[saHeroActions]" />
+      </div>
+    </header>
+
+    <ng-content />
+  </main>
+</div>

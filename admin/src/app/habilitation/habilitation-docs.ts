@@ -9,6 +9,7 @@ import { AuthService } from '../auth.service';
 import { Clinic } from '../models';
 import { DocumentsApiService } from '../documents/documents-api.service';
 import { DocumentFileRow, RequirementDetail } from '../documents/documents.models';
+import { SaShell } from '../super-admin/sa-shell';
 import { HabIcon } from './hab-icon';
 import { HabilitationApiService } from './habilitation-api.service';
 import {
@@ -91,9 +92,10 @@ const emptyDocForm = (): DocForm => ({
 @Component({
   selector: 'app-habilitation-docs',
   standalone: true,
-  imports: [FormsModule, RouterLink, HabIcon, NgTemplateOutlet],
+  imports: [FormsModule, RouterLink, HabIcon, NgTemplateOutlet, SaShell],
   templateUrl: './habilitation-docs.html',
   styleUrl: './habilitation-docs.scss',
+  host: { '[class.sa]': 'isSuper' },
 })
 export class HabilitationDocs {
   private readonly api = inject(HabilitationApiService);
@@ -123,6 +125,35 @@ export class HabilitationDocs {
   readonly view = signal<View>('dashboard');
   readonly pillar = signal<PillarKey | ''>('');
   readonly navOpen = signal(false);
+  readonly saTabs: { view: View; label: string; icon: string }[] = [
+    { view: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+    { view: 'estandares', label: '7 estándares', icon: 'layers' },
+    { view: 'documentos', label: 'Documentos', icon: 'file' },
+    { view: 'maestra', label: 'Lista maestra', icon: 'list' },
+    { view: 'vencimientos', label: 'Vencimientos', icon: 'calendar' },
+    { view: 'archivo', label: 'Archivo histórico', icon: 'archive' },
+    { view: 'tipos', label: 'Tipos documentales', icon: 'tag' },
+  ];
+  readonly viewTitle = computed(() => {
+    switch (this.view()) {
+      case 'estandares':
+        return '7 estándares de habilitación';
+      case 'estandar':
+        return this.currentPillar()?.label || 'Estándar';
+      case 'documentos':
+        return 'Documentos de habilitación';
+      case 'maestra':
+        return 'Lista maestra';
+      case 'vencimientos':
+        return 'Vencimientos';
+      case 'archivo':
+        return 'Archivo histórico';
+      case 'tipos':
+        return 'Tipos documentales';
+      default:
+        return 'Dashboard documental de habilitación';
+    }
+  });
   readonly dueWindow = signal<DueWindow>('30');
   readonly dueWindows: DueWindow[] = ['7', '15', '30', 'vencidos'];
 

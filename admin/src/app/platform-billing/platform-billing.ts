@@ -1,11 +1,10 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../admin-api.service';
 import { AuthService } from '../auth.service';
-import { WEBSITE_URL } from '../api.config';
 import { Clinic } from '../models';
+import { SaShell } from '../super-admin/sa-shell';
 import {
   PaymentMethod,
   PlatformBillingApiService,
@@ -22,17 +21,15 @@ type Tab = 'resumen' | 'nuevo' | 'tarifas' | 'mensual';
 
 @Component({
   selector: 'app-platform-billing',
-  imports: [FormsModule, RouterLink, CurrencyPipe, DatePipe],
+  imports: [FormsModule, SaShell, CurrencyPipe, DatePipe],
   templateUrl: './platform-billing.html',
-  styleUrl: './platform-billing.scss',
+  styleUrls: ['../super-admin/sa-page.scss', './platform-billing.scss'],
 })
 export class PlatformBillingPage implements OnInit {
   private readonly api = inject(PlatformBillingApiService);
   private readonly adminApi = inject(AdminApiService);
   private readonly auth = inject(AuthService);
 
-  readonly websiteUrl = WEBSITE_URL;
-  readonly user = this.auth.user;
   readonly tab = signal<Tab>('resumen');
   readonly loading = signal(false);
   readonly error = signal('');
@@ -90,14 +87,6 @@ export class PlatformBillingPage implements OnInit {
     this.error.set('');
     this.notice.set('');
     this.reload();
-  }
-
-  logout() {
-    this.auth.logout();
-  }
-
-  goHome() {
-    window.location.href = this.websiteUrl;
   }
 
   reload() {

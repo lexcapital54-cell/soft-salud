@@ -1,0 +1,355 @@
+/* Estilos comunes del contenido de los módulos del superadmin (dentro de app-sa-shell). */
+* {
+  box-sizing: border-box;
+}
+
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+/* ---------- Avisos ---------- */
+.ok,
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid;
+  border-left-width: 4px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.ok {
+  color: var(--ok);
+  border-color: #b9e2c8;
+  border-left-color: var(--ok);
+}
+
+.error {
+  color: var(--err);
+  border-color: #f3c4bf;
+  border-left-color: var(--err);
+}
+
+/* ---------- Tarjetas ---------- */
+.card {
+  min-width: 0;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+
+  h2 {
+    margin-bottom: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 700;
+  }
+}
+
+.hint,
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.hint {
+  margin-bottom: 14px;
+}
+
+.empty {
+  padding: 18px 16px;
+  border-radius: 12px;
+  text-align: center;
+  color: var(--muted);
+  background: #f7f9fc;
+  border: 1px dashed #cdd8e5;
+}
+
+/* ---------- Formularios ---------- */
+label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+input,
+select,
+textarea {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 42px;
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 400;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid #c8d2de;
+  border-radius: 10px;
+
+  &:focus {
+    border-color: var(--navy);
+    outline: 3px solid rgba(46, 196, 182, 0.35);
+    outline-offset: 0;
+  }
+
+  &[readonly] {
+    background: #f7f9fc;
+  }
+}
+
+textarea {
+  min-height: 72px;
+}
+
+/* ---------- Botones ---------- */
+button {
+  font: inherit;
+}
+
+.primary,
+.ghost,
+.danger,
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, box-shadow 0.15s;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.primary {
+  color: #fff;
+  background: var(--navy);
+  box-shadow: 0 4px 12px rgba(0, 43, 92, 0.22);
+
+  &:hover:not(:disabled) {
+    background: var(--navy-deep);
+  }
+}
+
+.ghost,
+.action-btn {
+  color: var(--navy);
+  background: #fff;
+  border-color: #c9d6e6;
+
+  &:hover:not(:disabled) {
+    background: #eef3fa;
+  }
+}
+
+.danger {
+  color: var(--err);
+  background: #fff;
+  border-color: #f3c4bf;
+
+  &:hover:not(:disabled) {
+    background: #fdecea;
+  }
+}
+
+.compact,
+.action-btn {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 14px;
+  width: fit-content;
+}
+
+.linkish {
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  color: var(--navy);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.55;
+  }
+}
+
+/* ---------- Pestañas ---------- */
+.tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #e9eef5;
+  width: fit-content;
+  max-width: 100%;
+
+  button {
+    min-height: 38px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    background: transparent;
+    cursor: pointer;
+
+    &.active {
+      color: var(--navy);
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(10, 31, 61, 0.14);
+    }
+  }
+}
+
+/* ---------- Indicadores ---------- */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.stat {
+  padding: 18px;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+
+  .lbl {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  .val {
+    margin-top: 4px;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sub {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+}
+
+/* ---------- Etiquetas ---------- */
+.badge,
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--ok);
+  background: #e3f4ea;
+
+  &.off {
+    color: #4a5a61;
+    background: #edf1f2;
+  }
+}
+
+.pill {
+  color: #4a5a61;
+  background: #edf1f2;
+
+  &[data-status='PAID'] {
+    color: var(--ok);
+    background: #e3f4ea;
+  }
+
+  &[data-status='UNPAID'],
+  &[data-status='PENDING'] {
+    color: var(--warn);
+    background: #fdf1dc;
+  }
+
+  &[data-status='SUSPENDED'] {
+    color: var(--err);
+    background: #fdecea;
+  }
+}
+
+/* ---------- Tablas ---------- */
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: #f7f9fc;
+  border-block: 1px solid var(--line);
+}
+
+td {
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+tbody tr:hover td {
+  background: #f8fafd;
+}
+
+tr.selected td,
+tr.hl td {
+  background: #eef3fa;
+}
+
+tr.warn td {
+  background: #fffaf2;
+}
+
+tr.bad td {
+  background: #fff6f5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

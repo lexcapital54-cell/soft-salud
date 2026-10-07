@@ -1,10 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { API, WEBSITE_URL } from '../api.config';
+import { API } from '../api.config';
 import { AuthService } from '../auth.service';
 import { ClinicSpecialty, SPECIALTY_LABELS } from '../models';
+import { SaShell } from '../super-admin/sa-shell';
 
 type DemoUser = { role: string; roleLabel: string; fullName: string; email: string; password: string | null };
 
@@ -26,17 +26,14 @@ const LOGIN_PATH = '/login-profesional.html';
 
 @Component({
   selector: 'app-demo-clinics',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, SaShell],
   templateUrl: './demo-clinics.html',
-  styleUrls: ['../password-admin/password-admin.scss', './demo-clinics.scss'],
+  styleUrls: ['../super-admin/sa-page.scss', './demo-clinics.scss'],
 })
 export class DemoClinicsPage implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
 
-  readonly websiteUrl = WEBSITE_URL;
-  readonly user = this.auth.user;
   /** El equipo comercial solo consulta: no crea ni desactiva demos. */
   readonly readOnly = this.auth.isCommercial;
   readonly loginUrl = location.origin + LOGIN_PATH;
@@ -174,14 +171,5 @@ export class DemoClinicsPage implements OnInit {
       ...demo.users.map((u) => `${u.roleLabel}: ${u.email} · clave ${u.password ?? '—'}`),
     ];
     this.copy(lines.join('\n'));
-  }
-
-  goHome() {
-    window.location.href = this.websiteUrl;
-  }
-
-  logout() {
-    this.auth.logout();
-    void this.router.navigateByUrl('/login');
   }
 }

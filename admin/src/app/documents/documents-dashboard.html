@@ -1,3 +1,15 @@
+<!-- El superadmin usa el mismo marco del panel de administración; el consultorio conserva su diseño -->
+@if (canManage()) {
+  <app-sa-shell
+    eyebrow="Gestión documental"
+    heading="Expediente de habilitación y SG-SST"
+    subtitle="Asigne, cargue, revise y firme la documentación de cada consultorio."
+  >
+    <div class="sa-body">
+      <ng-container *ngTemplateOutlet="docsBody" />
+    </div>
+  </app-sa-shell>
+} @else {
 <section class="wrap">
   <header class="topbar">
     <div class="header-left">
@@ -8,10 +20,16 @@
     </div>
     <button type="button" class="logout" (click)="logout()">Cerrar sesión</button>
   </header>
+  <ng-container *ngTemplateOutlet="docsBody" />
+</section>
+}
 
+<ng-template #docsBody>
   <div class="intro">
-    <p class="eyebrow">Gestión documental</p>
-    <h1>Expediente de habilitación y SG-SST</h1>
+    @if (!canManage()) {
+      <p class="eyebrow">Gestión documental</p>
+      <h1>Expediente de habilitación y SG-SST</h1>
+    }
     @if (canManage()) {
       <p class="muted">
         Modo <strong>superadministrador</strong>: puede
@@ -759,7 +777,7 @@
       <p class="muted">Ningún requisito coincide con la búsqueda.</p>
     }
   }
-</section>
+</ng-template>
 
 @if (detail(); as info) {
   <div class="modal-backdrop" (click)="closeDetail()">

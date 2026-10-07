@@ -1,469 +1,433 @@
-<div class="shell">
-  <aside>
-    <div>
-      <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()">
-        HABILISALUD
-      </a>
-      <p class="role">Superadmin</p>
-    </div>
-    <nav>
-      <a routerLink="/admin">Administración</a>
-      <a routerLink="/admin/contrasenas">Contraseñas</a>
-      <a routerLink="/admin/ingresos" class="active">Recibos de caja</a>
-      <a routerLink="/admin/habilitacion">Habilitación</a>
-      <a routerLink="/admin/documentos">Documentos</a>
-      <a routerLink="/admin/demos">Consultorios demo</a>
-    </nav>
-    <div class="session">
-      <div class="session-user">
-        <p class="session-name">{{ user()?.fullName }}</p>
-        <p class="session-email">{{ user()?.email }}</p>
-      </div>
-      <button type="button" class="ghost" (click)="logout()">Cerrar sesión</button>
-    </div>
-  </aside>
+<app-sa-shell eyebrow="Ingresos de plataforma" heading="Recibos de caja HabiliSALUD" subtitle="Cobros por alta de consultorio (con o sin documentación) y arrendamiento mensual del servidor.">
 
-  <main>
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">Ingresos de plataforma</p>
-        <h1>Recibos de caja HabiliSALUD</h1>
-        <p class="welcome">
-          Cobros por alta de consultorio (con o sin documentación) y arrendamiento mensual del
-          servidor.
+  @if (notice()) {
+    <p class="ok">{{ notice() }}</p>
+  }
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  <nav class="tabs">
+    <button type="button" [class.active]="tab() === 'resumen'" (click)="setTab('resumen')">
+      Ingresos
+    </button>
+    <button type="button" [class.active]="tab() === 'nuevo'" (click)="setTab('nuevo')">
+      Nuevo cobro
+    </button>
+    <button type="button" [class.active]="tab() === 'mensual'" (click)="setTab('mensual')">
+      Arrendamiento mensual
+    </button>
+    <button type="button" [class.active]="tab() === 'tarifas'" (click)="setTab('tarifas')">
+      Tarifas
+    </button>
+  </nav>
+
+  @if (tab() === 'resumen') {
+    <section class="cards">
+      <article class="stat">
+        <p class="lbl">Este mes</p>
+        <p class="val">
+          {{ (income()?.currentMonth?.total || 0) | currency: 'COP':'symbol-narrow':'1.0-0' }}
         </p>
-      </div>
-    </header>
+        <p class="sub">{{ income()?.currentMonth?.count || 0 }} recibos</p>
+      </article>
+      <article class="stat">
+        <p class="lbl">Altas (mes)</p>
+        <p class="val">
+          {{ (income()?.currentMonth?.setup || 0) | currency: 'COP':'symbol-narrow':'1.0-0' }}
+        </p>
+      </article>
+      <article class="stat">
+        <p class="lbl">Arrendamiento (mes)</p>
+        <p class="val">
+          {{ (income()?.currentMonth?.hosting || 0) | currency: 'COP':'symbol-narrow':'1.0-0' }}
+        </p>
+      </article>
+      <article class="stat">
+        <p class="lbl">Total {{ incomeYear }}</p>
+        <p class="val">
+          {{ (income()?.yearTotal || 0) | currency: 'COP':'symbol-narrow':'1.0-0' }}
+        </p>
+      </article>
+    </section>
 
-    @if (notice()) {
-      <p class="ok">{{ notice() }}</p>
-    }
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
-    }
-
-    <nav class="tabs">
-      <button type="button" [class.active]="tab() === 'resumen'" (click)="setTab('resumen')">
-        Ingresos
-      </button>
-      <button type="button" [class.active]="tab() === 'nuevo'" (click)="setTab('nuevo')">
-        Nuevo cobro
-      </button>
-      <button type="button" [class.active]="tab() === 'mensual'" (click)="setTab('mensual')">
-        Arrendamiento mensual
-      </button>
-      <button type="button" [class.active]="tab() === 'tarifas'" (click)="setTab('tarifas')">
-        Tarifas
-      </button>
-    </nav>
-
-    @if (tab() === 'resumen') {
-      <section class="cards">
-        <article class="stat">
-          <p class="lbl">Este mes</p>
-          <p class="val">
-            {{ (income()?.currentMonth?.total || 0) | currency: 'COP':'symbol-narrow':'1.0-0' }}
-          </p>
-          <p class="sub">{{ income()?.currentMonth?.count || 0 }} recibos</p>
-        </article>
-        <article class="stat">
-          <p class="lbl">Altas (mes)</p>
-          <p class="val">
-            {{ (income()?.currentMonth?.setup || 0) | currency: 'COP':'symbol-narrow':'1.0-0' }}
-          </p>
-        </article>
-        <article class="stat">
-          <p class="lbl">Arrendamiento (mes)</p>
-          <p class="val">
-            {{ (income()?.currentMonth?.hosting || 0) | currency: 'COP':'symbol-narrow':'1.0-0' }}
-          </p>
-        </article>
-        <article class="stat">
-          <p class="lbl">Total {{ incomeYear }}</p>
-          <p class="val">
-            {{ (income()?.yearTotal || 0) | currency: 'COP':'symbol-narrow':'1.0-0' }}
-          </p>
-        </article>
-      </section>
-
-      <section class="card">
-        <div class="row-head">
-          <h2>Ingreso mensual {{ incomeYear }}</h2>
-          <div class="year-nav">
-            <button type="button" class="ghost" (click)="changeYear(-1)">←</button>
-            <button type="button" class="ghost" (click)="changeYear(1)">→</button>
-          </div>
+    <section class="card">
+      <div class="row-head">
+        <h2>Ingreso mensual {{ incomeYear }}</h2>
+        <div class="year-nav">
+          <button type="button" class="ghost" (click)="changeYear(-1)">←</button>
+          <button type="button" class="ghost" (click)="changeYear(1)">→</button>
         </div>
-        @if (loading()) {
-          <p class="muted">Cargando…</p>
-        } @else {
-          <table>
-            <thead>
-              <tr>
-                <th>Mes</th>
-                <th>Altas</th>
-                <th>Arrendamiento</th>
-                <th>Otros</th>
-                <th>Total</th>
-                <th>#</th>
+      </div>
+      @if (loading()) {
+        <p class="muted">Cargando…</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>Mes</th>
+              <th>Altas</th>
+              <th>Arrendamiento</th>
+              <th>Otros</th>
+              <th>Total</th>
+              <th>#</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of income()?.months || []; track m.month) {
+              <tr [class.hl]="m.month === income()?.currentMonth?.month">
+                <td>{{ m.month }}</td>
+                <td>{{ m.setup | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td>{{ m.hosting | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td>{{ m.other | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td>
+                  <strong>{{ m.total | currency: 'COP':'symbol-narrow':'1.0-0' }}</strong>
+                </td>
+                <td>{{ m.count }}</td>
               </tr>
-            </thead>
-            <tbody>
-              @for (m of income()?.months || []; track m.month) {
-                <tr [class.hl]="m.month === income()?.currentMonth?.month">
-                  <td>{{ m.month }}</td>
-                  <td>{{ m.setup | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
-                  <td>{{ m.hosting | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
-                  <td>{{ m.other | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
-                  <td>
-                    <strong>{{ m.total | currency: 'COP':'symbol-narrow':'1.0-0' }}</strong>
-                  </td>
-                  <td>{{ m.count }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      </section>
-
-      <section class="card">
-        <h2>Últimos recibos</h2>
-        @if (!receipts().length) {
-          <p class="muted">Aún no hay cobros registrados.</p>
-        } @else {
-          <table>
-            <thead>
-              <tr>
-                <th>Número</th>
-                <th>Fecha de pago</th>
-                <th>Consultorio</th>
-                <th>Concepto</th>
-                <th>Plan</th>
-                <th>Total</th>
-                <th>Estado</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (r of receipts(); track r.id) {
-                <tr [class.warn]="r.status === 'PENDING'">
-                  <td>{{ r.number }}</td>
-                  <td>{{ r.paidAt ? (r.paidAt | date: 'short') : '—' }}</td>
-                  <td>{{ r.clinic?.name }}</td>
-                  <td>
-                    {{ r.kindLabel }}
-                    @if (r.billingRange) {
-                      <span class="muted"> · {{ r.billingRange }}</span>
-                    }
-                  </td>
-                  <td>{{ r.planSnapshot || r.planLabel }}</td>
-                  <td>{{ r.amount | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
-                  <td>
-                    <span class="pill" [attr.data-status]="r.status">{{ r.statusLabel }}</span>
-                  </td>
-                  <td class="row-actions">
-                    @if (r.status === 'PENDING') {
-                      <button
-                        type="button"
-                        class="linkish"
-                        [disabled]="busyReceiptId() === r.id"
-                        (click)="markPaid(r.id, r.number)"
-                      >
-                        Marcar pagado
-                      </button>
-                    } @else {
-                      <button
-                        type="button"
-                        class="linkish"
-                        [disabled]="busyReceiptId() === r.id"
-                        (click)="markPending(r.id, r.number)"
-                      >
-                        Marcar pendiente
-                      </button>
-                    }
-                    <button type="button" class="linkish" (click)="openPdf(r.id)">PDF</button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      </section>
-    }
-
-    @if (tab() === 'nuevo') {
-      <section class="card form-card">
-        <h2>Nuevo recibo de cobro</h2>
-        <p class="muted">
-          Use «Alta de consultorio» al crear un cliente, eligiendo si incluye documentación o no.
-          Use «Arrendamiento mensual» para el coste del espacio en el servidor.
-        </p>
-        <div class="grid">
-          <label>
-            Consultorio
-            <select [(ngModel)]="form.clinicId" (ngModelChange)="onClinicChange()">
-              <option value="">— Seleccione —</option>
-              @for (c of clinics(); track c.id) {
-                <option [value]="c.id">{{ c.name }}</option>
-              }
-            </select>
-          </label>
-          <label>
-            Concepto
-            <select [(ngModel)]="form.kind" (ngModelChange)="onKindOrPlanChange()">
-              <option value="CLINIC_SETUP">Alta / creación de consultorio</option>
-              <option value="MONTHLY_HOSTING">Arrendamiento mensual del servidor</option>
-              <option value="OTHER">Otro</option>
-            </select>
-          </label>
-          <label>
-            Documentación
-            <select
-              [(ngModel)]="form.plan"
-              [disabled]="!!selectedClinic()?.dashboardType"
-              (ngModelChange)="onKindOrPlanChange()"
-            >
-              <option value="WITHOUT_DOCS">Sin documentación</option>
-              <option value="WITH_DOCS">Con documentación</option>
-            </select>
-            @if (selectedClinic()?.dashboardType) {
-              <small class="muted">Según el plan que tiene hoy el consultorio.</small>
             }
-          </label>
-          @if (form.kind === 'MONTHLY_HOSTING') {
-            <label>
-              Periodo (mes)
-              <input type="month" [(ngModel)]="form.periodMonth" />
-              <small class="muted">Facturación {{ periodRange(form.periodMonth) }}</small>
-            </label>
-          }
-          <label>
-            Estado
-            <select [(ngModel)]="form.status">
-              <option value="PAID">Pagado (registrar pago hoy)</option>
-              <option value="PENDING">Pendiente (cuenta de cobro)</option>
-            </select>
-          </label>
-          <label>
-            Forma de pago
-            <select [(ngModel)]="form.method">
-              @for (m of methods; track m.value) {
-                <option [value]="m.value">{{ m.label }}</option>
-              }
-            </select>
-          </label>
-          <label>
-            Monto (COP)
-            <input
-              type="number"
-              [(ngModel)]="form.amount"
-              min="0"
-              step="1000"
-              placeholder="Escriba el valor"
-              required
-            />
-          </label>
-          @if (suggestedAmount() != null) {
-            <p class="hint full">
-              Referencia de tarifa:
-              {{ suggestedAmount()! | currency: 'COP':'symbol-narrow':'1.0-0' }}
-              <button type="button" class="linkish" (click)="applySuggestedAmount()">
-                Usar esta referencia
-              </button>
-            </p>
-          }
-          <label class="full">
-            Notas
-            <textarea [(ngModel)]="form.notes" rows="2"></textarea>
-          </label>
-        </div>
-        <button type="button" class="primary" [disabled]="loading()" (click)="createReceipt()">
-          {{ loading() ? 'Guardando…' : 'Registrar cobro' }}
-        </button>
-      </section>
-    }
+          </tbody>
+        </table>
+      }
+    </section>
 
-    @if (tab() === 'mensual') {
-      <section class="card form-card">
-        <h2>Generar arrendamiento mensual</h2>
-        <p class="muted">
-          Facturación de fin de mes a fin de mes; la mensualidad se paga los primeros 5 días de
-          cada mes. Esos días el sistema envía un recordatorio diario al admin de cada consultorio
-          sin pago y le muestra un aviso en su panel de inicio. Al registrar el pago de un
-          consultorio suspendido, se reactivan sus usuarios.
-        </p>
-        <div class="grid">
-          <label>
-            Periodo
-            <input
-              type="month"
-              [(ngModel)]="monthlyForm.periodMonth"
-              (ngModelChange)="loadHostingStatus()"
-            />
-            <small class="muted">Facturación {{ periodRange(monthlyForm.periodMonth) }}</small>
-          </label>
-          <label>
-            Registrar como
-            <select [(ngModel)]="monthlyForm.status">
-              <option value="PENDING">Pendiente (cuentas de cobro)</option>
-              <option value="PAID">Pagado</option>
-            </select>
-          </label>
-          <label>
-            Monto (COP)
-            <input
-              type="number"
-              [(ngModel)]="monthlyForm.amount"
-              min="0"
-              step="1000"
-              placeholder="Escriba el valor"
-              required
-            />
-          </label>
-          <label>
-            Forma de pago
-            <select [(ngModel)]="monthlyForm.method">
-              @for (m of methods; track m.value) {
-                <option [value]="m.value">{{ m.label }}</option>
-              }
-            </select>
-          </label>
-          <label>
-            Solo un consultorio (opcional)
-            <select [(ngModel)]="monthlyForm.clinicId">
-              <option value="">Todos los activos</option>
-              @for (c of clinics(); track c.id) {
-                <option [value]="c.id">{{ c.name }}</option>
-              }
-            </select>
-          </label>
-        </div>
-        <div class="actions-row">
-          <button type="button" class="primary" [disabled]="loading()" (click)="generateMonthly()">
-            {{
-              loading()
-                ? 'Generando…'
-                : monthlyForm.status === 'PENDING'
-                  ? 'Emitir cuentas de cobro del mes'
-                  : 'Registrar pagos del mes'
-            }}
-          </button>
-          <button type="button" class="ghost" [disabled]="loading()" (click)="notifyDue()">
-            Avisar mora (ponerse al día)
-          </button>
-          <button type="button" class="danger" [disabled]="loading()" (click)="suspendUnpaid()">
-            Suspender sin pago
-          </button>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>
-          Estado del periodo {{ monthlyForm.periodMonth }}
-          <span class="muted">· {{ periodRange(monthlyForm.periodMonth) }}</span>
-        </h2>
-        <p class="muted">
-          Pendiente o sin cobro → puede marcar pagado, avisar o suspender. Al suspender se desactivan los usuarios y se avisa
-          al admin. Al registrar el pago se reactivan.
-        </p>
-        @if (loading()) {
-          <p class="muted">Cargando…</p>
-        } @else if (!hostingRows().length) {
-          <p class="muted">No hay consultorios con dashboard.</p>
-        } @else {
-          <table>
-            <thead>
-              <tr>
-                <th>Consultorio</th>
-                <th>Estado</th>
-                <th>Recibo</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of hostingRows(); track row.clinicId) {
-                <tr
-                  [class.warn]="row.status === 'UNPAID' || row.status === 'PENDING'"
-                  [class.bad]="row.status === 'SUSPENDED'"
-                >
-                  <td>{{ row.clinicName }}</td>
-                  <td>
-                    <span class="pill" [attr.data-status]="row.status">{{ statusLabel(row.status) }}</span>
-                  </td>
-                  <td>{{ row.receiptNumber || '—' }}</td>
-                  <td class="row-actions">
-                    @if (row.status !== 'PAID' && row.receiptId) {
-                      <button
-                        type="button"
-                        class="linkish"
-                        [disabled]="busyReceiptId() === row.receiptId"
-                        (click)="markPaid(row.receiptId, row.receiptNumber || '')"
-                      >
-                        Marcar pagado
-                      </button>
-                    }
-                    @if (row.status !== 'PAID') {
-                      <button type="button" class="linkish" (click)="notifyDue(row.clinicId)">
-                        Avisar
-                      </button>
-                      <button type="button" class="linkish" (click)="suspendUnpaid(row.clinicId)">
-                        Suspender
-                      </button>
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      </section>
-    }
-
-    @if (tab() === 'tarifas') {
-      <section class="card">
-        <h2>Tarifas de referencia</h2>
-        <p class="muted">
-          Valores orientativos. En cada cobro el SUPER_ADMIN escribe el monto real; puede usar
-          «Usar esta referencia» como ayuda.
-        </p>
-        @if (loading()) {
-          <p class="muted">Cargando…</p>
-        } @else {
-          <table>
-            <thead>
-              <tr>
-                <th>Concepto</th>
-                <th>Plan</th>
-                <th>Monto (COP)</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (f of fees(); track f.id) {
-                <tr>
-                  <td>{{ f.label }}</td>
-                  <td>{{ f.planLabel }}</td>
-                  <td>
-                    <input
-                      type="number"
-                      class="fee-input"
-                      [value]="f.amount"
-                      #amt
-                      min="0"
-                      step="1000"
-                    />
-                  </td>
-                  <td>
-                    <button type="button" class="ghost" (click)="saveFee(f, amt.value)">
-                      Guardar
+    <section class="card">
+      <h2>Últimos recibos</h2>
+      @if (!receipts().length) {
+        <p class="muted">Aún no hay cobros registrados.</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>Número</th>
+              <th>Fecha de pago</th>
+              <th>Consultorio</th>
+              <th>Concepto</th>
+              <th>Plan</th>
+              <th>Total</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of receipts(); track r.id) {
+              <tr [class.warn]="r.status === 'PENDING'">
+                <td>{{ r.number }}</td>
+                <td>{{ r.paidAt ? (r.paidAt | date: 'short') : '—' }}</td>
+                <td>{{ r.clinic?.name }}</td>
+                <td>
+                  {{ r.kindLabel }}
+                  @if (r.billingRange) {
+                    <span class="muted"> · {{ r.billingRange }}</span>
+                  }
+                </td>
+                <td>{{ r.planSnapshot || r.planLabel }}</td>
+                <td>{{ r.amount | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td>
+                  <span class="pill" [attr.data-status]="r.status">{{ r.statusLabel }}</span>
+                </td>
+                <td class="row-actions">
+                  @if (r.status === 'PENDING') {
+                    <button
+                      type="button"
+                      class="linkish"
+                      [disabled]="busyReceiptId() === r.id"
+                      (click)="markPaid(r.id, r.number)"
+                    >
+                      Marcar pagado
                     </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+                  } @else {
+                    <button
+                      type="button"
+                      class="linkish"
+                      [disabled]="busyReceiptId() === r.id"
+                      (click)="markPending(r.id, r.number)"
+                    >
+                      Marcar pendiente
+                    </button>
+                  }
+                  <button type="button" class="linkish" (click)="openPdf(r.id)">PDF</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  }
+
+  @if (tab() === 'nuevo') {
+    <section class="card form-card">
+      <h2>Nuevo recibo de cobro</h2>
+      <p class="muted">
+        Use «Alta de consultorio» al crear un cliente, eligiendo si incluye documentación o no.
+        Use «Arrendamiento mensual» para el coste del espacio en el servidor.
+      </p>
+      <div class="grid">
+        <label>
+          Consultorio
+          <select [(ngModel)]="form.clinicId" (ngModelChange)="onClinicChange()">
+            <option value="">— Seleccione —</option>
+            @for (c of clinics(); track c.id) {
+              <option [value]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          Concepto
+          <select [(ngModel)]="form.kind" (ngModelChange)="onKindOrPlanChange()">
+            <option value="CLINIC_SETUP">Alta / creación de consultorio</option>
+            <option value="MONTHLY_HOSTING">Arrendamiento mensual del servidor</option>
+            <option value="OTHER">Otro</option>
+          </select>
+        </label>
+        <label>
+          Documentación
+          <select
+            [(ngModel)]="form.plan"
+            [disabled]="!!selectedClinic()?.dashboardType"
+            (ngModelChange)="onKindOrPlanChange()"
+          >
+            <option value="WITHOUT_DOCS">Sin documentación</option>
+            <option value="WITH_DOCS">Con documentación</option>
+          </select>
+          @if (selectedClinic()?.dashboardType) {
+            <small class="muted">Según el plan que tiene hoy el consultorio.</small>
+          }
+        </label>
+        @if (form.kind === 'MONTHLY_HOSTING') {
+          <label>
+            Periodo (mes)
+            <input type="month" [(ngModel)]="form.periodMonth" />
+            <small class="muted">Facturación {{ periodRange(form.periodMonth) }}</small>
+          </label>
         }
-      </section>
-    }
-  </main>
-</div>
+        <label>
+          Estado
+          <select [(ngModel)]="form.status">
+            <option value="PAID">Pagado (registrar pago hoy)</option>
+            <option value="PENDING">Pendiente (cuenta de cobro)</option>
+          </select>
+        </label>
+        <label>
+          Forma de pago
+          <select [(ngModel)]="form.method">
+            @for (m of methods; track m.value) {
+              <option [value]="m.value">{{ m.label }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          Monto (COP)
+          <input
+            type="number"
+            [(ngModel)]="form.amount"
+            min="0"
+            step="1000"
+            placeholder="Escriba el valor"
+            required
+          />
+        </label>
+        @if (suggestedAmount() != null) {
+          <p class="hint full">
+            Referencia de tarifa:
+            {{ suggestedAmount()! | currency: 'COP':'symbol-narrow':'1.0-0' }}
+            <button type="button" class="linkish" (click)="applySuggestedAmount()">
+              Usar esta referencia
+            </button>
+          </p>
+        }
+        <label class="full">
+          Notas
+          <textarea [(ngModel)]="form.notes" rows="2"></textarea>
+        </label>
+      </div>
+      <button type="button" class="primary" [disabled]="loading()" (click)="createReceipt()">
+        {{ loading() ? 'Guardando…' : 'Registrar cobro' }}
+      </button>
+    </section>
+  }
+
+  @if (tab() === 'mensual') {
+    <section class="card form-card">
+      <h2>Generar arrendamiento mensual</h2>
+      <p class="muted">
+        Facturación de fin de mes a fin de mes; la mensualidad se paga los primeros 5 días de
+        cada mes. Esos días el sistema envía un recordatorio diario al admin de cada consultorio
+        sin pago y le muestra un aviso en su panel de inicio. Al registrar el pago de un
+        consultorio suspendido, se reactivan sus usuarios.
+      </p>
+      <div class="grid">
+        <label>
+          Periodo
+          <input
+            type="month"
+            [(ngModel)]="monthlyForm.periodMonth"
+            (ngModelChange)="loadHostingStatus()"
+          />
+          <small class="muted">Facturación {{ periodRange(monthlyForm.periodMonth) }}</small>
+        </label>
+        <label>
+          Registrar como
+          <select [(ngModel)]="monthlyForm.status">
+            <option value="PENDING">Pendiente (cuentas de cobro)</option>
+            <option value="PAID">Pagado</option>
+          </select>
+        </label>
+        <label>
+          Monto (COP)
+          <input
+            type="number"
+            [(ngModel)]="monthlyForm.amount"
+            min="0"
+            step="1000"
+            placeholder="Escriba el valor"
+            required
+          />
+        </label>
+        <label>
+          Forma de pago
+          <select [(ngModel)]="monthlyForm.method">
+            @for (m of methods; track m.value) {
+              <option [value]="m.value">{{ m.label }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          Solo un consultorio (opcional)
+          <select [(ngModel)]="monthlyForm.clinicId">
+            <option value="">Todos los activos</option>
+            @for (c of clinics(); track c.id) {
+              <option [value]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </label>
+      </div>
+      <div class="actions-row">
+        <button type="button" class="primary" [disabled]="loading()" (click)="generateMonthly()">
+          {{
+            loading()
+              ? 'Generando…'
+              : monthlyForm.status === 'PENDING'
+                ? 'Emitir cuentas de cobro del mes'
+                : 'Registrar pagos del mes'
+          }}
+        </button>
+        <button type="button" class="ghost" [disabled]="loading()" (click)="notifyDue()">
+          Avisar mora (ponerse al día)
+        </button>
+        <button type="button" class="danger" [disabled]="loading()" (click)="suspendUnpaid()">
+          Suspender sin pago
+        </button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>
+        Estado del periodo {{ monthlyForm.periodMonth }}
+        <span class="muted">· {{ periodRange(monthlyForm.periodMonth) }}</span>
+      </h2>
+      <p class="muted">
+        Pendiente o sin cobro → puede marcar pagado, avisar o suspender. Al suspender se desactivan los usuarios y se avisa
+        al admin. Al registrar el pago se reactivan.
+      </p>
+      @if (loading()) {
+        <p class="muted">Cargando…</p>
+      } @else if (!hostingRows().length) {
+        <p class="muted">No hay consultorios con dashboard.</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>Consultorio</th>
+              <th>Estado</th>
+              <th>Recibo</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of hostingRows(); track row.clinicId) {
+              <tr
+                [class.warn]="row.status === 'UNPAID' || row.status === 'PENDING'"
+                [class.bad]="row.status === 'SUSPENDED'"
+              >
+                <td>{{ row.clinicName }}</td>
+                <td>
+                  <span class="pill" [attr.data-status]="row.status">{{ statusLabel(row.status) }}</span>
+                </td>
+                <td>{{ row.receiptNumber || '—' }}</td>
+                <td class="row-actions">
+                  @if (row.status !== 'PAID' && row.receiptId) {
+                    <button
+                      type="button"
+                      class="linkish"
+                      [disabled]="busyReceiptId() === row.receiptId"
+                      (click)="markPaid(row.receiptId, row.receiptNumber || '')"
+                    >
+                      Marcar pagado
+                    </button>
+                  }
+                  @if (row.status !== 'PAID') {
+                    <button type="button" class="linkish" (click)="notifyDue(row.clinicId)">
+                      Avisar
+                    </button>
+                    <button type="button" class="linkish" (click)="suspendUnpaid(row.clinicId)">
+                      Suspender
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  }
+
+  @if (tab() === 'tarifas') {
+    <section class="card">
+      <h2>Tarifas de referencia</h2>
+      <p class="muted">
+        Valores orientativos. En cada cobro el SUPER_ADMIN escribe el monto real; puede usar
+        «Usar esta referencia» como ayuda.
+      </p>
+      @if (loading()) {
+        <p class="muted">Cargando…</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>Concepto</th>
+              <th>Plan</th>
+              <th>Monto (COP)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of fees(); track f.id) {
+              <tr>
+                <td>{{ f.label }}</td>
+                <td>{{ f.planLabel }}</td>
+                <td>
+                  <input
+                    type="number"
+                    class="fee-input"
+                    [value]="f.amount"
+                    #amt
+                    min="0"
+                    step="1000"
+                  />
+                </td>
+                <td>
+                  <button type="button" class="ghost" (click)="saveFee(f, amt.value)">
+                    Guardar
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  }
+</app-sa-shell>

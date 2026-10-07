@@ -272,6 +272,40 @@ button { font: inherit; color: inherit; }
 .viewer-html { margin: 20px auto; padding: 32px; max-width: 820px; width: 100%; background: #fff; box-shadow: var(--shadow); font-size: 14px; line-height: 1.55; }
 .viewer-msg { margin: auto; padding: 24px; text-align: center; color: var(--muted); }
 
+/* ---------- Superadmin: paleta y marco del panel de administración ---------- */
+:host(.sa) {
+  --petrol: #002b5c;
+  --petrol-2: #0a3d73;
+  --slate: #4a5d72;
+  --beige: #dff5f2;
+  --taupe: #0b6f68;
+  --gold: #2ec4b6;
+
+  .card-head h2, .stat strong, .std-count strong, .std-head-row h2, .drawer-head h2, .modal-head h2 { font-family: inherit; }
+  .card-head h2 { font-size: 18px; color: var(--ink); }
+  .btn-primary, .quick-btn.primary { background: var(--petrol); border-color: var(--petrol); &:hover:not(:disabled) { background: #001a3a; } }
+  .btn-soft { border-color: #bfe9e3; }
+  .std, .support, .due-list button, .quick-btn:hover { background: #fff; }
+  .tbl th { background: #f7f9fc; }
+  .tbl td, .cat-list li { border-bottom-color: #eef2f6; }
+  .tbl tbody tr:hover { background: #f7f9fc; }
+  .skeleton { background: linear-gradient(90deg, #e9eef4 0%, #f5f8fb 50%, #e9eef4 100%); background-size: 200% 100%; }
+  .overlay { background: rgba(0, 26, 58, 0.4); }
+  .search:focus-within, .clinic-pick select:focus { border-color: var(--petrol); box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.35); }
+}
+.sa-tools .clinic-pick select { min-width: 240px; max-width: 100%; border-color: rgba(255, 255, 255, 0.3); }
+.sa-tabs {
+  display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 12px; background: #e9eef5; width: fit-content; max-width: 100%;
+  button, .sa-tab-link {
+    display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 0; border-radius: 9px;
+    background: transparent; color: var(--muted); font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer;
+    &:hover { color: var(--ink); }
+    &:focus-visible { outline: 3px solid rgba(46, 196, 182, 0.5); outline-offset: 1px; }
+  }
+  button.on { background: #fff; color: var(--petrol); box-shadow: 0 1px 3px rgba(10, 31, 61, 0.12); }
+}
+.sa-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; .search { flex: 1 1 320px; max-width: 560px; } }
+
 /* ---------- Adaptable ---------- */
 @media (max-width: 1300px) {
   .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
