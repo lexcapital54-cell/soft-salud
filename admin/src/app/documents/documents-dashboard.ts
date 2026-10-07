@@ -1736,15 +1736,28 @@ export class DocumentsDashboard {
     });
   }
 
+  /** Archivado lógico: la versión sale de vigencia pero queda en el historial. */
   retireFile(fileId: string) {
-    this.deleteFilePermanent(fileId);
+    if (!confirm('¿Archivar esta versión? Deja de estar vigente y se conserva en el historial.')) return;
+    this.api.retire(fileId).subscribe({
+      next: (data) => {
+        this.detail.set(data);
+        this.notice.set('Versión archivada. Se conserva en el historial.');
+        if (this.viewing()?.id === fileId) this.closeViewer();
+        if (this.editingFileId() === fileId) this.cancelEditFileMeta();
+        this.viewerSiblings.set(data.files.filter((f) => f.status !== 'RETIRED'));
+        this.load();
+      },
+      error: (err) => this.error.set(describeError(err)),
+    });
   }
 
+  /** Solo superadmin y solo sobre versiones ya archivadas. */
   deleteFilePermanent(fileId: string) {
     if (!this.canManage()) return;
     if (
       !confirm(
-        '¿Eliminar este archivo? Se borra sin dejar rastro. Los demás documentos de la carpeta se conservan.',
+        '¿Eliminar definitivamente esta versión archivada? Esta acción no se puede deshacer.',
       )
     ) {
       return;
@@ -1802,7 +1815,7 @@ export class DocumentsDashboard {
     if (!file) return;
     if (
       !confirm(
-        `¿Reemplazar este archivo por «${file.name}»? Solo se elimina este; los demás documentos de la carpeta se conservan.`,
+        `¿Reemplazar este archivo por «${file.name}»? La versión actual se archiva y queda en el historial.`,
       )
     ) {
       input.value = '';
@@ -1810,19 +1823,20 @@ export class DocumentsDashboard {
     }
     this.uploading.set(requirementId);
     this.error.set('');
-    this.api.deleteFilePermanent(fileId).subscribe({
-      next: () => {
-        this.api
-          .upload(requirementId, file, {
-            expiresAt: this.pendingExpiry() || undefined,
-            periodLabel: this.pendingPeriod() || undefined,
-          })
-          .subscribe({
+    // Primero se carga la nueva versión; solo si llega bien se archiva la anterior.
+    this.api
+      .upload(requirementId, file, {
+        expiresAt: this.pendingExpiry() || undefined,
+        periodLabel: this.pendingPeriod() || undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.api.retire(fileId).subscribe({
             next: (detail) => {
               this.uploading.set(null);
               input.value = '';
               this.detail.set(detail);
-              this.notice.set(`Archivo reemplazado por «${file.name}».`);
+              this.notice.set(`Archivo reemplazado por «${file.name}». La versión anterior quedó en el historial.`);
               this.load();
               const active = detail.files.filter((f) => f.status !== 'RETIRED');
               const newest = active[0];
@@ -1835,13 +1849,14 @@ export class DocumentsDashboard {
               this.openDetail(requirementId);
             },
           });
-      },
-      error: (err) => {
-        this.uploading.set(null);
-        input.value = '';
-        this.error.set(describeError(err));
-      },
-    });
+        },
+        error: (err) => {
+          this.uploading.set(null);
+          input.value = '';
+          this.error.set(describeError(err));
+          this.openDetail(requirementId);
+        },
+      });
   }
 
   openLatest(req: RequirementRow) {

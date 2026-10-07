@@ -300,6 +300,8 @@ export class DocumentsController {
         expiresAt: body.expiresAt || undefined,
         periodLabel: body.periodLabel || undefined,
         notes: body.notes || undefined,
+        issuedAt: body.issuedAt || undefined,
+        changeReason: body.changeReason || undefined,
       },
       requestContext(req),
       clinicId,

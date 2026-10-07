@@ -54,6 +54,8 @@ export interface DocumentFileRow {
   sizeBytes: number;
   checksum: string | null;
   expiresAt: string | null;
+  issuedAt?: string | null;
+  changeReason?: string | null;
   notes: string | null;
   formData?: Record<string, unknown> | null;
   retiredAt: string | null;

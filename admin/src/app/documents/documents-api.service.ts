@@ -88,13 +88,21 @@ export class DocumentsApiService {
   upload(
     requirementId: string,
     file: File,
-    meta?: { expiresAt?: string; periodLabel?: string; notes?: string },
+    meta?: {
+      expiresAt?: string;
+      periodLabel?: string;
+      notes?: string;
+      issuedAt?: string;
+      changeReason?: string;
+    },
   ) {
     const form = new FormData();
     form.append('file', file);
     if (meta?.expiresAt) form.append('expiresAt', meta.expiresAt);
     if (meta?.periodLabel) form.append('periodLabel', meta.periodLabel);
     if (meta?.notes) form.append('notes', meta.notes);
+    if (meta?.issuedAt) form.append('issuedAt', meta.issuedAt);
+    if (meta?.changeReason) form.append('changeReason', meta.changeReason);
     return this.http.post<RequirementDetail>(
       this.withClinic(`${API}/documents/requirements/${requirementId}/files`),
       form,

@@ -924,9 +924,13 @@
                     </label>
                   </div>
                 }
-                @if (canManage()) {
+                @if (file.status !== 'RETIRED') {
+                  <button type="button" class="danger" (click)="retireFile(file.id)">
+                    Archivar
+                  </button>
+                } @else if (canManage()) {
                   <button type="button" class="danger" (click)="deleteFilePermanent(file.id)">
-                    Eliminar
+                    Eliminar definitivamente
                   </button>
                 }
               }

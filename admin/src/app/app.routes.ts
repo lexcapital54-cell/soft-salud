@@ -43,6 +43,11 @@ export const routes: Routes = [
     canActivate: [authGuard, superAdminGuard],
   },
   {
+    path: 'admin/habilitacion',
+    loadComponent: () => import('./habilitation/habilitation-docs').then((m) => m.HabilitationDocs),
+    canActivate: [authGuard, superAdminGuard],
+  },
+  {
     path: 'admin/ingresos',
     component: PlatformBillingPage,
     canActivate: [authGuard, superAdminGuard],
@@ -92,6 +97,11 @@ export const routes: Routes = [
   {
     path: 'consultorio/documentos',
     component: DocumentsDashboard,
+    canActivate: [authGuard, documentsReadGuard, agendaOnlyGuard],
+  },
+  {
+    path: 'consultorio/habilitacion',
+    loadComponent: () => import('./habilitation/habilitation-docs').then((m) => m.HabilitationDocs),
     canActivate: [authGuard, documentsReadGuard, agendaOnlyGuard],
   },
   {

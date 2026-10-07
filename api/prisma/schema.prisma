@@ -1244,6 +1244,8 @@ model DocumentCategory {
   /// Estándar de habilitación (Res. 3100 de 2019) o pilar SG-SST al que se agrupa en el dashboard.
   pillar    DocumentPillar @default(PROCESOS_PRIORITARIOS)
   sortOrder Int            @default(0) @map("sort_order")
+  /// Tipo documental desactivado: no se ofrece para documentos nuevos; los existentes se conservan.
+  isActive  Boolean        @default(true) @map("is_active")
 
   requirements DocumentRequirement[]
 
@@ -1266,6 +1268,12 @@ model DocumentRequirement {
   /// Si es true, tras el sello HABILISALUD el consultorio debe firmar contraparte.
   requiresClinicSignature Boolean @default(false) @map("requires_clinic_signature")
   validityDays Int?             @map("validity_days")
+  /// Persona responsable del documento (distinta de quien carga el archivo).
+  responsibleName String?       @map("responsible_name") @db.VarChar(160)
+  /// Área responsable (ej. Servicios generales, Calidad).
+  responsibleArea String?       @map("responsible_area") @db.VarChar(120)
+  /// Archivado lógico: el documento y sus versiones se conservan para trazabilidad.
+  archivedAt   DateTime?        @map("archived_at") @db.Timestamptz(6)
   createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -1293,6 +1301,10 @@ model DocumentFile {
   sizeBytes     Int                @map("size_bytes")
   checksum      String?            @db.VarChar(128)
   expiresAt     DateTime?          @map("expires_at") @db.Timestamptz(6)
+  /// Fecha de emisión del documento (no la de carga).
+  issuedAt      DateTime?          @map("issued_at") @db.Timestamptz(6)
+  /// Motivo del cambio al cargar una nueva versión.
+  changeReason  String?            @map("change_reason")
   notes         String?
   /// Campos diligenciados (líneas punteadas / formulario) de esta versión.
   formData      Json?              @map("form_data")

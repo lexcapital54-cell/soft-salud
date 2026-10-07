@@ -4,10 +4,13 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
+  Min,
   MinLength,
 } from 'class-validator';
 
@@ -58,6 +61,16 @@ export class UploadDocumentMetaDto {
   @IsString()
   @MaxLength(2000)
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  issuedAt?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  changeReason?: string;
 }
 
 export class SetRequirementEnabledDto {
@@ -107,6 +120,23 @@ export class CreateDocumentRequirementDto {
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
   requiresClinicSignature?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  responsibleName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  responsibleArea?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(3650)
+  validityDays?: number;
 }
 
 export class ReplicateDocumentsDto {

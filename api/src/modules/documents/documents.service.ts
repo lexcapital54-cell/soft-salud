@@ -472,6 +472,8 @@ export class DocumentsService {
       sizeBytes: file.sizeBytes,
       checksum: file.checksum,
       expiresAt: this.expiryOf(file, validityDays),
+      issuedAt: file.issuedAt,
+      changeReason: file.changeReason,
       notes: file.notes,
       formData: file.formData,
       retiredAt: file.retiredAt,
@@ -697,7 +699,7 @@ export class DocumentsService {
     const now = new Date();
 
     const requirements = await this.prisma.documentRequirement.findMany({
-      where: { clinicId, ...(pillar ? { category: { pillar } } : {}) },
+      where: { clinicId, archivedAt: null, ...(pillar ? { category: { pillar } } : {}) },
       include: {
         category: true,
         files: {
@@ -977,7 +979,13 @@ export class DocumentsService {
     user: User,
     requirementId: string,
     file: Express.Multer.File,
-    meta: { expiresAt?: string; periodLabel?: string; notes?: string },
+    meta: {
+      expiresAt?: string;
+      periodLabel?: string;
+      notes?: string;
+      issuedAt?: string;
+      changeReason?: string;
+    },
     context: AuditContext,
     clinicIdParam?: string,
   ) {
@@ -1022,6 +1030,14 @@ export class DocumentsService {
         throw new BadRequestException('Fecha de vencimiento inválida');
       }
       expiry = parsed;
+    }
+    let issuedAt: Date | null = null;
+    if (meta.issuedAt) {
+      const parsed = new Date(meta.issuedAt);
+      if (Number.isNaN(parsed.getTime())) {
+        throw new BadRequestException('Fecha de emisión inválida');
+      }
+      issuedAt = parsed;
     }
 
     const sgsst = isSgsstFillable(
@@ -1078,6 +1094,8 @@ export class DocumentsService {
         sizeBytes: buffer.length,
         checksum: contentHash,
         expiresAt: expiry,
+        issuedAt,
+        changeReason: meta.changeReason?.trim() || null,
         notes:
           meta.notes?.trim() ||
           (autoSigned
@@ -1114,6 +1132,7 @@ export class DocumentsService {
       checksum: contentHash,
       version,
       periodLabel: meta.periodLabel ?? null,
+      changeReason: meta.changeReason?.trim() || null,
       brandedProfessional: !sgsst && isPdf,
       autoSignedWithProfile: autoSigned,
     });
@@ -1722,12 +1741,40 @@ export class DocumentsService {
    * Retiro: elimina ese archivo sin dejar rastro (DB + disco).
    * Si hay otros documentos en la misma carpeta/requisito, se conservan.
    */
+  /**
+   * Archivado lógico de una versión: deja de contar como vigente, pero el archivo
+   * y sus firmas se conservan en el historial (trazabilidad de habilitación).
+   */
   async retire(user: User, fileId: string, context: AuditContext, clinicIdParam?: string) {
-    return this.deleteFilePermanent(user, fileId, context, clinicIdParam);
+    const clinicId = this.clinicScope(user, clinicIdParam);
+    const file = await this.prisma.documentFile.findFirst({
+      where: { id: fileId, requirement: { clinicId } },
+      include: {
+        requirement: {
+          select: { id: true, code: true, category: { select: { pillar: true } } },
+        },
+      },
+    });
+    if (!file) throw new NotFoundException('Documento no encontrado');
+    this.assertClinicDocFileCrud(user, file.requirement.category.pillar, file.requirement.code);
+    if (file.status !== DocumentFileStatus.RETIRED) {
+      await this.prisma.documentFile.update({
+        where: { id: file.id },
+        data: { status: DocumentFileStatus.RETIRED, retiredAt: new Date() },
+      });
+      await this.recordAudit(clinicId, user, AuditAction.UPDATE, file.id, context, {
+        archived: true,
+        requirementCode: file.requirement.code,
+        originalName: file.originalName,
+        version: file.version,
+      });
+    }
+    return this.listFiles(user, file.requirement.id, clinicIdParam);
   }
 
   /**
    * Eliminación definitiva de un archivo (firmas + disco).
+   * Solo superadmin y solo sobre versiones ya archivadas: nunca de forma directa.
    * No borra los demás documentos del mismo requisito.
    */
   async deleteFilePermanent(
@@ -1750,11 +1797,12 @@ export class DocumentsService {
       },
     });
     if (!file) throw new NotFoundException('Documento no encontrado');
-    this.assertClinicDocFileCrud(
-      user,
-      file.requirement.category.pillar,
-      file.requirement.code,
-    );
+    this.assertDocumentWriter(user);
+    if (file.status !== DocumentFileStatus.RETIRED) {
+      throw new ConflictException(
+        'Primero archive esta versión. Solo las versiones archivadas pueden eliminarse definitivamente.',
+      );
+    }
 
     const requirementId = file.requirement.id;
     const storageKey = file.storageKey;
@@ -1859,6 +1907,9 @@ export class DocumentsService {
       description?: string;
       isMandatory?: boolean;
       requiresClinicSignature?: boolean;
+      responsibleName?: string;
+      responsibleArea?: string;
+      validityDays?: number;
     },
     clinicIdParam?: string,
   ) {
@@ -1868,6 +1919,9 @@ export class DocumentsService {
       where: { id: dto.categoryId },
     });
     if (!category) throw new NotFoundException('Categoría no encontrada');
+    if (!category.isActive) {
+      throw new BadRequestException('Este tipo documental está desactivado.');
+    }
 
     const code = dto.code.trim().toUpperCase().replace(/\s+/g, '_');
     const existing = await this.prisma.documentRequirement.findFirst({
@@ -1887,6 +1941,9 @@ export class DocumentsService {
         isMandatory: dto.isMandatory !== false,
         isEnabled: true,
         requiresClinicSignature: dto.requiresClinicSignature === true,
+        responsibleName: dto.responsibleName?.trim() || null,
+        responsibleArea: dto.responsibleArea?.trim() || null,
+        validityDays: dto.validityDays && dto.validityDays > 0 ? Math.round(dto.validityDays) : null,
       },
     });
     return this.overview(user, undefined, clinicId);

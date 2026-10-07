@@ -1,0 +1,894 @@
+<div class="hab" [class.nav-open]="navOpen()">
+  <!-- Menú lateral -->
+  <aside class="side" aria-label="Menú de habilitación">
+    <div class="side-brand">
+      <span class="side-mark"><hab-icon name="folder" [size]="20" /></span>
+      <div>
+        <strong>HABILISALUD</strong>
+        <small>{{ isSuper ? 'Superadministrador' : 'Consultorio' }}</small>
+      </div>
+    </div>
+    <nav>
+      <a class="side-link" [routerLink]="homeLink"><hab-icon name="home" /> <span>Inicio</span></a>
+      <p class="side-group">Habilitación</p>
+      <button type="button" class="side-link" [class.active]="view() === 'dashboard'" (click)="go('dashboard')">
+        <hab-icon name="dashboard" /> <span>Dashboard documental</span>
+      </button>
+      <button type="button" class="side-link" [class.active]="view() === 'estandares' || view() === 'estandar'" (click)="go('estandares')">
+        <hab-icon name="layers" /> <span>7 estándares</span>
+      </button>
+      <button type="button" class="side-link" [class.active]="view() === 'documentos'" (click)="go('documentos')">
+        <hab-icon name="file" /> <span>Documentos</span>
+      </button>
+      <button type="button" class="side-link" [class.active]="view() === 'maestra'" (click)="go('maestra')">
+        <hab-icon name="list" /> <span>Lista maestra</span>
+      </button>
+      <button type="button" class="side-link" [class.active]="view() === 'vencimientos'" (click)="go('vencimientos')">
+        <hab-icon name="calendar" /> <span>Vencimientos</span>
+      </button>
+      <button type="button" class="side-link" [class.active]="view() === 'archivo'" (click)="go('archivo')">
+        <hab-icon name="archive" /> <span>Archivo histórico</span>
+      </button>
+      @if (isSuper) {
+        <button type="button" class="side-link" [class.active]="view() === 'tipos'" (click)="go('tipos')">
+          <hab-icon name="tag" /> <span>Tipos documentales</span>
+        </button>
+      }
+      <p class="side-group">Expediente</p>
+      <a class="side-link" [routerLink]="expedienteLink" [queryParams]="isSuper && selectedClinicId() ? { clinicId: selectedClinicId() } : {}">
+        <hab-icon name="folder" /> <span>Expediente y firmas</span>
+      </a>
+    </nav>
+    <div class="side-foot">
+      <p class="side-user">{{ auth.user()?.fullName }}</p>
+      <button type="button" class="side-link" (click)="logout()"><hab-icon name="logout" /> <span>Cerrar sesión</span></button>
+    </div>
+  </aside>
+  <button type="button" class="scrim" aria-label="Cerrar menú" (click)="navOpen.set(false)"></button>
+
+  <main class="main">
+    <!-- Encabezado -->
+    <header class="top">
+      <button type="button" class="icon-btn menu-btn" aria-label="Abrir menú" (click)="navOpen.set(true)">
+        <hab-icon name="menu" />
+      </button>
+      <div class="top-title">
+        <h1>
+          @switch (view()) {
+            @case ('estandares') { 7 estándares de habilitación }
+            @case ('estandar') { {{ currentPillar()?.label || 'Estándar' }} }
+            @case ('documentos') { Documentos de habilitación }
+            @case ('maestra') { Lista maestra }
+            @case ('vencimientos') { Vencimientos }
+            @case ('archivo') { Archivo histórico }
+            @case ('tipos') { Tipos documentales }
+            @default { Dashboard documental de habilitación }
+          }
+        </h1>
+        <p>Gestión centralizada de documentos y evidencias por estándares de habilitación.</p>
+      </div>
+      <div class="top-tools">
+        <label class="search">
+          <hab-icon name="search" [size]="16" />
+          <span class="sr-only">Buscar documento</span>
+          <input
+            type="search"
+            placeholder="Buscar por nombre, código, responsable o archivo"
+            [ngModel]="q()"
+            (ngModelChange)="globalSearch($event)"
+          />
+        </label>
+        @if (isSuper) {
+          <label class="clinic-pick">
+            <span class="sr-only">Consultorio</span>
+            <select [ngModel]="selectedClinicId()" (ngModelChange)="selectClinic($event)">
+              @for (c of clinics(); track c.id) {
+                <option [value]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </label>
+        }
+        <div class="today"><hab-icon name="calendar" [size]="16" /> <span>{{ todayLabel() }}</span></div>
+      </div>
+    </header>
+
+    @if (error()) {
+      <div class="banner banner-error" role="alert">
+        <span>{{ error() }}</span>
+        <button type="button" class="icon-btn" aria-label="Cerrar aviso" (click)="error.set('')"><hab-icon name="x" [size]="16" /></button>
+      </div>
+    }
+    @if (notice()) {
+      <div class="banner banner-ok" role="status">{{ notice() }}</div>
+    }
+
+    @if (loading() && !registry()) {
+      <div class="state-box" aria-busy="true">
+        <div class="skeleton-row">
+          @for (i of [1, 2, 3, 4, 5, 6]; track i) { <div class="skeleton"></div> }
+        </div>
+        <p>Cargando la documentación de habilitación…</p>
+      </div>
+    } @else if (registry(); as reg) {
+      <!-- ===================== DASHBOARD ===================== -->
+      @if (view() === 'dashboard') {
+        <section class="stats" aria-label="Resumen documental">
+          <button type="button" class="stat" (click)="go('documentos')">
+            <span class="stat-ico ico-navy"><hab-icon name="file" /></span>
+            <span><small>Documentos totales</small><strong>{{ stats().total }}</strong></span>
+          </button>
+          <button type="button" class="stat" (click)="filterByState('VIGENTE')">
+            <span class="stat-ico ico-sage"><hab-icon name="shield" /></span>
+            <span><small>Documentos vigentes</small><strong>{{ stats().vigentes }}</strong></span>
+          </button>
+          <button type="button" class="stat" (click)="goDue('30')">
+            <span class="stat-ico ico-sand"><hab-icon name="clock" /></span>
+            <span><small>Próximos a vencer</small><strong>{{ stats().porVencer }}</strong></span>
+          </button>
+          <button type="button" class="stat" (click)="goDue('vencidos')">
+            <span class="stat-ico ico-rose"><hab-icon name="calendar" /></span>
+            <span><small>Documentos vencidos</small><strong>{{ stats().vencidos }}</strong></span>
+          </button>
+          <button type="button" class="stat" (click)="filterByState('PENDIENTE')">
+            <span class="stat-ico ico-stone"><hab-icon name="upload" /></span>
+            <span><small>Pendientes de cargar</small><strong>{{ stats().pendientes }}</strong></span>
+          </button>
+          <div class="stat">
+            <span class="stat-ico ico-taupe"><hab-icon name="history" /></span>
+            <span><small>Actualizados este mes</small><strong>{{ stats().mes }}</strong></span>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>7 estándares de habilitación</h2>
+            <button type="button" class="link-btn" (click)="go('estandares')">Ver detalle por estándar <hab-icon name="chevronRight" [size]="14" /></button>
+          </div>
+          <div class="std-grid">
+            @for (p of standardCards(); track p.key; let i = $index) {
+              <article class="std">
+                <header>
+                  <span class="std-num">{{ i + 1 }}.</span>
+                  <h3>{{ p.label }}</h3>
+                </header>
+                <span class="std-ico"><hab-icon [name]="p.icon" [size]="22" /></span>
+                <p class="std-count"><strong>{{ p.total }}</strong> documentos</p>
+                <ul>
+                  <li><hab-icon name="tag" [size]="14" /> <b>{{ p.types }}</b> tipos documentales</li>
+                  <li><hab-icon name="clock" [size]="14" /> <b>{{ p.porVencer }}</b> próximos a vencer</li>
+                  <li><hab-icon name="upload" [size]="14" /> <b>{{ p.pendientes }}</b> pendientes de cargar</li>
+                  <li><hab-icon name="calendar" [size]="14" /> {{ p.lastUpdate ? 'Actualizado ' + date(p.lastUpdate) : 'Sin cargas' }}</li>
+                </ul>
+                <button type="button" class="btn btn-soft btn-block" (click)="go('estandar', p.key)">Ver documentos</button>
+              </article>
+            }
+          </div>
+        </section>
+
+        <div class="dash-grid">
+          <div class="dash-main">
+            <section class="card">
+              <div class="card-head">
+                <h2>Documentos recientes</h2>
+                <button type="button" class="link-btn" (click)="go('documentos')">Ver todos <hab-icon name="chevronRight" [size]="14" /></button>
+              </div>
+              @if (recent().length) {
+                <div class="table-wrap">
+                  <table class="tbl tbl-cards">
+                    <thead>
+                      <tr><th>Documento</th><th>Estándar</th><th>Responsable</th><th>Fecha</th><th>Estado</th><th><span class="sr-only">Acción</span></th></tr>
+                    </thead>
+                    <tbody>
+                      @for (d of recent(); track d.id) {
+                        <tr>
+                          <td data-label="Documento">
+                            <button type="button" class="doc-name" (click)="openDoc(d)">
+                              <hab-icon name="file" [size]="16" />
+                              <span>{{ d.title }}<small>{{ d.code }} · v{{ d.current?.version }}</small></span>
+                            </button>
+                          </td>
+                          <td data-label="Estándar">{{ d.pillarLabel }}</td>
+                          <td data-label="Responsable">{{ d.responsibleName || d.responsibleArea || '—' }}</td>
+                          <td data-label="Fecha">{{ date(d.lastUpdate) }}</td>
+                          <td data-label="Estado"><span [class]="stateClass(d.state)">{{ d.stateLabel }}</span></td>
+                          <td class="td-act"><button type="button" class="icon-btn" (click)="openDoc(d)" [attr.aria-label]="'Ver ' + d.title"><hab-icon name="eye" [size]="16" /></button></td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <p class="empty">Aún no se han cargado archivos en este consultorio.</p>
+              }
+            </section>
+
+            @if (supportCards().length) {
+              <section class="card">
+                <div class="card-head"><h2>Otros grupos documentales</h2></div>
+                <div class="support-grid">
+                  @for (p of supportCards(); track p.key) {
+                    <button type="button" class="support" (click)="go('estandar', p.key)">
+                      <span class="std-ico sm"><hab-icon [name]="p.icon" /></span>
+                      <span><strong>{{ p.label }}</strong><small>{{ p.total }} documentos · {{ p.pendientes }} pendientes</small></span>
+                      <hab-icon name="chevronRight" [size]="16" />
+                    </button>
+                  }
+                </div>
+              </section>
+            }
+          </div>
+
+          <div class="dash-side">
+            <section class="card">
+              <div class="card-head">
+                <h2>Vencimientos</h2>
+                <button type="button" class="link-btn" (click)="go('vencimientos')">Ver todos</button>
+              </div>
+              <div class="tabs" role="tablist" aria-label="Ventana de vencimiento">
+                @for (w of dueWindows; track w) {
+                  <button
+                    type="button"
+                    role="tab"
+                    [attr.aria-selected]="dueWindow() === w"
+                    [class.on]="dueWindow() === w"
+                    (click)="dueWindow.set(w)"
+                  >
+                    {{ w === 'vencidos' ? 'Vencidos' : w + ' días' }}
+                    <span class="count">{{ dueCounts()[w] }}</span>
+                  </button>
+                }
+              </div>
+              @if (dueDocs().length) {
+                <ul class="due-list">
+                  @for (d of dueDocs().slice(0, 5); track d.id) {
+                    <li>
+                      <button type="button" (click)="openDoc(d)">
+                        <hab-icon name="file" [size]="16" />
+                        <span><strong>{{ d.title }}</strong><small>{{ d.pillarLabel }} · {{ date(d.expiresAt) }}</small></span>
+                        <span class="days" [class.late]="d.daysLeft! < 0">{{ daysText(d.daysLeft) }}</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="empty sm">
+                  {{ dueWindow() === 'vencidos' ? 'No hay documentos vencidos.' : 'Ningún documento vence en los próximos ' + dueWindow() + ' días.' }}
+                </p>
+              }
+            </section>
+
+            <section class="card">
+              <div class="card-head"><h2>Accesos rápidos</h2></div>
+              <div class="quick">
+                @if (canManage()) {
+                  <button type="button" class="quick-btn primary" (click)="openCreate()"><hab-icon name="upload" /> Subir documento</button>
+                  <button type="button" class="quick-btn" (click)="openCreate()"><hab-icon name="filePlus" /> Crear registro pendiente</button>
+                }
+                <button type="button" class="quick-btn" (click)="go('maestra')"><hab-icon name="list" /> Ver lista maestra</button>
+                <button type="button" class="quick-btn" (click)="go('vencimientos')"><hab-icon name="calendar" /> Ver vencimientos</button>
+                <button type="button" class="quick-btn" (click)="go('documentos')"><hab-icon name="search" /> Buscar documento</button>
+                <button type="button" class="quick-btn" (click)="go('estandares')"><hab-icon name="layers" /> Ver 7 estándares</button>
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-head"><h2>Actividad documental</h2></div>
+              @if (activity().length) {
+                <ol class="feed">
+                  @for (a of activity(); track a.id) {
+                    <li>
+                      <span class="feed-dot"></span>
+                      <div>
+                        <p>
+                          <strong>{{ a.description }}</strong>
+                          @if (a.documentTitle) { · {{ a.documentTitle }} }
+                        </p>
+                        <small>{{ dateTime(a.at) }}{{ a.user ? ' · ' + a.user : '' }}</small>
+                      </div>
+                    </li>
+                  }
+                </ol>
+              } @else {
+                <p class="empty sm">Sin actividad documental registrada.</p>
+              }
+            </section>
+          </div>
+        </div>
+      }
+
+      <!-- ===================== 7 ESTÁNDARES ===================== -->
+      @if (view() === 'estandares') {
+        <section class="std-grid big">
+          @for (p of standardCards(); track p.key; let i = $index) {
+            <article class="std">
+              <header>
+                <span class="std-num">{{ i + 1 }}.</span>
+                <h3>{{ p.label }}</h3>
+              </header>
+              <span class="std-ico"><hab-icon [name]="p.icon" [size]="22" /></span>
+              <p class="std-desc">{{ p.description }}</p>
+              <p class="std-count"><strong>{{ p.total }}</strong> documentos</p>
+              <ul>
+                <li><hab-icon name="tag" [size]="14" /> {{ p.types }} tipos documentales</li>
+                <li><hab-icon name="shield" [size]="14" /> {{ p.vigentes }} vigentes</li>
+                <li><hab-icon name="clock" [size]="14" /> {{ p.porVencer }} próximos a vencer</li>
+                <li><hab-icon name="calendar" [size]="14" /> {{ p.vencidos }} vencidos</li>
+                <li><hab-icon name="upload" [size]="14" /> {{ p.pendientes }} pendientes de cargar</li>
+                <li><hab-icon name="history" [size]="14" /> Última actualización: {{ p.lastUpdate ? date(p.lastUpdate) : 'sin cargas' }}</li>
+              </ul>
+              <button type="button" class="btn btn-soft btn-block" (click)="go('estandar', p.key)">Ver documentos</button>
+            </article>
+          }
+        </section>
+        @if (supportCards().length) {
+          <section class="card">
+            <div class="card-head"><h2>Otros grupos documentales</h2></div>
+            <div class="support-grid">
+              @for (p of supportCards(); track p.key) {
+                <button type="button" class="support" (click)="go('estandar', p.key)">
+                  <span class="std-ico sm"><hab-icon [name]="p.icon" /></span>
+                  <span><strong>{{ p.label }}</strong><small>{{ p.total }} documentos · {{ p.pendientes }} pendientes</small></span>
+                  <hab-icon name="chevronRight" [size]="16" />
+                </button>
+              }
+            </div>
+          </section>
+        }
+      }
+
+      <!-- ===================== DETALLE DE ESTÁNDAR ===================== -->
+      @if (view() === 'estandar') {
+        @if (currentPillar(); as p) {
+          <section class="card std-head">
+            <button type="button" class="link-btn back" (click)="go('estandares')"><hab-icon name="chevronRight" [size]="14" class="flip" /> 7 estándares</button>
+            <div class="std-head-row">
+              <span class="std-ico lg"><hab-icon [name]="p.icon" [size]="26" /></span>
+              <div>
+                <h2>{{ p.isStandard ? pillarIndex(p.key) + '. ' : '' }}{{ p.label }}</h2>
+                <p>{{ p.description }}</p>
+              </div>
+              @if (canManage()) {
+                <button type="button" class="btn btn-primary" (click)="openCreate(p.key)"><hab-icon name="plus" [size]="16" /> Nuevo documento</button>
+              }
+            </div>
+            <div class="mini-stats">
+              <div><small>Registrados</small><strong>{{ p.total }}</strong></div>
+              <div><small>Vigentes</small><strong>{{ p.vigentes }}</strong></div>
+              <div><small>Próximos a vencer</small><strong>{{ p.porVencer }}</strong></div>
+              <div><small>Vencidos</small><strong>{{ p.vencidos }}</strong></div>
+              <div><small>Pendientes de cargar</small><strong>{{ p.pendientes }}</strong></div>
+            </div>
+          </section>
+          <ng-container *ngTemplateOutlet="docsTable" />
+        } @else {
+          <p class="empty">Seleccione un estándar.</p>
+        }
+      }
+
+      <!-- ===================== DOCUMENTOS ===================== -->
+      @if (view() === 'documentos') {
+        <ng-container *ngTemplateOutlet="docsTable" />
+      }
+
+      <!-- ===================== LISTA MAESTRA ===================== -->
+      @if (view() === 'maestra') {
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h2>Lista maestra documental</h2>
+              <p class="muted">{{ filtered().length }} documentos · {{ reg.clinic.name }}</p>
+            </div>
+            <div class="head-actions">
+              <button type="button" class="btn btn-ghost" [disabled]="busy()" (click)="exportMaster('xlsx')"><hab-icon name="download" [size]="16" /> Excel</button>
+              <button type="button" class="btn btn-ghost" [disabled]="busy()" (click)="exportMaster('pdf')"><hab-icon name="download" [size]="16" /> PDF</button>
+            </div>
+          </div>
+          <ng-container *ngTemplateOutlet="filtersBar" />
+          @if (filtered().length) {
+            <div class="table-wrap">
+              <table class="tbl tbl-cards">
+                <thead>
+                  <tr>
+                    <th>Código</th><th>Nombre</th><th>Estándar</th><th>Categoría</th><th>Versión</th>
+                    <th>Fecha de aprobación</th><th>Vigencia</th><th>Responsable</th><th>Estado</th><th>Ubicación digital</th><th>Observaciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (d of filtered(); track d.id) {
+                    <tr>
+                      <td data-label="Código" class="mono">{{ d.code }}</td>
+                      <td data-label="Nombre"><button type="button" class="doc-name plain" (click)="openDoc(d)">{{ d.title }}</button></td>
+                      <td data-label="Estándar">{{ d.pillarLabel }}</td>
+                      <td data-label="Categoría">{{ d.categoryName }}</td>
+                      <td data-label="Versión">{{ d.current ? 'v' + d.current.version : '—' }}</td>
+                      <td data-label="Aprobación">{{ date(d.current?.issuedAt || d.current?.createdAt) }}</td>
+                      <td data-label="Vigencia">{{ d.expiresAt ? date(d.expiresAt) : d.current ? 'Sin vencimiento' : '—' }}</td>
+                      <td data-label="Responsable">{{ d.responsibleName || '—' }}@if (d.responsibleArea) {<small class="block">{{ d.responsibleArea }}</small>}</td>
+                      <td data-label="Estado"><span [class]="stateClass(d.state)">{{ d.stateLabel }}</span></td>
+                      <td data-label="Ubicación" class="loc">{{ d.current ? d.pillarLabel + ' / ' + d.categoryName + ' / ' + d.current.originalName : 'Sin archivo' }}</td>
+                      <td data-label="Observaciones" class="notes">{{ d.current?.notes || '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="empty">No hay documentos con estos filtros.</p>
+          }
+        </section>
+      }
+
+      <!-- ===================== VENCIMIENTOS ===================== -->
+      @if (view() === 'vencimientos') {
+        <section class="card">
+          <div class="card-head">
+            <h2>Vencimientos</h2>
+            <p class="muted">La nueva vigencia se registra cargando una nueva versión; la anterior se conserva.</p>
+          </div>
+          <div class="tabs wide" role="tablist" aria-label="Ventana de vencimiento">
+            @for (w of dueWindows; track w) {
+              <button type="button" role="tab" [attr.aria-selected]="dueWindow() === w" [class.on]="dueWindow() === w" (click)="dueWindow.set(w)">
+                {{ w === 'vencidos' ? 'Vencidos' : 'Próximos ' + w + ' días' }}
+                <span class="count">{{ dueCounts()[w] }}</span>
+              </button>
+            }
+          </div>
+          @if (dueDocs().length) {
+            <div class="table-wrap">
+              <table class="tbl tbl-cards">
+                <thead>
+                  <tr><th>Documento</th><th>Estándar</th><th>Responsable</th><th>Fecha de vencimiento</th><th>Días restantes</th><th>Acción</th></tr>
+                </thead>
+                <tbody>
+                  @for (d of dueDocs(); track d.id) {
+                    <tr>
+                      <td data-label="Documento">
+                        <button type="button" class="doc-name" (click)="openDoc(d)">
+                          <hab-icon name="file" [size]="16" /><span>{{ d.title }}<small>{{ d.code }}</small></span>
+                        </button>
+                      </td>
+                      <td data-label="Estándar">{{ d.pillarLabel }}</td>
+                      <td data-label="Responsable">{{ d.responsibleName || d.responsibleArea || '—' }}</td>
+                      <td data-label="Vencimiento">{{ date(d.expiresAt) }}</td>
+                      <td data-label="Días"><span class="days" [class.late]="d.daysLeft! < 0">{{ daysText(d.daysLeft) }}</span></td>
+                      <td class="td-act">
+                        <button type="button" class="icon-btn" (click)="openDoc(d)" [attr.aria-label]="'Abrir ' + d.title"><hab-icon name="eye" [size]="16" /></button>
+                        @if (canWrite(d)) {
+                          <button type="button" class="btn btn-soft sm" (click)="openUpload(d)">Registrar nueva vigencia</button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="empty">
+              {{ dueWindow() === 'vencidos' ? 'No hay documentos vencidos.' : 'Ningún documento vence en los próximos ' + dueWindow() + ' días.' }}
+            </p>
+          }
+        </section>
+      }
+
+      <!-- ===================== ARCHIVO HISTÓRICO ===================== -->
+      @if (view() === 'archivo') {
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h2>Archivo histórico</h2>
+              <p class="muted">Documentos archivados: salen de las listas activas, pero se conservan con todas sus versiones e historial.</p>
+            </div>
+          </div>
+          @if (archivedDocs().length) {
+            <div class="table-wrap">
+              <table class="tbl tbl-cards">
+                <thead><tr><th>Documento</th><th>Estándar</th><th>Categoría</th><th>Versiones</th><th>Archivado</th><th>Acción</th></tr></thead>
+                <tbody>
+                  @for (d of archivedDocs(); track d.id) {
+                    <tr>
+                      <td data-label="Documento">
+                        <button type="button" class="doc-name" (click)="openDoc(d)"><hab-icon name="archive" [size]="16" /><span>{{ d.title }}<small>{{ d.code }}</small></span></button>
+                      </td>
+                      <td data-label="Estándar">{{ d.pillarLabel }}</td>
+                      <td data-label="Categoría">{{ d.categoryName }}</td>
+                      <td data-label="Versiones">{{ d.versionCount }}</td>
+                      <td data-label="Archivado">{{ date(d.archivedAt) }}</td>
+                      <td class="td-act">
+                        <button type="button" class="icon-btn" (click)="openDoc(d, 'historial')" [attr.aria-label]="'Historial de ' + d.title"><hab-icon name="history" [size]="16" /></button>
+                        @if (d.canEdit) {
+                          <button type="button" class="btn btn-soft sm" (click)="toggleArchive(d)"><hab-icon name="restore" [size]="14" /> Restaurar</button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="empty">No hay documentos archivados.</p>
+          }
+        </section>
+      }
+
+      <!-- ===================== TIPOS DOCUMENTALES (superadmin) ===================== -->
+      @if (view() === 'tipos' && isSuper) {
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h2>Tipos documentales</h2>
+              <p class="muted">Catálogo común a todos los consultorios. Desactivar un tipo no borra sus documentos: solo deja de ofrecerse para documentos nuevos.</p>
+            </div>
+          </div>
+          <form class="cat-new" (ngSubmit)="addCategory()">
+            <label><span>Nombre del tipo documental</span><input name="catName" [(ngModel)]="newCategory.name" maxlength="160" placeholder="Ej. Certificados de calibración" /></label>
+            <label>
+              <span>Estándar</span>
+              <select name="catPillar" [(ngModel)]="newCategory.pillar">
+                @for (p of pillars(); track p.key) { <option [value]="p.key">{{ p.label }}</option> }
+              </select>
+            </label>
+            <button type="submit" class="btn btn-primary"><hab-icon name="plus" [size]="16" /> Agregar</button>
+          </form>
+          @for (g of categoriesByPillar(); track g.key) {
+            @if (g.items.length) {
+              <h3 class="cat-group"><hab-icon [name]="pillarIcon(g.key)" [size]="16" /> {{ g.label }}</h3>
+              <ul class="cat-list">
+                @for (c of g.items; track c.id) {
+                  <li [class.off]="!c.isActive">
+                    @if (editingCategory() === c.id) {
+                      <input [(ngModel)]="categoryDraft.name" [name]="'n' + c.id" maxlength="160" aria-label="Nombre" />
+                      <select [(ngModel)]="categoryDraft.pillar" [name]="'p' + c.id" aria-label="Estándar">
+                        @for (p of pillars(); track p.key) { <option [value]="p.key">{{ p.label }}</option> }
+                      </select>
+                      <button type="button" class="btn btn-primary sm" (click)="saveCategory(c)">Guardar</button>
+                      <button type="button" class="btn btn-ghost sm" (click)="editingCategory.set(null)">Cancelar</button>
+                    } @else {
+                      <span class="cat-name">{{ c.name }}<small>{{ c.documentCount }} documentos en total · {{ c.isActive ? 'Activo' : 'Inactivo' }}</small></span>
+                      <button type="button" class="icon-btn" (click)="startEditCategory(c)" [attr.aria-label]="'Editar ' + c.name"><hab-icon name="pencil" [size]="16" /></button>
+                      <button type="button" class="btn btn-ghost sm" (click)="toggleCategory(c)">{{ c.isActive ? 'Desactivar' : 'Activar' }}</button>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          } @empty {
+            <p class="empty">Cargando tipos documentales…</p>
+          }
+        </section>
+      }
+    }
+  </main>
+
+  <!-- ===================== Tabla de documentos reutilizable ===================== -->
+  <ng-template #filtersBar>
+    <button type="button" class="btn btn-ghost sm filters-toggle" [attr.aria-expanded]="filtersOpen()" (click)="filtersOpen.set(!filtersOpen())">
+      <hab-icon name="filter" [size]="15" /> Filtros{{ hasFilters() ? ' (activos)' : '' }}
+    </button>
+    <div class="filters" [class.open]="filtersOpen()" role="search">
+      @if (view() !== 'estandar') {
+        <select [ngModel]="fPillar()" (ngModelChange)="fPillar.set($event); fCategory.set('')" aria-label="Estándar">
+          <option value="">Todos los estándares</option>
+          @for (p of pillars(); track p.key) { <option [value]="p.key">{{ p.label }}</option> }
+        </select>
+      }
+      <select [ngModel]="fCategory()" (ngModelChange)="fCategory.set($event)" aria-label="Categoría">
+        <option value="">Todas las categorías</option>
+        @for (c of categoryOptions(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+      </select>
+      <select [ngModel]="fResponsible()" (ngModelChange)="fResponsible.set($event)" aria-label="Responsable">
+        <option value="">Todos los responsables</option>
+        @for (r of responsibleOptions(); track r) { <option [value]="r">{{ r }}</option> }
+      </select>
+      <select [ngModel]="fState()" (ngModelChange)="fState.set($event)" aria-label="Estado documental">
+        <option value="">Todos los estados</option>
+        <option value="VIGENTE">Vigente</option>
+        <option value="POR_VENCER">Próximo a vencer</option>
+        <option value="VENCIDO">Vencido</option>
+        <option value="PENDIENTE">Pendiente de cargar</option>
+      </select>
+      <select [ngModel]="fValidity()" (ngModelChange)="fValidity.set($event)" aria-label="Vigencia">
+        <option value="">Toda vigencia</option>
+        <option value="con">Con fecha de vencimiento</option>
+        <option value="sin">Sin vencimiento</option>
+      </select>
+      <select [ngModel]="fYear()" (ngModelChange)="fYear.set($event)" aria-label="Año">
+        <option value="">Todos los años</option>
+        @for (y of yearOptions(); track y) { <option [value]="y">{{ y }}</option> }
+      </select>
+      <select [ngModel]="fVersion()" (ngModelChange)="fVersion.set($event)" aria-label="Versión">
+        <option value="">Todas las versiones</option>
+        <option value="una">Una versión</option>
+        <option value="varias">Varias versiones</option>
+      </select>
+      @if (isSuper) {
+        <label class="check"><input type="checkbox" [ngModel]="showDisabled()" (ngModelChange)="showDisabled.set($event)" /> Incluir no aplicables</label>
+      }
+      <button type="button" class="btn btn-ghost sm" [disabled]="!hasFilters()" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+  </ng-template>
+
+  <ng-template #docsTable>
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2>Documentos</h2>
+          <p class="muted">{{ filtered().length }} de {{ view() === 'estandar' ? currentPillar()?.total : activeDocs().length }} documentos</p>
+        </div>
+        @if (canManage() && view() !== 'estandar') {
+          <button type="button" class="btn btn-primary" (click)="openCreate()"><hab-icon name="plus" [size]="16" /> Nuevo documento</button>
+        }
+      </div>
+      <label class="search inline">
+        <hab-icon name="search" [size]="16" />
+        <span class="sr-only">Buscar</span>
+        <input type="search" placeholder="Buscar documento, código, responsable o archivo…" [ngModel]="q()" (ngModelChange)="q.set($event)" />
+      </label>
+      <ng-container *ngTemplateOutlet="filtersBar" />
+      @if (filtered().length) {
+        <div class="table-wrap">
+          <table class="tbl tbl-cards">
+            <thead>
+              <tr>
+                <th>Documento</th><th>Código</th><th>Estándar</th><th>Categoría</th><th>Responsable</th>
+                <th>Emisión</th><th>Vencimiento</th><th>Estado</th><th>Versión</th><th>Actualizado</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of filtered(); track d.id) {
+                <tr [class.dim]="!d.isEnabled">
+                  <td data-label="Documento">
+                    <button type="button" class="doc-name" (click)="openDoc(d)">
+                      <hab-icon name="file" [size]="16" />
+                      <span>{{ d.title }}@if (!d.isEnabled) {<small>No aplica a este consultorio</small>}</span>
+                    </button>
+                  </td>
+                  <td data-label="Código" class="mono">{{ d.code }}</td>
+                  <td data-label="Estándar">{{ d.pillarLabel }}</td>
+                  <td data-label="Categoría">{{ d.categoryName }}</td>
+                  <td data-label="Responsable">{{ d.responsibleName || '—' }}@if (d.responsibleArea) {<small class="block">{{ d.responsibleArea }}</small>}</td>
+                  <td data-label="Emisión">{{ date(d.current?.issuedAt) }}</td>
+                  <td data-label="Vencimiento">{{ date(d.expiresAt) }}</td>
+                  <td data-label="Estado"><span [class]="stateClass(d.state)">{{ d.stateLabel }}</span></td>
+                  <td data-label="Versión">{{ d.current ? 'v' + d.current.version : '—' }}</td>
+                  <td data-label="Actualizado">{{ date(d.lastUpdate) }}</td>
+                  <td class="td-act">
+                    <button type="button" class="icon-btn" (click)="openDoc(d)" [attr.aria-label]="'Ver ' + d.title" title="Ver"><hab-icon name="eye" [size]="16" /></button>
+                    @if (d.current && canDownload()) {
+                      <button type="button" class="icon-btn" (click)="downloadFile(d.current.id, d.current.originalName)" [attr.aria-label]="'Descargar ' + d.title" title="Descargar"><hab-icon name="download" [size]="16" /></button>
+                    }
+                    @if (d.canEdit && writerRole()) {
+                      <button type="button" class="icon-btn" (click)="openEdit(d)" [attr.aria-label]="'Editar metadatos de ' + d.title" title="Editar metadatos"><hab-icon name="pencil" [size]="16" /></button>
+                      <button type="button" class="icon-btn" (click)="openUpload(d)" [attr.aria-label]="(d.current ? 'Reemplazar archivo de ' : 'Cargar archivo de ') + d.title" [title]="d.current ? 'Reemplazar archivo' : 'Cargar archivo'"><hab-icon [name]="d.current ? 'replace' : 'upload'" [size]="16" /></button>
+                    }
+                    <button type="button" class="icon-btn" (click)="openDoc(d, 'historial')" [attr.aria-label]="'Historial de ' + d.title" title="Ver historial"><hab-icon name="history" [size]="16" /></button>
+                    @if (d.canEdit && writerRole()) {
+                      <button type="button" class="icon-btn" (click)="toggleArchive(d)" [attr.aria-label]="'Archivar ' + d.title" title="Archivar"><hab-icon name="archive" [size]="16" /></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty">
+          <p>No hay documentos con estos criterios.</p>
+          @if (hasFilters()) { <button type="button" class="btn btn-ghost sm" (click)="clearFilters()">Limpiar filtros</button> }
+        </div>
+      }
+    </section>
+  </ng-template>
+
+  <!-- ===================== Panel del documento ===================== -->
+  @if (drawer(); as d) {
+    <div class="overlay" (click)="closeDrawer()"></div>
+    <aside class="drawer" role="dialog" aria-modal="true" [attr.aria-label]="d.title">
+      <header class="drawer-head">
+        <div>
+          <p class="eyebrow">{{ d.pillarLabel }} · {{ d.categoryName }}</p>
+          <h2>{{ d.title }}</h2>
+          <p class="drawer-sub"><span class="mono">{{ d.code }}</span> <span [class]="stateClass(d.state)">{{ d.stateLabel }}</span></p>
+        </div>
+        <button type="button" class="icon-btn" aria-label="Cerrar" (click)="closeDrawer()"><hab-icon name="x" /></button>
+      </header>
+      <div class="drawer-actions">
+        @if (d.current) {
+          <button type="button" class="btn btn-ghost sm" (click)="viewFile(d.current.id)"><hab-icon name="eye" [size]="15" /> Ver archivo</button>
+          @if (canDownload()) {
+            <button type="button" class="btn btn-ghost sm" (click)="downloadFile(d.current.id, d.current.originalName)"><hab-icon name="download" [size]="15" /> Descargar</button>
+          }
+        }
+        @if (d.canEdit && writerRole()) {
+          <button type="button" class="btn btn-ghost sm" (click)="openEdit(d)"><hab-icon name="pencil" [size]="15" /> Editar</button>
+          @if (d.state !== 'ARCHIVADO') {
+            <button type="button" class="btn btn-primary sm" (click)="openUpload(d)"><hab-icon name="upload" [size]="15" /> {{ d.current ? 'Subir nueva versión' : 'Cargar archivo' }}</button>
+          }
+          <button type="button" class="btn btn-ghost sm" (click)="toggleArchive(d)">
+            <hab-icon [name]="d.state === 'ARCHIVADO' ? 'restore' : 'archive'" [size]="15" /> {{ d.state === 'ARCHIVADO' ? 'Restaurar' : 'Archivar' }}
+          </button>
+        }
+      </div>
+      <div class="tabs drawer-tabs" role="tablist">
+        <button type="button" role="tab" [class.on]="drawerTab() === 'detalle'" [attr.aria-selected]="drawerTab() === 'detalle'" (click)="drawerTab.set('detalle')">Detalle</button>
+        <button type="button" role="tab" [class.on]="drawerTab() === 'versiones'" [attr.aria-selected]="drawerTab() === 'versiones'" (click)="drawerTab.set('versiones')">
+          Versiones <span class="count">{{ d.versionCount }}</span>
+        </button>
+        <button type="button" role="tab" [class.on]="drawerTab() === 'historial'" [attr.aria-selected]="drawerTab() === 'historial'" (click)="drawerTab.set('historial')">Historial</button>
+      </div>
+
+      <div class="drawer-body">
+        @switch (drawerTab()) {
+          @case ('detalle') {
+            <dl class="meta">
+              <div><dt>Estándar</dt><dd>{{ d.pillarLabel }}</dd></div>
+              <div><dt>Categoría</dt><dd>{{ d.categoryName }}</dd></div>
+              <div><dt>Versión actual</dt><dd>{{ d.current ? 'v' + d.current.version : 'Sin archivo' }}</dd></div>
+              <div><dt>Responsable</dt><dd>{{ d.responsibleName || '—' }}</dd></div>
+              <div><dt>Área responsable</dt><dd>{{ d.responsibleArea || '—' }}</dd></div>
+              <div><dt>Cargado por</dt><dd>{{ d.current?.uploadedBy || '—' }}</dd></div>
+              <div><dt>Fecha de emisión</dt><dd>{{ date(d.current?.issuedAt) }}</dd></div>
+              <div><dt>Fecha de vencimiento</dt><dd>{{ d.expiresAt ? date(d.expiresAt) : 'Sin vencimiento' }}</dd></div>
+              <div><dt>Última actualización</dt><dd>{{ dateTime(d.lastUpdate) }}</dd></div>
+              <div><dt>Renovación</dt><dd>{{ d.validityDays ? 'Cada ' + d.validityDays + ' días' : 'No periódica' }}</dd></div>
+            </dl>
+            <h3 class="sub">Descripción</h3>
+            <p class="text">{{ d.description || 'Sin descripción.' }}</p>
+            <h3 class="sub">Observaciones</h3>
+            <p class="text">{{ d.current?.notes || 'Sin observaciones.' }}</p>
+            <h3 class="sub">Archivo actual</h3>
+            @if (d.current) {
+              <div class="file-row">
+                <hab-icon name="file" />
+                <span><strong>{{ d.current.originalName }}</strong><small>v{{ d.current.version }} · {{ size(d.current.sizeBytes) }} · {{ dateTime(d.current.createdAt) }}</small></span>
+                <button type="button" class="icon-btn" (click)="viewFile(d.current.id)" aria-label="Ver archivo"><hab-icon name="eye" [size]="16" /></button>
+              </div>
+            } @else {
+              <p class="text muted">Pendiente de cargar.</p>
+            }
+          }
+          @case ('versiones') {
+            @if (drawerDetail(); as det) {
+              <ol class="versions">
+                @for (f of det.files; track f.id; let first = $first) {
+                  <li [class.retired]="f.status === 'RETIRED'">
+                    <div class="v-head">
+                      <strong>Versión {{ f.version }}</strong>
+                      @if (d.current?.id === f.id) { <span class="st st-vigente">Actual</span> }
+                      @else if (f.status === 'RETIRED') { <span class="st st-archivado">Archivada</span> }
+                      @else { <span class="st st-pendiente">Anterior</span> }
+                    </div>
+                    <p>{{ f.originalName }} · {{ size(f.sizeBytes) }}</p>
+                    <small>Cargada {{ dateTime(f.createdAt) }}{{ f.uploadedBy ? ' por ' + f.uploadedBy : '' }}</small>
+                    @if (f.issuedAt) { <small>Emisión: {{ date(f.issuedAt) }}</small> }
+                    @if (f.expiresAt) { <small>Vence: {{ date(f.expiresAt) }}</small> }
+                    @if (f.changeReason) { <small>Motivo del cambio: {{ f.changeReason }}</small> }
+                    @if (f.retiredAt) { <small>Archivada {{ dateTime(f.retiredAt) }}</small> }
+                    <div class="v-actions">
+                      <button type="button" class="btn btn-ghost sm" (click)="viewFile(f.id)"><hab-icon name="eye" [size]="14" /> Ver</button>
+                      @if (canDownload()) {
+                        <button type="button" class="btn btn-ghost sm" (click)="downloadFile(f.id, f.originalName)"><hab-icon name="download" [size]="14" /> Descargar</button>
+                      }
+                      @if (f.status !== 'RETIRED' && d.current?.id !== f.id && d.canEdit && writerRole()) {
+                        <button type="button" class="btn btn-ghost sm" (click)="archiveVersion(f)"><hab-icon name="archive" [size]="14" /> Archivar</button>
+                      }
+                    </div>
+                  </li>
+                } @empty {
+                  <li class="empty sm">Aún no hay versiones cargadas.</li>
+                }
+              </ol>
+            } @else {
+              <p class="empty sm" aria-busy="true">Cargando versiones…</p>
+            }
+          }
+          @case ('historial') {
+            @if (drawerActivity().length) {
+              <ol class="feed">
+                <li>
+                  <span class="feed-dot"></span>
+                  <div><p><strong>Registro creado</strong></p><small>{{ dateTime(d.createdAt) }}</small></div>
+                </li>
+                @for (a of drawerActivity(); track a.id) {
+                  <li>
+                    <span class="feed-dot"></span>
+                    <div><p><strong>{{ a.description }}</strong></p><small>{{ dateTime(a.at) }}{{ a.user ? ' · ' + a.user : '' }}</small></div>
+                  </li>
+                }
+              </ol>
+            } @else {
+              <p class="empty sm">Sin movimientos registrados para este documento. Registro creado el {{ date(d.createdAt) }}.</p>
+            }
+          }
+        }
+      </div>
+    </aside>
+  }
+
+  <!-- ===================== Formulario crear / editar ===================== -->
+  @if (formMode()) {
+    <div class="overlay" (click)="closeForm()"></div>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+      <header class="modal-head">
+        <h2 id="formTitle">{{ formMode() === 'create' ? 'Nuevo documento' : 'Editar metadatos' }}</h2>
+        <button type="button" class="icon-btn" aria-label="Cerrar" (click)="closeForm()"><hab-icon name="x" /></button>
+      </header>
+      <form class="form" (ngSubmit)="saveForm()">
+        <label>
+          <span>Estándar *</span>
+          <select name="pillar" [(ngModel)]="docForm.pillar" (ngModelChange)="onPillarChange()" [disabled]="formMode() === 'edit' && !canManage()" required>
+            <option value="" disabled>Seleccione</option>
+            @for (p of pillars(); track p.key) { <option [value]="p.key">{{ p.label }}</option> }
+          </select>
+        </label>
+        <label>
+          <span>Categoría (tipo documental) *</span>
+          <select name="categoryId" [(ngModel)]="docForm.categoryId" [disabled]="!docForm.pillar || (formMode() === 'edit' && !canManage())" required>
+            <option value="" disabled>Seleccione</option>
+            @for (c of formCategories()(docForm.pillar); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+          </select>
+        </label>
+        <label class="full"><span>Nombre del documento *</span><input name="title" [(ngModel)]="docForm.title" maxlength="255" required /></label>
+        <label>
+          <span>Código</span>
+          <input name="code" [(ngModel)]="docForm.code" maxlength="60" [disabled]="formMode() === 'edit' && !canManage()" [placeholder]="formMode() === 'create' ? 'Se genera si lo deja vacío' : ''" />
+        </label>
+        <label>
+          <span>Renovación (días)</span>
+          <input name="validity" type="number" min="0" max="3650" [(ngModel)]="docForm.validityDays" placeholder="Ej. 365" />
+        </label>
+        <label><span>Responsable {{ formMode() === 'create' ? '*' : '' }}</span><input name="resp" [(ngModel)]="docForm.responsibleName" maxlength="160" placeholder="Nombre de la persona" /></label>
+        <label><span>Área responsable</span><input name="area" [(ngModel)]="docForm.responsibleArea" maxlength="120" placeholder="Ej. Servicios generales" /></label>
+        <label class="full"><span>Descripción</span><textarea name="desc" rows="2" [(ngModel)]="docForm.description" maxlength="2000"></textarea></label>
+        @if (formMode() === 'create') {
+          <fieldset class="full">
+            <legend>Archivo (opcional)</legend>
+            <p class="hint">Sin archivo, el documento queda como «Pendiente de cargar» en la matriz documental.</p>
+            <label class="full file-input"><span class="sr-only">Archivo</span><input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp" (change)="onFormFile($event)" /></label>
+            @if (docForm.file) {
+              <div class="grid2">
+                <label><span>Fecha de emisión</span><input name="issued" type="date" [(ngModel)]="docForm.issuedAt" /></label>
+                <label><span>Fecha de vencimiento</span><input name="expires" type="date" [(ngModel)]="docForm.expiresAt" /></label>
+                <label class="full"><span>Observaciones</span><textarea name="notes" rows="2" [(ngModel)]="docForm.notes" maxlength="2000"></textarea></label>
+              </div>
+            }
+          </fieldset>
+        }
+        <footer class="modal-foot full">
+          <button type="button" class="btn btn-ghost" (click)="closeForm()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="busy()">{{ busy() ? 'Guardando…' : formMode() === 'create' ? 'Crear documento' : 'Guardar cambios' }}</button>
+        </footer>
+      </form>
+    </div>
+  }
+
+  <!-- ===================== Cargar archivo / nueva versión ===================== -->
+  @if (uploadFor(); as d) {
+    <div class="overlay" (click)="closeUpload()"></div>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="upTitle">
+      <header class="modal-head">
+        <div>
+          <h2 id="upTitle">{{ d.current ? 'Subir nueva versión' : 'Cargar archivo' }}</h2>
+          <p class="muted">{{ d.title }} · {{ d.code }}{{ d.current ? ' · versión actual v' + d.current.version : '' }}</p>
+        </div>
+        <button type="button" class="icon-btn" aria-label="Cerrar" (click)="closeUpload()"><hab-icon name="x" /></button>
+      </header>
+      <form class="form" (ngSubmit)="saveUpload()">
+        <label class="full file-input"><span>Archivo *</span><input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp" (change)="onUploadFile($event)" required /></label>
+        <label><span>Fecha de emisión</span><input name="uIssued" type="date" [(ngModel)]="uploadForm.issuedAt" /></label>
+        <label><span>Fecha de vencimiento</span><input name="uExpires" type="date" [(ngModel)]="uploadForm.expiresAt" /></label>
+        @if (d.current) {
+          <label class="full"><span>Motivo del cambio *</span><input name="uReason" [(ngModel)]="uploadForm.changeReason" maxlength="500" placeholder="Ej. Renovación anual, actualización del protocolo" /></label>
+          <label class="full check">
+            <input type="checkbox" name="uRetire" [(ngModel)]="uploadForm.retirePrevious" />
+            Archivar la versión anterior (v{{ d.current.version }}). Se conserva en el historial; no se borra.
+          </label>
+        }
+        <label class="full"><span>Observaciones</span><textarea name="uNotes" rows="2" [(ngModel)]="uploadForm.notes" maxlength="2000"></textarea></label>
+        <footer class="modal-foot full">
+          <button type="button" class="btn btn-ghost" (click)="closeUpload()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="busy()">{{ busy() ? 'Cargando…' : 'Cargar' }}</button>
+        </footer>
+      </form>
+    </div>
+  }
+</div>

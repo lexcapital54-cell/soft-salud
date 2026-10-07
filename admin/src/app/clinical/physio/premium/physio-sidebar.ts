@@ -135,7 +135,7 @@ export class PhysioSidebar {
       { label: 'Pacientes', icon: 'users', route: '/consultorio/pacientes' },
       { label: 'Agenda', icon: 'calendar', route: '/consultorio/agenda' },
       { label: 'Evolución', icon: 'chart', section: this.evolutionSection() },
-      (canWrite || this.auth.canAuditSivigila()) && withDocs && { label: 'Documentos', icon: 'file', route: '/consultorio/documentos' },
+      (canWrite || this.auth.canAuditSivigila()) && withDocs && { label: 'Documentos', icon: 'file', route: '/consultorio/habilitacion' },
       canWrite && { label: 'Historias en PDF', icon: 'download', route: '/consultorio/historias-pdf' },
       { label: 'Configuración', icon: 'settings', route: '/consultorio/configuracion' },
     ];
