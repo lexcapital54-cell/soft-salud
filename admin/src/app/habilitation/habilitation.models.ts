@@ -1,6 +1,7 @@
 export type DocState = 'VIGENTE' | 'POR_VENCER' | 'VENCIDO' | 'PENDIENTE' | 'ARCHIVADO';
 
 export type PillarKey =
+  | 'DOCUMENTACION_GENERAL'
   | 'DOCUMENTACION_LEGAL'
   | 'TALENTO_HUMANO'
   | 'INFRAESTRUCTURA'

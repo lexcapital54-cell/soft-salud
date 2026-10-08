@@ -29,6 +29,12 @@ const WARNING_WINDOW_DAYS = 30;
 /** Orden y textos de los grupos documentales (7 estándares de la Res. 3100 de 2019 + grupos de apoyo). */
 const PILLARS: Array<{ key: DocumentPillar; label: string; description: string; isStandard: boolean }> = [
   {
+    key: DocumentPillar.DOCUMENTACION_GENERAL,
+    label: 'Documentación general',
+    description: 'Documentos generales del consultorio que aplican a todos los estándares.',
+    isStandard: true,
+  },
+  {
     key: DocumentPillar.TALENTO_HUMANO,
     label: 'Talento humano',
     description: 'Hojas de vida, títulos, tarjetas profesionales, RETHUS, formación, inducción y contratos del personal.',
@@ -167,12 +173,24 @@ export class HabilitationRegistryService {
     const isSuper = user.role === UserRole.SUPER_ADMIN;
     const clinic = await this.prisma.clinic.findUnique({
       where: { id: clinicId },
-      select: { id: true, name: true, dashboardType: true, sgsstEnabled: true },
+      select: { id: true, name: true, dashboardType: true, sgsstEnabled: true, specialty: true },
     });
     if (!clinic) throw new NotFoundException('Consultorio no encontrado');
     // Habilitación con la gestión documental; SG-SST con su propio módulo.
     const withDocs = clinic.dashboardType === 'CLINICAL_HISTORY_WITH_DOCS';
-    const pillars = PILLARS.filter((p) => (p.key === DocumentPillar.SG_SST ? clinic.sgsstEnabled : withDocs));
+    const hasGeneral =
+      withDocs &&
+      (clinic.specialty === 'PHYSIOTHERAPY' ||
+        (await this.prisma.documentRequirement.count({
+          where: { clinicId, category: { pillar: DocumentPillar.DOCUMENTACION_GENERAL } },
+        })) > 0);
+    const pillars = PILLARS.filter((p) =>
+      p.key === DocumentPillar.SG_SST
+        ? clinic.sgsstEnabled
+        : p.key === DocumentPillar.DOCUMENTACION_GENERAL
+          ? hasGeneral
+          : withDocs,
+    );
     const [requirements, categories] = await Promise.all([
       this.prisma.documentRequirement.findMany({
         where: {

@@ -28,6 +28,7 @@ type DueWindow = '7' | '15' | '30' | 'vencidos';
 const VIEWS: View[] = ['dashboard', 'estandares', 'estandar', 'documentos', 'maestra', 'vencimientos', 'archivo', 'tipos'];
 
 const PILLAR_ICONS: Record<PillarKey, string> = {
+  DOCUMENTACION_GENERAL: 'folder',
   TALENTO_HUMANO: 'users',
   INFRAESTRUCTURA: 'building',
   DOTACION: 'package',
@@ -883,8 +884,11 @@ export class HabilitationDocs implements OnInit {
     return PILLAR_ICONS[key] ?? 'folder';
   }
 
+  /** Documentación general es el 0; los 7 estándares conservan su número 1 a 7. */
   pillarIndex(key: PillarKey) {
-    return this.standards().findIndex((p) => p.key === key) + 1;
+    const list = this.standards();
+    const offset = list[0]?.key === 'DOCUMENTACION_GENERAL' ? 0 : 1;
+    return list.findIndex((p) => p.key === key) + offset;
   }
 
   date(value: string | null | undefined) {

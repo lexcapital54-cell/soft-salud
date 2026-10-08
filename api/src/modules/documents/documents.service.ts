@@ -138,6 +138,7 @@ function warningWindow(validityDays: number | null) {
 }
 
 const PILLAR_LABELS: Record<DocumentPillar, string> = {
+  DOCUMENTACION_GENERAL: 'Documentación general',
   DOCUMENTACION_LEGAL: 'Documentación legal',
   TALENTO_HUMANO: 'Talento humano',
   INFRAESTRUCTURA: 'Infraestructura',
@@ -175,6 +176,7 @@ function isClinicLandUseOrSanitaryCode(code: string | null | undefined): boolean
 }
 
 const PILLAR_ORDER: DocumentPillar[] = [
+  DocumentPillar.DOCUMENTACION_GENERAL,
   DocumentPillar.DOCUMENTACION_LEGAL,
   DocumentPillar.TALENTO_HUMANO,
   DocumentPillar.INFRAESTRUCTURA,

@@ -43,6 +43,7 @@ type MainTab = 'expediente' | 'historico';
 
 /** Orden de los grupos: los 7 estándares de la Res. 3100 de 2019 y luego los grupos de apoyo. */
 const PILLAR_ORDER: DocumentPillar[] = [
+  'DOCUMENTACION_GENERAL',
   'TALENTO_HUMANO',
   'INFRAESTRUCTURA',
   'DOTACION',
@@ -1055,14 +1056,24 @@ export class DocumentsDashboard {
     (this.overview()?.pillars ?? []).filter((p) => SUPPORT_PILLARS.has(p.pillar)),
   );
 
-  /** Número del estándar (1 a 7); los grupos de apoyo no llevan número. */
+  /** Número del estándar (0 = documentación general, 1 a 7); los grupos de apoyo no llevan número. */
   pillarNumber(pillar: DocumentPillar) {
-    const i = this.standardPillars().findIndex((p) => p.pillar === pillar);
-    return i >= 0 ? i + 1 : null;
+    const list = this.standardPillars();
+    const i = list.findIndex((p) => p.pillar === pillar);
+    if (i < 0) return pillar === 'DOCUMENTACION_GENERAL' ? 0 : null;
+    return i + (list[0]?.pillar === 'DOCUMENTACION_GENERAL' ? 0 : 1);
+  }
+
+  private numbered(pillar: DocumentPillar, label: string) {
+    const n = this.pillarNumber(pillar);
+    return (n !== null ? n + '. ' : '') + label;
   }
 
   pillarLabel(pillar: DocumentPillar) {
-    return this.overview()?.pillars.find((p) => p.pillar === pillar)?.label ?? '';
+    return (
+      this.overview()?.pillars.find((p) => p.pillar === pillar)?.label ??
+      (pillar === 'DOCUMENTACION_GENERAL' ? 'Documentación general' : '')
+    );
   }
 
   // ---------- Carga múltiple (superadmin, consultorio elegido) ----------
@@ -1083,10 +1094,9 @@ export class DocumentsDashboard {
     return [...this.standardPillars(), ...this.otherPillars()]
       .filter((p) => !only || p.pillar === only)
       .map((p) => {
-        const n = this.pillarNumber(p.pillar);
         return {
           pillar: p.pillar,
-          label: (n ? n + '. ' : '') + p.label,
+          label: this.numbered(p.pillar, p.label),
           reqs: p.categories.flatMap((c) =>
             c.requirements
               .filter((r) => !picked || picked.has(r.id))
@@ -1108,7 +1118,7 @@ export class DocumentsDashboard {
   readonly bulkNewPillars = computed(() =>
     [...this.standardPillars(), ...this.otherPillars()].map((p) => ({
       pillar: p.pillar,
-      label: (this.pillarNumber(p.pillar) ? this.pillarNumber(p.pillar) + '. ' : '') + p.label,
+      label: this.numbered(p.pillar, p.label),
     })),
   );
   private bulkCategories: DocCategory[] = [];

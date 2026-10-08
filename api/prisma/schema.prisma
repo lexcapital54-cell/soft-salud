@@ -247,6 +247,7 @@ enum EquipmentStatus {
 /// SG-SST (Dec. 1072 de 2015). DOCUMENTACION_LEGAL agrupa lo administrativo
 /// que el checklist del consultorio exige pero no cae en ningún estándar.
 enum DocumentPillar {
+  DOCUMENTACION_GENERAL
   DOCUMENTACION_LEGAL
   TALENTO_HUMANO
   INFRAESTRUCTURA

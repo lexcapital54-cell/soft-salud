@@ -16,6 +16,7 @@ export type DocumentSignerRole =
   | 'CLINIC_ADMIN';
 
 export type DocumentPillar =
+  | 'DOCUMENTACION_GENERAL'
   | 'DOCUMENTACION_LEGAL'
   | 'TALENTO_HUMANO'
   | 'INFRAESTRUCTURA'
