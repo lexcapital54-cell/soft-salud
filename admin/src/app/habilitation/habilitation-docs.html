@@ -311,43 +311,15 @@
       @if (view() === 'estandares') {
         <section class="std-grid big">
           @for (p of standardCards(); track p.key; let i = $index) {
-            <article class="std">
-              <header>
-                <span class="std-num">{{ i + 1 }}.</span>
-                <h3>{{ p.label }}</h3>
-              </header>
-              <span class="std-ico"><hab-icon [name]="p.icon" [size]="22" /></span>
-              <p class="std-desc">{{ p.description }}</p>
-              <p class="std-count"><strong>{{ p.total }}</strong> documentos</p>
-              <ul>
-                <li><hab-icon name="tag" [size]="14" /> {{ p.types }} tipos documentales</li>
-                <li><hab-icon name="shield" [size]="14" /> {{ p.vigentes }} vigentes</li>
-                <li><hab-icon name="clock" [size]="14" /> {{ p.porVencer }} próximos a vencer</li>
-                <li><hab-icon name="calendar" [size]="14" /> {{ p.vencidos }} vencidos</li>
-                <li><hab-icon name="upload" [size]="14" /> {{ p.pendientes }} pendientes de cargar</li>
-                <li><hab-icon name="history" [size]="14" /> Última actualización: {{ p.lastUpdate ? date(p.lastUpdate) : 'sin cargas' }}</li>
-              </ul>
-              <button type="button" class="btn btn-soft btn-block" (click)="go('estandar', p.key)">Ver documentos</button>
-              @if (embedded()) {
-                <button type="button" class="btn btn-primary btn-block" (click)="bulkUpload.emit(p.key)" [attr.aria-label]="'Cargar archivos de ' + p.label">
-                  <hab-icon name="upload" [size]="16" /> Cargar archivos
-                </button>
-              }
-            </article>
+            <ng-container *ngTemplateOutlet="stdCard; context: { $implicit: p, num: i + 1 }" />
           }
         </section>
         @if (supportCards().length) {
-          <section class="card">
-            <div class="card-head"><h2>Otros grupos documentales</h2></div>
-            <div class="support-grid">
-              @for (p of supportCards(); track p.key) {
-                <button type="button" class="support" (click)="go('estandar', p.key)">
-                  <span class="std-ico sm"><hab-icon [name]="p.icon" /></span>
-                  <span><strong>{{ p.label }}</strong><small>{{ p.total }} documentos · {{ p.pendientes }} pendientes</small></span>
-                  <hab-icon name="chevronRight" [size]="16" />
-                </button>
-              }
-            </div>
+          <h2 class="group-title">Otros grupos documentales</h2>
+          <section class="std-grid big">
+            @for (p of supportCards(); track p.key) {
+              <ng-container *ngTemplateOutlet="stdCard; context: { $implicit: p, num: null }" />
+            }
           </section>
         }
       }
@@ -624,6 +596,33 @@
       }
       <button type="button" class="btn btn-ghost sm" [disabled]="!hasFilters()" (click)="clearFilters()">Limpiar filtros</button>
     </div>
+  </ng-template>
+
+  <!-- Tarjeta de estándar o grupo documental (7 estándares y otros grupos) -->
+  <ng-template #stdCard let-p let-num="num">
+    <article class="std">
+      <header>
+        @if (num) { <span class="std-num">{{ num }}.</span> }
+        <h3>{{ p.label }}</h3>
+      </header>
+      <span class="std-ico"><hab-icon [name]="p.icon" [size]="22" /></span>
+      <p class="std-desc">{{ p.description }}</p>
+      <p class="std-count"><strong>{{ p.total }}</strong> documentos</p>
+      <ul>
+        <li><hab-icon name="tag" [size]="14" /> {{ p.types }} tipos documentales</li>
+        <li><hab-icon name="shield" [size]="14" /> {{ p.vigentes }} vigentes</li>
+        <li><hab-icon name="clock" [size]="14" /> {{ p.porVencer }} próximos a vencer</li>
+        <li><hab-icon name="calendar" [size]="14" /> {{ p.vencidos }} vencidos</li>
+        <li><hab-icon name="upload" [size]="14" /> {{ p.pendientes }} pendientes de cargar</li>
+        <li><hab-icon name="history" [size]="14" /> Última actualización: {{ p.lastUpdate ? date(p.lastUpdate) : 'sin cargas' }}</li>
+      </ul>
+      <button type="button" class="btn btn-soft btn-block" (click)="go('estandar', p.key)">Ver documentos</button>
+      @if (embedded()) {
+        <button type="button" class="btn btn-primary btn-block" (click)="bulkUpload.emit(p.key)" [attr.aria-label]="'Cargar archivos de ' + p.label">
+          <hab-icon name="upload" [size]="16" /> Cargar archivos
+        </button>
+      }
+    </article>
   </ng-template>
 
   <ng-template #docsTable>
