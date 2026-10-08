@@ -93,7 +93,7 @@ const emptyDocForm = (): DocForm => ({
   standalone: true,
   imports: [FormsModule, RouterLink, HabIcon, NgTemplateOutlet],
   templateUrl: './habilitation-docs.html',
-  styleUrl: './habilitation-docs.scss',
+  styleUrls: ['./habilitation-docs.scss', './habilitation-docs-sa.scss'],
   host: { '[class.sa]': 'embedded()' },
 })
 export class HabilitationDocs implements OnInit {
@@ -106,6 +106,19 @@ export class HabilitationDocs implements OnInit {
   readonly changed = output<void>();
   /** Pide al contenedor abrir la carga múltiple de un estándar. */
   readonly bulkUpload = output<PillarKey>();
+  /** Pide al contenedor cargar archivos a los documentos seleccionados. */
+  readonly bulkUploadSelected = output<string[]>();
+
+  // Selección múltiple (solo superadmin en Documentos).
+  readonly selected = signal<ReadonlySet<string>>(new Set());
+  readonly selectedDocs = computed(() => (this.registry()?.documents ?? []).filter((d) => this.selected().has(d.id)));
+  readonly selectedFiles = computed(() => this.selectedDocs().reduce((n, d) => n + (d.versionCount || 0), 0));
+  readonly allVisibleSelected = computed(() => {
+    const rows = this.filtered();
+    return rows.length > 0 && rows.every((d) => this.selected().has(d.id));
+  });
+  readonly deleteMode = signal<'files' | 'documents' | null>(null);
+  deleteAck = false;
 
   private readonly api = inject(HabilitationApiService);
   private readonly docsApi = inject(DocumentsApiService);
@@ -391,6 +404,7 @@ export class HabilitationDocs implements OnInit {
     this.selectedClinicId.set(id);
     this.api.clinicId = id;
     this.docsApi.clinicId = id;
+    this.clearSelection();
     this.closeDrawer();
     if (syncUrl) this.syncUrl({ clinicId: id });
     this.load(false);
@@ -402,6 +416,10 @@ export class HabilitationDocs implements OnInit {
     this.api.registry().subscribe({
       next: (data) => {
         this.registry.set(data);
+        if (this.selected().size) {
+          const ids = new Set(data.documents.map((d) => d.id));
+          this.selected.set(new Set([...this.selected()].filter((id) => ids.has(id))));
+        }
         if (notify && this.embedded()) this.changed.emit();
         this.loading.set(false);
         const docId = this.route.snapshot.queryParamMap.get('doc');
@@ -935,6 +953,60 @@ export class HabilitationDocs implements OnInit {
     a.download = name;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 5_000);
+  }
+
+  toggleSelect(id: string) {
+    const next = new Set(this.selected());
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    this.selected.set(next);
+  }
+
+  toggleAllVisible() {
+    const next = new Set(this.selected());
+    const rows = this.filtered();
+    if (this.allVisibleSelected()) rows.forEach((d) => next.delete(d.id));
+    else rows.forEach((d) => next.add(d.id));
+    this.selected.set(next);
+  }
+
+  clearSelection() {
+    this.selected.set(new Set());
+  }
+
+  uploadSelected() {
+    if (this.selected().size) this.bulkUploadSelected.emit([...this.selected()]);
+  }
+
+  openBulkDelete(mode: 'files' | 'documents') {
+    this.deleteAck = false;
+    this.deleteMode.set(mode);
+  }
+
+  confirmBulkDelete() {
+    const mode = this.deleteMode();
+    const ids = [...this.selected()];
+    if (!mode || !ids.length || !this.deleteAck) return;
+    this.busy.set(true);
+    this.error.set('');
+    this.api.bulkDelete(ids, mode).subscribe({
+      next: (r) => {
+        this.busy.set(false);
+        this.deleteMode.set(null);
+        this.clearSelection();
+        this.closeDrawer();
+        this.flash(
+          mode === 'documents'
+            ? `Se eliminaron ${r.documents} documento${r.documents === 1 ? '' : 's'} y ${r.files} archivo${r.files === 1 ? '' : 's'}.`
+            : `Se eliminaron ${r.files} archivo${r.files === 1 ? '' : 's'} de ${r.documents} documento${r.documents === 1 ? '' : 's'}; el árbol documental se conserva.`,
+        );
+        this.load();
+      },
+      error: (err) => {
+        this.busy.set(false);
+        this.error.set(describeError(err));
+      },
+    });
   }
 
   private flash(text: string) {

@@ -643,18 +643,40 @@
         <input type="search" placeholder="Buscar documento, código, responsable o archivo…" [ngModel]="q()" (ngModelChange)="q.set($event)" />
       </label>
       <ng-container *ngTemplateOutlet="filtersBar" />
+      @if (embedded() && selected().size) {
+        <div class="sel-bar" role="region" aria-label="Acciones sobre la selección">
+          <strong>{{ selected().size }} seleccionado{{ selected().size === 1 ? '' : 's' }}</strong>
+          <span class="muted">· {{ selectedFiles() }} archivo{{ selectedFiles() === 1 ? '' : 's' }}</span>
+          <span class="sel-actions">
+            <button type="button" class="act-btn act-main" (click)="uploadSelected()"><hab-icon name="upload" [size]="14" /> Cargar archivos</button>
+            <button type="button" class="act-btn act-danger" (click)="openBulkDelete('files')" [disabled]="!selectedFiles()"><hab-icon name="trash" [size]="14" /> Eliminar archivos</button>
+            <button type="button" class="act-btn act-danger" (click)="openBulkDelete('documents')"><hab-icon name="trash" [size]="14" /> Eliminar documentos</button>
+            <button type="button" class="act-btn" (click)="clearSelection()">Quitar selección</button>
+          </span>
+        </div>
+      }
       @if (filtered().length) {
         <div class="table-wrap">
           <table class="tbl tbl-cards">
             <thead>
               <tr>
+                @if (embedded()) {
+                  <th class="td-sel">
+                    <input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleAllVisible()" aria-label="Seleccionar todos los documentos visibles" />
+                  </th>
+                }
                 <th>Documento</th><th>Código</th>@if (!embedded()) {<th>Estándar</th>}<th>Categoría</th><th>Responsable</th>
                 <th>Emisión</th><th>Vencimiento</th><th>Estado</th><th>Versión</th><th>Actualizado</th><th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               @for (d of filtered(); track d.id) {
-                <tr [class.dim]="!d.isEnabled">
+                <tr [class.dim]="!d.isEnabled" [class.is-sel]="selected().has(d.id)">
+                  @if (embedded()) {
+                    <td class="td-sel">
+                      <input type="checkbox" [checked]="selected().has(d.id)" (change)="toggleSelect(d.id)" [attr.aria-label]="'Seleccionar ' + d.title" />
+                    </td>
+                  }
                   <td data-label="Documento">
                     <button type="button" class="doc-name" (click)="openDoc(d)">
                       <hab-icon name="file" [size]="16" />
@@ -915,6 +937,48 @@
           <button type="submit" class="btn btn-primary" [disabled]="busy()">{{ busy() ? 'Guardando…' : formMode() === 'create' ? 'Crear documento' : 'Guardar cambios' }}</button>
         </footer>
       </form>
+    </div>
+  }
+
+  <!-- ===================== Eliminar selección (superadmin) ===================== -->
+  @if (deleteMode(); as mode) {
+    <div class="overlay" (click)="deleteMode.set(null)"></div>
+    <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="delTitle" aria-describedby="delText">
+      <header class="modal-head">
+        <div>
+          <h2 id="delTitle">{{ mode === 'files' ? 'Eliminar archivos' : 'Eliminar documentos' }}</h2>
+          <p class="muted">{{ registry()?.clinic?.name }}</p>
+        </div>
+        <button type="button" class="icon-btn" aria-label="Cerrar" (click)="deleteMode.set(null)"><hab-icon name="x" /></button>
+      </header>
+      <div class="form">
+        <p class="full del-text" id="delText">
+          @if (mode === 'files') {
+            Se borrarán definitivamente <strong>{{ selectedFiles() }} archivo{{ selectedFiles() === 1 ? '' : 's' }}</strong>
+            (todas sus versiones y firmas) de {{ selectedDocs().length }} documento{{ selectedDocs().length === 1 ? '' : 's' }}.
+            Los documentos siguen en el árbol documental como pendientes de cargar.
+          } @else {
+            Se borrarán definitivamente <strong>{{ selectedDocs().length }} documento{{ selectedDocs().length === 1 ? '' : 's' }}</strong>
+            del árbol documental, con sus {{ selectedFiles() }} archivo{{ selectedFiles() === 1 ? '' : 's' }}, versiones y firmas.
+          }
+        </p>
+        <ul class="full del-list">
+          @for (d of selectedDocs().slice(0, 8); track d.id) {
+            <li><span class="mono">{{ d.code }}</span> {{ d.title }}</li>
+          }
+          @if (selectedDocs().length > 8) { <li class="muted">y {{ selectedDocs().length - 8 }} más…</li> }
+        </ul>
+        <label class="full check">
+          <input type="checkbox" name="delAck" [(ngModel)]="deleteAck" />
+          Entiendo que esta acción no se puede deshacer.
+        </label>
+        <footer class="modal-foot full">
+          <button type="button" class="btn btn-ghost" (click)="deleteMode.set(null)">Cancelar</button>
+          <button type="button" class="btn btn-danger" [disabled]="!deleteAck || busy()" (click)="confirmBulkDelete()">
+            {{ busy() ? 'Eliminando…' : mode === 'files' ? 'Eliminar archivos' : 'Eliminar documentos' }}
+          </button>
+        </footer>
+      </div>
     </div>
   }
 

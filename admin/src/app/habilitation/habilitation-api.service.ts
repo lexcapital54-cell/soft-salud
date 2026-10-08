@@ -52,6 +52,11 @@ export class HabilitationApiService {
     return this.http.post<{ id: string; changed: boolean }>(this.url(`/documents/${id}/update`), body);
   }
 
+  /** Eliminación definitiva por selección (superadmin). */
+  bulkDelete(ids: string[], mode: 'files' | 'documents') {
+    return this.http.post<{ mode: string; documents: number; files: number }>(this.url('/documents/bulk-delete'), { ids, mode });
+  }
+
   setArchived(id: string, archived: boolean) {
     return this.http.post<{ id: string; archivedAt: string | null }>(this.url(`/documents/${id}/archive`), { archived });
   }

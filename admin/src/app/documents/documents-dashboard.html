@@ -568,6 +568,7 @@
       [embeddedRefresh]="habRefresh()"
       (changed)="load()"
       (bulkUpload)="openBulk($any($event))"
+      (bulkUploadSelected)="openBulk(null, $event)"
     />
   } @else if (loading()) {
     <p class="muted">Cargando expediente…</p>
@@ -677,6 +678,7 @@
           <p class="muted">
             {{ selectedClinicName() || 'Consultorio seleccionado' }}
             @if (bulkPillar(); as bp) { · {{ pillarLabel(bp) }} }
+            @if (bulkOnly(); as only) { · {{ only.length }} documento{{ only.length === 1 ? '' : 's' }} seleccionado{{ only.length === 1 ? '' : 's' }} }
           </p>
         </div>
         <button type="button" class="close" (click)="closeBulk()" [disabled]="bulkRunning()">Cerrar</button>

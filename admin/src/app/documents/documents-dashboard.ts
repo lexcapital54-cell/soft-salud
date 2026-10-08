@@ -1075,8 +1075,11 @@ export class DocumentsDashboard {
   private bulkSeq = 0;
 
   /** Requisitos agrupados por estándar para elegir el destino de cada archivo. */
+  /** Documentos elegidos con la selección múltiple; limita los destinos de la carga. */
+  readonly bulkOnly = signal<string[] | null>(null);
   readonly bulkOptions = computed(() => {
     const only = this.bulkPillar();
+    const picked = this.bulkOnly() ? new Set(this.bulkOnly()) : null;
     return [...this.standardPillars(), ...this.otherPillars()]
       .filter((p) => !only || p.pillar === only)
       .map((p) => {
@@ -1085,7 +1088,9 @@ export class DocumentsDashboard {
           pillar: p.pillar,
           label: (n ? n + '. ' : '') + p.label,
           reqs: p.categories.flatMap((c) =>
-            c.requirements.map((r) => ({ id: r.id, code: r.code, title: r.title, enabled: r.isEnabled !== false })),
+            c.requirements
+              .filter((r) => !picked || picked.has(r.id))
+              .map((r) => ({ id: r.id, code: r.code, title: r.title, enabled: r.isEnabled !== false })),
           ),
         };
       })
@@ -1108,12 +1113,13 @@ export class DocumentsDashboard {
   );
   private bulkCategories: DocCategory[] = [];
 
-  openBulk(pillar: DocumentPillar | null) {
+  openBulk(pillar: DocumentPillar | null, onlyIds: string[] | null = null) {
     if (!this.api.clinicId) {
       this.error.set('Seleccione un consultorio antes de cargar archivos.');
       return;
     }
     this.bulkPillar.set(pillar);
+    this.bulkOnly.set(onlyIds?.length ? onlyIds : null);
     this.bulkNewPillar.set(pillar ?? PILLAR_ORDER[0]);
     this.bulkRows.set([]);
     this.bulkPeriod = '';
@@ -1133,12 +1139,17 @@ export class DocumentsDashboard {
     input.value = '';
     if (!files.length) return;
     const options = this.bulkOptions().flatMap((g) => g.reqs);
-    const rows: BulkRow[] = files.map((file) => {
+    // Con selección: lo que no coincide por nombre va, en orden, a los seleccionados aún sin archivo.
+    const taken = new Set(this.bulkRows().map((r) => r.requirementId).filter(Boolean));
+    const suggestions = files.map((file) => (file.size > MAX_UPLOAD_BYTES ? '' : suggestRequirement(file.name, options)));
+    suggestions.forEach((id) => id && taken.add(id));
+    const free = this.bulkOnly() ? options.filter((o) => !taken.has(o.id)).map((o) => o.id) : [];
+    const rows: BulkRow[] = files.map((file, i) => {
       const tooBig = file.size > MAX_UPLOAD_BYTES;
       return {
         key: ++this.bulkSeq,
         file,
-        requirementId: tooBig ? '' : suggestRequirement(file.name, options),
+        requirementId: tooBig ? '' : suggestions[i] || free.shift() || '',
         state: tooBig ? 'error' : 'pendiente',
         message: tooBig ? 'Supera 25 MB; no se cargará' : '',
         tooBig,

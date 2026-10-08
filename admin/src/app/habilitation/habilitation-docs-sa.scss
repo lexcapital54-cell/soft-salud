@@ -1,0 +1,56 @@
+/* Incrustado en Documentos del superadmin: paleta del panel, acciones y selección múltiple */
+:host(.sa) {
+  --petrol: #002b5c;
+  --petrol-2: #0a3d73;
+  --slate: #4a5d72;
+  --bg: #f4f7fb;
+  --beige: #dff5f2;
+  --taupe: #0b6f68;
+  --gold: #2ec4b6;
+  --ink: #0a1f3d;
+  --muted: #5a6b7d;
+  --line: #e4eaf0;
+  --shadow: 0 1px 2px rgba(10, 31, 61, 0.06), 0 6px 20px rgba(10, 31, 61, 0.06);
+
+  .btn-primary, .quick-btn.primary { background: var(--petrol); border-color: var(--petrol); &:hover:not(:disabled) { background: #001a3a; } }
+  .btn-soft { border-color: #bfe9e3; }
+  .std, .support, .due-list button, .quick-btn:hover { background: #fff; }
+  .tbl th { background: #f7f9fc; }
+  .tbl td, .cat-list li { border-bottom-color: #eef2f6; }
+  .tbl tbody tr:hover { background: #f7f9fc; }
+  .skeleton { background: linear-gradient(90deg, #e9eef4 0%, #f5f8fb 50%, #e9eef4 100%); background-size: 200% 100%; }
+  .overlay { background: rgba(0, 26, 58, 0.4); }
+  .search:focus-within, .filters select:focus, .form input:focus, .form select:focus { border-color: var(--petrol); box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.35); }
+
+  /* Acciones siempre visibles aunque la tabla se desplace */
+  .tbl th:last-child, .tbl .td-act { position: sticky; right: 0; z-index: 1; background: #fff; box-shadow: -6px 0 8px -6px rgba(10, 31, 61, 0.18); }
+  .tbl th:last-child { background: #f7f9fc; z-index: 2; }
+  .tbl tbody tr:hover .td-act { background: #f7f9fc; }
+  .act-btn {
+    display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 10px; border: 1px solid #bfe9e3; border-radius: 999px;
+    background: #fff; color: var(--petrol); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+    &:hover { background: var(--beige); }
+    &:focus-visible { outline: 2px solid var(--petrol); outline-offset: 2px; }
+  }
+  .act-main { background: var(--petrol); border-color: var(--petrol); color: #fff; &:hover { background: #001a3a; } }
+  .act-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .act-danger { border-color: #f1c4c4; color: #a12828; &:hover:not(:disabled) { background: #fdecec; } }
+  .btn-danger { background: #a12828; border-color: #a12828; color: #fff; &:hover:not(:disabled) { background: #861f1f; } &:disabled { opacity: 0.55; cursor: not-allowed; } }
+
+  /* Selección múltiple */
+  .sel-bar {
+    position: sticky; top: 8px; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px;
+    padding: 10px 12px; border: 1px solid #bfe9e3; border-radius: 12px; background: var(--beige); color: var(--petrol); font-size: 13px;
+  }
+  .sel-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+  .td-sel { width: 36px; text-align: center; input { width: 16px; height: 16px; accent-color: var(--petrol); cursor: pointer; } }
+  .tbl tbody tr.is-sel, .tbl tbody tr.is-sel .td-act { background: #eefaf8; }
+  .del-text { margin: 0; color: var(--ink); font-size: 14px; line-height: 1.5; }
+  .del-list { margin: 0; padding: 10px 12px 10px 28px; max-height: 180px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); font-size: 13px; color: var(--ink); li + li { margin-top: 4px; } }
+  @media (max-width: 640px) {
+    .tbl .td-act { position: static; box-shadow: none; background: transparent; gap: 6px; padding-top: 8px; }
+    .tbl-cards td.td-sel { width: auto; justify-content: flex-start; padding-bottom: 0; border-bottom: 0; margin-bottom: 0; }
+    .sel-actions { margin-left: 0; width: 100%; }
+    .tbl tbody tr:hover .td-act { background: transparent; }
+  }
+}

@@ -11,6 +11,7 @@ import { AuditAction, DocumentFileStatus, DocumentPillar, Prisma } from '@prisma
 import * as XLSX from 'xlsx';
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { PrismaService } from '../../prisma/prisma.module';
+import { ClinicalStorageService } from '../clinical/clinical-storage.service';
 import { UserRole } from '../../common/enums';
 import { User } from '../../users/user.entity';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -117,7 +118,10 @@ export class HabilitationRegistryService {
     },
   });
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: ClinicalStorageService,
+  ) {}
 
   private scope(user: User, clinicId?: string) {
     if (user.role === UserRole.SUPER_ADMIN) {
@@ -529,6 +533,42 @@ export class HabilitationRegistryService {
       requirementCode: req.code,
     });
     return { id: req.id, archivedAt: updated.archivedAt };
+  }
+
+  /**
+   * Eliminación definitiva por selección (superadmin), solo dentro del consultorio indicado.
+   * - files: borra todas las versiones y firmas; el requisito queda en el árbol como pendiente.
+   * - documents: borra además el requisito.
+   * Cada documento queda registrado en la auditoría.
+   */
+  async bulkDelete(user: User, ids: string[], mode: 'files' | 'documents', context: AuditContext, clinicIdParam?: string) {
+    this.assertSuperAdmin(user);
+    const clinicId = this.scope(user, clinicIdParam);
+    const reqs = await this.prisma.documentRequirement.findMany({
+      where: { clinicId, id: { in: [...new Set(ids)] } },
+      select: { id: true, code: true, title: true, files: { select: { id: true, storageKey: true, originalName: true, version: true } } },
+    });
+    if (!reqs.length) throw new NotFoundException('No se encontraron los documentos seleccionados en este consultorio.');
+
+    let files = 0;
+    for (const req of reqs) {
+      if (mode === 'documents') {
+        await this.prisma.documentRequirement.delete({ where: { id: req.id } });
+      } else if (req.files.length) {
+        await this.prisma.documentFile.deleteMany({ where: { requirementId: req.id } });
+      }
+      for (const f of req.files) await this.storage.deleteStored(f.storageKey).catch(() => undefined);
+      files += req.files.length;
+      await this.audit(clinicId, user, AuditAction.UPDATE, req.id, context, {
+        kind: mode === 'documents' ? 'document-deleted' : 'files-deleted',
+        permanent: true,
+        deleted: true,
+        requirementCode: req.code,
+        title: req.title,
+        files: req.files.map((f) => ({ name: f.originalName, version: f.version })),
+      });
+    }
+    return { mode, documents: reqs.length, files };
   }
 
   /** Tipos documentales (catálogo global): solo superadmin. */

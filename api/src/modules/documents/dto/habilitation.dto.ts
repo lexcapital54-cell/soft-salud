@@ -1,6 +1,21 @@
 import { Transform, Type } from 'class-transformer';
 import { DocumentPillar } from '@prisma/client';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
 
 export class CreateHabilitationDocumentDto {
   @IsUUID()
@@ -85,6 +100,18 @@ export class UpdateHabilitationDocumentDto {
 export class SetArchivedDto {
   @IsBoolean()
   archived!: boolean;
+}
+
+/** Eliminación por selección (superadmin): solo los archivos o el documento completo. */
+export class BulkDeleteDocumentsDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(500)
+  @IsUUID('4', { each: true })
+  ids!: string[];
+
+  @IsIn(['files', 'documents'])
+  mode!: 'files' | 'documents';
 }
 
 export class CreateDocumentCategoryDto {

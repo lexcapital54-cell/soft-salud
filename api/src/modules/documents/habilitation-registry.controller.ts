@@ -7,6 +7,7 @@ import { UserRole } from '../../common/enums';
 import { User } from '../../users/user.entity';
 import { HabilitationRegistryService } from './habilitation-registry.service';
 import {
+  BulkDeleteDocumentsDto,
   CreateDocumentCategoryDto,
   CreateHabilitationDocumentDto,
   SetArchivedDto,
@@ -85,6 +86,12 @@ export class HabilitationRegistryController {
     @Query('clinicId') clinicId?: string,
   ) {
     return this.registry.setArchived(req.user, id, dto.archived, ctx(req), clinicId);
+  }
+
+  @Post('documents/bulk-delete')
+  @Roles(UserRole.SUPER_ADMIN)
+  bulkDelete(@Req() req: AuthedRequest, @Body() dto: BulkDeleteDocumentsDto, @Query('clinicId') clinicId?: string) {
+    return this.registry.bulkDelete(req.user, dto.ids, dto.mode, ctx(req), clinicId);
   }
 
   @Get('categories')
