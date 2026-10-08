@@ -29,6 +29,7 @@ services:
     volumes:
       - ./api/storage:/app/storage
       - "./DOCUMENOS PDF PSICOLOGIA:/app/habilitation-pack:ro"
+      - "./DOCUMENTOS PDF FISIOTERAPIA:/app/habilitation-packs/fisioterapia:ro"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

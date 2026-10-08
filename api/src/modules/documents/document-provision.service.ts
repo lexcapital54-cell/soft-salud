@@ -36,8 +36,23 @@ export class DocumentProvisionService {
       return { skipped: true as const, sgsst };
     }
 
+    if (clinic && this.packImport.hasSpecialtyPack(clinic.specialty)) {
+      // Paquete maestro propio de la especialidad (no el de psicología).
+      const pack = await this.packImport
+        .importSpecialtyPack(clinicId, { withFiles: options.importPack !== false })
+        .catch((error) => {
+          this.logger.warn(
+            `No se importó el paquete ${clinic.specialty} para ${clinic.name}: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+          return null;
+        });
+      return { skipped: false as const, specialtyPack: pack, sgsst };
+    }
+
     if (clinic?.specialty === ClinicSpecialty.PHYSIOTHERAPY) {
-      // Sin checklist ni pack de psicología: el SUPER_ADMIN carga y replica.
+      // Sin paquete de fisioterapia montado: el SUPER_ADMIN carga y replica.
       await seedPhysiotherapyDocsForClinic(this.prisma, clinicId);
       this.logger.log(
         `Gestión documental fisioterapia: sin auto-carga de psicología para ${clinic.name}.`,
