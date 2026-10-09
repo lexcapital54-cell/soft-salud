@@ -181,7 +181,7 @@ export class HabilitationRegistryService {
     const withDocs = clinic.dashboardType === 'CLINICAL_HISTORY_WITH_DOCS';
     const hasGeneral =
       withDocs &&
-      (clinic.specialty === 'PHYSIOTHERAPY' ||
+      (['PHYSIOTHERAPY', 'DENTISTRY', 'ORTHODONTICS'].includes(clinic.specialty) ||
         (await this.prisma.documentRequirement.count({
           where: { clinicId, category: { pillar: DocumentPillar.DOCUMENTACION_GENERAL } },
         })) > 0);
