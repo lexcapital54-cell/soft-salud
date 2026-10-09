@@ -1290,10 +1290,21 @@ export class DocumentsDashboard {
     );
   }
 
-  canCrudRequirement(req: { code?: string | null; pillar?: string | null }) {
+  /** Infraestructura pendiente (o cargada por el consultorio): el profesional puede cargar. */
+  private readonly clinicUploadIds = computed(
+    () =>
+      new Set(
+        (this.overview()?.pillars ?? []).flatMap((p) =>
+          p.categories.flatMap((c) => c.requirements.filter((r) => r.clinicCanUpload).map((r) => r.id)),
+        ),
+      ),
+  );
+
+  canCrudRequirement(req: { id?: string; code?: string | null; pillar?: string | null }) {
     if (this.canManage()) return true;
     if (!this.canClinicDocCrud()) return false;
     if (this.isLandUseOrSanitaryRequirement(req)) return true;
+    if (req.id && this.clinicUploadIds().has(req.id)) return true;
     return this.canCrudPillar(req.pillar);
   }
 

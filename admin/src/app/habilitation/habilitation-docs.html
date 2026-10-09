@@ -706,6 +706,8 @@
                     }
                     @if (!embedded() && d.canEdit && writerRole()) {
                       <button type="button" class="icon-btn" (click)="openEdit(d)" [attr.aria-label]="'Editar metadatos de ' + d.title" title="Editar metadatos"><hab-icon name="pencil" [size]="16" /></button>
+                    }
+                    @if (!embedded() && d.canUpload && writerRole()) {
                       <button type="button" class="icon-btn" (click)="openUpload(d)" [attr.aria-label]="(d.current ? 'Reemplazar archivo de ' : 'Cargar archivo de ') + d.title" [title]="d.current ? 'Reemplazar archivo' : 'Cargar archivo'"><hab-icon [name]="d.current ? 'replace' : 'upload'" [size]="16" /></button>
                     }
                     <button type="button" class="icon-btn" (click)="openDoc(d, 'historial')" [attr.aria-label]="'Historial de ' + d.title" title="Ver historial"><hab-icon name="history" [size]="16" /></button>
@@ -745,6 +747,9 @@
           @if (canDownload()) {
             <button type="button" class="btn btn-ghost sm" (click)="downloadFile(d.current.id, d.current.originalName)"><hab-icon name="download" [size]="15" /> Descargar</button>
           }
+        }
+        @if (!d.canEdit && d.canUpload && writerRole() && d.state !== 'ARCHIVADO') {
+          <button type="button" class="btn btn-primary sm" (click)="openUpload(d)"><hab-icon name="upload" [size]="15" /> {{ d.current ? 'Subir nueva versión' : 'Cargar archivo' }}</button>
         }
         @if (d.canEdit && writerRole()) {
           <button type="button" class="btn btn-ghost sm" (click)="openEdit(d)"><hab-icon name="pencil" [size]="15" /> Editar</button>

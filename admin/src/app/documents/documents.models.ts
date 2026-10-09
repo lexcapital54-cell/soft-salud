@@ -88,6 +88,8 @@ export interface RequirementRow {
   requiresClinicSignature?: boolean;
   /** Pilar del requisito (para permisos CRUD del admin). */
   pillar?: DocumentPillar;
+  /** Infraestructura pendiente o cargada por el consultorio: el profesional puede cargar. */
+  clinicCanUpload?: boolean;
   validityDays: number | null;
   status: ComplianceStatus;
   expiresAt: string | null;

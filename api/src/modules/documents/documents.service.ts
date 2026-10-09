@@ -22,6 +22,7 @@ import { DocumentProvisionService } from './document-provision.service';
 import { SignDocumentDto, UpdateDocumentMetaDto } from './dto/document.dto';
 import { FillSgsstDto } from './dto/fill-sgsst.dto';
 import { FillTrainingActaDto } from './dto/fill-training-acta.dto';
+import { clinicMayUploadInfra, clinicOwnsInfraFile } from './clinic-upload-rules';
 import { HabilitationPackImportService } from './habilitation-pack-import.service';
 import { FT_DOC_CATEGORY_HINTS } from './ft-doc-categories';
 import { PdfBrandService } from './pdf-brand.service';
@@ -284,6 +285,7 @@ export class DocumentsService {
     user: User,
     pillar: DocumentPillar | string | null | undefined,
     requirementCode?: string | null,
+    infraAllowed = false,
   ) {
     if (user.role === UserRole.SUPER_ADMIN) return;
     const isClinicProfessional =
@@ -296,8 +298,11 @@ export class DocumentsService {
     }
     if (isClinicLandUseOrSanitaryCode(requirementCode)) return;
     if (isClinicAdminCrudPillar(pillar)) return;
+    if (infraAllowed) return;
     throw new ForbiddenException(
-      'Solo puede cargar o modificar Documentación legal, Talento humano, uso de suelo y concepto sanitario.',
+      pillar === DocumentPillar.INFRAESTRUCTURA
+        ? 'En Infraestructura solo puede cargar documentos pendientes o reemplazar los que usted cargó.'
+        : 'Solo puede cargar o modificar Documentación legal, Talento humano, Infraestructura pendiente, uso de suelo y concepto sanitario.',
     );
   }
 
@@ -804,6 +809,7 @@ export class DocumentsService {
         status,
         expiresAt,
         daysToExpiry,
+        clinicCanUpload: clinicMayUploadInfra(pillar, requirement.files),
         fileCount: active.length,
         latestFile: latest
           ? this.serializeFile(
@@ -896,6 +902,7 @@ export class DocumentsService {
         status: ComplianceStatus;
         expiresAt: Date | null;
         daysToExpiry: number | null;
+        clinicCanUpload: boolean;
         fileCount: number;
         latestFile: unknown;
         fillable: boolean;
@@ -1032,13 +1039,20 @@ export class DocumentsService {
 
     const requirement = await this.prisma.documentRequirement.findFirst({
       where: { id: requirementId, clinicId },
-      include: { category: true },
+      include: {
+        category: true,
+        files: {
+          orderBy: { version: 'desc' },
+          select: { status: true, uploadedBy: { select: { role: true } } },
+        },
+      },
     });
     if (!requirement) throw new NotFoundException('Requisito no encontrado');
     this.assertClinicDocFileCrud(
       user,
       requirement.category.pillar,
       requirement.code,
+      clinicMayUploadInfra(requirement.category.pillar, requirement.files),
     );
     await this.assertPillarEnabled(user, clinicId, requirement.category.pillar);
     if (requirement.isEnabled === false && user.role !== UserRole.SUPER_ADMIN) {
@@ -1473,6 +1487,7 @@ export class DocumentsService {
             category: { select: { pillar: true } },
           },
         },
+        uploadedBy: { select: { role: true } },
       },
     });
     if (!file) throw new NotFoundException('Documento no encontrado');
@@ -1480,6 +1495,7 @@ export class DocumentsService {
       user,
       file.requirement.category.pillar,
       file.requirement.code,
+      clinicOwnsInfraFile(file.requirement.category.pillar, file),
     );
     if (file.status === DocumentFileStatus.RETIRED) {
       throw new ConflictException('No se puede editar una versión retirada');
@@ -1785,10 +1801,16 @@ export class DocumentsService {
         requirement: {
           select: { id: true, code: true, category: { select: { pillar: true } } },
         },
+        uploadedBy: { select: { role: true } },
       },
     });
     if (!file) throw new NotFoundException('Documento no encontrado');
-    this.assertClinicDocFileCrud(user, file.requirement.category.pillar, file.requirement.code);
+    this.assertClinicDocFileCrud(
+      user,
+      file.requirement.category.pillar,
+      file.requirement.code,
+      clinicOwnsInfraFile(file.requirement.category.pillar, file),
+    );
     if (file.status !== DocumentFileStatus.RETIRED) {
       await this.prisma.documentFile.update({
         where: { id: file.id },

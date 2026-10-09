@@ -877,7 +877,7 @@ export class HabilitationDocs implements OnInit {
   // ---------- Utilidades de vista ----------
 
   canWrite(doc: RegistryDoc) {
-    return doc.canEdit && this.writerRole();
+    return (doc.canUpload ?? doc.canEdit) && this.writerRole();
   }
 
   pillarIcon(key: PillarKey) {

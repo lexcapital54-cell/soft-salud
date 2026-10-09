@@ -1,3 +1,4 @@
+import { clinicMayUploadInfra } from './clinic-upload-rules';
 import { uploaderLabel } from './uploader-label';
 import {
   BadRequestException,
@@ -267,6 +268,11 @@ export class HabilitationRegistryService {
         versionCount: r.files.length,
         activeFileCount: active.length,
         canEdit: clinicCanWrite(user.role, r.category.pillar, r.code),
+        canUpload:
+          clinicCanWrite(user.role, r.category.pillar, r.code) ||
+          ((user.role === UserRole.ADMIN || user.role === UserRole.HEALTH_PROFESSIONAL) &&
+            !r.archivedAt &&
+            clinicMayUploadInfra(r.category.pillar, r.files)),
         createdAt: r.createdAt,
         lastUpdate: current?.createdAt ?? null,
         current: current

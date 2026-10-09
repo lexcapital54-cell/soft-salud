@@ -65,6 +65,8 @@ export interface RegistryDoc {
   versionCount: number;
   activeFileCount: number;
   canEdit: boolean;
+  /** Puede cargar archivo (incluye Infraestructura pendiente para el consultorio). */
+  canUpload?: boolean;
   createdAt: string;
   lastUpdate: string | null;
   current: RegistryFile | null;
