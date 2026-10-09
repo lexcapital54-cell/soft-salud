@@ -382,9 +382,9 @@ export class DocumentsController {
     );
   }
 
-  /** Descarga solo superadmin (evita sacar el archivo del consultorio). */
+  /** Superadmin: original. Consultorio: PDF con marca de agua de quien descarga. */
   @Get('files/:id/download')
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
   download(
     @Req() req: AuthedRequest,
     @Param('id') id: string,

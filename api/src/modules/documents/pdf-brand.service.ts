@@ -4,6 +4,7 @@ import {
   PDFName,
   PDFTextField,
   StandardFonts,
+  degrees,
   rgb,
   type PDFField,
   type PDFPage,
@@ -239,6 +240,79 @@ export class PdfBrandService {
         }`,
       );
       return buffer;
+    }
+  }
+
+  /**
+   * Marca de agua de consulta: nombre del profesional y consultorio en diagonal
+   * (muy tenue) y una línea al pie con quién y cuándo lo descargó. Se aplica a
+   * la copia entregada; el archivo almacenado no cambia.
+   */
+  async watermarkPdf(
+    buffer: Buffer,
+    mark: { name: string; card: string | null; clinic: string; when: Date },
+  ): Promise<Buffer | null> {
+    try {
+      const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
+      const font = await pdf.embedFont(StandardFonts.Helvetica);
+      const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+      const latin = (value: string) => value.replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
+      const name = latin(mark.name.trim()) || 'Profesional';
+      const clinic = latin(mark.clinic.trim()) || 'Consultorio';
+      const when = mark.when.toLocaleString('es-CO', {
+        timeZone: 'America/Bogota',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+      const diagonal = `${name} · ${clinic}`;
+      const footer =
+        `Descargado por ${name}${mark.card ? ` · TP ${latin(mark.card)}` : ''} · ${clinic} · ${when} · ` +
+        'Uso exclusivo de este consultorio';
+      const gray = rgb(0.35, 0.4, 0.45);
+
+      for (const page of pdf.getPages()) {
+        const { width, height } = page.getSize();
+        const size = 20;
+        const stepX = bold.widthOfTextAtSize(diagonal, size) + 90;
+        const stepY = 150;
+        for (let y = -height; y < height * 2; y += stepY) {
+          for (let x = -width; x < width * 2; x += stepX) {
+            page.drawText(diagonal, {
+              x,
+              y,
+              size,
+              font: bold,
+              color: gray,
+              opacity: 0.06,
+              rotate: degrees(35),
+            });
+          }
+        }
+        let footSize = 6.5;
+        while (font.widthOfTextAtSize(footer, footSize) > width - 40 && footSize > 4.5) {
+          footSize -= 0.25;
+        }
+        page.drawText(footer, {
+          x: Math.max(20, (width - font.widthOfTextAtSize(footer, footSize)) / 2),
+          y: 10,
+          size: footSize,
+          font,
+          color: gray,
+          opacity: 0.6,
+        });
+      }
+      return Buffer.from(await pdf.save());
+    } catch (error) {
+      this.logger.warn(
+        `No se pudo poner la marca de agua: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return null;
     }
   }
 

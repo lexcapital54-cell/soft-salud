@@ -701,7 +701,7 @@
                       </button>
                     }
                     <button type="button" class="icon-btn" (click)="viewDoc(d)" [attr.aria-label]="'Ver ' + d.title" title="Ver"><hab-icon name="eye" [size]="16" /></button>
-                    @if (d.current && canDownload()) {
+                    @if (d.current && canDownloadFile(d.current.originalName)) {
                       <button type="button" class="icon-btn" (click)="downloadFile(d.current.id, d.current.originalName)" [attr.aria-label]="'Descargar ' + d.title" title="Descargar"><hab-icon name="download" [size]="16" /></button>
                     }
                     @if (!embedded() && d.canEdit && writerRole()) {
@@ -744,7 +744,7 @@
       <div class="drawer-actions">
         @if (d.current) {
           <button type="button" class="btn btn-ghost sm" (click)="viewFile(d.current.id, d.current.originalName, d.current.mimeType)"><hab-icon name="eye" [size]="15" /> Ver archivo</button>
-          @if (canDownload()) {
+          @if (canDownloadFile(d.current.originalName)) {
             <button type="button" class="btn btn-ghost sm" (click)="downloadFile(d.current.id, d.current.originalName)"><hab-icon name="download" [size]="15" /> Descargar</button>
           }
         }
@@ -818,7 +818,7 @@
                     @if (f.retiredAt) { <small>Archivada {{ dateTime(f.retiredAt) }}</small> }
                     <div class="v-actions">
                       <button type="button" class="btn btn-ghost sm" (click)="viewFile(f.id, f.originalName, f.mimeType)"><hab-icon name="eye" [size]="14" /> Ver</button>
-                      @if (canDownload()) {
+                      @if (canDownloadFile(f.originalName)) {
                         <button type="button" class="btn btn-ghost sm" (click)="downloadFile(f.id, f.originalName)"><hab-icon name="download" [size]="14" /> Descargar</button>
                       }
                       @if (f.status !== 'RETIRED' && d.current?.id !== f.id && d.canEdit && writerRole()) {
@@ -863,7 +863,7 @@
       <header class="viewer-head">
         <span class="viewer-name"><hab-icon name="file" [size]="16" /> {{ v.name }}</span>
         <div class="viewer-tools">
-          @if (canDownload()) {
+          @if (canDownloadFile(v.name)) {
             <button type="button" class="btn btn-ghost sm" (click)="downloadFile(v.fileId, v.name)"><hab-icon name="download" [size]="14" /> Descargar</button>
           }
           <button type="button" class="icon-btn" aria-label="Cerrar visor" (click)="closeViewer()"><hab-icon name="x" /></button>

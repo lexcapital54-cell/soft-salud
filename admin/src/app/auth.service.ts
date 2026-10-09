@@ -51,6 +51,11 @@ export class AuthService {
   });
   /** Descarga de archivos: solo superadmin. */
   readonly canDownloadDocuments = computed(() => this.userSignal()?.role === 'SUPER_ADMIN');
+  /** Profesional/admin del consultorio: descarga PDF con marca de agua de su nombre. */
+  readonly canDownloadMarkedPdf = computed(() => {
+    const role = this.userSignal()?.role;
+    return role === 'ADMIN' || role === 'HEALTH_PROFESSIONAL';
+  });
   /** Contraparte tras sello HABILISALUD (admin o profesional del consultorio). */
   readonly canCountersignDocuments = computed(() => {
     const role = this.userSignal()?.role;

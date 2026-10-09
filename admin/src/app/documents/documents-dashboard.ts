@@ -1995,9 +1995,15 @@ export class DocumentsDashboard {
     });
   }
 
+  /** Superadmin: cualquier archivo. Consultorio: solo PDF (sale con marca de agua). */
+  canDownloadFile(fileName: string | null | undefined) {
+    if (this.canDownload()) return true;
+    return this.auth.canDownloadMarkedPdf() && /\.pdf$/i.test(fileName || '');
+  }
+
   download(fileId: string, fileName: string) {
-    if (!this.canDownload()) {
-      this.error.set('Solo el superadministrador puede descargar documentos.');
+    if (!this.canDownloadFile(fileName)) {
+      this.error.set('Solo puede descargar documentos PDF.');
       return;
     }
     this.api.downloadBlob(fileId).subscribe({

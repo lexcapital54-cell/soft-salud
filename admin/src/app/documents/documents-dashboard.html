@@ -540,7 +540,7 @@
                 >
                   Ver
                 </button>
-                @if (canDownload()) {
+                @if (canDownloadFile(file.originalName)) {
                   <button
                     type="button"
                     class="ghost"
@@ -1071,7 +1071,7 @@
               >
                 Ver
               </button>
-              @if (canDownload()) {
+              @if (canDownloadFile(file.originalName)) {
                 <button
                   type="button"
                   class="ghost"

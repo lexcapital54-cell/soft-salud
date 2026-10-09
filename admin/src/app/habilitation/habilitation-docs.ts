@@ -562,6 +562,12 @@ export class HabilitationDocs implements OnInit {
     this.viewer.set(null);
   }
 
+  /** Superadmin: cualquier archivo. Consultorio: solo PDF (sale con marca de agua). */
+  canDownloadFile(name: string | null | undefined) {
+    if (this.canDownload()) return true;
+    return this.auth.canDownloadMarkedPdf() && /\.pdf$/i.test(name || '');
+  }
+
   downloadFile(fileId: string, name: string) {
     this.docsApi.downloadBlob(fileId).subscribe({
       next: (blob) => this.saveBlob(blob, name),

@@ -1704,13 +1704,20 @@ export class DocumentsService {
     const isPdf =
       file.mimeType === 'application/pdf' ||
       file.originalName.toLowerCase().endsWith('.pdf');
-    const output = isPdf ? await this.pdfBrand.brandPdf(buffer, brand) : buffer;
+    let output = isPdf ? await this.pdfBrand.brandPdf(buffer, brand) : buffer;
+    // El visor permite guardar/imprimir: el profesional recibe la copia con marca de agua.
+    const marked =
+      isPdf && user.role !== UserRole.SUPER_ADMIN
+        ? await this.watermarkFor(user, brand.clinicName, output)
+        : null;
+    if (marked) output = marked;
 
     await this.recordAudit(clinicId, user, AuditAction.VIEW, file.id, context, {
       requirementCode: file.requirement.code,
       originalName: file.originalName,
       version: file.version,
       branded: isPdf,
+      watermarked: !!marked,
     });
 
     return new StreamableFile(output, {
@@ -1762,21 +1769,67 @@ export class DocumentsService {
     };
   }
 
+  /** Copia con marca de agua del usuario que la pide (nombre, TP, consultorio, fecha). */
+  private async watermarkFor(user: User, clinicName: string, pdf: Buffer) {
+    const me = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { fullName: true, professionalCard: true },
+    });
+    return this.pdfBrand.watermarkPdf(pdf, {
+      name: me?.fullName || user.fullName || 'Profesional',
+      card: me?.professionalCard?.trim() || null,
+      clinic: clinicName,
+      when: new Date(),
+    });
+  }
+
+  /**
+   * Superadmin: archivo original. Profesional/admin del consultorio: solo PDF,
+   * autodiligenciado y con marca de agua de quien descarga.
+   */
   async download(user: User, fileId: string, context: AuditContext, clinicIdParam?: string) {
-    this.assertDocumentWriter(user);
+    const isSuper = user.role === UserRole.SUPER_ADMIN;
+    if (
+      !isSuper &&
+      user.role !== UserRole.ADMIN &&
+      user.role !== UserRole.HEALTH_PROFESSIONAL
+    ) {
+      throw new ForbiddenException('No tiene permiso para descargar documentos.');
+    }
     const clinicId = this.clinicScope(user, clinicIdParam);
     const file = await this.prisma.documentFile.findFirst({
       where: { id: fileId, requirement: { clinicId } },
-      include: { requirement: { select: { code: true } } },
+      include: { requirement: { select: { code: true, isEnabled: true } } },
     });
     if (!file) throw new NotFoundException('Documento no encontrado');
 
-    const buffer = await this.storage.readBuffer(file.storageKey);
+    let buffer = await this.storage.readBuffer(file.storageKey);
+    if (!isSuper) {
+      const isPdf =
+        file.mimeType === 'application/pdf' ||
+        file.originalName.toLowerCase().endsWith('.pdf');
+      if (!isPdf || file.requirement.isEnabled === false) {
+        throw new ForbiddenException('Solo puede descargar documentos PDF habilitados.');
+      }
+      const brand = await this.pdfBrand.resolveBrand(user, clinicId);
+      const marked = await this.watermarkFor(
+        user,
+        brand.clinicName,
+        await this.pdfBrand.brandPdf(buffer, brand),
+      );
+      if (!marked) {
+        throw new BadRequestException(
+          'No se pudo preparar la copia con marca de agua. Use «Ver» o intente de nuevo.',
+        );
+      }
+      buffer = marked;
+    }
 
     await this.recordAudit(clinicId, user, AuditAction.DOWNLOAD, file.id, context, {
       requirementCode: file.requirement.code,
       originalName: file.originalName,
       version: file.version,
+      watermarked: !isSuper,
     });
 
     return new StreamableFile(buffer, {
