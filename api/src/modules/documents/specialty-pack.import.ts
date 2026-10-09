@@ -49,6 +49,10 @@ export type SpecialtyPackStats = {
 
 /** Carpeta del repo y punto de montaje en Docker de cada especialidad. */
 const SPECIALTY_PACKS: Record<string, { folder: string; mount: string }> = {
+  PSYCHOLOGY: {
+    folder: 'DOCUMENOS PDF PSICOLOGIA',
+    mount: '/app/habilitation-pack',
+  },
   PHYSIOTHERAPY: {
     folder: 'DOCUMENTOS PDF FISIOTERAPIA',
     mount: '/app/habilitation-packs/fisioterapia',

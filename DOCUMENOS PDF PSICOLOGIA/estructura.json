@@ -1,0 +1,5029 @@
+{
+  "version": 1,
+  "specialty": "PSYCHOLOGY",
+  "exportedAt": "2026-10-09T20:12:32.592Z",
+  "categories": [
+    {
+      "code": "02_TALENTO_HUMANO",
+      "name": "Talento Humano",
+      "pillar": "TALENTO_HUMANO",
+      "sortOrder": 2
+    },
+    {
+      "code": "03_INFRAESTRUCTURA",
+      "name": "Infraestructura",
+      "pillar": "INFRAESTRUCTURA",
+      "sortOrder": 3
+    },
+    {
+      "code": "04_DOTACION",
+      "name": "Dotación",
+      "pillar": "DOTACION",
+      "sortOrder": 4
+    },
+    {
+      "code": "FT_04_DOTACION",
+      "name": "04. Dotación",
+      "pillar": "DOTACION",
+      "sortOrder": 4
+    },
+    {
+      "code": "05_MEDICAMENTOS_DISPOSITIVOS",
+      "name": "Medicamentos y Dispositivos",
+      "pillar": "MEDICAMENTOS_INSUMOS",
+      "sortOrder": 5
+    },
+    {
+      "code": "FT_05_MEDICAMENTOS",
+      "name": "5. Medicamentos",
+      "pillar": "MEDICAMENTOS_INSUMOS",
+      "sortOrder": 5
+    },
+    {
+      "code": "09_PGIRASA",
+      "name": "PGIRASA",
+      "pillar": "MEDICAMENTOS_INSUMOS",
+      "sortOrder": 9
+    },
+    {
+      "code": "06_PROCESOS_PRIORITARIOS",
+      "name": "Procesos Prioritarios",
+      "pillar": "PROCESOS_PRIORITARIOS",
+      "sortOrder": 6
+    },
+    {
+      "code": "08_SEGURIDAD_PACIENTE",
+      "name": "Seguridad del Paciente",
+      "pillar": "PROCESOS_PRIORITARIOS",
+      "sortOrder": 8
+    },
+    {
+      "code": "10_EMERGENCIAS",
+      "name": "Emergencias",
+      "pillar": "PROCESOS_PRIORITARIOS",
+      "sortOrder": 10
+    },
+    {
+      "code": "11_INDICADORES_PAMEC",
+      "name": "Indicadores y PAMEC",
+      "pillar": "PROCESOS_PRIORITARIOS",
+      "sortOrder": 11
+    },
+    {
+      "code": "07_HISTORIA_CLINICA",
+      "name": "Historia Clínica",
+      "pillar": "HISTORIA_CLINICA",
+      "sortOrder": 7
+    },
+    {
+      "code": "FT_07_HC",
+      "name": "07. Historia clínica",
+      "pillar": "HISTORIA_CLINICA",
+      "sortOrder": 7
+    },
+    {
+      "code": "FT_10_INTERDEPENDENCIA",
+      "name": "10. Interdependencia",
+      "pillar": "INTERDEPENDENCIA",
+      "sortOrder": 10
+    },
+    {
+      "code": "12_INTERDEPENDENCIA",
+      "name": "Interdependencia",
+      "pillar": "INTERDEPENDENCIA",
+      "sortOrder": 12
+    },
+    {
+      "code": "01_DOCUMENTACION_LEGAL",
+      "name": "Documentación Legal",
+      "pillar": "DOCUMENTACION_LEGAL",
+      "sortOrder": 1
+    },
+    {
+      "code": "SST_01_PLANEACION",
+      "name": "SG-SST · Planeación y política",
+      "pillar": "SG_SST",
+      "sortOrder": 13
+    },
+    {
+      "code": "SST_02_RIESGOS",
+      "name": "SG-SST · Identificación de peligros",
+      "pillar": "SG_SST",
+      "sortOrder": 14
+    },
+    {
+      "code": "SST_03_OPERACION",
+      "name": "SG-SST · Programas y operación",
+      "pillar": "SG_SST",
+      "sortOrder": 15
+    },
+    {
+      "code": "SST_04_VERIFICACION",
+      "name": "SG-SST · Verificación y mejora",
+      "pillar": "SG_SST",
+      "sortOrder": 16
+    }
+  ],
+  "requirements": [
+    {
+      "code": "02_001_COPIA_DE_LA_CEDULA",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Copia de la cédula — 1. Identificación del profesional",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_002_TARJETA_PROFESIONAL",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Tarjeta Profesional — 1. Identificación del profesional",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_003_CERTIFICADO_DE_INSCRIPCION_EN_RETHUS",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Certificado de inscripción en RETHUS",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_004_CERTIFICADO_DE_ANTECEDENTES_DISCIPLINARI",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Certificado de antecedentes disciplinarios",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_005_CERTIFICADO_DE_ANTECEDENTES_FISCALES",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Certificado de antecedentes fiscales",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_006_CERTIFICADO_DE_ANTECEDENTES_JUDICIALES",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Certificado de antecedentes judiciales",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_007_INDUCCION",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Inducción — 1. Identificación del profesional | APLICA PARA IPS",
+      "description": "Sección: 1. Identificación del profesional | APLICA PARA IPS",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_008_REINDUCCION",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Reinducción — 1. Identificación del profesional | APLICA PARA IPS",
+      "description": "Sección: 1. Identificación del profesional | APLICA PARA IPS",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_009_CAPACITACIONES",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Capacitaciones — 1. Identificación del profesional",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/03_Plan_Anual_de_Capacitacion_Psicologia_MF001.pdf",
+          "originalName": "03_Plan_Anual_de_Capacitacion_Psicologia_MF001.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "02_010_VACUNACION",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Vacunación — 1. Identificación del profesional",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_011_EVALUACION_COMPETENCIAS",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Evaluación competencias — 1. Identificación del profesional",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/01_Evaluacion_de_Competencias_Psicologia_MF001.pdf",
+          "originalName": "01_Evaluacion_de_Competencias_Psicologia_MF001.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "02_012_DIPLOMA_PROFESIONAL",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Diploma profesional — 2. Formación",
+      "description": "Sección: 2. Formación",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_013_ACTA_DE_GRADO",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Acta de grado — 2. Formación",
+      "description": "Sección: 2. Formación",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_014_CERTIFICADOS_DE_EDUCACION_CONTINUA",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Certificados de educación continua",
+      "description": "Sección: 2. Formación",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_015_CERTIFICADOS_DE_CURSOS_RELACIONADOS_CON_",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Certificado de cursos relacionados con la especialidad",
+      "description": "Sección: 2. Formación",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_016_HOJA_DE_VIDA",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Hoja de vida — 3. Vinculación",
+      "description": "Sección: 3. Vinculación",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_017_CONTRATO_LABORAL_O_DE_PRESTACION_DE_SERV",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Contrato laboral o de prestación de servicios",
+      "description": "Sección: 3. Vinculación",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_018_PERFIL_DEL_CARGO",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Perfil del cargo — 3. Vinculación",
+      "description": "Sección: 3. Vinculación",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/01_Perfil_del_Cargo_Psicologia.pdf",
+          "originalName": "01_Perfil_del_Cargo_Psicologia.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "02_019_MANUAL_DE_FUNCIONES",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Manual de funciones — 3. Vinculación",
+      "description": "Sección: 3. Vinculación",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/02_Manual_de_Funciones_Psicologia.pdf",
+          "originalName": "02_Manual_de_Funciones_Psicologia.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "02_020_ACTA_DE_INDUCCION",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Acta de inducción — 3. Vinculación",
+      "description": "Sección: 3. Vinculación",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/03_Acta_de_Induccion_Psicologia.pdf",
+          "originalName": "03_Acta_de_Induccion_Psicologia.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "02_021_ACTA_DE_REINDUCCION",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Acta de reinducción — 3. Vinculación",
+      "description": "Sección: 3. Vinculación",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/04_Acta_de_Reinduccion_Psicologia.pdf",
+          "originalName": "04_Acta_de_Reinduccion_Psicologia.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "02_022_EVALUACION_DE_COMPETENCIAS",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Evaluación de competencias",
+      "description": "Sección: 4. Competencias",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/02_022_EVALUACION_DE_COMPETENCIAS 01_Evaluacion_de_Competencias_Psicologia_MF001.pdf",
+          "originalName": "01_Evaluacion_de_Competencias_Psicologia_MF001.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "02_023_EVALUACION_DE_DESEMPENO",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Evaluación de desempeño — 4. Competencias",
+      "description": "Sección: 4. Competencias",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/02_Evaluacion_de_Desempeno_Psicologia_MF001.pdf",
+          "originalName": "02_Evaluacion_de_Desempeno_Psicologia_MF001.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "02_024_PLAN_ANUAL_DE_CAPACITACION",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Plan anual de capacitación",
+      "description": "Sección: 4. Competencias",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/02_024_PLAN_ANUAL_DE_CAPACITACION 03_Plan_Anual_de_Capacitacion_Psicologia_MF001.pdf",
+          "originalName": "03_Plan_Anual_de_Capacitacion_Psicologia_MF001.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "02_025_REGISTRO_DE_CAPACITACIONES",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Registro de capacitaciones",
+      "description": "Sección: 4. Competencias",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/04_Registro_de_Capacitaciones_Psicologia_MF001.pdf",
+          "originalName": "04_Registro_de_Capacitaciones_Psicologia_MF001.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "02_026_EXAMENES_OCUPACIONALES",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Exámenes ocupacionales — 5. Seguridad y Salud en el Trabajo",
+      "description": "Sección: 5. Seguridad y Salud en el Trabajo",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_027_AFILIACIONES_A_EPS",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Afiliaciones a EPS — 5. Seguridad y Salud en el Trabajo",
+      "description": "Sección: 5. Seguridad y Salud en el Trabajo",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_028_AFILIACION_A_ARL",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Afiliación a ARL — 5. Seguridad y Salud en el Trabajo",
+      "description": "Sección: 5. Seguridad y Salud en el Trabajo",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_029_AFILIACION_A_FONDO_DE_PENSIONES",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Afiliación a Fondo de Pensiones",
+      "description": "Sección: 5. Seguridad y Salud en el Trabajo",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_030_CAJA_DE_COMPENSACION_SI_APLICA",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Caja de Compensación (si aplica)",
+      "description": "Sección: 5. Seguridad y Salud en el Trabajo",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_001_PLANO_ARQUITECTONICO",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Plano arquitectónico — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_002_PLANO_DE_EVACUACION",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Plano de evacuación — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/Piso 1.pdf",
+          "originalName": "Piso 1.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/Piso 2.pdf",
+          "originalName": "Piso 2.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "03_003_PLANO_DE_RUTAS_DE_EMERGENCIA",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Plano de rutas de emergencia",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_004_PLANO_DE_RUTA_DE_RESIDUOS",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Plano de ruta de residuos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/3. MATRIZ_RESIDUOS_PSICOLOGIA.pdf",
+          "originalName": "3. MATRIZ_RESIDUOS_PSICOLOGIA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "03_005_CERTIFICACION_RETIE",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Certificación RETIE — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/Certificado_RETIE_Profesional_Manizales.pdf",
+          "originalName": "Certificado_RETIE_Profesional_Manizales.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/tarjeta profesional Electricco .jpeg",
+          "originalName": "tarjeta profesional Electricco .jpeg",
+          "mimeType": "image/jpeg",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "03_006_CERTIFICACION_DE_USO_DEL_SUELO",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Certificación de uso del suelo",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_007_CONCEPTO_SANITARIO_CUANDO_APLIQUE",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Concepto sanitario (cuando aplique)",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_008_PLAN_DE_MANTENIMIENTO_LOCATIVO",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Plan de mantenimiento locativo",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/Plan_Cronograma_Mantenimiento.pdf",
+          "originalName": "Plan_Cronograma_Mantenimiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/Matriz_Residuos_Psicologia_MF001.pdf",
+          "originalName": "Matriz_Residuos_Psicologia_MF001.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/Matriz_Integral_Riesgos_MF001.pdf",
+          "originalName": "Matriz_Integral_Riesgos_MF001.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/Formato_Verificacion_Plagas_MF001.pdf",
+          "originalName": "Formato_Verificacion_Plagas_MF001.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/Programa_Prevencion_Plagas_MF001.pdf",
+          "originalName": "Programa_Prevencion_Plagas_MF001.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/MF-001_Registro_Mantenimiento.pdf",
+          "originalName": "MF-001_Registro_Mantenimiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "03_009_ACCESIBILIDAD",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Accesibilidad — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_010_VENTILACION",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Ventilación — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_011_ILUMINACION",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Iluminación — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_012_PRIVACIDAD",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Privacidad — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_013_CONDICIONES_ACUSTICAS",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Condiciones acústicas — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_014_SENALIZACION",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Señalización — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_015_SERVICIOS_SANITARIOS",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Servicios sanitarios — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_016_LAVAMANOS",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Lavamanos — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_017_PISOS",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Pisos — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_018_PAREDES",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Paredes — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_019_TECHOS",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Techos — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_020_PUERTAS",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Puertas — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_021_REDES_ELECTRICAS",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Redes eléctricas — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_022_TOMAS_ELECTRICAS",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Tomas eléctricas — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_023_EXTINTORES",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Extintores — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_024_BOTIQUIN",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Botiquín — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_025_CAMILLAS_SI_APLICA",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Camillas (si aplica) — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_026_SALA_DE_ESPERA",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Sala de espera — Verificaciones",
+      "description": "Sección: Verificaciones",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_027_INSPECCION_LOCATIVA",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Inspección locativa — Registros",
+      "description": "Sección: Registros",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/MF-001_Inspeccion_Locativa.pdf",
+          "originalName": "MF-001_Inspeccion_Locativa.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "03_028_CRONOGRAMA_DE_MANTENIMIENTO",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Cronograma de mantenimiento",
+      "description": "Sección: Registros",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/MF-001_Cronograma_Mantenimiento.pdf",
+          "originalName": "MF-001_Cronograma_Mantenimiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "03_029_REGISTRO_DE_MANTENIMIENTO",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Registro de mantenimiento",
+      "description": "Sección: Registros",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/Infraestructura/03_029_REGISTRO_DE_MANTENIMIENTO MF-001_Registro_Mantenimiento.pdf",
+          "originalName": "MF-001_Registro_Mantenimiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "04_001_INVENTARIO_GENERAL",
+      "categoryCode": "04_DOTACION",
+      "title": "Inventario general — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/Dotación/3. INVENTARIO_MOBILIARIO_PSICOLOGIA.pdf",
+          "originalName": "3. INVENTARIO_MOBILIARIO_PSICOLOGIA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "3. DOTACION/Dotación/01_Inventario_General.pdf",
+          "originalName": "01_Inventario_General.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "3. DOTACION/Dotación/02_Procedimiento_Administracion_Equipos.pdf",
+          "originalName": "02_Procedimiento_Administracion_Equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "3. DOTACION/Dotación/03_Procedimiento_Mantenimiento.pdf",
+          "originalName": "03_Procedimiento_Mantenimiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "3. DOTACION/Dotación/04_Cronograma_Anual.pdf",
+          "originalName": "04_Cronograma_Anual.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "3. DOTACION/Dotación/05_Hojas_de_Vida_Equipos.pdf",
+          "originalName": "05_Hojas_de_Vida_Equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "3. DOTACION/Dotación/06_Registros_Mantenimiento.pdf",
+          "originalName": "06_Registros_Mantenimiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "3. DOTACION/Dotación/07_Acta_No_Aplicabilidad_Biomedicos_Robusta.pdf",
+          "originalName": "07_Acta_No_Aplicabilidad_Biomedicos_Robusta.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "04_002_PROCEDIMIENTO_DE_ADMINISTRACION_DE_EQUIP",
+      "categoryCode": "04_DOTACION",
+      "title": "Procedimiento de administración de equipos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/Dotación/4. MATRIZ_PRUEBAS_PSICOLOGICAS.pdf",
+          "originalName": "4. MATRIZ_PRUEBAS_PSICOLOGICAS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "04_003_PROCEDIMIENTO_DE_MANTENIMIENTO",
+      "categoryCode": "04_DOTACION",
+      "title": "Procedimiento de mantenimiento",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_004_CRONOGRAMA_ANUAL",
+      "categoryCode": "04_DOTACION",
+      "title": "Cronograma anual — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/Dotación/04_004_CRONOGRAMA_ANUAL 04_Cronograma_Anual.pdf",
+          "originalName": "04_Cronograma_Anual.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "04_005_HOJAS_DE_VIDA_DE_EQUIPOS",
+      "categoryCode": "04_DOTACION",
+      "title": "Hojas de vida de equipos — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/Dotación/2. HOJA_VIDA_EQUIPOS_INFORMATICOS.pdf",
+          "originalName": "2. HOJA_VIDA_EQUIPOS_INFORMATICOS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "04_006_REGISTROS_DE_MANTENIMIENTO",
+      "categoryCode": "04_DOTACION",
+      "title": "Registros de mantenimiento",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/Dotación/04_006_REGISTROS_DE_MANTENIMIENTO 06_Registros_Mantenimiento.pdf",
+          "originalName": "06_Registros_Mantenimiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "04_007_ESCRITORIO",
+      "categoryCode": "04_DOTACION",
+      "title": "Escritorio — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_008_SILLAS",
+      "categoryCode": "04_DOTACION",
+      "title": "Sillas — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_009_ARCHIVADOR",
+      "categoryCode": "04_DOTACION",
+      "title": "Archivador — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_010_BIBLIOTECA",
+      "categoryCode": "04_DOTACION",
+      "title": "Biblioteca — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_011_MESA_AUXILIAR",
+      "categoryCode": "04_DOTACION",
+      "title": "Mesa auxiliar — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_012_COMPUTADOR",
+      "categoryCode": "04_DOTACION",
+      "title": "Computador — Tecnología",
+      "description": "Sección: Tecnología",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_013_IMPRESORA",
+      "categoryCode": "04_DOTACION",
+      "title": "Impresora — Tecnología",
+      "description": "Sección: Tecnología",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_014_UPS",
+      "categoryCode": "04_DOTACION",
+      "title": "UPS — Tecnología",
+      "description": "Sección: Tecnología",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_015_ROUTER",
+      "categoryCode": "04_DOTACION",
+      "title": "Router — Tecnología",
+      "description": "Sección: Tecnología",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_016_DISPENSADOR_DE_JABON",
+      "categoryCode": "04_DOTACION",
+      "title": "Dispensador de jabón — Bioseguridad",
+      "description": "Sección: Bioseguridad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_017_ALCOHOL_GLICERINADO",
+      "categoryCode": "04_DOTACION",
+      "title": "Alcohol glicerinado — Bioseguridad",
+      "description": "Sección: Bioseguridad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_018_TOALLAS_DESECHABLES",
+      "categoryCode": "04_DOTACION",
+      "title": "Toallas desechables — Bioseguridad",
+      "description": "Sección: Bioseguridad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_019_CANECAS",
+      "categoryCode": "04_DOTACION",
+      "title": "Canecas — Bioseguridad",
+      "description": "Sección: Bioseguridad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_020_EXTINTOR",
+      "categoryCode": "04_DOTACION",
+      "title": "Extintor — Seguridad",
+      "description": "Sección: Seguridad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_021_BOTIQUIN",
+      "categoryCode": "04_DOTACION",
+      "title": "Botiquín — Seguridad",
+      "description": "Sección: Seguridad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_022_LINTERNA",
+      "categoryCode": "04_DOTACION",
+      "title": "Linterna — Seguridad",
+      "description": "Sección: Seguridad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_023_PRUEBAS_PSICOLOGICAS",
+      "categoryCode": "04_DOTACION",
+      "title": "Pruebas psicológicas",
+      "description": "Sección: Especialidad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/Dotación/PSI-DOT02_Gestion_de_pruebas_psicologicas_licencias_y_materiales_reservados.pdf",
+          "originalName": "PSI-DOT02_Gestion_de_pruebas_psicologicas_licencias_y_materiales_reservados.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "04_024_PROTOCOLOS",
+      "categoryCode": "04_DOTACION",
+      "title": "Protocolos",
+      "description": "Sección: Especialidad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_025_MANUALES",
+      "categoryCode": "04_DOTACION",
+      "title": "Manuales",
+      "description": "Sección: Especialidad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "04_026_MATERIAL_TERAPEUTICO",
+      "categoryCode": "04_DOTACION",
+      "title": "Material terapéutico",
+      "description": "Sección: Especialidad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "FT_04_DOTACI-001",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "PSI-AN3 Control de soportes reales pendientes del estandar Dotacion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/PSI-AN3_Control_de_soportes_reales_pendientes_del_estandar_Dotacion.pdf",
+          "originalName": "PSI-AN3_Control_de_soportes_reales_pendientes_del_estandar_Dotacion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-002",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "PSI-AN3-FR01 Control de anexos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/PSI-AN3-FR01_Control_de_anexos.pdf",
+          "originalName": "PSI-AN3-FR01_Control_de_anexos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-003",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "PSI-DOT01 Manual de dotacion inventario y mantenimiento",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/PSI-DOT01_Manual_de_dotacion_inventario_y_mantenimiento.pdf",
+          "originalName": "PSI-DOT01_Manual_de_dotacion_inventario_y_mantenimiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-004",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "PSI-DOT01-FR01 Inventario y estado de dotacion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/PSI-DOT01-FR01_Inventario_y_estado_de_dotacion.pdf",
+          "originalName": "PSI-DOT01-FR01_Inventario_y_estado_de_dotacion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-005",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "PSI-DOT01-FR02 Hoja de vida y mantenimiento",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/PSI-DOT01-FR02_Hoja_de_vida_y_mantenimiento.pdf",
+          "originalName": "PSI-DOT01-FR02_Hoja_de_vida_y_mantenimiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-006",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "PSI-DOT02-FR01 Catalogo reservado de instrumentos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/PSI-DOT02-FR01_Catalogo_reservado_de_instrumentos.pdf",
+          "originalName": "PSI-DOT02-FR01_Catalogo_reservado_de_instrumentos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-007",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "PSI-DOT02-FR02 Control de prestamo y uso",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/PSI-DOT02-FR02_Control_de_prestamo_y_uso.pdf",
+          "originalName": "PSI-DOT02-FR02_Control_de_prestamo_y_uso.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-008",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "PSI-DOT03 Seguridad tecnologica y plataformas de atencion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/PSI-DOT03_Seguridad_tecnologica_y_plataformas_de_atencion.pdf",
+          "originalName": "PSI-DOT03_Seguridad_tecnologica_y_plataformas_de_atencion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-009",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "PSI-DOT03-FR01 Ficha de sistema y revision tecnica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/PSI-DOT03-FR01_Ficha_de_sistema_y_revision_tecnica.pdf",
+          "originalName": "PSI-DOT03-FR01_Ficha_de_sistema_y_revision_tecnica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-010",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "PSI-IDX3 Analisis e indice del estandar Dotacion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/PSI-IDX3_Analisis_e_indice_del_estandar_Dotacion.pdf",
+          "originalName": "PSI-IDX3_Analisis_e_indice_del_estandar_Dotacion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "05_001_ACTA_DE_NO_APLICABILIDAD",
+      "categoryCode": "05_MEDICAMENTOS_DISPOSITIVOS",
+      "title": "Acta de No Aplicabilidad — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/Medicamentos y Dispositivos/ACTA_DECLARACION_NO_USO_PSICOLOGIA.pdf",
+          "originalName": "ACTA_DECLARACION_NO_USO_PSICOLOGIA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "05_002_MATRIZ_DE_DISPOSITIVOS",
+      "categoryCode": "05_MEDICAMENTOS_DISPOSITIVOS",
+      "title": "Matriz de dispositivos — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "05_003_INVENTARIO_DE_INSUMOS",
+      "categoryCode": "05_MEDICAMENTOS_DISPOSITIVOS",
+      "title": "Inventario de insumos — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "05_004_PROCEDIMIENTO_DE_ADQUISICION",
+      "categoryCode": "05_MEDICAMENTOS_DISPOSITIVOS",
+      "title": "Procedimiento de adquisición",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "05_005_PROCEDIMIENTO_DE_ALMACENAMIENTO",
+      "categoryCode": "05_MEDICAMENTOS_DISPOSITIVOS",
+      "title": "Procedimiento de almacenamiento",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "05_006_PROCEDIMIENTO_DE_DISPOSICION_FINAL",
+      "categoryCode": "05_MEDICAMENTOS_DISPOSITIVOS",
+      "title": "Procedimiento de disposición final",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "05_007_GUANTES",
+      "categoryCode": "05_MEDICAMENTOS_DISPOSITIVOS",
+      "title": "Guantes — Insumos",
+      "description": "Sección: Insumos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "05_008_TAPABOCAS",
+      "categoryCode": "05_MEDICAMENTOS_DISPOSITIVOS",
+      "title": "Tapabocas — Insumos",
+      "description": "Sección: Insumos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "05_009_ALCOHOL",
+      "categoryCode": "05_MEDICAMENTOS_DISPOSITIVOS",
+      "title": "Alcohol — Insumos",
+      "description": "Sección: Insumos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "05_010_JABON",
+      "categoryCode": "05_MEDICAMENTOS_DISPOSITIVOS",
+      "title": "Jabón — Insumos",
+      "description": "Sección: Insumos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "05_011_TOALLAS",
+      "categoryCode": "05_MEDICAMENTOS_DISPOSITIVOS",
+      "title": "Toallas — Insumos",
+      "description": "Sección: Insumos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "05_012_PAPELERIA_CLINICA",
+      "categoryCode": "05_MEDICAMENTOS_DISPOSITIVOS",
+      "title": "Papelería clínica — Insumos",
+      "description": "Sección: Insumos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "FT_05_MEDICA-001",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "PSI-AN4 Control de soportes reales pendientes del estandar Medicamentos dispositivos e insumos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/PSI-AN4_Control_de_soportes_reales_pendientes_del_estandar_Medicamentos_dispositivos_e_insumos.pdf",
+          "originalName": "PSI-AN4_Control_de_soportes_reales_pendientes_del_estandar_Medicamentos_dispositivos_e_insumos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-002",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "PSI-AN4-FR01 Control de anexos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/PSI-AN4-FR01_Control_de_anexos.pdf",
+          "originalName": "PSI-AN4-FR01_Control_de_anexos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-003",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "PSI-IDX4 Analisis e indice del estandar Medicamentos dispositivos e insumos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/PSI-IDX4_Analisis_e_indice_del_estandar_Medicamentos_dispositivos_e_insumos.pdf",
+          "originalName": "PSI-IDX4_Analisis_e_indice_del_estandar_Medicamentos_dispositivos_e_insumos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-004",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "PSI-INS01 Manual de insumos almacenamiento recepcion y vencimientos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/PSI-INS01_Manual_de_insumos_almacenamiento_recepcion_y_vencimientos.pdf",
+          "originalName": "PSI-INS01_Manual_de_insumos_almacenamiento_recepcion_y_vencimientos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-005",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "PSI-INS01-FR01 Inventario recepcion y vencimientos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/PSI-INS01-FR01_Inventario_recepcion_y_vencimientos.pdf",
+          "originalName": "PSI-INS01-FR01_Inventario_recepcion_y_vencimientos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-006",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "PSI-INS01-FR02 Rechazo o retiro de insumo",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/PSI-INS01-FR02_Rechazo_o_retiro_de_insumo.pdf",
+          "originalName": "PSI-INS01-FR02_Rechazo_o_retiro_de_insumo.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-007",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "PSI-INS02 Alertas sanitarias y vigilancia de productos segun aplicabilidad",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/PSI-INS02_Alertas_sanitarias_y_vigilancia_de_productos_segun_aplicabilidad.pdf",
+          "originalName": "PSI-INS02_Alertas_sanitarias_y_vigilancia_de_productos_segun_aplicabilidad.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-008",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "PSI-INS02-FR01 Matriz de aplicabilidad de vigilancia",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/PSI-INS02-FR01_Matriz_de_aplicabilidad_de_vigilancia.pdf",
+          "originalName": "PSI-INS02-FR01_Matriz_de_aplicabilidad_de_vigilancia.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "09_001_PLAN",
+      "categoryCode": "09_PGIRASA",
+      "title": "Plan — PGIRASA / gestión de residuos",
+      "description": "Sección: PGIRASA",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/PGIRASA/1. PLAN_PGIRASA.pdf",
+          "originalName": "1. PLAN_PGIRASA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "4. MEDICAMENTOS/PGIRASA/4. POLITICA AMBIENTAL.pdf",
+          "originalName": "4. POLITICA AMBIENTAL.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "09_002_SEGREGACION",
+      "categoryCode": "09_PGIRASA",
+      "title": "Segregación",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/PGIRASA/SEGREGACIÃN EN LA FUENTE.docx",
+          "originalName": "SEGREGACIÃN EN LA FUENTE.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "09_003_RECOLECCION",
+      "categoryCode": "09_PGIRASA",
+      "title": "Recolección",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "09_004_GESTOR",
+      "categoryCode": "09_PGIRASA",
+      "title": "Gestor",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/PGIRASA/3. CONTRATO_GESTOR.pdf",
+          "originalName": "3. CONTRATO_GESTOR.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "09_005_ACTAS",
+      "categoryCode": "09_PGIRASA",
+      "title": "Actas",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/PGIRASA/2. REGISTROS_PGIRASA.pdf",
+          "originalName": "2. REGISTROS_PGIRASA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_001_POLITICA",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Política — Seguridad del Paciente",
+      "description": "Sección: Seguridad del Paciente",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/1. POLITICA_SEGURIDAD_PACIENTE.pdf",
+          "originalName": "1. POLITICA_SEGURIDAD_PACIENTE.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_002_PROGRAMA",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Programa — Seguridad del Paciente",
+      "description": "Sección: Seguridad del Paciente",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/2. PROGRAMA_SEGURIDAD_PACIENTE.pdf",
+          "originalName": "2. PROGRAMA_SEGURIDAD_PACIENTE.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_003_MATRIZ_DE_RIESGOS",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Matriz de riesgos — Seguridad del Paciente",
+      "description": "Sección: Seguridad del Paciente",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/2. MATRIZ_INTEGRAL_RIESGOS_PSICOLOGIA.pdf",
+          "originalName": "2. MATRIZ_INTEGRAL_RIESGOS_PSICOLOGIA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/3. MATRIZ_RIESGOS_ASISTENCIALES.pdf",
+          "originalName": "3. MATRIZ_RIESGOS_ASISTENCIALES.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/1. MAPA_RIESGOS_PSICOLOGIA_3100.pdf",
+          "originalName": "1. MAPA_RIESGOS_PSICOLOGIA_3100.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/2. MATRIZ_RIESGOS_PSICOLOGIA_3100.pdf",
+          "originalName": "2. MATRIZ_RIESGOS_PSICOLOGIA_3100.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_004_REPORTE_DE_INCIDENTES",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Reporte de incidentes — Seguridad del Paciente",
+      "description": "Sección: Seguridad del Paciente",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/4. PROCEDIMIENTO_REPORTE_EVENTOS.pdf",
+          "originalName": "4. PROCEDIMIENTO_REPORTE_EVENTOS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/5. FORMATO_REPORTE_INCIDENTES.pdf",
+          "originalName": "5. FORMATO_REPORTE_INCIDENTES.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/2. FORMATO_EVENTOS_ADVERSOS.pdf",
+          "originalName": "2. FORMATO_EVENTOS_ADVERSOS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_005_EVENTOS_ADVERSOS",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Eventos adversos — Seguridad del Paciente",
+      "description": "Sección: Seguridad del Paciente",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_006_PROCEDIMIENTO",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Procedimiento — Historia Clínica",
+      "description": "Sección: Historia Clínica",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/1. PROCEDIMIENTO_PQRS.pdf",
+          "originalName": "1. PROCEDIMIENTO_PQRS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/2. FORMATO_PQRS.pdf",
+          "originalName": "2. FORMATO_PQRS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/3. INDICADORES_PQRS.pdf",
+          "originalName": "3. INDICADORES_PQRS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/1. PROCEDIMIENTO_RECEPCION.pdf",
+          "originalName": "1. PROCEDIMIENTO_RECEPCION.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/2. PROCEDIMIENTO_VALORACION.pdf",
+          "originalName": "2. PROCEDIMIENTO_VALORACION.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/3. PROCEDIMIENTO_SEGUIMIENTO.pdf",
+          "originalName": "3. PROCEDIMIENTO_SEGUIMIENTO.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/4. PROCEDIMIENTO_CIERRE.pdf",
+          "originalName": "4. PROCEDIMIENTO_CIERRE.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/FORMATO LIM-DES-BAÑO.pdf",
+          "originalName": "FORMATO LIM-DES-BAÑO.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/LIMPIEZA Y DESINFECCION .pdf",
+          "originalName": "LIMPIEZA Y DESINFECCION .pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/PQRs REGISTRO RECLAMOS INTERNOS.pdf",
+          "originalName": "PQRs REGISTRO RECLAMOS INTERNOS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/REGISTRO LIMPIEZA DE AREAS.pdf",
+          "originalName": "REGISTRO LIMPIEZA DE AREAS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/1. ATENCION_RECEPCION.pdf",
+          "originalName": "1. ATENCION_RECEPCION.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/2. ATENCION_VALORACION.pdf",
+          "originalName": "2. ATENCION_VALORACION.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/3. ATENCION_SEGUIMIENTO.pdf",
+          "originalName": "3. ATENCION_SEGUIMIENTO.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/4. ATENCION_CIERRE.pdf",
+          "originalName": "4. ATENCION_CIERRE.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/1. MANUAL_BIOSEGURIDAD.pdf",
+          "originalName": "1. MANUAL_BIOSEGURIDAD.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/2. PROCEDIMIENTO_LIMPIEZA.pdf",
+          "originalName": "2. PROCEDIMIENTO_LIMPIEZA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/3. PROCEDIMIENTO_DESINFECCION.pdf",
+          "originalName": "3. PROCEDIMIENTO_DESINFECCION.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/FORMATO LIM-DES-BAÑO.docx",
+          "originalName": "FORMATO LIM-DES-BAÑO.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/Limpieza y desinfeccion.docx",
+          "originalName": "Limpieza y desinfeccion.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/PROGRAMA LIMPIEZA BAÑO.pdf",
+          "originalName": "PROGRAMA LIMPIEZA BAÑO.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/PROGRAMA LIMPIEZA Y DESINFECCION.pdf",
+          "originalName": "PROGRAMA LIMPIEZA Y DESINFECCION.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/REGISTRO RECLAMOS INTERNOS.pdf",
+          "originalName": "REGISTRO RECLAMOS INTERNOS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/USO EPP LIMPIEZA.pdf",
+          "originalName": "USO EPP LIMPIEZA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/registros de limpieza de areas.pdf",
+          "originalName": "registros de limpieza de areas.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_007_APERTURA",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Apertura — Historia Clínica",
+      "description": "Sección: Historia Clínica",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/1. PROCEDIMIENTO_APERTURA_HC.pdf",
+          "originalName": "1. PROCEDIMIENTO_APERTURA_HC.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_008_CUSTODIA",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Custodia — Historia Clínica",
+      "description": "Sección: Historia Clínica",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/2. PROCEDIMIENTO_CUSTODIA_HC.pdf",
+          "originalName": "2. PROCEDIMIENTO_CUSTODIA_HC.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_009_ARCHIVO",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Archivo — Historia Clínica",
+      "description": "Sección: Historia Clínica",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_010_CONSERVACION",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Conservación — Historia Clínica",
+      "description": "Sección: Historia Clínica",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/4. PROCEDIMIENTO_CONSERVACION_HC.pdf",
+          "originalName": "4. PROCEDIMIENTO_CONSERVACION_HC.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_011_PROCEDIMIENTO",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Procedimiento — Consentimiento Informado",
+      "description": "Sección: Consentimiento Informado",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_012_FORMATOS",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Formatos — Consentimiento Informado",
+      "description": "Sección: Consentimiento Informado",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/2. CONSENTIMIENTO_INFORMADO_PSICOLOGIA.pdf",
+          "originalName": "2. CONSENTIMIENTO_INFORMADO_PSICOLOGIA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_013_RECEPCION",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Recepción — Atención",
+      "description": "Sección: Atención",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_014_VALORACION",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Valoración — Atención",
+      "description": "Sección: Atención",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_015_SEGUIMIENTO",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Seguimiento — Atención",
+      "description": "Sección: Atención",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_016_CIERRE",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Cierre — Atención",
+      "description": "Sección: Atención",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_017_PROCEDIMIENTO",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Procedimiento — Gestión Documental",
+      "description": "Sección: Gestión Documental",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_018_CODIFICACION",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Codificación — Gestión Documental",
+      "description": "Sección: Gestión Documental",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_019_CONTROL_DOCUMENTAL",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Control documental — Gestión Documental",
+      "description": "Sección: Gestión Documental",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_020_POLITICA",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Política — Protección de Datos",
+      "description": "Sección: Protección de Datos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_021_AUTORIZACION",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Autorización — Protección de Datos",
+      "description": "Sección: Protección de Datos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_022_AVISO_DE_PRIVACIDAD",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Aviso de privacidad — Protección de Datos",
+      "description": "Sección: Protección de Datos",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_023_MANUAL",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Manual — Bioseguridad",
+      "description": "Sección: Bioseguridad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_024_LIMPIEZA",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Limpieza — Bioseguridad",
+      "description": "Sección: Bioseguridad",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/06_024_LIMPIEZA 2. PROCEDIMIENTO_LIMPIEZA.pdf",
+          "originalName": "2. PROCEDIMIENTO_LIMPIEZA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_025_DESINFECCION",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Desinfección — Bioseguridad",
+      "description": "Sección: Bioseguridad",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/06_025_DESINFECCION 3. PROCEDIMIENTO_DESINFECCION.pdf",
+          "originalName": "3. PROCEDIMIENTO_DESINFECCION.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_026_PLAN",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Plan — PGIRASA",
+      "description": "Sección: PGIRASA",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/MF-001 - PGIRASA Consultorio de Psicologia - Version 01 - 2026.pdf",
+          "originalName": "MF-001 - PGIRASA Consultorio de Psicologia - Version 01 - 2026.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_027_REGISTROS",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Registros — PGIRASA",
+      "description": "Sección: PGIRASA",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/2. REGISTROS_PGIRASA.pdf",
+          "originalName": "2. REGISTROS_PGIRASA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_028_CONTRATO_CON_GESTOR",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Contrato con gestor — PGIRASA",
+      "description": "Sección: PGIRASA",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_030_BRIGADAS",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Brigadas — Emergencias",
+      "description": "Sección: Emergencias",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/3. CONFORMACION_BRIGADAS.pdf",
+          "originalName": "3. CONFORMACION_BRIGADAS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_031_SIMULACROS",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Simulacros — Emergencias",
+      "description": "Sección: Emergencias",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_032_PROCEDIMIENTO",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Procedimiento — PQR",
+      "description": "Sección: PQR",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_033_FORMATO",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Formato — PQR",
+      "description": "Sección: PQR",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/06_033_FORMATO 2. FORMATO_PQRS.pdf",
+          "originalName": "2. FORMATO_PQRS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_034_INDICADORES",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Indicadores — PQR",
+      "description": "Sección: PQR",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_035_POLITICA",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Política — Humanización",
+      "description": "Sección: Humanización",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_036_PROGRAMA",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Programa — Humanización",
+      "description": "Sección: Humanización",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_037_MAPA",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Mapa — Riesgos",
+      "description": "Sección: Riesgos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/06_037_MAPA 1. MAPA_RIESGOS_PSICOLOGIA_3100.pdf",
+          "originalName": "1. MAPA_RIESGOS_PSICOLOGIA_3100.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_038_MATRIZ",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Matriz — Riesgos",
+      "description": "Sección: Riesgos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/06_038_MATRIZ 2. MATRIZ_RIESGOS_PSICOLOGIA_3100.pdf",
+          "originalName": "2. MATRIZ_RIESGOS_PSICOLOGIA_3100.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_039_PLANES_DE_ACCION",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Planes de acción — Riesgos",
+      "description": "Sección: Riesgos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/3. PLANES_ACCION_PSICOLOGIA_3100.pdf",
+          "originalName": "3. PLANES_ACCION_PSICOLOGIA_3100.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_040_PAMEC",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "PAMEC — Calidad",
+      "description": "Sección: Calidad",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Procesos Prioritarios/Programa de AuditorÃ­a para el Mejoramiento de la Calidad (PAMEC) - PsicologÃ­a.pdf",
+          "originalName": "Programa de AuditorÃ­a para el Mejoramiento de la Calidad (PAMEC) - PsicologÃ­a.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "06_041_INDICADORES",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Indicadores — Calidad",
+      "description": "Sección: Calidad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "06_042_AUDITORIAS",
+      "categoryCode": "06_PROCESOS_PRIORITARIOS",
+      "title": "Auditorías — Calidad",
+      "description": "Sección: Calidad",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "08_001_PROGRAMA",
+      "categoryCode": "08_SEGURIDAD_PACIENTE",
+      "title": "Programa",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Seguridad del Paciente/7. ACTA_SEGURIDAD_PACIENTE_PSICOLOGIA.pdf",
+          "originalName": "7. ACTA_SEGURIDAD_PACIENTE_PSICOLOGIA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Seguridad del Paciente/ACTA DE SEGURIDAD DEL PACIENTE.docx",
+          "originalName": "ACTA DE SEGURIDAD DEL PACIENTE.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "08_002_REPORTE_INCIDENTES",
+      "categoryCode": "08_SEGURIDAD_PACIENTE",
+      "title": "Reporte incidentes",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Seguridad del Paciente/5. FORMATO_REPORTE_INCIDENTES.pdf",
+          "originalName": "5. FORMATO_REPORTE_INCIDENTES.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "08_003_EVENTOS_ADVERSOS",
+      "categoryCode": "08_SEGURIDAD_PACIENTE",
+      "title": "Eventos adversos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Seguridad del Paciente/4. PROCEDIMIENTO_REPORTE_EVENTOS.pdf",
+          "originalName": "4. PROCEDIMIENTO_REPORTE_EVENTOS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "08_004_ANALISIS_CAUSA",
+      "categoryCode": "08_SEGURIDAD_PACIENTE",
+      "title": "Análisis causa",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "08_005_PLAN_MEJORA",
+      "categoryCode": "08_SEGURIDAD_PACIENTE",
+      "title": "Plan mejora",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Seguridad del Paciente/3. MANUAL_MEJORAMIENTO_ANALISIS.pdf",
+          "originalName": "3. MANUAL_MEJORAMIENTO_ANALISIS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "10_001_PLAN",
+      "categoryCode": "10_EMERGENCIAS",
+      "title": "Plan — Emergencias",
+      "description": "Sección: Emergencias",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Emergencias/3. CONFORMACION_BRIGADAS.pdf",
+          "originalName": "3. CONFORMACION_BRIGADAS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "10_002_SIMULACROS",
+      "categoryCode": "10_EMERGENCIAS",
+      "title": "Simulacros",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Emergencias/2. PROCEDIMIENTO_SIMULACROS.pdf",
+          "originalName": "2. PROCEDIMIENTO_SIMULACROS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "10_003_INSPECCION_EXTINTORES",
+      "categoryCode": "10_EMERGENCIAS",
+      "title": "Inspección extintores",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "10_004_INSPECCION_BOTIQUIN",
+      "categoryCode": "10_EMERGENCIAS",
+      "title": "Inspección botiquín",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "11_001_INDICADORES",
+      "categoryCode": "11_INDICADORES_PAMEC",
+      "title": "Indicadores",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Indicadores y PAMEC/1. INDICADORES_CALIDAD_PSICOLOGIA.pdf",
+          "originalName": "1. INDICADORES_CALIDAD_PSICOLOGIA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "11_002_CRONOGRAMA",
+      "categoryCode": "11_INDICADORES_PAMEC",
+      "title": "Cronograma",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Indicadores y PAMEC/2. PAMEC_PSICOLOGIA_3100.pdf",
+          "originalName": "2. PAMEC_PSICOLOGIA_3100.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "11_003_AUDITORIAS",
+      "categoryCode": "11_INDICADORES_PAMEC",
+      "title": "Auditorías",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Indicadores y PAMEC/3. PROGRAMA_AUDITORIAS_PSICOLOGIA.pdf",
+          "originalName": "3. PROGRAMA_AUDITORIAS_PSICOLOGIA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "11_004_PLANES_MEJORA",
+      "categoryCode": "11_INDICADORES_PAMEC",
+      "title": "Planes mejora",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/Indicadores y PAMEC/3. PLANES_ACCION_PSICOLOGIA_3100.pdf",
+          "originalName": "3. PLANES_ACCION_PSICOLOGIA_3100.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "11_005_SEGUIMIENTO_ACCIONES",
+      "categoryCode": "11_INDICADORES_PAMEC",
+      "title": "Seguimiento acciones",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "07_001_HISTORIA_CLINICA_PSICOLOGICA",
+      "categoryCode": "07_HISTORIA_CLINICA",
+      "title": "Historia clínica psicológica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/MANUAL DE AUDITORÍA DE HISTORIA CLÍNICA Y REGISTROS ASISTENCIALES.pdf",
+          "originalName": "MANUAL DE AUDITORÍA DE HISTORIA CLÍNICA Y REGISTROS ASISTENCIALES.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/PSI-AN6_Control_de_soportes_reales_pendientes_del_estandar_Historia_clinica_y_consentimientos.pdf",
+          "originalName": "PSI-AN6_Control_de_soportes_reales_pendientes_del_estandar_Historia_clinica_y_consentimientos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/PSI-HC01_Manual_de_historia_clinica_registros_custodia_y_conservacion.pdf",
+          "originalName": "PSI-HC01_Manual_de_historia_clinica_registros_custodia_y_conservacion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/PSI-HC02_Historia_clinica_psicologica_inicial.pdf",
+          "originalName": "PSI-HC02_Historia_clinica_psicologica_inicial.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/PSI-IDX6_Analisis_e_indice_del_estandar_Historia_clinica_y_consentimientos.pdf",
+          "originalName": "PSI-IDX6_Analisis_e_indice_del_estandar_Historia_clinica_y_consentimientos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "07_002_CONSENTIMIENTO_INFORMADO",
+      "categoryCode": "07_HISTORIA_CLINICA",
+      "title": "Consentimiento informado",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/6. FORMATO_CONSENTIMIENTO_INFORMADO.pdf",
+          "originalName": "6. FORMATO_CONSENTIMIENTO_INFORMADO.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/1. PROCEDIMIENTO_CONTROL_FORMATOS.pdf",
+          "originalName": "1. PROCEDIMIENTO_CONTROL_FORMATOS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/2. CONSENTIMIENTO_INFORMADO_PSICOLOGIA.pdf",
+          "originalName": "2. CONSENTIMIENTO_INFORMADO_PSICOLOGIA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/3. COMPENDIO_FORMATOS_CLINICOS.pdf",
+          "originalName": "3. COMPENDIO_FORMATOS_CLINICOS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "07_003_EVALUACION_PSICOLOGICA",
+      "categoryCode": "07_HISTORIA_CLINICA",
+      "title": "Evaluación psicológica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/PSI-C01_Consentimiento_para_evaluacion_y_atencion_psicologica_de_adultos.pdf",
+          "originalName": "PSI-C01_Consentimiento_para_evaluacion_y_atencion_psicologica_de_adultos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "07_004_EVOLUCIONES",
+      "categoryCode": "07_HISTORIA_CLINICA",
+      "title": "Evoluciones",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "07_005_PLAN_TERAPEUTICO",
+      "categoryCode": "07_HISTORIA_CLINICA",
+      "title": "Plan terapéutico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/PSI-HC04_Plan_terapeutico_y_reevaluacion_de_resultados.pdf",
+          "originalName": "PSI-HC04_Plan_terapeutico_y_reevaluacion_de_resultados.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "07_006_REGISTRO_DE_SESIONES",
+      "categoryCode": "07_HISTORIA_CLINICA",
+      "title": "Registro de sesiones",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "07_008_CUSTODIA_DOCUMENTAL",
+      "categoryCode": "07_HISTORIA_CLINICA",
+      "title": "Custodia documental",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/3. PROCEDIMIENTO_ARCHIVO_HC.pdf",
+          "originalName": "3. PROCEDIMIENTO_ARCHIVO_HC.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/4. PROCEDIMIENTO_CONSERVACION_HC.pdf",
+          "originalName": "4. PROCEDIMIENTO_CONSERVACION_HC.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/1. PROCEDIMIENTO_GESTION_DOCUMENTAL.pdf",
+          "originalName": "1. PROCEDIMIENTO_GESTION_DOCUMENTAL.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/2. INSTRUCTIVO_CODIFICACION.pdf",
+          "originalName": "2. INSTRUCTIVO_CODIFICACION.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/3. PROTOCOLO_CONTROL_DOCUMENTAL.pdf",
+          "originalName": "3. PROTOCOLO_CONTROL_DOCUMENTAL.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/03_Procedimiento_Gestion_Documental_SGSST.docx",
+          "originalName": "03_Procedimiento_Gestion_Documental_SGSST.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "07_009_ENTREGA_DE_COPIAS",
+      "categoryCode": "07_HISTORIA_CLINICA",
+      "title": "Entrega de copias",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/CARTA SOFTWARE.pdf",
+          "originalName": "CARTA SOFTWARE.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/Tarjeta profesional imgeniero sistemas .pdf",
+          "originalName": "Tarjeta profesional imgeniero sistemas .pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "6. HISTORIA CLINICA/Historia Clínica/PSI-HC07_Procedimiento_de_entrega_de_copias_y_control_de_acceso.pdf",
+          "originalName": "PSI-HC07_Procedimiento_de_entrega_de_copias_y_control_de_acceso.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-001",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-AN6-FR01 Control de anexos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-AN6-FR01_Control_de_anexos.pdf",
+          "originalName": "PSI-AN6-FR01_Control_de_anexos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-002",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C02 Consentimiento para psicoterapia y cambios del plan",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C02_Consentimiento_para_psicoterapia_y_cambios_del_plan.pdf",
+          "originalName": "PSI-C02_Consentimiento_para_psicoterapia_y_cambios_del_plan.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-003",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C03 Consentimiento y participacion de menores con representacion cuando corresponda",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C03_Consentimiento_y_participacion_de_menores_con_representacion_cuando_corresponda.pdf",
+          "originalName": "PSI-C03_Consentimiento_y_participacion_de_menores_con_representacion_cuando_corresponda.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-004",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C04 Asentimiento informado de ninos ninas y adolescentes",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C04_Asentimiento_informado_de_ninos_ninas_y_adolescentes.pdf",
+          "originalName": "PSI-C04_Asentimiento_informado_de_ninos_ninas_y_adolescentes.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-005",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C05 Consentimiento con ajustes razonables y apoyos para la decision",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C05_Consentimiento_con_ajustes_razonables_y_apoyos_para_la_decision.pdf",
+          "originalName": "PSI-C05_Consentimiento_con_ajustes_razonables_y_apoyos_para_la_decision.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-006",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C06 Consentimiento para evaluacion y pruebas psicologicas",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C06_Consentimiento_para_evaluacion_y_pruebas_psicologicas.pdf",
+          "originalName": "PSI-C06_Consentimiento_para_evaluacion_y_pruebas_psicologicas.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-007",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C07 Consentimiento para evaluacion neuropsicologica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C07_Consentimiento_para_evaluacion_neuropsicologica.pdf",
+          "originalName": "PSI-C07_Consentimiento_para_evaluacion_neuropsicologica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-008",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C08 Consentimiento para terapia de pareja",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C08_Consentimiento_para_terapia_de_pareja.pdf",
+          "originalName": "PSI-C08_Consentimiento_para_terapia_de_pareja.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-009",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C09 Consentimiento para terapia familiar",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C09_Consentimiento_para_terapia_familiar.pdf",
+          "originalName": "PSI-C09_Consentimiento_para_terapia_familiar.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-010",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C10 Consentimiento para terapia grupal",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C10_Consentimiento_para_terapia_grupal.pdf",
+          "originalName": "PSI-C10_Consentimiento_para_terapia_grupal.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-011",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C11 Consentimiento para telepsicologia por telemedicina",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C11_Consentimiento_para_telepsicologia_por_telemedicina.pdf",
+          "originalName": "PSI-C11_Consentimiento_para_telepsicologia_por_telemedicina.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-012",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C12 Autorizacion para contacto recordatorios y mensajeria",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C12_Autorizacion_para_contacto_recordatorios_y_mensajeria.pdf",
+          "originalName": "PSI-C12_Autorizacion_para_contacto_recordatorios_y_mensajeria.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-013",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C13 Autorizacion de tratamiento de datos personales y sensibles",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C13_Autorizacion_de_tratamiento_de_datos_personales_y_sensibles.pdf",
+          "originalName": "PSI-C13_Autorizacion_de_tratamiento_de_datos_personales_y_sensibles.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-014",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C14 Autorizacion especifica para intercambio de informacion clinica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C14_Autorizacion_especifica_para_intercambio_de_informacion_clinica.pdf",
+          "originalName": "PSI-C14_Autorizacion_especifica_para_intercambio_de_informacion_clinica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-015",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C15 Autorizacion para coordinacion con escuela y cuidadores",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C15_Autorizacion_para_coordinacion_con_escuela_y_cuidadores.pdf",
+          "originalName": "PSI-C15_Autorizacion_para_coordinacion_con_escuela_y_cuidadores.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-016",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C16 Consentimiento para participacion de acompanante o interprete",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C16_Consentimiento_para_participacion_de_acompanante_o_interprete.pdf",
+          "originalName": "PSI-C16_Consentimiento_para_participacion_de_acompanante_o_interprete.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-017",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C17 Autorizacion para grabacion de audio o video clinico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C17_Autorizacion_para_grabacion_de_audio_o_video_clinico.pdf",
+          "originalName": "PSI-C17_Autorizacion_para_grabacion_de_audio_o_video_clinico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-018",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C18 Consentimiento para supervision clinica y observacion profesional",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C18_Consentimiento_para_supervision_clinica_y_observacion_profesional.pdf",
+          "originalName": "PSI-C18_Consentimiento_para_supervision_clinica_y_observacion_profesional.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-019",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C19 Autorizacion para uso de imagenes o casos con finalidad docente",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C19_Autorizacion_para_uso_de_imagenes_o_casos_con_finalidad_docente.pdf",
+          "originalName": "PSI-C19_Autorizacion_para_uso_de_imagenes_o_casos_con_finalidad_docente.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-020",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C20 Consentimiento para tecnicas de exposicion e intervencion en trauma",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C20_Consentimiento_para_tecnicas_de_exposicion_e_intervencion_en_trauma.pdf",
+          "originalName": "PSI-C20_Consentimiento_para_tecnicas_de_exposicion_e_intervencion_en_trauma.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-021",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C21 Registro de negativa aplazamiento y retiro del consentimiento",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C21_Registro_de_negativa_aplazamiento_y_retiro_del_consentimiento.pdf",
+          "originalName": "PSI-C21_Registro_de_negativa_aplazamiento_y_retiro_del_consentimiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-022",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C22 Consentimiento para talleres psicoeducativos no terapeuticos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C22_Consentimiento_para_talleres_psicoeducativos_no_terapeuticos.pdf",
+          "originalName": "PSI-C22_Consentimiento_para_talleres_psicoeducativos_no_terapeuticos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-023",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-C23 Consentimiento para atencion psicologica domiciliaria",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-C23_Consentimiento_para_atencion_psicologica_domiciliaria.pdf",
+          "originalName": "PSI-C23_Consentimiento_para_atencion_psicologica_domiciliaria.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-024",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC01-FR01 Ficha de custodia e implementacion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC01-FR01_Ficha_de_custodia_e_implementacion.pdf",
+          "originalName": "PSI-HC01-FR01_Ficha_de_custodia_e_implementacion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-025",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC02-FR02 Valoracion formulacion y conducta",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC02-FR02_Valoracion_formulacion_y_conducta.pdf",
+          "originalName": "PSI-HC02-FR02_Valoracion_formulacion_y_conducta.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-026",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC03 Formato de evolucion por sesion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC03_Formato_de_evolucion_por_sesion.pdf",
+          "originalName": "PSI-HC03_Formato_de_evolucion_por_sesion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-027",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC04-FR02 Reevaluacion y actualizacion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC04-FR02_Reevaluacion_y_actualizacion.pdf",
+          "originalName": "PSI-HC04-FR02_Reevaluacion_y_actualizacion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-028",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC05 Informe psicologico y devolucion de resultados",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC05_Informe_psicologico_y_devolucion_de_resultados.pdf",
+          "originalName": "PSI-HC05_Informe_psicologico_y_devolucion_de_resultados.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-029",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC06 Resumen de cierre egreso y recomendaciones",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC06_Resumen_de_cierre_egreso_y_recomendaciones.pdf",
+          "originalName": "PSI-HC06_Resumen_de_cierre_egreso_y_recomendaciones.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-030",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC07-FR01 Solicitud y entrega de informacion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC07-FR01_Solicitud_y_entrega_de_informacion.pdf",
+          "originalName": "PSI-HC07-FR01_Solicitud_y_entrega_de_informacion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-031",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC07-FR02 Control de prestamo o acceso",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC07-FR02_Control_de_prestamo_o_acceso.pdf",
+          "originalName": "PSI-HC07-FR02_Control_de_prestamo_o_acceso.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-032",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC08 Proteccion de datos incidentes respaldos y recuperacion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC08_Proteccion_de_datos_incidentes_respaldos_y_recuperacion.pdf",
+          "originalName": "PSI-HC08_Proteccion_de_datos_incidentes_respaldos_y_recuperacion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-033",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC08-FR01 Plan y prueba de respaldo",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC08-FR01_Plan_y_prueba_de_respaldo.pdf",
+          "originalName": "PSI-HC08-FR01_Plan_y_prueba_de_respaldo.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-034",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC08-FR02 Incidente de datos y respuesta",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC08-FR02_Incidente_de_datos_y_respuesta.pdf",
+          "originalName": "PSI-HC08-FR02_Incidente_de_datos_y_respuesta.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-035",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC09 Actividades especiales y consentimientos que requieren desarrollo propio",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC09_Actividades_especiales_y_consentimientos_que_requieren_desarrollo_propio.pdf",
+          "originalName": "PSI-HC09_Actividades_especiales_y_consentimientos_que_requieren_desarrollo_propio.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-036",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC09-FR01 Control previo a incorporacion de nueva actividad",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC09-FR01_Control_previo_a_incorporacion_de_nueva_actividad.pdf",
+          "originalName": "PSI-HC09-FR01_Control_previo_a_incorporacion_de_nueva_actividad.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-037",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC90 Procedimiento de confidencialidad copias acceso y cierre de archivo",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC90_Procedimiento_de_confidencialidad_copias_acceso_y_cierre_de_archivo.pdf",
+          "originalName": "PSI-HC90_Procedimiento_de_confidencialidad_copias_acceso_y_cierre_de_archivo.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-038",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC90-FR01 Solicitud decision y entrega de copia",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC90-FR01_Solicitud_decision_y_entrega_de_copia.pdf",
+          "originalName": "PSI-HC90-FR01_Solicitud_decision_y_entrega_de_copia.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-039",
+      "categoryCode": "FT_07_HC",
+      "title": "PSI-HC90-FR02 Inventario de transferencia y custodia",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/PSI-HC90-FR02_Inventario_de_transferencia_y_custodia.pdf",
+          "originalName": "PSI-HC90-FR02_Inventario_de_transferencia_y_custodia.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-001",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "PSI-AN7 Control de soportes reales pendientes del estandar Interdependencia y remision",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/PSI-AN7_Control_de_soportes_reales_pendientes_del_estandar_Interdependencia_y_remision.pdf",
+          "originalName": "PSI-AN7_Control_de_soportes_reales_pendientes_del_estandar_Interdependencia_y_remision.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-002",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "PSI-AN7-FR01 Control de anexos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/PSI-AN7-FR01_Control_de_anexos.pdf",
+          "originalName": "PSI-AN7-FR01_Control_de_anexos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-003",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "PSI-IDX7 Analisis e indice del estandar Interdependencia y remision",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/PSI-IDX7_Analisis_e_indice_del_estandar_Interdependencia_y_remision.pdf",
+          "originalName": "PSI-IDX7_Analisis_e_indice_del_estandar_Interdependencia_y_remision.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-004",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "PSI-REF01 Aplicabilidad de interdependencia y coordinacion asistencial",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/PSI-REF01_Aplicabilidad_de_interdependencia_y_coordinacion_asistencial.pdf",
+          "originalName": "PSI-REF01_Aplicabilidad_de_interdependencia_y_coordinacion_asistencial.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-005",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "PSI-REF01-FR01 Analisis de aplicabilidad y apoyos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/PSI-REF01-FR01_Analisis_de_aplicabilidad_y_apoyos.pdf",
+          "originalName": "PSI-REF01-FR01_Analisis_de_aplicabilidad_y_apoyos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-006",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "PSI-REF02 Directorio local de urgencias proteccion y servicios de apoyo",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/PSI-REF02_Directorio_local_de_urgencias_proteccion_y_servicios_de_apoyo.pdf",
+          "originalName": "PSI-REF02_Directorio_local_de_urgencias_proteccion_y_servicios_de_apoyo.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-007",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "PSI-REF02-FR01 Directorio local verificable",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/PSI-REF02-FR01_Directorio_local_verificable.pdf",
+          "originalName": "PSI-REF02-FR01_Directorio_local_verificable.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-008",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "PSI-REF03 Formato de remision y confirmacion de entrega",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/PSI-REF03_Formato_de_remision_y_confirmacion_de_entrega.pdf",
+          "originalName": "PSI-REF03_Formato_de_remision_y_confirmacion_de_entrega.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "12_001_AMBULANCIA",
+      "categoryCode": "12_INTERDEPENDENCIA",
+      "title": "Ambulancia — Convenios",
+      "description": "Sección: Convenios",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "12_002_URGENCIAS",
+      "categoryCode": "12_INTERDEPENDENCIA",
+      "title": "Urgencias — Convenios",
+      "description": "Sección: Convenios",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "12_003_MEDICINA_GENERAL",
+      "categoryCode": "12_INTERDEPENDENCIA",
+      "title": "Medicina General — Convenios",
+      "description": "Sección: Convenios",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "12_004_PSIQUIATRIA",
+      "categoryCode": "12_INTERDEPENDENCIA",
+      "title": "Psiquiatría — Convenios",
+      "description": "Sección: Convenios",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "12_005_LABORATORIO_CUANDO_APLIQUE",
+      "categoryCode": "12_INTERDEPENDENCIA",
+      "title": "Laboratorio (cuando aplique)",
+      "description": "Sección: Convenios",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "12_006_CONVENIOS_FIRMADOS",
+      "categoryCode": "12_INTERDEPENDENCIA",
+      "title": "Convenios firmados — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/Interdependencia/CONVENIO DE COLABORACION.pdf",
+          "originalName": "CONVENIO DE COLABORACION.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "12_007_PROCEDIMIENTO_DE_REFERENCIA",
+      "categoryCode": "12_INTERDEPENDENCIA",
+      "title": "Procedimiento de referencia",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/Interdependencia/1. PROCEDIMIENTO_REFERENCIA.pdf",
+          "originalName": "1. PROCEDIMIENTO_REFERENCIA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "12_008_PROCEDIMIENTO_DE_CONTRARREFERENCIA",
+      "categoryCode": "12_INTERDEPENDENCIA",
+      "title": "Procedimiento de contrarreferencia",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/Interdependencia/2. PROCEDIMIENTO_CONTRARREFERENCIA.pdf",
+          "originalName": "2. PROCEDIMIENTO_CONTRARREFERENCIA.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "12_009_DIRECTORIO_INSTITUCIONAL",
+      "categoryCode": "12_INTERDEPENDENCIA",
+      "title": "Directorio institucional — Documentos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/Interdependencia/Directorio Institucional - PsicologÃ­a.pdf",
+          "originalName": "Directorio Institucional - PsicologÃ­a.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "12_010_DIRECTORIO_DE_EMERGENCIAS",
+      "categoryCode": "12_INTERDEPENDENCIA",
+      "title": "Directorio de emergencias",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/Interdependencia/Directorio de Emergencias y Contingencia ClÃ­nica - PsicologÃ­a.pdf",
+          "originalName": "Directorio de Emergencias y Contingencia ClÃ­nica - PsicologÃ­a.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "01_001_CAMARA_DE_COMERCIO",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Cámara de Comercio",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_002_RUT",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "RUT",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_003_USO_DEL_SUELO",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Uso del suelo",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_004_REPS_VIGENTE",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "REPS vigente",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_005_AUTOEVALUACION_REPS",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Autoevaluación REPS",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_006_BOMBEROS",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Bomberos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_007_CONTRATOS",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Contratos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_008_POLITICAS_INSTITUCIONALES",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Políticas institucionales",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "8. DOCUMENTACION LEGAL/Documentación Legal/01_Politicas_Institucionales.pdf",
+          "originalName": "01_Politicas_Institucionales.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "01_009_MANUAL_DE_FUNCIONES",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Manual de funciones",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "8. DOCUMENTACION LEGAL/Documentación Legal/02_Manual_de_Funciones.pdf",
+          "originalName": "02_Manual_de_Funciones.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "01_010_ORGANIGRAMA",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Organigrama",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "8. DOCUMENTACION LEGAL/Documentación Legal/03_Organigrama.pdf",
+          "originalName": "03_Organigrama.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "01_011_PROTECCION_DE_DATOS",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Protección de datos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "8. DOCUMENTACION LEGAL/Documentación Legal/04_Politica_Proteccion_Datos.pdf",
+          "originalName": "04_Politica_Proteccion_Datos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "01_012_TRATAMIENTO_DE_DATOS_PERSONALES",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "TRATAMIENTO DE DATOS PERSONALES",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "8. DOCUMENTACION LEGAL/Documentación Legal/05_Autorizacion_Tratamiento_Datos.pdf",
+          "originalName": "05_Autorizacion_Tratamiento_Datos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_ACTA_NOMBRAMIENTO_RESPONSABLE",
+      "categoryCode": "SST_01_PLANEACION",
+      "title": "Acta de nombramiento del responsable del SG-SST",
+      "description": "Designación por escrito del responsable y su carta de aceptación.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Planeación y política/1. ACTA DE NOMBRAMIENTO DEL RESPONSABLE DEL SISTEMA DE GESTIÓN DE SEGURIDAD Y SALUD EN EL TRABAJO.docx",
+          "originalName": "1. ACTA DE NOMBRAMIENTO DEL RESPONSABLE DEL SISTEMA DE GESTIÓN DE SEGURIDAD Y SALUD EN EL TRABAJO.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        },
+        {
+          "path": "9. SG-SST/SG-SST · Planeación y política/2. CARTA DE DESIGNACIÓN DEL RESPONSABLE DEL SG.docx",
+          "originalName": "2. CARTA DE DESIGNACIÓN DEL RESPONSABLE DEL SG.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_EVALUACION_INICIAL",
+      "categoryCode": "SST_01_PLANEACION",
+      "title": "Evaluación inicial o prediagnóstico",
+      "description": "Línea base del sistema, requisito de entrada del Dec. 1072.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Planeación y política/5. EVALUACIÓN INICIAL O PREDIAGNOSTICO.docx",
+          "originalName": "5. EVALUACIÓN INICIAL O PREDIAGNOSTICO.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_MATRIZ_LEGAL",
+      "categoryCode": "SST_01_PLANEACION",
+      "title": "Matriz legal MAT-LEG-01",
+      "description": "Normativa aplicable al consultorio, actualizada al menos una vez al año.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Planeación y política/MATRIZ REQUISITOS LEGALES.docx",
+          "originalName": "MATRIZ REQUISITOS LEGALES.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        },
+        {
+          "path": "9. SG-SST/SG-SST · Planeación y política/Matriz_Requisitos_Legales_Psicologia.docx",
+          "originalName": "Matriz_Requisitos_Legales_Psicologia.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        },
+        {
+          "path": "9. SG-SST/SG-SST · Planeación y política/13. MATRIZ LEGAL SG-SST.docx",
+          "originalName": "13. MATRIZ LEGAL SG-SST.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_OBJETIVOS",
+      "categoryCode": "SST_01_PLANEACION",
+      "title": "Objetivos del SG-SST",
+      "description": "Medibles, coherentes con la política y revisados cada año.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Planeación y política/14. OBJETIVOS DE SEGURIDAD Y SALUD EN EL TRABAJO.docx",
+          "originalName": "14. OBJETIVOS DE SEGURIDAD Y SALUD EN EL TRABAJO.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_PLAN_ANUAL_TRABAJO",
+      "categoryCode": "SST_01_PLANEACION",
+      "title": "Plan anual de trabajo",
+      "description": "Con metas, responsables, recursos y cronograma (estándar 2.4.1).",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Planeación y política/15. PLAN ANUAL DE TRABAJO EN SEGURIDAD Y SALUD EN EL TRABAJO.docx",
+          "originalName": "15. PLAN ANUAL DE TRABAJO EN SEGURIDAD Y SALUD EN EL TRABAJO.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        },
+        {
+          "path": "9. SG-SST/SG-SST · Planeación y política/16. PLAN ANUAL DE TRABAJO SG.docx",
+          "originalName": "16. PLAN ANUAL DE TRABAJO SG.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_POLITICA_ACOSO_LABORAL",
+      "categoryCode": "SST_01_PLANEACION",
+      "title": "Política de prevención del acoso laboral",
+      "description": "Ley 1010 de 2006 y conformación del comité de convivencia.",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "SST_POLITICA_DESCONEXION",
+      "categoryCode": "SST_01_PLANEACION",
+      "title": "Política de desconexión laboral",
+      "description": "Ley 2191 de 2022, obligatoria para todo empleador.",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "SST_POLITICA_SST",
+      "categoryCode": "SST_01_PLANEACION",
+      "title": "Política de Seguridad y Salud en el Trabajo",
+      "description": "Firmada por el empleador y revisada anualmente (Res. 0312, estándar 2.1.1).",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Planeación y política/19. POLÍTICA DE SEGURIDAD Y SALUD EN EL TRABAJO.docx",
+          "originalName": "19. POLÍTICA DE SEGURIDAD Y SALUD EN EL TRABAJO.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        },
+        {
+          "path": "9. SG-SST/SG-SST · Planeación y política/sst_politica_sst_2026-09_v4.pdf",
+          "originalName": "sst_politica_sst_2026-09_v4.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": "2026-09"
+        }
+      ]
+    },
+    {
+      "code": "SST_MATRIZ_PELIGROS",
+      "categoryCode": "SST_02_RIESGOS",
+      "title": "Matriz de identificación de peligros MAT-RGO-01",
+      "description": "Metodología GTC 45, actualizada cada año o ante cambios (estándar 4.1.2).",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Identificación de peligros/11. MATRIZ DE IDENTIFICACIÓN DE PELIGROS, EVALUACIÓN Y VALORACIÓN DE RIESGOS.docx",
+          "originalName": "11. MATRIZ DE IDENTIFICACIÓN DE PELIGROS, EVALUACIÓN Y VALORACIÓN DE RIESGOS.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        },
+        {
+          "path": "9. SG-SST/SG-SST · Identificación de peligros/12. MATRIZ DE RIESGOS PRIORITARIOS (Basado en GTC 45).docx",
+          "originalName": "12. MATRIZ DE RIESGOS PRIORITARIOS (Basado en GTC 45).docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_RIESGO_BIOMECANICO",
+      "categoryCode": "SST_02_RIESGOS",
+      "title": "Programa de riesgo biomecánico y ergonomía",
+      "description": "Puestos de trabajo con exposición prolongada a postura sedente.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Identificación de peligros/06_Programa_Riesgo_Biomecanico_Ergonomia.docx",
+          "originalName": "06_Programa_Riesgo_Biomecanico_Ergonomia.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_RIESGO_PSICOSOCIAL",
+      "categoryCode": "SST_02_RIESGOS",
+      "title": "Programa de gestión del riesgo psicosocial",
+      "description": "Res. 2646 de 2008. Crítico en esta especialidad por la exposición del profesional.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Identificación de peligros/10. MANUAL PROGRAMA DE GESTIÓN DEL RIESGO PSICOSOCIAL.docx",
+          "originalName": "10. MANUAL PROGRAMA DE GESTIÓN DEL RIESGO PSICOSOCIAL.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_ACTAS_CAPACITACION",
+      "categoryCode": "SST_03_OPERACION",
+      "title": "Actas de capacitación del mes",
+      "description": "Registro mensual con firma del capacitador y de los asistentes.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 30,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Programas y operación/Actas_Capacitacion_SGSST_2026 (1).pdf",
+          "originalName": "Actas_Capacitacion_SGSST_2026 (1).pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "9. SG-SST/SG-SST · Programas y operación/Actas_Capacitacion_SGSST_2026_.docx",
+          "originalName": "Actas_Capacitacion_SGSST_2026_.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_CRONOGRAMA_CAPACITACION",
+      "categoryCode": "SST_03_OPERACION",
+      "title": "Cronograma anual de capacitación",
+      "description": "Incluye inducción y reinducción en SG-SST (estándar 1.2.1).",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Programas y operación/3. CRONOGRAMA ANUAL DE CAPACITACIÓN SG-SST – 2026.docx",
+          "originalName": "3. CRONOGRAMA ANUAL DE CAPACITACIÓN SG-SST – 2026.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        },
+        {
+          "path": "9. SG-SST/SG-SST · Programas y operación/10_Programa_Induccion_y_Reinduccion_SGSST.docx",
+          "originalName": "10_Programa_Induccion_y_Reinduccion_SGSST.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_GESTION_CAMBIO",
+      "categoryCode": "SST_03_OPERACION",
+      "title": "Procedimiento de gestión del cambio",
+      "description": "Evaluación del impacto en SST ante cambios de sede, equipos o personal.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Programas y operación/02_Procedimiento_Gestion_del_Cambio.docx",
+          "originalName": "02_Procedimiento_Gestion_del_Cambio.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_GESTION_CONTRATISTAS",
+      "categoryCode": "SST_03_OPERACION",
+      "title": "Programa de gestión de contratistas",
+      "description": "Verificación de afiliación a la ARL de proveedores y contratistas.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Programas y operación/07_Programa_Gestion_Contratistas.docx",
+          "originalName": "07_Programa_Gestion_Contratistas.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_INSPECCION_BOTIQUIN",
+      "categoryCode": "SST_03_OPERACION",
+      "title": "Inspección de botiquín",
+      "description": "Chequeo mensual de dotación y fechas de vencimiento (Res. 0705 de 2007).",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": 30,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "SST_INSPECCION_EXTINTORES",
+      "categoryCode": "SST_03_OPERACION",
+      "title": "Inspección de extintores",
+      "description": "Chequeo visual mensual de carga, presión y señalización.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 30,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Programas y operación/7. FORMATO DE INSPECCION -SST-INS-001.docx",
+          "originalName": "7. FORMATO DE INSPECCION -SST-INS-001.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        },
+        {
+          "path": "9. SG-SST/SG-SST · Programas y operación/04_Programa_de_Inspecciones.docx",
+          "originalName": "04_Programa_de_Inspecciones.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_MEDICINA_PREVENTIVA",
+      "categoryCode": "SST_03_OPERACION",
+      "title": "Programa de medicina preventiva y del trabajo",
+      "description": "Incluye exámenes médicos ocupacionales de ingreso, periódicos y de retiro.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Programas y operación/01_Programa_Medicina_Preventiva_y_del_Trabajo.docx",
+          "originalName": "01_Programa_Medicina_Preventiva_y_del_Trabajo.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_PAUSAS_ACTIVAS",
+      "categoryCode": "SST_03_OPERACION",
+      "title": "Registro de pausas activas del mes",
+      "description": "Planilla mensual firmada por los participantes.",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": 30,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "SST_PLAN_EMERGENCIAS",
+      "categoryCode": "SST_03_OPERACION",
+      "title": "Plan de prevención, preparación y respuesta ante emergencias",
+      "description": "Con plano de evacuación y directorio de emergencia (estándar 5.1.1).",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Programas y operación/1. PLAN DE EMERGENCIAS.pdf",
+          "originalName": "1. PLAN DE EMERGENCIAS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "9. SG-SST/SG-SST · Programas y operación/17. PLAN DE EMERGENCIAS.docx",
+          "originalName": "17. PLAN DE EMERGENCIAS.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_SIMULACRO",
+      "categoryCode": "SST_03_OPERACION",
+      "title": "Informe del simulacro de evacuación",
+      "description": "Al menos uno al año, con registro de asistencia y evaluación.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Programas y operación/09_Programa_Simulacro_e_Informe.docx",
+          "originalName": "09_Programa_Simulacro_e_Informe.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_AUDITORIA_INTERNA",
+      "categoryCode": "SST_04_VERIFICACION",
+      "title": "Auditoría interna anual del SG-SST",
+      "description": "Programa e informe de auditoría (estándar 6.1.2).",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Verificación y mejora/8. MANUAL DE AUDITORÍA INTERNA DEL SG-SST.docx",
+          "originalName": "8. MANUAL DE AUDITORÍA INTERNA DEL SG-SST.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_AUTOEVALUACION_0312",
+      "categoryCode": "SST_04_VERIFICACION",
+      "title": "Autoevaluación de estándares mínimos (Res. 0312)",
+      "description": "Obligatoria cada diciembre; su resultado alimenta el plan de mejora.",
+      "isMandatory": true,
+      "isEnabled": false,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "SST_FURAT",
+      "categoryCode": "SST_04_VERIFICACION",
+      "title": "FURAT radicado ante la ARL",
+      "description": "Reporte dentro de los dos días hábiles siguientes al accidente (Dec. 1072).",
+      "isMandatory": false,
+      "isEnabled": false,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "SST_INDICADORES",
+      "categoryCode": "SST_04_VERIFICACION",
+      "title": "Manual de indicadores del SG-SST",
+      "description": "Indicadores de estructura, proceso y resultado (Dec. 1072, art. 2.2.4.6.19).",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Verificación y mejora/9. MANUAL DE INDICADORES DEL SG-SST.docx",
+          "originalName": "9. MANUAL DE INDICADORES DEL SG-SST.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_PLAN_MEJORAMIENTO",
+      "categoryCode": "SST_04_VERIFICACION",
+      "title": "Plan de mejoramiento del SG-SST",
+      "description": "Acciones correctivas derivadas de la autoevaluación y las auditorías.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Verificación y mejora/18. PLAN DE MEJORAMIENTO DEL SG-SST.docx",
+          "originalName": "18. PLAN DE MEJORAMIENTO DEL SG-SST.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_REPORTE_ACCIDENTES",
+      "categoryCode": "SST_04_VERIFICACION",
+      "title": "Reporte de accidentes e incidentes de trabajo",
+      "description": "Investigación interna del evento; se genera solo cuando ocurre.",
+      "isMandatory": false,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Verificación y mejora/6. FORMATO DE GESTIÓN DE ACCIDENTES E INCIDENTES DE TRABAJO.docx",
+          "originalName": "6. FORMATO DE GESTIÓN DE ACCIDENTES E INCIDENTES DE TRABAJO.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        },
+        {
+          "path": "9. SG-SST/SG-SST · Verificación y mejora/05_Procedimiento_Accidentes_e_Incidentes.docx",
+          "originalName": "05_Procedimiento_Accidentes_e_Incidentes.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "SST_REVISION_DIRECCION",
+      "categoryCode": "SST_04_VERIFICACION",
+      "title": "Revisión por la alta dirección",
+      "description": "Acta anual con conclusiones y decisiones sobre el sistema.",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": 365,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "9. SG-SST/SG-SST · Verificación y mejora/08_Revision_por_la_Direccion_SGSST.docx",
+          "originalName": "08_Revision_por_la_Direccion_SGSST.docx",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "periodLabel": null
+        }
+      ]
+    }
+  ]
+}

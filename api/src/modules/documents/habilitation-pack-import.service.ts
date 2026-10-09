@@ -208,10 +208,12 @@ export class HabilitationPackImportService implements OnModuleInit {
       return null;
     }
     if (
+      this.hasSpecialtyPack(clinic.specialty) ||
       clinic.specialty === 'PHYSIOTHERAPY' ||
       clinic.specialty === 'DENTISTRY' ||
       clinic.specialty === 'ORTHODONTICS'
     ) {
+      // Con paquete propio (estructura.json) no se usa el emparejamiento por nombre.
       this.logger.log(
         `Omitiendo pack de psicología para «${clinic.name}» (${clinic.specialty}).`,
       );
