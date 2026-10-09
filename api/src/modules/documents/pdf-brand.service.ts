@@ -253,7 +253,20 @@ export class PdfBrandService {
     mark: { name: string; card: string | null; clinic: string; when: Date },
   ): Promise<Buffer | null> {
     try {
-      const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
+      const source = await PDFDocument.load(buffer, { ignoreEncryption: true });
+      try {
+        source.getForm().flatten();
+      } catch {
+        // Formularios atípicos: se copian las páginas tal cual.
+      }
+      // Copia en un documento nuevo: re-guardar el original con pdf-lib rompe
+      // los PDF con objetos de generación > 0 (Vista previa / Safari no los abren).
+      const pdf = await PDFDocument.create();
+      const pages = await pdf.copyPages(source, source.getPageIndices());
+      for (const page of pages) pdf.addPage(page);
+      const title = source.getTitle();
+      if (title) pdf.setTitle(title);
+      pdf.setProducer('HABILISALUD');
       const font = await pdf.embedFont(StandardFonts.Helvetica);
       const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
       const latin = (value: string) => value.replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
