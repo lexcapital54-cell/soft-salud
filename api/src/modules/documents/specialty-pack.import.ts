@@ -57,6 +57,10 @@ const SPECIALTY_PACKS: Record<string, { folder: string; mount: string }> = {
     folder: 'DOCUMENTOS PDF FISIOTERAPIA',
     mount: '/app/habilitation-packs/fisioterapia',
   },
+  DENTISTRY: {
+    folder: 'DOCUMENTOS PDF ODONTOLOGIA',
+    mount: '/app/habilitation-packs/odontologia',
+  },
 };
 
 export function specialtyPackPath(specialty: string | null | undefined): string | null {
