@@ -6,6 +6,7 @@ import { PSYCHOLOGY_CUPS_CATALOG } from './psychology-cups.catalog';
 import { PHYSIOTHERAPY_CIE_CATALOG } from './physiotherapy-cie.catalog';
 import { PHYSIOTHERAPY_CUPS_CATALOG } from './physiotherapy-cups.catalog';
 import { DENTISTRY_CIE_CATALOG } from './dentistry-cie.catalog';
+import { AESTHETIC_CIE_CATALOG } from './aesthetic-cie.catalog';
 import { DENTISTRY_CUPS_CATALOG } from './dentistry-cups.catalog';
 import { ORTHO_CONTROL_PROCEDURES, ORTHO_EVENT_CUPS } from './ortho-control-procedures';
 import { ORTHO_CIE_CATALOG, orthoCieRows } from './ortho-cie.catalog';
@@ -54,6 +55,16 @@ const PHYSIO_CIE_INDEX = indexCie(
 const ORTHO_CIE_INDEX = indexCie(
   orthoCieRows().map((row) => ({
     id: `cie-orto-${row.key}`,
+    code: row.code,
+    description: row.description,
+    cie11Code: '',
+    category: row.category,
+    source: 'CIE' as const,
+  })),
+);
+const AESTHETIC_CIE_INDEX = indexCie(
+  AESTHETIC_CIE_CATALOG.map((row) => ({
+    id: `cie-aes-${row.code}`,
     code: row.code,
     description: row.description,
     cie11Code: '',
@@ -123,6 +134,13 @@ export class CatalogsService {
 
     if (spec === ClinicSpecialty.PHYSIOTHERAPY || spec === 'PHYSIOTHERAPY') {
       return rankCie(PHYSIO_CIE_INDEX, query, take);
+    }
+
+    // Estética: primero sus diagnósticos frecuentes; al buscar se completa con todo el CIE-10.
+    if (spec === ClinicSpecialty.AESTHETIC) {
+      const fromStatic = rankCie(AESTHETIC_CIE_INDEX, query, take);
+      if (fromStatic.length >= take || !query) return fromStatic;
+      return this.fillFromCie(fromStatic, query, take, 'CIE-10');
     }
 
     if (spec === ClinicSpecialty.DENTISTRY) {
