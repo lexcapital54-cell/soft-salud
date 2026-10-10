@@ -70,7 +70,7 @@ type TextKey =
       }
 
       @if (!tracking.loaded()) {
-        <p class="empty">{{ tracking.status() === 'error' ? tracking.message() : 'Cargando procedimientos…' }}</p>
+        <p class="empty">{{ tracking.status() === 'error' ? tracking.message() : tracking.status() === 'idle' ? 'Seleccione o cree el paciente para registrar procedimientos.' : 'Cargando procedimientos…' }}</p>
       } @else if (!list().length) {
         <p class="empty">Aún no hay procedimientos registrados para este paciente.</p>
       } @else {

@@ -116,7 +116,11 @@ const SAVE_LABEL: Record<string, string> = {
         <p class="alert-line" role="alert"><hab-icon name="alert" /> {{ flash() }}</p>
       }
 
-      @if (!tracking.loaded()) {
+      @if (noPatient()) {
+        <p class="alert-line" role="status"><hab-icon name="alert" /> Seleccione o cree el paciente para abrir su historia; luego podrá marcar el mapa facial.</p>
+      }
+
+      @if (!tracking.loaded() && !noPatient()) {
         <div class="fm-skeleton" aria-busy="true">
           <span class="big"></span><span></span>
           <p class="empty">{{ tracking.status() === 'error' ? tracking.message() : 'Cargando mapa facial…' }}</p>
@@ -606,6 +610,8 @@ export class AestheticFaceMap {
   private flashTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly ro = computed(() => this.disabled() || !this.tracking.loaded() || this.presentation());
+  /** Aún no hay atención abierta: se muestra el rostro de referencia solo para consulta. */
+  readonly noPatient = computed(() => !this.tracking.loaded() && this.tracking.status() === 'idle');
   readonly canUndo = computed(() => {
     this.histRev();
     return this.undoStack.length > 0;

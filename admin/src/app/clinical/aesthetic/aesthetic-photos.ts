@@ -37,7 +37,7 @@ export type AesPhotoUploader = (file: File, label: string) => Observable<Clinica
       </p>
 
       @if (!tracking.loaded()) {
-        <p class="empty">{{ tracking.status() === 'error' ? tracking.message() : 'Cargando fotos…' }}</p>
+        <p class="empty">{{ tracking.status() === 'error' ? tracking.message() : tracking.status() === 'idle' ? 'Seleccione o cree el paciente para agregar fotos.' : 'Cargando fotos…' }}</p>
       } @else {
         @if (!ro) {
           <div class="aes-grid-narrow">
