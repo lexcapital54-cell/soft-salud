@@ -34,6 +34,58 @@ function clinicalPart(row: Json, extra: string[] = []) {
 }
 
 export const AES_MAX_PHOTOS = 2000;
+
+const VB_W = 200;
+const VB_H = 260;
+const MAX_VERTICES = 240;
+const SHAPES = new Set(['point', 'zone', 'line', 'arrow', 'freehand', 'ellipse', 'rect', 'polygon', 'text']);
+const MARK_STATUSES = new Set(['PLANEADO', 'REALIZADO', 'SUSPENDIDO', 'CANCELADO']);
+const LATERALITIES = new Set(['DERECHA', 'IZQUIERDA', 'BILATERAL', 'CENTRAL', 'NA']);
+const MIN_POINTS: Record<string, number> = { line: 4, arrow: 4, ellipse: 4, rect: 4, freehand: 4, polygon: 6 };
+
+/** Geometría y datos del editor del mapa facial (los campos son opcionales por compatibilidad). */
+export function validateAnnotation(row: Json) {
+  const inRange = (v: unknown, max: number) => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= max;
+  if (!inRange(row.x, VB_W) || !inRange(row.y, VB_H)) {
+    throw new AestheticIntegrityError('La marca del mapa facial tiene coordenadas fuera del rostro.');
+  }
+  const shape = row.shape === undefined ? 'point' : row.shape;
+  if (typeof shape !== 'string' || !SHAPES.has(shape)) throw new AestheticIntegrityError('Tipo de trazo no válido en el mapa facial.');
+  if (row.points !== undefined) {
+    const pts = row.points;
+    if (!Array.isArray(pts) || pts.length % 2 !== 0 || pts.length > MAX_VERTICES * 2) {
+      throw new AestheticIntegrityError('El trazo del mapa facial tiene vértices no válidos o demasiados puntos.');
+    }
+    for (let i = 0; i < pts.length; i++) {
+      if (!inRange(pts[i], i % 2 ? VB_H : VB_W)) {
+        throw new AestheticIntegrityError('El trazo del mapa facial tiene vértices fuera del rostro.');
+      }
+    }
+  }
+  const need = MIN_POINTS[shape];
+  if (need && (!Array.isArray(row.points) || row.points.length < need)) {
+    throw new AestheticIntegrityError('El trazo del mapa facial está incompleto.');
+  }
+  if (shape === 'zone' && !text(row.zone)) throw new AestheticIntegrityError('La marca de zona necesita una región.');
+  if (row.status !== undefined && !MARK_STATUSES.has(text(row.status))) {
+    throw new AestheticIntegrityError('Estado no válido en una marca del mapa facial.');
+  }
+  if (row.laterality !== undefined && !LATERALITIES.has(text(row.laterality))) {
+    throw new AestheticIntegrityError('Lateralidad no válida en una marca del mapa facial.');
+  }
+  if (row.quantity !== undefined) {
+    const q = typeof row.quantity === 'string' ? row.quantity.trim() : '';
+    if (typeof row.quantity !== 'string' || (q && !/^\d{1,6}([.,]\d{1,3})?$/.test(q))) {
+      throw new AestheticIntegrityError('La cantidad de una marca debe ser un número positivo.');
+    }
+  }
+  for (const k of ['note', 'label', 'unit', 'procType'] as const) {
+    const v = row[k];
+    if (v !== undefined && (typeof v !== 'string' || v.length > (k === 'note' ? 2000 : 120))) {
+      throw new AestheticIntegrityError('Un texto de la marca del mapa facial no es válido o es demasiado largo.');
+    }
+  }
+}
 const PHOTO_ANGLES = new Set(['FRONTAL', 'PERFIL_DER', 'PERFIL_IZQ', 'OBLICUA_DER', 'OBLICUA_IZQ', 'DETALLE']);
 const PHOTO_MOMENTS = new Set(['ANTES', 'DESPUES', 'CONTROL']);
 
@@ -178,6 +230,7 @@ export function applyAestheticIntegrity(
     const wantsClose = row.close === true;
     delete row.close;
     for (const k of SERVER_KEYS) delete row[k];
+    if (!prev || clinicalPart(prev) !== clinicalPart(row)) validateAnnotation(row);
     const prevAudit = obj(prev?._audit);
     const changed = !prev || clinicalPart(prev) !== clinicalPart(row);
     row._audit = {

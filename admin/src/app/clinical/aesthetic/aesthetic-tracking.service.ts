@@ -98,6 +98,18 @@ export class AestheticTrackingService {
     return this.enqueue();
   }
 
+  /** Reintento manual después de un error de red o del servidor. */
+  retry(): Promise<boolean> {
+    if (this.status() !== 'error') return Promise.resolve(false);
+    return this.commit();
+  }
+
+  /** Hay cambios que aún no confirma el servidor. */
+  hasUnsaved() {
+    const s = this.status();
+    return s === 'pending' || s === 'saving' || s === 'error';
+  }
+
   flush() {
     if (this.timer) {
       clearTimeout(this.timer);

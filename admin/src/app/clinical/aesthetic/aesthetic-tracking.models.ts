@@ -13,18 +13,57 @@ export const AES_VIEWS: Array<{ key: AesView; label: string }> = [
   { key: 'IZQUIERDO', label: 'Perfil izquierdo' },
 ];
 
-export type AesMarkKind = 'TRATADA' | 'HALLAZGO' | 'PLAN' | 'EVENTO';
+/**
+ * TRATADA y PLAN son las marcas anteriores al editor: se siguen mostrando como procedimiento
+ * realizado o planeado, pero las nuevas usan PROCEDIMIENTO con un estado explícito.
+ */
+export type AesMarkKind = 'PROCEDIMIENTO' | 'HALLAZGO' | 'EVENTO' | 'NOTA' | 'TRATADA' | 'PLAN';
 
 /** Colores con contraste AA sobre blanco para el punto y su texto. */
-export const AES_MARK_KINDS: Array<{ key: AesMarkKind; label: string; color: string }> = [
-  { key: 'TRATADA', label: 'Zona tratada', color: '#173B3A' },
+export const AES_MARK_KINDS: Array<{ key: AesMarkKind; label: string; color: string; legacy?: boolean }> = [
+  { key: 'PROCEDIMIENTO', label: 'Procedimiento', color: '#1F3653' },
   { key: 'HALLAZGO', label: 'Hallazgo', color: '#7A5A2C' },
-  { key: 'PLAN', label: 'Zona planificada', color: '#3F6B5C' },
   { key: 'EVENTO', label: 'Evento adverso', color: '#A23B2C' },
+  { key: 'NOTA', label: 'Nota o trazo', color: '#475467' },
+  { key: 'TRATADA', label: 'Zona tratada', color: '#173B3A', legacy: true },
+  { key: 'PLAN', label: 'Zona planificada', color: '#3F6B5C', legacy: true },
 ];
 
 export function markKind(key: string) {
   return AES_MARK_KINDS.find((k) => k.key === key) ?? AES_MARK_KINDS[1];
+}
+
+export type AesShape = 'point' | 'zone' | 'line' | 'arrow' | 'freehand' | 'ellipse' | 'rect' | 'polygon' | 'text';
+export const AES_SHAPES: AesShape[] = ['point', 'zone', 'line', 'arrow', 'freehand', 'ellipse', 'rect', 'polygon', 'text'];
+
+/** Planeado y realizado no se mezclan: realizar exige una acción expresa del profesional. */
+export type AesMarkStatus = 'PLANEADO' | 'REALIZADO' | 'SUSPENDIDO' | 'CANCELADO';
+export const AES_MARK_STATUSES: Array<{ key: AesMarkStatus; label: string }> = [
+  { key: 'PLANEADO', label: 'Planeado' },
+  { key: 'REALIZADO', label: 'Realizado' },
+  { key: 'SUSPENDIDO', label: 'Suspendido' },
+  { key: 'CANCELADO', label: 'Cancelado' },
+];
+
+export type AesLaterality = 'DERECHA' | 'IZQUIERDA' | 'BILATERAL' | 'CENTRAL' | 'NA';
+export const AES_LATERALITIES: Array<{ key: AesLaterality; label: string }> = [
+  { key: 'DERECHA', label: 'Derecha' },
+  { key: 'IZQUIERDA', label: 'Izquierda' },
+  { key: 'BILATERAL', label: 'Bilateral' },
+  { key: 'CENTRAL', label: 'Central' },
+  { key: 'NA', label: 'No aplica' },
+];
+
+/** Marca de procedimiento (incluidas las anteriores TRATADA y PLAN). */
+export function isProcedureMark(a: Pick<AesAnnotation, 'kind'>) {
+  return a.kind === 'PROCEDIMIENTO' || a.kind === 'TRATADA' || a.kind === 'PLAN';
+}
+
+/** Estado efectivo: las marcas anteriores lo deducen de su tipo. */
+export function markStatus(a: Pick<AesAnnotation, 'kind' | 'status'>): AesMarkStatus | null {
+  if (!isProcedureMark(a)) return null;
+  if (a.status) return a.status;
+  return a.kind === 'TRATADA' ? 'REALIZADO' : 'PLANEADO';
 }
 
 export interface AesAudit {
@@ -45,6 +84,20 @@ export interface AesAnnotation {
   date: string;
   procedureId: string;
   note: string;
+  /**
+   * Campos del editor; son opcionales para no alterar marcas guardadas antes (las cerradas
+   * se comparan tal cual en el servidor). Sin `shape` la marca es un punto.
+   */
+  shape?: AesShape;
+  /** Vértices [x1, y1, x2, y2, …] en el mismo viewBox 200×260. */
+  points?: number[];
+  status?: AesMarkStatus;
+  procType?: string;
+  laterality?: AesLaterality;
+  /** Cantidad digitada por el profesional; el sistema solo suma unidades iguales. */
+  quantity?: string;
+  unit?: string;
+  label?: string;
   /** Solo de ida: pide al servidor cerrar la anotación. */
   close?: boolean;
   lockedAt?: string;
@@ -262,9 +315,28 @@ export function normalizeAnnotation(raw: unknown): AesAnnotation {
     date: str(r['date']),
     procedureId: str(r['procedureId']),
     note: str(r['note']),
+    ...editorFields(r),
     ...(str(r['lockedAt']) ? { lockedAt: str(r['lockedAt']), lockedBy: str(r['lockedBy']) } : {}),
     ...(audit(r['_audit']) ? { _audit: audit(r['_audit']) } : {}),
   };
+}
+
+/** Copia solo los campos del editor que vienen guardados (sin agregar claves vacías). */
+function editorFields(r: Record<string, unknown>): Partial<AesAnnotation> {
+  const out: Partial<AesAnnotation> = {};
+  const shape = str(r['shape']);
+  if ('shape' in r) out.shape = AES_SHAPES.includes(shape as AesShape) ? (shape as AesShape) : 'point';
+  if (Array.isArray(r['points'])) {
+    out.points = (r['points'] as unknown[]).map((v) => Number(v)).filter((v) => Number.isFinite(v));
+  }
+  const status = str(r['status']);
+  if ('status' in r && AES_MARK_STATUSES.some((s) => s.key === status)) out.status = status as AesMarkStatus;
+  const lat = str(r['laterality']);
+  if ('laterality' in r && AES_LATERALITIES.some((l) => l.key === lat)) out.laterality = lat as AesLaterality;
+  for (const k of ['procType', 'quantity', 'unit', 'label'] as const) {
+    if (k in r) out[k] = str(r[k]);
+  }
+  return out;
 }
 
 export function normalizePhoto(raw: unknown): AesPhoto {

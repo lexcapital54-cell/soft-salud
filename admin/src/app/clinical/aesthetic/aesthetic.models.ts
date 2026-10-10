@@ -98,21 +98,32 @@ export function consentsForProcedureType(type: string) {
   return AES_CONSENTS.filter((c) => (c.types as readonly string[]).includes(type));
 }
 
+/** Las claves ya guardadas no cambian; las nuevas amplían el catálogo del mapa facial. */
 export const AES_ZONES = [
   { key: 'frente', label: 'Frente' },
-  { key: 'glabela', label: 'Glabela' },
+  { key: 'glabela', label: 'Glabela (entrecejo)' },
+  { key: 'temporal', label: 'Región temporal (sienes)' },
+  { key: 'cejas', label: 'Cejas' },
+  { key: 'periocular_lateral', label: 'Región periocular lateral' },
+  { key: 'parpado_superior', label: 'Párpados superiores' },
+  { key: 'parpado_inferior', label: 'Párpados inferiores' },
+  { key: 'surco_lagrimal', label: 'Surco lagrimal' },
   { key: 'periorbitaria', label: 'Región periorbitaria' },
-  { key: 'temporal', label: 'Región temporal' },
+  { key: 'mejillas', label: 'Mejillas' },
   { key: 'malar', label: 'Región malar' },
   { key: 'pomulos', label: 'Pómulos' },
-  { key: 'nariz', label: 'Nariz' },
   { key: 'nasogeniano', label: 'Surcos nasogenianos' },
+  { key: 'nariz', label: 'Nariz' },
+  { key: 'perioral', label: 'Zona perioral' },
   { key: 'labios', label: 'Labios' },
+  { key: 'marioneta', label: 'Líneas de marioneta' },
   { key: 'menton', label: 'Mentón' },
   { key: 'mandibular', label: 'Línea mandibular' },
+  { key: 'maseterina', label: 'Región maseterina' },
   { key: 'submentoniana', label: 'Región submentoniana' },
   { key: 'cuello', label: 'Cuello' },
   { key: 'corporal', label: 'Zona corporal' },
+  { key: 'otra', label: 'Otra región' },
 ] as const;
 
 export function zoneLabel(key: string) {

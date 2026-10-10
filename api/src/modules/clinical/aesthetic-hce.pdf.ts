@@ -50,19 +50,29 @@ const PROCEDURE_TYPES: Record<string, string> = {
 
 const ZONES: Record<string, string> = {
   frente: 'Frente',
-  glabela: 'Glabela',
+  glabela: 'Glabela (entrecejo)',
+  temporal: 'Región temporal (sienes)',
+  cejas: 'Cejas',
+  periocular_lateral: 'Región periocular lateral',
+  parpado_superior: 'Párpados superiores',
+  parpado_inferior: 'Párpados inferiores',
+  surco_lagrimal: 'Surco lagrimal',
   periorbitaria: 'Región periorbitaria',
-  temporal: 'Región temporal',
+  mejillas: 'Mejillas',
   malar: 'Región malar',
   pomulos: 'Pómulos',
-  nariz: 'Nariz',
   nasogeniano: 'Surcos nasogenianos',
+  nariz: 'Nariz',
+  perioral: 'Zona perioral',
   labios: 'Labios',
+  marioneta: 'Líneas de marioneta',
   menton: 'Mentón',
   mandibular: 'Línea mandibular',
+  maseterina: 'Región maseterina',
   submentoniana: 'Región submentoniana',
   cuello: 'Cuello',
   corporal: 'Zona corporal',
+  otra: 'Otra región',
 };
 
 const SYSTEMS: Array<[string, string]> = [
@@ -140,11 +150,42 @@ const CONTRAINDICATIONS: Record<string, string> = {
 
 const VIEWS: Record<string, string> = { FRONTAL: 'Frontal', DERECHO: 'Perfil derecho', IZQUIERDO: 'Perfil izquierdo', OBLICUA_DER: '45° derecho', OBLICUA_IZQ: '45° izquierdo' };
 const MARK_KINDS: Record<string, string> = {
+  PROCEDIMIENTO: 'Procedimiento',
   TRATADA: 'Zona tratada',
   HALLAZGO: 'Hallazgo',
   PLAN: 'Zona planificada',
   EVENTO: 'Evento adverso',
+  NOTA: 'Nota o trazo',
 };
+const MARK_STATUSES: Record<string, string> = {
+  PLANEADO: 'Planeado',
+  REALIZADO: 'Realizado',
+  SUSPENDIDO: 'Suspendido',
+  CANCELADO: 'Cancelado',
+};
+const LATERALITY: Record<string, string> = {
+  DERECHA: 'derecha',
+  IZQUIERDA: 'izquierda',
+  BILATERAL: 'bilateral',
+  CENTRAL: 'central',
+  NA: '',
+};
+
+/** Tipo de la marca con procedimiento, estado y cantidad (las anteriores deducen el estado). */
+export function markTypeLabel(a: Record<string, unknown>) {
+  const kind = str(a['kind']);
+  const isProc = kind === 'PROCEDIMIENTO' || kind === 'TRATADA' || kind === 'PLAN';
+  if (!isProc) return MARK_KINDS[kind] || kind;
+  const status = str(a['status']) || (kind === 'TRATADA' ? 'REALIZADO' : 'PLANEADO');
+  const qty = str(a['quantity']);
+  return [
+    str(a['procType']) ? procedureTypeLabel(str(a['procType'])) : 'Procedimiento',
+    MARK_STATUSES[status] || status,
+    qty ? `${qty} ${str(a['unit'])}`.trim() : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
 const PHOTO_ANGLES: Record<string, string> = {
   FRONTAL: 'Frontal',
   OBLICUA_DER: '45° derecho',
@@ -465,9 +506,9 @@ export function aestheticTrackingSections(raw: unknown, attachmentLabels: Map<st
         .map((a) => [
           isoDay(a['date']),
           VIEWS[str(a['view'])] || str(a['view']),
-          zoneLabel(str(a['zone'])),
-          MARK_KINDS[str(a['kind'])] || str(a['kind']),
-          `${str(a['note'])}${str(a['lockedAt']) ? (str(a['note']) ? ' · ' : '') + 'Cerrada' : ''}`,
+          [zoneLabel(str(a['zone'])), LATERALITY[str(a['laterality'])] || ''].filter(Boolean).join(', '),
+          markTypeLabel(a),
+          [str(a['label']), str(a['note']), str(a['lockedAt']) ? 'Cerrada' : ''].filter(Boolean).join(' · '),
           procLabel.get(str(a['procedureId'])) || '',
         ]),
     });
