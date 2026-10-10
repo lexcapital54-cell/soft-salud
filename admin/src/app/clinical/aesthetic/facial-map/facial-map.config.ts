@@ -118,14 +118,14 @@ export type FaceFamily = 'frontal' | 'oblicua' | 'perfil';
  */
 export const FACE_PHOTOS: Record<FaceSex, Record<FaceFamily, { src: string; x: number; y: number; bg: string }>> = {
   F: {
-    frontal: { src: 'facial-map/mujer-frontal.jpg', x: -2, y: 0, bg: '#F0EBE7' },
-    oblicua: { src: 'facial-map/mujer-oblicua.jpg', x: 0, y: 0, bg: '#EEE9E5' },
-    perfil: { src: 'facial-map/mujer-perfil.jpg', x: 0, y: 0, bg: '#F0EBE7' },
+    frontal: { src: '/facial-map/mujer-frontal.jpg', x: -2, y: 0, bg: '#F0EBE7' },
+    oblicua: { src: '/facial-map/mujer-oblicua.jpg', x: 0, y: 0, bg: '#EEE9E5' },
+    perfil: { src: '/facial-map/mujer-perfil.jpg', x: 0, y: 0, bg: '#F0EBE7' },
   },
   M: {
-    frontal: { src: 'facial-map/hombre-frontal.jpg', x: -2.5, y: 0.5, bg: '#EEE9E5' },
-    oblicua: { src: 'facial-map/hombre-oblicua.jpg', x: -7.3, y: 0.8, bg: '#ECE7E3' },
-    perfil: { src: 'facial-map/hombre-perfil.jpg', x: -16.9, y: -5.2, bg: '#ECE7E3' },
+    frontal: { src: '/facial-map/hombre-frontal.jpg', x: -2.5, y: 0.5, bg: '#EEE9E5' },
+    oblicua: { src: '/facial-map/hombre-oblicua.jpg', x: -7.3, y: 0.8, bg: '#ECE7E3' },
+    perfil: { src: '/facial-map/hombre-perfil.jpg', x: -16.9, y: -5.2, bg: '#ECE7E3' },
   },
 };
 

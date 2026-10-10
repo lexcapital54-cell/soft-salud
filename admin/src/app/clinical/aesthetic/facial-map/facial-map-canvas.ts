@@ -96,17 +96,6 @@ const DRAG_TOL_PX = 4;
         (dblclick)="finishPolygon()"
         (wheel)="wheel($event)"
       >
-        <defs>
-          <linearGradient id="fm-fade" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stop-color="#000" />
-            <stop offset="0.05" stop-color="#fff" />
-            <stop offset="0.95" stop-color="#fff" />
-            <stop offset="1" stop-color="#000" />
-          </linearGradient>
-          <mask id="fm-photo-mask" maskContentUnits="objectBoundingBox">
-            <rect width="1" height="1" fill="url(#fm-fade)" />
-          </mask>
-        </defs>
         <rect x="-600" y="-400" width="1400" height="1060" [attr.fill]="layers().has('base') ? photo().bg : '#f7f8fa'" />
 
         @if (layers().has('base')) {
@@ -118,7 +107,6 @@ const DRAG_TOL_PX = 4;
               width="200"
               [attr.height]="photoH"
               preserveAspectRatio="xMidYMid slice"
-              mask="url(#fm-photo-mask)"
               (load)="photoState.set('ok')"
               (error)="photoState.set('error')"
             />

@@ -773,7 +773,7 @@ export class AestheticFaceMap {
 
   thumb(v: AesView) {
     const family = v === 'FRONTAL' ? 'frontal' : v === 'OBLICUA_DER' || v === 'OBLICUA_IZQ' ? 'oblicua' : 'perfil';
-    return `facial-map/${this.sex() === 'M' ? 'hombre' : 'mujer'}-${family}-mini.jpg`;
+    return `/facial-map/${this.sex() === 'M' ? 'hombre' : 'mujer'}-${family}-mini.jpg`;
   }
 
   saveNow() {
