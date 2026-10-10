@@ -41,6 +41,7 @@ import { PsychPatientExtras } from './psychology/psych-patient-extras';
 import { NO_OTHER_SPECIALTY, type PatientExtras } from './patient-extras';
 import { physioIntakeSummary } from './physio/physio-intake.summary';
 import { PHYSIO_MODULES, physioModuleStatus } from './physio/physio-nav';
+import { AES_MODULES, aestheticModuleStatus } from './aesthetic/aesthetic-nav';
 import { psychModuleList, psychModuleStatus } from './psychology/psych-nav';
 import { OrthoFaceProportions } from './dentistry/ortho-face-proportions';
 import { OrthoMovementPlan } from './dentistry/ortho-movement-plan';
@@ -1334,6 +1335,30 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  aestheticAllergies() {
+    return aestheticAllergyList(this.aesthetic());
+  }
+
+  /** Módulos de la historia de medicina estética (menú superior) con su estado orientativo. */
+  aestheticModules() {
+    this.aestheticTracking.rev();
+    const ctx = {
+      patient: this.patientForm,
+      motive: this.content.careMinimum?.motive || '',
+      evolutions: this.evolutions().length,
+      consents: this.consents,
+      attachments: this.attachments().length,
+      diagnoses: this.diagnoses.filter((d) => d.cieCode?.trim()).length,
+      encounterId: this.encounter()?.id || '',
+    };
+    const a = this.aesthetic();
+    const tracking = this.aestheticTracking.data;
+    return AES_MODULES.map((m, i) => {
+      const status = aestheticModuleStatus(m.id, a, tracking, ctx);
+      return { ...m, n: i + 1, status, dot: status ? moduleDotStyle(status.state) : '' };
+    });
+  }
+
   odoProgress(mods: Array<{ status: ModuleStatus | null }>) {
     const required = mods.filter((m) => m.status && m.status.state !== 'optional');
     return { done: required.filter((m) => m.status!.state === 'done').length, total: required.length };
@@ -1353,7 +1378,8 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   }
 
   scrollToOdo(id: string) {
-    const el = document.getElementById(id);
+    // Mapa, procedimientos y fotos cargan diferidos: se baja hasta su encabezado para que aparezcan.
+    const el = document.getElementById(id) || (id.startsWith('aes-') ? document.getElementById('aes-seguimiento') : null);
     if (!el) return;
     this.activeOdo.set(id);
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1369,7 +1395,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   onOdoScroll() {
     if (
       this.odoSpyFrame ||
-      !(this.isDentistryClinic() || this.isPhysiotherapyClinic() || this.isPsychologyClinic())
+      !(this.isDentistryClinic() || this.isPhysiotherapyClinic() || this.isPsychologyClinic() || this.isAestheticClinic())
     )
       return;
     this.odoSpyFrame = requestAnimationFrame(() => {
@@ -1381,6 +1407,8 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   private updateOdoSpy() {
     const ids = this.isPhysiotherapyClinic()
       ? PHYSIO_MODULES.map((m) => m.id)
+      : this.isAestheticClinic()
+        ? AES_MODULES.map((m) => m.id)
       : this.isPsychologyClinic()
         ? this.psychModuleIds().map((m) => m.id)
         : this.odoModuleList().map((m) => m.id);
