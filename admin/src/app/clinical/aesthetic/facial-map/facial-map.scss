@@ -409,6 +409,31 @@
   }
 }
 
+.fm-qty {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+  input,
+  select {
+    min-width: 0;
+    border: 1px solid var(--fm-line);
+    border-radius: 10px;
+    padding: 7px 8px;
+    font: inherit;
+    font-size: 0.83rem;
+    color: var(--fm-ink);
+    background: #fff;
+    &:focus-visible {
+      outline: 0;
+      border-color: var(--aes-primary);
+      box-shadow: 0 0 0 3px rgba(23, 59, 58, 0.12);
+    }
+  }
+  input[aria-invalid='true'] {
+    border-color: #b42318;
+  }
+}
+
 .fm-proc-list {
   list-style: none;
   margin: 0;

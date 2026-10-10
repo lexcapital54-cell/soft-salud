@@ -46,6 +46,16 @@ type Category = 'PROCEDIMIENTO' | 'HALLAZGO' | 'EVENTO' | 'NOTA';
 type EditableKey = 'kind' | 'zone' | 'date' | 'procedureId' | 'note' | 'status' | 'procType' | 'laterality' | 'quantity' | 'unit' | 'label';
 
 const HISTORY_MAX = 60;
+/** Unidad con que suele registrarse cada tipo; solo la etiqueta, la cantidad la escribe el profesional. */
+const DEFAULT_UNIT: Record<string, string> = {
+  TOXINA: 'U',
+  ACIDO_HIALURONICO: 'mL',
+  RADIESSE: 'mL',
+  BIOESTIMULADOR: 'mL',
+  SKINBOOSTER: 'mL',
+  MESOTERAPIA: 'mL',
+  HILOS: 'hilos',
+};
 const SAVE_LABEL: Record<string, string> = {
   idle: 'Sin cambios',
   loading: 'Cargando…',
@@ -289,7 +299,7 @@ const SAVE_LABEL: Record<string, string> = {
                     @if (st) {
                       <label class="aes-field">
                         Cantidad
-                        <input inputmode="decimal" [value]="m.quantity || ''" [readOnly]="!edit" [attr.aria-invalid]="qtyInvalid(m)"
+                        <input id="fm-qty-input" inputmode="decimal" [value]="m.quantity || ''" [readOnly]="!edit" [attr.aria-invalid]="qtyInvalid(m)"
                           (focus)="snapshot()" (input)="patch(m, 'quantity', val($event), false)" placeholder="La registra el profesional" />
                       </label>
                       <label class="aes-field">
@@ -515,7 +525,7 @@ const SAVE_LABEL: Record<string, string> = {
                   @let s = styleOf(p.key);
                   <li>
                     <button type="button" role="radio" [attr.aria-checked]="procType() === p.key" [class.on]="procType() === p.key"
-                      [disabled]="lock" (click)="procType.set(p.key)">
+                      [disabled]="lock" (click)="selectProcType(p.key)">
                       <span class="fm-radio" aria-hidden="true"></span>
                       <svg class="fm-swatch" viewBox="-6 -6 12 12" aria-hidden="true"><path [attr.d]="sym(s.symbol)" [attr.fill]="s.color" /></svg>
                       {{ p.label }}
@@ -525,6 +535,22 @@ const SAVE_LABEL: Record<string, string> = {
                   <li class="empty">Sin coincidencias.</li>
                 }
               </ul>
+              <span class="fm-label" id="fm-newqty">{{ procType() === 'TOXINA' ? 'Unidades por punto' : 'Cantidad por marca' }}</span>
+              <div class="fm-qty" role="group" aria-labelledby="fm-newqty">
+                <input inputmode="decimal" aria-label="Cantidad para las marcas nuevas" placeholder="Opcional" [value]="newQty()"
+                  [readOnly]="lock" [attr.aria-invalid]="newQtyInvalid()" (input)="newQty.set(val($event))" />
+                <select aria-label="Unidad para las marcas nuevas" [disabled]="lock" (change)="newUnit.set(val($event))">
+                  <option value="" [selected]="!newUnit()">Sin unidad</option>
+                  @for (u of units; track u) {
+                    <option [value]="u" [selected]="u === newUnit()">{{ u }}</option>
+                  }
+                </select>
+              </div>
+              @if (newQtyInvalid()) {
+                <p class="field-error" role="alert">Escriba solo el número (use coma o punto para decimales).</p>
+              } @else {
+                <p class="fm-hint">Se copia en cada marca nueva; puede cambiarla en el detalle de cada una.</p>
+              }
               <span class="fm-label" id="fm-newstatus">Estado al marcar</span>
               <div class="fm-seg" role="radiogroup" aria-labelledby="fm-newstatus">
                 <button type="button" role="radio" [attr.aria-checked]="newStatus() === 'PLANEADO'" [class.on]="newStatus() === 'PLANEADO'"
@@ -593,6 +619,10 @@ export class AestheticFaceMap {
   readonly category = signal<Category>('PROCEDIMIENTO');
   readonly procType = signal('TOXINA');
   readonly newStatus = signal<'PLANEADO' | 'REALIZADO'>('PLANEADO');
+  /** Cantidad que escribe el profesional para las marcas nuevas; nunca se propone un valor. */
+  readonly newQty = signal('');
+  readonly newUnit = signal(DEFAULT_UNIT['TOXINA'] ?? '');
+  readonly newQtyInvalid = computed(() => !!this.newQty().trim() && parseQty(this.newQty()) === null);
   readonly session = signal('');
   readonly selectedIds = signal<Set<string>>(new Set());
   readonly layers = signal<Set<FacialLayer>>(new Set(FACIAL_LAYERS.map((l) => l.key)));
@@ -954,6 +984,11 @@ export class AestheticFaceMap {
       mark.procType = this.procType();
       const linked = this.autoLink(mark.procType, date);
       if (linked) mark.procedureId = linked;
+      if (req.shape === 'point' || req.shape === 'zone') {
+        const qty = this.newQty().trim();
+        if (qty && !this.newQtyInvalid()) mark.quantity = qty;
+        if (this.newUnit()) mark.unit = this.newUnit();
+      }
     }
     this.snapshot();
     this.tracking.data.annotations = [...this.tracking.data.annotations, mark];
@@ -961,6 +996,17 @@ export class AestheticFaceMap {
     if (zone) this.highlight.set(zone);
     this.commitEdit();
     if (req.shape === 'text') setTimeout(() => this.host.nativeElement.querySelector<HTMLInputElement>('#fm-label-input')?.select());
+    else if (mark.status && !mark.quantity && (req.shape === 'point' || req.shape === 'zone')) {
+      this.rightOpen.set(true);
+      setTimeout(() => this.host.nativeElement.querySelector<HTMLInputElement>('#fm-qty-input')?.focus({ preventScroll: true }));
+    }
+  }
+
+  selectProcType(key: string) {
+    if (key === this.procType()) return;
+    this.procType.set(key);
+    this.newQty.set('');
+    this.newUnit.set(DEFAULT_UNIT[key] ?? '');
   }
 
   createAtRegion(r: { key: string; cx: number; cy: number }) {
