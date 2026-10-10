@@ -286,6 +286,9 @@
               </select>
             </label>
             @if (selectedService(); as svc) {
+              @if (serviceImage(svc.name); as img) {
+                <img class="service-thumb" [src]="img.src" [style.object-position]="img.focus" [alt]="svc.name" width="320" height="140" />
+              }
               <p class="muted small service-info">
                 {{ svc.subcategory || '' }}{{ svc.subcategory ? ' · ' : '' }}{{ svc.durationNote || svc.durationMinutes + ' min' }}
                 · {{ formatCop(svc.price) }}

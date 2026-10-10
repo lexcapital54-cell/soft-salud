@@ -16,6 +16,7 @@ import { AgendaApiService } from './agenda-api.service';
 import { AgendaMonth, monthGridRange, shiftMonth } from './agenda-month';
 import { ClinicSwitcher } from '../clinic-switcher';
 import { PsychIntakeDialog } from './psych-intake-dialog';
+import { aestheticServiceImage } from './aesthetic-service-images';
 import {
   AgendaCell,
   AgendaColumn,
@@ -530,6 +531,10 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
         });
       }
     }
+  }
+
+  serviceImage(name: string) {
+    return aestheticServiceImage(name);
   }
 
   selectedService() {

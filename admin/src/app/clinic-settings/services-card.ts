@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { AgendaApiService } from '../agenda/agenda-api.service';
 import { ClinicServiceItem, SERVICE_CATEGORY_LABELS, ServiceCategory, formatCop } from '../agenda/agenda.models';
+import { aestheticServiceImage } from '../agenda/aesthetic-service-images';
 import { AES_CONSENTS, AES_PROCEDURE_TYPES, aesConsentLabel, procedureTypeLabel } from '../clinical/aesthetic/aesthetic.models';
 
 type Draft = {
@@ -72,7 +73,12 @@ const EMPTY: Draft = {
         <ul class="sv-list">
           @for (s of g.items; track s.id) {
             <li [class.off]="!s.active">
-              <div>
+              @if (aesthetic() && image(s.name); as img) {
+                <img class="sv-img" [src]="img.src" [style.object-position]="img.focus" [alt]="s.name" loading="lazy" width="96" height="72" />
+              } @else if (aesthetic()) {
+                <span class="sv-img sv-noimg" aria-hidden="true">{{ s.name.charAt(0) }}</span>
+              }
+              <div class="sv-body">
                 <strong>{{ s.name }}</strong>
                 <small>
                   {{ s.subcategory ? s.subcategory + ' · ' : '' }}{{ s.durationMinutes }} min{{ s.durationNote ? ' (' + s.durationNote + ')' : '' }}
@@ -156,6 +162,10 @@ const EMPTY: Draft = {
     .sv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
     .sv-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid #d7e3e6; border-radius: 12px; }
     .sv-list li.off { opacity: 0.65; }
+    .sv-body { flex: 1; min-width: 0; }
+    .sv-img { flex: none; width: 96px; height: 72px; border-radius: 10px; object-fit: cover; background: #eef4f5; }
+    .sv-noimg { display: grid; place-items: center; font-size: 1.6rem; font-weight: 600; color: #0d7377; }
+    @media (max-width: 520px) { .sv-img { width: 72px; height: 56px; } }
     .sv-list small { display: block; color: #5c7378; }
     .sv-import { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: 12px; background: #f2f8f9; border: 1px solid #d7e3e6; margin-bottom: 8px; }
     .sv-import p { margin: 0; flex: 1 1 260px; color: #3d5459; }
@@ -203,6 +213,10 @@ export class ServicesCard implements OnInit {
 
   ngOnInit() {
     this.load();
+  }
+
+  image(name: string) {
+    return aestheticServiceImage(name);
   }
 
   cop(v: number | null) {
