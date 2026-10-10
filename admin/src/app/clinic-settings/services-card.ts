@@ -193,6 +193,7 @@ export class ServicesCard implements OnInit {
   readonly procedureTypes = AES_PROCEDURE_TYPES;
   readonly consents = AES_CONSENTS;
   draft: Draft = { ...EMPTY };
+  private scrolled = false;
 
   readonly groups = computed(() =>
     this.categories
@@ -223,6 +224,10 @@ export class ServicesCard implements OnInit {
       next: (rows) => {
         this.services.set(rows);
         this.loading.set(false);
+        if (!this.scrolled && location.search.includes('seccion=servicios')) {
+          this.scrolled = true;
+          setTimeout(() => document.getElementById('servicios')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+        }
       },
       error: () => {
         this.loading.set(false);

@@ -445,6 +445,7 @@
           <li><a href="/consultorio/historias-pdf" data-for="hcePdf" title="Historias en PDF"><svg class="ico"><use href="#i-download"/></svg><span>Historias en PDF</span></a></li>
           <li><a href="/consultorio/habilitacion" data-for="docs" title="Gestión documental"><svg class="ico"><use href="#i-file"/></svg><span>Gestión documental</span></a></li>
           <li><a href="/consultorio/recibos" data-for="billing" title="Recibos de caja"><svg class="ico"><use href="#i-receipt"/></svg><span>Recibos de caja</span></a></li>
+          <li><a href="/consultorio/configuracion?seccion=servicios" data-for="servicesMod" title="Catálogo de servicios"><svg class="ico"><use href="#i-clipboard"/></svg><span>Catálogo de servicios</span></a></li>
           <li><a href="/consultorio/configuracion?seccion=asistentes" data-for="assistantsMod" title="Asistentes"><svg class="ico"><use href="#i-user-plus"/></svg><span>Asistentes</span></a></li>
           <li><a href="#recibos-habilisalud" data-for="platformReceipts" title="Recibos HabiliSALUD"><svg class="ico"><use href="#i-folder"/></svg><span>Recibos HabiliSALUD</span></a></li>
         </ul>
@@ -666,6 +667,12 @@
             <p>Cree la cuenta de su asistente: maneja la agenda y los recibos de caja, sin acceso a historias clínicas.</p>
             <span class="cta">Gestionar asistentes<svg class="ico"><use href="#i-chevron"/></svg></span>
           </a>
+          <a class="module" id="servicesMod" href="/consultorio/configuracion?seccion=servicios" hidden>
+            <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-clipboard"/></svg></span>
+            <h2>Catálogo de servicios</h2>
+            <p>Servicios faciales y corporales con duración y precio; la agenda y los recibos de caja los usan.</p>
+            <span class="cta">Abrir catálogo<svg class="ico"><use href="#i-chevron"/></svg></span>
+          </a>
           <a class="module" id="billing" href="/consultorio/recibos" hidden>
             <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-receipt"/></svg></span>
             <h2>Recibos de caja</h2>
@@ -790,6 +797,8 @@
 
       var canWriteClinical = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
       document.getElementById('assistantsMod').hidden = !canWriteClinical;
+      // El catálogo de servicios es exclusivo de medicina estética.
+      document.getElementById('servicesMod').hidden = !(canWriteClinical && user.specialty === 'AESTHETIC');
       document.getElementById('attendanceMod').hidden = !(canWriteClinical && user.specialty === 'PSYCHOLOGY');
       document.getElementById('reportMod').hidden = !(canWriteClinical && user.specialty === 'PSYCHOLOGY');
       if (!canWriteClinical) {
