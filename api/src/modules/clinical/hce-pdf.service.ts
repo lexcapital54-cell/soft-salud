@@ -34,6 +34,7 @@ import {
   ORTHO_PLAN_PHASE_LABELS,
 } from './dentistry-labels';
 import { physioIntakeSections, physioMetricItems, physioPainFromText } from './physio-intake.pdf';
+import { aestheticRecordSections, aestheticTrackingSections, type AesPdfSection } from './aesthetic-hce.pdf';
 import { psychAgeLabel, psychBirthLabel, psychPatientRows } from './psych-intake.pdf';
 import {
   HCE_PAGE,
@@ -117,6 +118,10 @@ type ClinicInfo = {
   specialty?: ClinicSpecialty | string | null;
   /** Foto del paciente como data URL (JPG/PNG), solo si está registrada. */
   patientPhoto?: string | null;
+  /** Medicina estética: mapa facial, procedimientos y fotos del paciente (aesthetic_tracking.data). */
+  aestheticTracking?: unknown;
+  /** Rótulo de cada adjunto (id → nombre) para listar las fotos clínicas. */
+  attachmentLabels?: Map<string, string>;
 };
 
 const SPECIALTY_NAMES: Record<string, string> = {
@@ -247,6 +252,8 @@ export class HcePdfService {
     const isPhysio = specialty === ClinicSpecialty.PHYSIOTHERAPY;
     const isOrthoClinic = specialty === ClinicSpecialty.ORTHODONTICS;
     const isDental = specialty === ClinicSpecialty.DENTISTRY || isOrthoClinic;
+    const isAesthetic = specialty === ClinicSpecialty.AESTHETIC;
+    const hasAestheticContent = isAesthetic && !!content.aesthetic && typeof content.aesthetic === 'object';
     const dental = (content.dentistry || {}) as Record<string, unknown>;
     const dentalService = [
       DENTAL_SERVICE_LABELS[String(dental.service || '')] || '',
@@ -269,10 +276,10 @@ export class HcePdfService {
     const evolutions = record?.evolutions ?? [];
     const lastEvolution = evolutions[evolutions.length - 1];
 
-    const formCode = isPhysio ? 'HC-FT-001' : isOrthoClinic ? 'HC-ORT-001' : isDental ? 'HC-ODO-001' : '';
+    const formCode = isPhysio ? 'HC-FT-001' : isOrthoClinic ? 'HC-ORT-001' : isDental ? 'HC-ODO-001' : isAesthetic ? 'HC-AES-001' : '';
     const headingLine = [
       specialtyName,
-      isOrthoClinic ? 'Ortodoncia y odontograma' : isDental ? 'Historia odontológica y odontograma' : '',
+      isOrthoClinic ? 'Ortodoncia y odontograma' : isDental ? 'Historia odontológica y odontograma' : isAesthetic ? 'Historia clínica estética' : '',
       isSoap ? 'Nota de evolución (SOAP)' : '',
       formCode,
     ]
@@ -303,7 +310,16 @@ export class HcePdfService {
       ['EPS', patient.eps || ''],
     ];
     const summaryRows: SummaryRow[] = [
-      { icon: 'clipboard', label: 'Motivo de consulta', value: shorten(isSoap ? (content.soap as Record<string, unknown> | undefined)?.subjective : careMin.motive) },
+      {
+        icon: 'clipboard',
+        label: 'Motivo de consulta',
+        value: shorten(
+          isSoap
+            ? (content.soap as Record<string, unknown> | undefined)?.subjective
+            : careMin.motive ||
+                (hasAestheticContent ? ((content.aesthetic as Record<string, unknown>).consult as Record<string, unknown> | undefined)?.concerns : ''),
+        ),
+      },
       { icon: 'pulse', label: 'Diagnóstico principal', value: shorten(primaryDxText, 150) },
       {
         icon: 'check',
@@ -458,6 +474,8 @@ export class HcePdfService {
       );
     } else if (isDental) {
       body.push(...this.dentalSections(content, dental, theme.title));
+    } else if (hasAestheticContent) {
+      body.push(...this.aestheticSections(aestheticRecordSections(content)));
     } else {
       const care = (content.careMinimum || {}) as Record<string, unknown>;
       const mental = (content.mentalExam || {}) as Record<string, string>;
@@ -539,6 +557,10 @@ export class HcePdfService {
           encounter.procedures.map((p) => [p.cupsCode, p.description || '', String(p.quantity ?? 1)]),
         ),
       );
+    }
+
+    if (isAesthetic && clinic.aestheticTracking) {
+      body.push(...this.aestheticSections(aestheticTrackingSections(clinic.aestheticTracking, clinic.attachmentLabels)));
     }
 
     if (record?.evolutions?.length) {
@@ -1721,6 +1743,14 @@ export class HcePdfService {
       ),
     );
     return sections;
+  }
+
+  private aestheticSections(sections: AesPdfSection[]): Content[] {
+    return sections.map((s) =>
+      s.kind === 'table'
+        ? this.dataTable(s.title, s.widths, s.header, s.rows)
+        : this.section(s.title, s.text, undefined, s.highlight ? { highlight: true } : undefined),
+    );
   }
 
   private bandTitle(title: string, _titleColor?: string): Content {

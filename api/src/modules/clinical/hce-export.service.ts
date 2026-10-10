@@ -144,6 +144,7 @@ export class HceExportService {
       select: { name: true, address: true, phone: true, specialty: true },
     });
     const images = await this.clinicLogoDataUrls(encounter.clinicId);
+    const aesthetic = clinic?.specialty === 'AESTHETIC' ? await this.aestheticTrackingFor(encounter.clinicId, encounter.patientId) : null;
     const buffer = await this.pdf.buildPdfBuffer(
       encounter as never,
       {
@@ -154,6 +155,8 @@ export class HceExportService {
         phone: clinic?.phone,
         specialty: clinic?.specialty,
         patientPhoto: await this.patientPhotoDataUrl(encounter.patient.photoUrl),
+        aestheticTracking: aesthetic?.data ?? null,
+        attachmentLabels: aesthetic?.attachmentLabels,
       },
       await this.patientSignatureFor(encounter),
     );
@@ -161,6 +164,22 @@ export class HceExportService {
       buffer,
       fileName: this.pdf.suggestedFileName(encounter as never),
     };
+  }
+
+  /** Seguimiento estético del paciente y el nombre de los adjuntos de sus fotos clínicas. */
+  private async aestheticTrackingFor(clinicId: string, patientId: string) {
+    const row = await this.prisma.aestheticTracking.findFirst({ where: { clinicId, patientId }, select: { data: true } });
+    if (!row) return null;
+    const photos = ((row.data as { photos?: Array<{ attachmentId?: string }> } | null)?.photos ?? [])
+      .map((p) => p.attachmentId)
+      .filter((id): id is string => typeof id === 'string' && !!id);
+    const attachments = photos.length
+      ? await this.prisma.clinicalAttachment.findMany({
+          where: { id: { in: photos }, encounter: { clinicId, patientId } },
+          select: { id: true, label: true },
+        })
+      : [];
+    return { data: row.data, attachmentLabels: new Map(attachments.map((a) => [a.id, a.label])) };
   }
 
   /** Logo de historia clínica (si no tiene, el del panel de inicio) y hoja membretada opcional. */

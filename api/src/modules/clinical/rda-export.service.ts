@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { aestheticRecordSections } from './aesthetic-hce.pdf';
 import { createHash } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.module';
 import { ClinicalStorageService } from './clinical-storage.service';
@@ -57,8 +58,11 @@ export class RdaExportService {
     const assessment = (content.assessment ?? {}) as Record<string, unknown>;
     const mental = (content.mentalExam ?? {}) as Record<string, unknown>;
     const profile = String(content.profile || '').toUpperCase();
-    const specialtyTitle =
-      profile === 'DENTISTRY'
+    const isAesthetic =
+      encounter.specialtySnapshot === 'AESTHETIC' || (!!content.aesthetic && typeof content.aesthetic === 'object');
+    const specialtyTitle = isAesthetic
+      ? 'Medicina estética'
+      : profile === 'DENTISTRY'
         ? 'Odontología'
         : profile === 'PHYSIOTHERAPY'
           ? 'Fisioterapia'
@@ -67,8 +71,9 @@ export class RdaExportService {
       Array.isArray(v) ? v.map((x) => String(x ?? '').trim()).filter(Boolean) : [];
     const allergies = list(content.allergies);
     const medications = list(content.medications);
-    const clinicalNote =
-      profile === 'DENTISTRY'
+    const clinicalNote = isAesthetic
+      ? aestheticNote(content)
+      : profile === 'DENTISTRY'
         ? dentalNote(care, (content.dentistry ?? {}) as Record<string, unknown>)
         : profile === 'PHYSIOTHERAPY'
           ? physioNote(care, (content.physiotherapy ?? {}) as Record<string, unknown>)
@@ -382,6 +387,14 @@ function text(v: unknown) {
 
 function rowsOf(v: unknown) {
   return Array.isArray(v) ? (v as Array<Record<string, unknown>>) : [];
+}
+
+function aestheticNote(content: Record<string, unknown>) {
+  return aestheticRecordSections(content).map((s) =>
+    s.kind === 'text'
+      ? `${s.title}: ${s.text.replace(/\n/g, '; ')}`
+      : `${s.title}: ${s.rows.map((r) => r.filter(Boolean).join(' ')).join('; ')}`,
+  );
 }
 
 function physioNote(care: Record<string, unknown>, physio: Record<string, unknown>) {
