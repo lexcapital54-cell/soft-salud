@@ -109,6 +109,11 @@ export class CreateAppointmentDto {
   @IsUUID()
   serviceId?: string;
 
+  /** Asistente que atiende (solo medicina estética y servicios de masajes). */
+  @IsOptional()
+  @IsUUID()
+  staffId?: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(500)

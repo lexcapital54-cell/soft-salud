@@ -19,6 +19,7 @@ import { User } from '../../users/user.entity';
 import { EncountersService } from '../clinical/encounters.service';
 import { missingProfileFields } from '../clinical/patient-profile';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AgendaStaffService } from './agenda-staff.service';
 import {
   CreateAppointmentDto,
   RegisterAdmissionDto,
@@ -65,6 +66,7 @@ const appointmentInclude = {
   professional: {
     select: { id: true, fullName: true, professionalCard: true },
   },
+  staff: { select: { id: true, name: true } },
 } satisfies Prisma.AppointmentInclude;
 
 type AppointmentWithRelations = Prisma.AppointmentGetPayload<{
@@ -77,6 +79,7 @@ export class AppointmentsService {
     private readonly prisma: PrismaService,
     private readonly encounters: EncountersService,
     private readonly notifications: NotificationsService,
+    private readonly agendaStaff: AgendaStaffService,
   ) {}
 
   private requireClinicId(user: User) {
@@ -178,7 +181,14 @@ export class AppointmentsService {
    */
   private async clinicalPendingByAppointment(
     clinicId: string,
-    rows: { id: string; eventType: AppointmentEventType; status: AppointmentStatus; startsAt: Date; patientId: string | null }[],
+    rows: {
+      id: string;
+      eventType: AppointmentEventType;
+      status: AppointmentStatus;
+      startsAt: Date;
+      patientId: string | null;
+      staffId?: string | null;
+    }[],
   ): Promise<Map<string, ClinicalSessionState>> {
     const out = new Map<string, ClinicalSessionState>();
     const today = this.bogotaDateKey();
@@ -186,6 +196,8 @@ export class AppointmentsService {
       (r) =>
         r.eventType !== AppointmentEventType.BLOQUEO &&
         r.patientId &&
+        // Los masajes de las asistentes no se documentan en la historia clínica.
+        !r.staffId &&
         r.status !== AppointmentStatus.CANCELLED &&
         r.status !== AppointmentStatus.NO_SHOW &&
         this.bogotaDateKey(r.startsAt) <= today,
@@ -327,7 +339,14 @@ export class AppointmentsService {
       );
     }
 
-    await this.assertNoOverlap({ professionalId, startsAt, endsAt });
+    if (dto.staffId && isBlock) {
+      throw new BadRequestException('Los bloqueos aplican al profesional, no a las asistentes.');
+    }
+    const staff = dto.staffId
+      ? await this.agendaStaff.resolveForAppointment(clinicId, dto.staffId, service, startsAt, endsAt)
+      : null;
+
+    await this.assertNoOverlap({ professionalId, staffId: staff?.id ?? null, startsAt, endsAt });
 
     const modality = isBlock
       ? CareModality.IN_PERSON
@@ -348,6 +367,7 @@ export class AppointmentsService {
           !isBlock && modality === CareModality.VIRTUAL ? dto.meetingUrl : null,
         reason: isBlock ? null : (dto.reason?.trim() || service?.name),
         serviceId: service?.id ?? null,
+        staffId: staff?.id ?? null,
         notes: dto.notes,
       },
       include: appointmentInclude,
@@ -365,6 +385,7 @@ export class AppointmentsService {
         metadata: {
           patientId,
           professionalId,
+          staffId: staff?.id ?? null,
           modality,
           eventType,
           blockReason: created.blockReason,
@@ -428,9 +449,19 @@ export class AppointmentsService {
         })
       : { startsAt: existing.startsAt, endsAt: existing.endsAt };
 
+    if (existing.staffId && (reschedule || service)) {
+      const staffService =
+        service ??
+        (existing.serviceId
+          ? await this.prisma.clinicService.findFirst({ where: { id: existing.serviceId, clinicId } })
+          : null);
+      await this.agendaStaff.resolveForAppointment(clinicId, existing.staffId, staffService, startsAt, endsAt);
+    }
+
     if (reschedule || professionalId !== existing.professionalId) {
       await this.assertNoOverlap({
         professionalId,
+        staffId: existing.staffId,
         startsAt,
         endsAt,
         excludeId: existing.id,
@@ -554,15 +585,21 @@ export class AppointmentsService {
     return new Date(Date.now() - CANCELLATION_REOPEN_MINUTES * 60_000);
   }
 
-  /** Evita doble reserva del mismo profesional en franjas superpuestas. */
+  /**
+   * Evita doble reserva en franjas superpuestas. Cada asistente lleva su propia
+   * agenda; las citas de asistentes no ocupan la del profesional responsable.
+   */
   private async assertNoOverlap(params: {
     professionalId: string;
+    staffId?: string | null;
     startsAt: Date;
     endsAt: Date;
     excludeId?: string;
   }) {
     const overlaps = {
-      professionalId: params.professionalId,
+      ...(params.staffId
+        ? { staffId: params.staffId }
+        : { professionalId: params.professionalId, staffId: null }),
       startsAt: { lt: params.endsAt },
       endsAt: { gt: params.startsAt },
       ...(params.excludeId ? { id: { not: params.excludeId } } : {}),
@@ -581,7 +618,9 @@ export class AppointmentsService {
           ? `El profesional tiene un bloqueo en ese horario${
               clash.blockReason ? ` (${clash.blockReason})` : ''
             }.`
-          : 'El profesional ya tiene una cita que se cruza con ese horario.',
+          : params.staffId
+            ? 'La asistente ya tiene una cita que se cruza con ese horario.'
+            : 'El profesional ya tiene una cita que se cruza con ese horario.',
         conflictingAppointmentId: clash.id,
       });
     }
@@ -984,6 +1023,7 @@ export class AppointmentsService {
       opportunityDays,
       reason: row.reason,
       serviceId: row.serviceId,
+      staff: row.staff,
       notes: row.notes,
       cancelledAt: row.cancelledAt,
       // Hasta cuándo se puede volver a ocupar la franja liberada.

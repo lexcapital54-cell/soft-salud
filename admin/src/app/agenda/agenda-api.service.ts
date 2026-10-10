@@ -7,6 +7,7 @@ import {
   AppointmentEventType,
   AppointmentStatus,
   CareModality,
+  AgendaStaffMember,
   ClinicServiceItem,
   NotificationChannel,
   NotificationLogRow,
@@ -90,6 +91,7 @@ export class AgendaApiService {
     meetingUrl?: string;
     reason?: string;
     serviceId?: string;
+    staffId?: string;
     notes?: string;
   }) {
     return this.http.post<TodayAppointment>(`${API}/appointments`, body);
@@ -106,6 +108,26 @@ export class AgendaApiService {
     return id
       ? this.http.post<ClinicServiceItem>(`${API}/clinic-services/${id}`, body)
       : this.http.post<ClinicServiceItem>(`${API}/clinic-services`, body);
+  }
+
+  listStaff(includeInactive = false) {
+    const params = includeInactive ? new HttpParams().set('all', '1') : new HttpParams();
+    return this.http
+      .get<AgendaStaffMember[]>(`${API}/agenda-staff`, { params })
+      .pipe(retryOnDisconnect());
+  }
+
+  saveStaff(
+    id: string | null,
+    body: { name: string; roleLabel: string; shiftStart: string; shiftEnd: string; active: boolean },
+  ) {
+    return id
+      ? this.http.post<AgendaStaffMember>(`${API}/agenda-staff/${id}`, body)
+      : this.http.post<AgendaStaffMember>(`${API}/agenda-staff`, body);
+  }
+
+  provisionDefaultStaff() {
+    return this.http.post<{ created: number }>(`${API}/agenda-staff/provision-defaults`, {});
   }
 
   importAestheticServices() {

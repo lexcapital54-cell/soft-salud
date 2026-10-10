@@ -276,7 +276,7 @@
               Servicio
               <select [ngModel]="bookingForm.serviceId" (ngModelChange)="chooseService($event)">
                 <option value="">Sin servicio del catálogo</option>
-                @for (g of serviceGroups(); track g.label) {
+                @for (g of bookingServiceGroups(); track g.label) {
                   <optgroup [label]="g.label">
                     @for (s of g.items; track s.id) {
                       <option [value]="s.id">{{ s.name }} · {{ s.durationMinutes }} min</option>
@@ -289,6 +289,26 @@
               <p class="muted small service-info">
                 {{ svc.subcategory || '' }}{{ svc.subcategory ? ' · ' : '' }}{{ svc.durationNote || svc.durationMinutes + ' min' }}
                 · {{ formatCop(svc.price) }}
+              </p>
+            }
+            @if (staffAllowed()) {
+              <label class="service-pick">
+                Atiende
+                <select [(ngModel)]="bookingForm.staffId">
+                  <option value="">Profesional seleccionado</option>
+                  @for (m of staff(); track m.id) {
+                    <option [value]="m.id">{{ m.name }} · {{ m.shiftLabel }}</option>
+                  }
+                </select>
+              </label>
+              @if (selectedStaff(); as m) {
+                <p class="muted small service-info">
+                  {{ m.name }} atiende de {{ m.shiftLabel }}. El profesional seleccionado queda como responsable.
+                </p>
+              }
+            } @else if (bookingForm.staffId) {
+              <p class="muted small service-info" role="status">
+                Elija un servicio de masajes: las asistentes solo atienden esos servicios.
               </p>
             }
           }
@@ -614,7 +634,7 @@
                           } @else {
                             {{ appt.isTelemedicine ? 'Telemedicina' : 'Presencial' }}
                             @if (rangeMode() === 'week') {
-                              · {{ appt.professional.fullName }}
+                              · {{ appt.staff?.name || appt.professional.fullName }}
                             }
                           }
                         </span>
@@ -667,7 +687,7 @@
                 } @else {
                   {{ patient.phone || 'Sin documento registrado' }}
                 }
-                · {{ appt.professional.fullName }}
+                · {{ appt.staff ? appt.staff.name + ' (responsable: ' + appt.professional.fullName + ')' : appt.professional.fullName }}
               }
             </p>
             <div class="badges">
@@ -841,7 +861,7 @@
               } @else {
                 {{ patient.phone || 'Sin documento registrado' }}
               }
-              · {{ appt.professional.fullName }}
+              · {{ appt.staff ? appt.staff.name + ' (responsable: ' + appt.professional.fullName + ')' : appt.professional.fullName }}
               @if (appt.opportunityDays !== null) {
                 · Oportunidad: {{ appt.opportunityDays }} día(s)
               }

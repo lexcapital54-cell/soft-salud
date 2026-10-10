@@ -64,6 +64,8 @@ export interface TodayAppointment {
   opportunityDays: number | null;
   reason: string | null;
   serviceId?: string | null;
+  /** Asistente que atiende (masajes en medicina estética). */
+  staff?: { id: string; name: string } | null;
   notes: string | null;
   cancelledAt: string | null;
   /** Hasta cuándo se puede reocupar la franja liberada por una cancelación. */
@@ -101,6 +103,8 @@ export interface AgendaColumn {
   date: string;
   /** Profesional al que se agenda si se pulsa un hueco; vacío en vista Semana. */
   professionalId: string;
+  /** Asistente de la columna (medicina estética); vacío en columnas de profesional. */
+  staffId?: string;
   accent: string;
 }
 
@@ -194,6 +198,21 @@ export function formatCop(value: number | null | undefined) {
   if (value === null || value === undefined) return 'Consultar';
   return value.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
 }
+
+/** Asistente de agenda sin cuenta de usuario (estética corporal). */
+export interface AgendaStaffMember {
+  id: string;
+  name: string;
+  roleLabel: string;
+  shiftStart: string;
+  shiftEnd: string;
+  shiftLabel: string;
+  active: boolean;
+  sortOrder: number;
+}
+
+/** Colores de las asistentes, como en la agenda original: esmeralda, cielo y violeta. */
+export const STAFF_ACCENTS = ['#047857', '#0369a1', '#6d28d9'];
 
 export interface AgendaProfessional {
   id: string;

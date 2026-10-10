@@ -346,6 +346,7 @@ model Clinic {
   orthoTracking        OrthoTracking[]
   aestheticTracking    AestheticTracking[]
   services             ClinicService[]
+  agendaStaff          AgendaStaff[]
   appointments         Appointment[]
   encounters           Encounter[]
   formTemplates        FormTemplate[]
@@ -536,6 +537,9 @@ model Appointment {
   /// Servicio del catálogo del consultorio; `reason` guarda su nombre como copia.
   serviceId      String?               @map("service_id") @db.Uuid
   service        ClinicService?        @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  /// Asistente que atiende (masajes en medicina estética); el profesional sigue como responsable.
+  staffId        String?               @map("staff_id") @db.Uuid
+  staff          AgendaStaff?          @relation(fields: [staffId], references: [id], onDelete: SetNull)
   notes          String?
   /// Momento de la cancelación; marca el inicio de la ventana de reagendamiento.
   cancelledAt    DateTime?         @map("cancelled_at") @db.Timestamptz(6)
@@ -553,7 +557,29 @@ model Appointment {
   @@index([professionalId, startsAt])
   @@index([clinicId, status, startsAt])
   @@index([professionalId, eventType, startsAt])
+  @@index([staffId, startsAt])
   @@map("appointments")
+}
+
+/// Personal de agenda sin cuenta de usuario (asistentes de estética corporal).
+model AgendaStaff {
+  id           String        @id @default(uuid()) @db.Uuid
+  clinicId     String        @map("clinic_id") @db.Uuid
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  name         String        @db.VarChar(120)
+  roleLabel    String        @default("Estética corporal") @map("role_label") @db.VarChar(120)
+  /// Turno "HH:MM" en hora de Colombia.
+  shiftStart   String        @default("08:00") @map("shift_start") @db.VarChar(5)
+  shiftEnd     String        @default("18:00") @map("shift_end") @db.VarChar(5)
+  active       Boolean       @default(true)
+  sortOrder    Int           @default(0) @map("sort_order")
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  appointments Appointment[]
+
+  @@unique([clinicId, name])
+  @@index([clinicId, active])
+  @@map("agenda_staff")
 }
 
 model AppointmentAdmission {

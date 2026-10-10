@@ -3,11 +3,12 @@ import { AuthService } from '../auth.service';
 import { ClinicSwitcher } from '../clinic-switcher';
 import { AssistantsCard } from './assistants-card';
 import { ServicesCard } from './services-card';
+import { AgendaStaffCard } from './agenda-staff-card';
 import { WEBSITE_URL } from '../api.config';
 
 @Component({
   selector: 'app-clinic-settings',
-  imports: [ClinicSwitcher, AssistantsCard, ServicesCard],
+  imports: [ClinicSwitcher, AssistantsCard, ServicesCard, AgendaStaffCard],
   templateUrl: './clinic-settings.html',
   styleUrl: './clinic-settings.scss',
 })

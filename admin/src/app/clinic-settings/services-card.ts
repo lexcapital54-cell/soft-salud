@@ -80,7 +80,7 @@ const EMPTY: Draft = {
                 </small>
                 @if (s.procedureType || s.consentCode || s.assistantService) {
                   <small>
-                    {{ s.procedureType ? typeLabel(s.procedureType) : '' }}{{ s.consentCode ? ' · Consentimiento: ' + consentLabel(s.consentCode) : '' }}{{ s.assistantService ? ' · Lo puede realizar el auxiliar' : '' }}
+                    {{ s.procedureType ? typeLabel(s.procedureType) : '' }}{{ s.consentCode ? ' · Consentimiento: ' + consentLabel(s.consentCode) : '' }}{{ s.assistantService ? ' · Lo atienden las asistentes' : '' }}
                   </small>
                 }
               </div>
@@ -126,7 +126,7 @@ const EMPTY: Draft = {
             </label>
           }
           <label class="wide">Descripción <textarea rows="2" [(ngModel)]="draft.description" maxlength="2000"></textarea></label>
-          <label class="check"><input type="checkbox" [(ngModel)]="draft.assistantService" /> Lo puede realizar el auxiliar (p. ej. masajes)</label>
+          <label class="check"><input type="checkbox" [(ngModel)]="draft.assistantService" /> Lo atienden las asistentes de la agenda (masajes)</label>
           <label class="check"><input type="checkbox" [(ngModel)]="draft.active" /> Activo (visible al agendar)</label>
         </div>
         @if (error()) {

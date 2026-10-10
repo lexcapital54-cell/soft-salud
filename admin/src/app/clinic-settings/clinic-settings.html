@@ -13,6 +13,7 @@
     <app-assistants-card [isAdmin]="isClinicAdmin()" />
     @if (isAesthetic()) {
       <app-services-card [isAdmin]="isClinicAdmin()" [aesthetic]="true" />
+      <app-agenda-staff-card [isAdmin]="isClinicAdmin()" />
     }
   }
 </section>

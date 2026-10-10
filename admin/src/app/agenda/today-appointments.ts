@@ -25,7 +25,9 @@ import {
   AppointmentStatus,
   CareModality,
   ClinicServiceItem,
+  AgendaStaffMember,
   COLUMN_ACCENTS,
+  STAFF_ACCENTS,
   formatCop,
   NOTIFICATION_CHANNEL_LABELS,
   NOTIFICATION_KIND_LABELS,
@@ -225,7 +227,11 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
     meetingUrl: string;
     notes: string;
     serviceId: string;
+    staffId: string;
   } = this.emptyBookingForm();
+
+  /** Asistentes de estética corporal; cada una tiene su columna en la vista Día. */
+  readonly staff = signal<AgendaStaffMember[]>([]);
 
   /** Catálogo de servicios del consultorio (vacío si no se ha configurado). */
   readonly services = signal<ClinicServiceItem[]>([]);
@@ -252,6 +258,7 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
       meetingUrl: '',
       notes: '',
       serviceId: '',
+      staffId: '',
     };
   }
 
@@ -318,7 +325,7 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
     }
 
     const date = this.date();
-    return this.professionals().map((pro, index) => ({
+    const professionals = this.professionals().map((pro, index) => ({
       id: pro.id,
       title: pro.fullName,
       subtitle: pro.professionalCard ? `TP ${pro.professionalCard}` : pro.role,
@@ -326,6 +333,17 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
       professionalId: pro.id,
       accent: COLUMN_ACCENTS[index % COLUMN_ACCENTS.length],
     }));
+    const responsible = this.defaultProfessionalId();
+    const staff = this.staff().map((member, index) => ({
+      id: `staff-${member.id}`,
+      title: member.name,
+      subtitle: `${member.roleLabel} · ${member.shiftLabel}`,
+      date,
+      professionalId: responsible,
+      staffId: member.id,
+      accent: STAFF_ACCENTS[index % STAFF_ACCENTS.length],
+    }));
+    return [...professionals, ...staff];
   });
 
   /**
@@ -348,7 +366,12 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
         if (appt.eventType === 'BLOQUEO' && appt.status === 'CANCELLED') continue;
         const startsAt = new Date(appt.startsAt);
         if (toDateKey(startsAt) !== column.date) continue;
-        if (!byWeek && appt.professional.id !== column.professionalId) continue;
+        if (!byWeek) {
+          // Las citas de asistentes van en su columna, no en la del profesional responsable.
+          if (column.staffId ? appt.staff?.id !== column.staffId : appt.staff || appt.professional.id !== column.professionalId) {
+            continue;
+          }
+        }
 
         const minutes = startsAt.getHours() * 60 + startsAt.getMinutes();
         const slotIndex = Math.floor((minutes - DAY_START_MINUTES) / SLOT_MINUTES);
@@ -387,15 +410,17 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
         for (let i = slotIndex; i < slotIndex + span; i++) occupied.add(i);
       }
 
+      const member = column.staffId ? this.staff().find((m) => m.id === column.staffId) : undefined;
       slots.forEach((slot, slotIndex) => {
         if (occupied.has(slotIndex)) return;
         const at = parseDateKey(column.date);
         at.setMinutes(slot.minutes);
+        const offShift = !!member && !this.slotInShift(member, slot.minutes);
         out.push({
           column: columnIndex + 2,
           row: slotIndex + 2,
           span: 1,
-          state: at.getTime() < now ? 'past' : 'free',
+          state: offShift || at.getTime() < now ? 'past' : 'free',
           columnIndex,
           slotIndex,
           appointments: [],
@@ -426,6 +451,14 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
       if (latest === null || until > latest) latest = until;
     }
     return latest;
+  }
+
+  private slotInShift(member: AgendaStaffMember, minutes: number) {
+    const toMin = (hhmm: string) => {
+      const [h, m] = hhmm.split(':').map(Number);
+      return h * 60 + m;
+    };
+    return minutes >= toMin(member.shiftStart) && minutes + SLOT_MINUTES <= toMin(member.shiftEnd);
   }
 
   /** Cuántas franjas ocupa la cita, sin desbordar el final de la jornada. */
@@ -491,6 +524,10 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
           next: (rows) => this.services.set(rows),
           error: () => undefined,
         });
+        this.api.listStaff().subscribe({
+          next: (rows) => this.staff.set(rows),
+          error: () => undefined,
+        });
       }
     }
   }
@@ -504,6 +541,25 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
     this.bookingForm.serviceId = id;
     const service = this.selectedService();
     if (service) this.bookingForm.durationMinutes = service.durationMinutes;
+    // Solo los masajes los atienden las asistentes.
+    if (service && !service.assistantService) this.bookingForm.staffId = '';
+  }
+
+  /** El selector «Atiende» aparece si el servicio lo pueden realizar las asistentes. */
+  staffAllowed() {
+    return this.isAesthetic() && this.staff().length > 0 && !!this.selectedService()?.assistantService;
+  }
+
+  selectedStaff() {
+    return this.staff().find((m) => m.id === this.bookingForm.staffId) ?? null;
+  }
+
+  /** Servicios que se ofrecen al agendar: en la columna de una asistente, solo masajes. */
+  bookingServiceGroups() {
+    if (!this.bookingForm.staffId) return this.serviceGroups();
+    return this.serviceGroups()
+      .map((g) => ({ ...g, items: g.items.filter((s) => s.assistantService) }))
+      .filter((g) => g.items.length);
   }
 
   ngOnDestroy() {
@@ -601,6 +657,7 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
         this.defaultProfessionalId() ||
         this.bookingForm.professionalId,
       time: `${hour}:${minute}`,
+      staffId: column.staffId ?? '',
     };
     this.bookingDate.set(column.date);
     this.openBooking();
@@ -939,6 +996,22 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
       return;
     }
 
+    const member = form.staffId ? this.selectedStaff() : null;
+    if (member) {
+      if (!this.selectedService()?.assistantService) {
+        this.error.set('Las asistentes solo pueden agendar servicios de masajes.');
+        return;
+      }
+      const [h, m] = form.time.split(':').map(Number);
+      const start = h * 60 + m;
+      const toMin = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+      const duration = Number(form.durationMinutes) || 40;
+      if (start < toMin(member.shiftStart) || start + duration > toMin(member.shiftEnd)) {
+        this.error.set(`${member.name} solo está disponible de ${member.shiftLabel}.`);
+        return;
+      }
+    }
+
     this.booking.set(true);
     this.error.set('');
     this.message.set('');
@@ -951,6 +1024,7 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
         startsAt: startsAt.toISOString(),
         durationMinutes: Number(form.durationMinutes) || 40,
         serviceId: form.serviceId || undefined,
+        staffId: member?.id,
         reason: this.selectedService()?.name,
         modality: form.modality,
         meetingUrl: this.isVirtualBooking()
