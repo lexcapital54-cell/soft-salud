@@ -29,6 +29,8 @@ import { RemoteConsentService } from './remote-consent.service';
 import { OrthoTrackingController } from './ortho-tracking.controller';
 import { OrthoTrackingService } from './ortho-tracking.service';
 import { AestheticTrackingController } from './aesthetic-tracking.controller';
+import { AestheticIndicatorsController } from './aesthetic-indicators.controller';
+import { AestheticIndicatorsService } from './aesthetic-indicators.service';
 import { AestheticTrackingService } from './aesthetic-tracking.service';
 
 @Module({
@@ -45,6 +47,7 @@ import { AestheticTrackingService } from './aesthetic-tracking.service';
     HceExportController,
     OrthoTrackingController,
     AestheticTrackingController,
+    AestheticIndicatorsController,
   ],
   providers: [
     CatalogsService,
@@ -66,6 +69,7 @@ import { AestheticTrackingService } from './aesthetic-tracking.service';
     RemoteConsentService,
     OrthoTrackingService,
     AestheticTrackingService,
+    AestheticIndicatorsService,
   ],
   exports: [
     FormTemplatesService,

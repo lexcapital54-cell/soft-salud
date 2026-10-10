@@ -113,6 +113,11 @@ export const routes: Routes = [
     canDeactivate: [(page: { canLeave?: () => boolean }) => page.canLeave?.() ?? true],
   },
   {
+    path: 'consultorio/indicadores-esteticos',
+    loadComponent: () => import('./aesthetic-indicators/aesthetic-indicators').then((m) => m.AestheticIndicatorsPage),
+    canActivate: [authGuard, clinicalWriteGuard],
+  },
+  {
     path: 'consultorio/recibos',
     component: BillingDashboard,
     canActivate: [authGuard, clinicStaffGuard],

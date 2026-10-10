@@ -1,0 +1,182 @@
+<div class="ind">
+  <header class="ind-hero">
+    <a class="ind-back" routerLink="/consultorio"><hab-icon name="arrowLeft" [size]="16" /> Inicio</a>
+    <div class="ind-title">
+      <p class="eyebrow">Medicina estética</p>
+      <h1>Tablero de indicadores</h1>
+      <p class="lead">Actividad clínica del consultorio con datos reales y agregados. No muestra nombres ni documentos de pacientes.</p>
+    </div>
+  </header>
+
+  @if (user() && !isAesthetic()) {
+    <p class="banner warn" role="alert">Este tablero está disponible solo para los consultorios de medicina estética.</p>
+  } @else {
+    <section class="ind-filters" aria-label="Filtros">
+      <div class="chips" role="group" aria-label="Periodo">
+        @for (p of presets; track p.key) {
+          <button type="button" class="chip" [class.on]="preset() === p.key" [attr.aria-pressed]="preset() === p.key" (click)="applyPreset(p.key)">
+            {{ p.label }}
+          </button>
+        }
+      </div>
+      <div class="fields">
+        @if (preset() === 'custom') {
+          <label>Desde <input type="date" [(ngModel)]="from" [max]="to" /></label>
+          <label>Hasta <input type="date" [(ngModel)]="to" [min]="from" /></label>
+        }
+        <label>
+          Profesional
+          <select [(ngModel)]="professionalId" (ngModelChange)="preset() !== 'custom' && load()">
+            <option value="">Todos</option>
+            @for (p of data()?.professionals ?? []; track p.id) {
+              <option [value]="p.id">{{ p.name }}</option>
+            }
+          </select>
+        </label>
+        @if (preset() === 'custom') {
+          <button type="button" class="btn primary" (click)="load()" [disabled]="loading()"><hab-icon name="filter" [size]="16" /> Aplicar</button>
+        }
+      </div>
+    </section>
+
+    @if (error(); as msg) {
+      <div class="state error" role="alert">
+        <hab-icon name="alert" [size]="22" />
+        <p>{{ msg }}</p>
+        <button type="button" class="btn ghost" (click)="load()">Reintentar</button>
+      </div>
+    } @else if (loading() && !data()) {
+      <div class="kpis" aria-busy="true" aria-label="Cargando indicadores">
+        @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+          <div class="kpi skeleton"><span class="sk"></span><span class="sk short"></span></div>
+        }
+      </div>
+    } @else if (data(); as d) {
+      <p class="period" aria-live="polite">
+        {{ periodLabel() }}
+        @if (loading()) {
+          <span class="updating">· Actualizando…</span>
+        }
+      </p>
+
+      @if (isEmpty()) {
+        <div class="state empty">
+          <hab-icon name="activity" [size]="26" />
+          <p>No hay atenciones, procedimientos ni citas en este periodo.</p>
+          <p class="muted">Pruebe con un periodo más amplio.</p>
+        </div>
+      }
+
+      <section class="kpis" aria-label="Resumen del periodo">
+        <article class="kpi">
+          <span class="kpi-ico"><hab-icon name="users" [size]="18" /></span>
+          <strong>{{ d.totals.attendedPatients }}</strong>
+          <span>Pacientes atendidos</span>
+          <small>{{ d.totals.newPatients }} nuevos · {{ d.totals.patients }} en total</small>
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico"><hab-icon name="file" [size]="18" /></span>
+          <strong>{{ d.totals.encounters }}</strong>
+          <span>Atenciones</span>
+          <small>{{ d.totals.signedRecords }} historias firmadas</small>
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico"><hab-icon name="layers" [size]="18" /></span>
+          <strong>{{ d.totals.procedures }}</strong>
+          <span>Procedimientos</span>
+          <small>{{ d.totals.signedProcedures }} firmados</small>
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico"><hab-icon name="check" [size]="18" /></span>
+          <strong>{{ d.totals.consentsSigned }}</strong>
+          <span>Consentimientos firmados</span>
+          <small>En el periodo</small>
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico"><hab-icon name="calendar" [size]="18" /></span>
+          <strong>{{ d.totals.upcomingControls }}</strong>
+          <span>Controles próximos</span>
+          <small>En los próximos 30 días</small>
+        </article>
+        <article class="kpi" [class.warn]="d.totals.overdueControls > 0">
+          <span class="kpi-ico"><hab-icon name="clock" [size]="18" /></span>
+          <strong>{{ d.totals.overdueControls }}</strong>
+          <span>Controles vencidos</span>
+          <small>Paciente sin volver tras la fecha indicada</small>
+        </article>
+        <article class="kpi" [class.warn]="d.totals.adverseEvents > 0">
+          <span class="kpi-ico"><hab-icon name="alert" [size]="18" /></span>
+          <strong>{{ d.totals.adverseEvents }}</strong>
+          <span>Eventos adversos registrados</span>
+          <small>Procedimientos con evento anotado</small>
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico"><hab-icon name="activity" [size]="18" /></span>
+          <strong>{{ noShowRate() === null ? '—' : noShowRate() + '%' }}</strong>
+          <span>Inasistencia</span>
+          <small>{{ d.totals.appointments }} citas en el periodo</small>
+        </article>
+      </section>
+
+      <section class="panel trend" aria-labelledby="t-trend">
+        <header>
+          <h2 id="t-trend">Actividad por mes</h2>
+          <p class="legend">
+            <span class="sw enc" aria-hidden="true"></span> Atenciones
+            <span class="sw proc" aria-hidden="true"></span> Procedimientos
+          </p>
+        </header>
+        <div class="cols" role="list">
+          @for (m of d.monthly; track m.month) {
+            <div class="col" role="listitem" [attr.aria-label]="monthLabel(m.month) + ': ' + m.encounters + ' atenciones, ' + m.procedures + ' procedimientos'">
+              <div class="pair" aria-hidden="true">
+                <span class="bar enc" [style.height.%]="(m.encounters / monthlyMax()) * 100" [title]="m.encounters + ' atenciones'"></span>
+                <span class="bar proc" [style.height.%]="(m.procedures / monthlyMax()) * 100" [title]="m.procedures + ' procedimientos'"></span>
+              </div>
+              <span class="mlabel">{{ monthLabel(m.month) }}</span>
+            </div>
+          }
+        </div>
+      </section>
+
+      <div class="grid">
+        <ng-container *ngTemplateOutlet="bars; context: { title: 'Procedimientos por tipo', list: d.procedureTypes, label: procLabel, empty: 'Sin procedimientos en el periodo.' }" />
+        <ng-container *ngTemplateOutlet="bars; context: { title: 'Zonas más tratadas', list: d.zones, label: zoneName, empty: 'Sin zonas registradas.' }" />
+        <ng-container *ngTemplateOutlet="bars; context: { title: 'Fototipo de Fitzpatrick', list: d.fitzpatrick, label: fitzLabel, empty: 'Sin valoraciones en el periodo.', note: 'Valoración más reciente de cada paciente en el periodo.' }" />
+        <ng-container *ngTemplateOutlet="bars; context: { title: 'Fotoenvejecimiento de Glogau', list: d.glogau, label: glogauLabel, empty: 'Sin valoraciones en el periodo.' }" />
+        <ng-container *ngTemplateOutlet="bars; context: { title: 'Tipo de piel', list: d.skinTypes, label: skinLabel, empty: 'Sin valoraciones en el periodo.' }" />
+        <ng-container *ngTemplateOutlet="bars; context: { title: 'Rangos de edad', list: d.ageRanges, label: plain, empty: 'Sin pacientes atendidos.', note: 'Edad al final del periodo.' }" />
+        <ng-container *ngTemplateOutlet="bars; context: { title: 'Sexo al nacer', list: d.sex, label: plain, empty: 'Sin pacientes atendidos.' }" />
+        <ng-container *ngTemplateOutlet="bars; context: { title: 'Estado de las citas', list: d.appointmentStatus, label: statusLabel, empty: 'Sin citas en el periodo.' }" />
+        <ng-container *ngTemplateOutlet="bars; context: { title: 'Servicios más agendados', list: d.topServices, label: plain, empty: 'Sin citas con servicio.' }" />
+      </div>
+
+      <p class="foot">
+        Indicadores orientativos calculados con los registros del consultorio. Los procedimientos se cuentan por su fecha de
+        realización; las atenciones, por la fecha de inicio. La consulta queda registrada en la auditoría.
+      </p>
+    }
+  }
+</div>
+
+<ng-template #bars let-title="title" let-list="list" let-label="label" let-empty="empty" let-note="note">
+  <section class="panel">
+    <h2>{{ title }}</h2>
+    @if (note) {
+      <p class="note">{{ note }}</p>
+    }
+    @if (list.length) {
+      <ul class="bars">
+        @for (c of list; track c.key) {
+          <li>
+            <span class="blabel">{{ label(c.key) }}</span>
+            <span class="track" aria-hidden="true"><span class="fill" [style.width]="barWidth(c.count, list)"></span></span>
+            <span class="bval">{{ c.count }} <small>({{ pct(c.count, list) }}%)</small></span>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="muted">{{ empty }}</p>
+    }
+  </section>
+</ng-template>
