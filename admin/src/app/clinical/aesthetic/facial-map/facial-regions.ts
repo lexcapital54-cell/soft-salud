@@ -44,83 +44,89 @@ export const REGION_CODES: Record<string, string> = {
 /** Regiones de la línea media: no tienen lado. */
 export const MIDLINE_REGIONS = new Set(['glabela', 'nariz', 'labios', 'menton', 'submentoniana', 'perioral', 'cuello']);
 
-/** Frontal: las bilaterales se repiten reflejadas sobre x = 100. */
+/**
+ * Geometría calibrada sobre los rostros de referencia (fotos ficticias en public/facial-map).
+ * Frontal: las bilaterales se repiten reflejadas sobre x = 100.
+ */
 const FRONTAL: Array<RegionShape & { both?: boolean }> = [
-  { key: 'cuello', cx: 100, cy: 238, rx: 24, ry: 15 },
-  { key: 'frente', cx: 100, cy: 50, rx: 42, ry: 19 },
-  { key: 'perioral', cx: 100, cy: 156, rx: 25, ry: 15 },
-  { key: 'temporal', cx: 52, cy: 80, rx: 9, ry: 15, both: true },
-  { key: 'maseterina', cx: 53, cy: 156, rx: 8, ry: 12, both: true },
-  { key: 'mejillas', cx: 67, cy: 140, rx: 11, ry: 10, both: true },
-  { key: 'pomulos', cx: 61, cy: 114, rx: 10, ry: 8, both: true },
-  { key: 'malar', cx: 76, cy: 125, rx: 9, ry: 6, both: true },
-  { key: 'mandibular', cx: 65, cy: 176, rx: 13, ry: 7, both: true },
-  { key: 'menton', cx: 100, cy: 193, rx: 14, ry: 9 },
-  { key: 'submentoniana', cx: 100, cy: 215, rx: 17, ry: 6 },
-  { key: 'cejas', cx: 77, cy: 80, rx: 13, ry: 4, both: true },
-  { key: 'parpado_superior', cx: 77, cy: 89, rx: 10, ry: 3, both: true },
-  { key: 'parpado_inferior', cx: 77, cy: 99.5, rx: 10, ry: 3, both: true },
-  { key: 'surco_lagrimal', cx: 83, cy: 106, rx: 8, ry: 3, both: true },
-  { key: 'periocular_lateral', cx: 59, cy: 95, rx: 5, ry: 7, both: true },
-  { key: 'nariz', cx: 100, cy: 112, rx: 7, ry: 17 },
-  { key: 'nasogeniano', cx: 86, cy: 141, rx: 4, ry: 10, both: true },
-  { key: 'marioneta', cx: 82, cy: 170, rx: 4, ry: 8, both: true },
-  { key: 'labios', cx: 100, cy: 156, rx: 16, ry: 7 },
-  { key: 'glabela', cx: 100, cy: 82, rx: 7, ry: 6 },
+  { key: 'cuello', cx: 100, cy: 246, rx: 40, ry: 13 },
+  { key: 'frente', cx: 100, cy: 54, rx: 46, ry: 20 },
+  { key: 'perioral', cx: 100, cy: 176, rx: 31, ry: 20 },
+  { key: 'temporal', cx: 35, cy: 80, rx: 6, ry: 14, both: true },
+  { key: 'maseterina', cx: 45, cy: 156, rx: 8, ry: 13, both: true },
+  { key: 'mejillas', cx: 58, cy: 153, rx: 13, ry: 12, both: true },
+  { key: 'pomulos', cx: 46, cy: 122, rx: 9, ry: 9, both: true },
+  { key: 'malar', cx: 63, cy: 128, rx: 10, ry: 7, both: true },
+  { key: 'mandibular', cx: 55, cy: 182, rx: 13, ry: 8, both: true },
+  { key: 'menton', cx: 100, cy: 205, rx: 18, ry: 10 },
+  { key: 'submentoniana', cx: 100, cy: 224, rx: 16, ry: 5 },
+  { key: 'cejas', cx: 61.5, cy: 83, rx: 23, ry: 4, both: true },
+  { key: 'parpado_superior', cx: 65.5, cy: 97, rx: 14, ry: 3.5, both: true },
+  { key: 'parpado_inferior', cx: 65.5, cy: 110.5, rx: 14, ry: 3, both: true },
+  { key: 'surco_lagrimal', cx: 75, cy: 116, rx: 9, ry: 3, both: true },
+  { key: 'periocular_lateral', cx: 44, cy: 104, rx: 4.5, ry: 7, both: true },
+  { key: 'nariz', cx: 100, cy: 127, rx: 8, ry: 25 },
+  { key: 'nasogeniano', cx: 78.7, cy: 161, rx: 4.5, ry: 13, both: true },
+  { key: 'marioneta', cx: 73.5, cy: 191, rx: 4.5, ry: 9, both: true },
+  { key: 'labios', cx: 100, cy: 175, rx: 26, ry: 13 },
+  { key: 'glabela', cx: 100, cy: 88.5, rx: 7, ry: 7 },
 ];
 
 /** Perfil derecho (nariz hacia la derecha del lector); el izquierdo se refleja. */
 const PROFILE: RegionShape[] = [
-  { key: 'cuello', cx: 88, cy: 232, rx: 26, ry: 16 },
-  { key: 'frente', cx: 138, cy: 50, rx: 18, ry: 20 },
-  { key: 'temporal', cx: 110, cy: 80, rx: 13, ry: 13 },
-  { key: 'maseterina', cx: 104, cy: 152, rx: 9, ry: 13 },
-  { key: 'mandibular', cx: 116, cy: 176, rx: 18, ry: 7 },
-  { key: 'mejillas', cx: 130, cy: 146, rx: 10, ry: 9 },
-  { key: 'pomulos', cx: 126, cy: 114, rx: 11, ry: 8 },
-  { key: 'malar', cx: 138, cy: 127, rx: 9, ry: 6 },
-  { key: 'perioral', cx: 156, cy: 154, rx: 9, ry: 11 },
-  { key: 'submentoniana', cx: 130, cy: 203, rx: 12, ry: 6 },
-  { key: 'menton', cx: 153, cy: 180, rx: 8, ry: 9 },
-  { key: 'cejas', cx: 146, cy: 85, rx: 8, ry: 3 },
-  { key: 'parpado_superior', cx: 147, cy: 92, rx: 5, ry: 2.5 },
-  { key: 'parpado_inferior', cx: 147, cy: 102, rx: 5, ry: 2.5 },
-  { key: 'surco_lagrimal', cx: 148, cy: 108, rx: 5, ry: 3 },
-  { key: 'periocular_lateral', cx: 133, cy: 98, rx: 5, ry: 6 },
-  { key: 'nasogeniano', cx: 152, cy: 140, rx: 4, ry: 8 },
-  { key: 'marioneta', cx: 149, cy: 168, rx: 3.5, ry: 6 },
-  { key: 'labios', cx: 161, cy: 152, rx: 5, ry: 7 },
-  { key: 'nariz', cx: 163, cy: 114, rx: 7, ry: 11 },
-  { key: 'glabela', cx: 155, cy: 84, rx: 4, ry: 4 },
+  { key: 'cuello', cx: 100, cy: 236, rx: 40, ry: 20 },
+  { key: 'frente', cx: 128, cy: 53, rx: 20, ry: 21 },
+  { key: 'temporal', cx: 104, cy: 83, rx: 10, ry: 13 },
+  { key: 'maseterina', cx: 91, cy: 161, rx: 10, ry: 14 },
+  { key: 'mandibular', cx: 115, cy: 192, rx: 24, ry: 8 },
+  { key: 'mejillas', cx: 122, cy: 151, rx: 13, ry: 12 },
+  { key: 'pomulos', cx: 104, cy: 117, rx: 11, ry: 9 },
+  { key: 'malar', cx: 125, cy: 122, rx: 10, ry: 7 },
+  { key: 'perioral', cx: 151, cy: 167, rx: 13, ry: 17 },
+  { key: 'submentoniana', cx: 130, cy: 213, rx: 15, ry: 6 },
+  { key: 'menton', cx: 150, cy: 198, rx: 10, ry: 10 },
+  { key: 'cejas', cx: 140.6, cy: 75.5, rx: 11, ry: 3.5 },
+  { key: 'parpado_superior', cx: 134, cy: 92.4, rx: 7, ry: 3 },
+  { key: 'parpado_inferior', cx: 133, cy: 105.5, rx: 7, ry: 2.5 },
+  { key: 'surco_lagrimal', cx: 135.4, cy: 112, rx: 6, ry: 3 },
+  { key: 'periocular_lateral', cx: 118.5, cy: 99, rx: 5, ry: 7 },
+  { key: 'nasogeniano', cx: 147, cy: 151, rx: 4, ry: 10 },
+  { key: 'marioneta', cx: 147, cy: 182, rx: 4, ry: 7 },
+  { key: 'labios', cx: 157.5, cy: 164, rx: 7, ry: 10 },
+  { key: 'nariz', cx: 161, cy: 118, rx: 11, ry: 20 },
+  { key: 'glabela', cx: 152, cy: 86, rx: 4, ry: 5 },
 ];
 
 /** 45° derecho (nariz hacia la derecha del lector); el izquierdo se refleja. */
 const OBLIQUE: RegionShape[] = [
-  { key: 'cuello', cx: 100, cy: 232, rx: 28, ry: 16 },
-  { key: 'frente', cx: 108, cy: 50, rx: 36, ry: 18 },
-  { key: 'perioral', cx: 130, cy: 154, rx: 17, ry: 12 },
-  { key: 'temporal', cx: 64, cy: 82, rx: 10, ry: 14 },
-  { key: 'maseterina', cx: 64, cy: 152, rx: 8, ry: 12 },
-  { key: 'mejillas', cx: 86, cy: 146, rx: 11, ry: 9 },
-  { key: 'pomulos', cx: 76, cy: 114, rx: 11, ry: 8 },
-  { key: 'malar', cx: 94, cy: 126, rx: 10, ry: 6 },
-  { key: 'mandibular', cx: 82, cy: 176, rx: 16, ry: 7 },
-  { key: 'submentoniana', cx: 118, cy: 203, rx: 14, ry: 6 },
-  { key: 'menton', cx: 134, cy: 183, rx: 11, ry: 8 },
-  { key: 'cejas', cx: 85, cy: 84, rx: 11, ry: 3 },
-  { key: 'cejas', cx: 124, cy: 85, rx: 7, ry: 3 },
-  { key: 'parpado_superior', cx: 85, cy: 91, rx: 9, ry: 2.5 },
-  { key: 'parpado_superior', cx: 124, cy: 92, rx: 6, ry: 2.5 },
-  { key: 'parpado_inferior', cx: 85, cy: 101, rx: 9, ry: 2.5 },
-  { key: 'parpado_inferior', cx: 124, cy: 100, rx: 6, ry: 2.5 },
-  { key: 'surco_lagrimal', cx: 91, cy: 107, rx: 7, ry: 3 },
-  { key: 'periocular_lateral', cx: 68, cy: 97, rx: 5, ry: 6 },
-  { key: 'nasogeniano', cx: 116, cy: 140, rx: 4, ry: 10 },
-  { key: 'marioneta', cx: 118, cy: 168, rx: 4, ry: 7 },
-  { key: 'labios', cx: 132, cy: 153, rx: 13, ry: 6 },
-  { key: 'nariz', cx: 138, cy: 112, rx: 7, ry: 15 },
-  { key: 'glabela', cx: 112, cy: 82, rx: 6, ry: 5 },
+  { key: 'cuello', cx: 99, cy: 245, rx: 40, ry: 14 },
+  { key: 'frente', cx: 116, cy: 52, rx: 48, ry: 19 },
+  { key: 'perioral', cx: 130, cy: 174, rx: 30, ry: 20 },
+  { key: 'temporal', cx: 58.6, cy: 78, rx: 9, ry: 14 },
+  { key: 'maseterina', cx: 60, cy: 159, rx: 9, ry: 13 },
+  { key: 'mejillas', cx: 83, cy: 154, rx: 14, ry: 12 },
+  { key: 'pomulos', cx: 68, cy: 122, rx: 11, ry: 9 },
+  { key: 'malar', cx: 94, cy: 128, rx: 11, ry: 7 },
+  { key: 'mandibular', cx: 78, cy: 182, rx: 18, ry: 9 },
+  { key: 'submentoniana', cx: 122, cy: 221, rx: 15, ry: 5 },
+  { key: 'menton', cx: 135, cy: 206, rx: 17, ry: 10 },
+  { key: 'cejas', cx: 95, cy: 82, rx: 27, ry: 4 },
+  { key: 'cejas', cx: 163, cy: 79, rx: 17, ry: 4 },
+  { key: 'parpado_superior', cx: 99, cy: 97, rx: 15, ry: 3 },
+  { key: 'parpado_superior', cx: 160, cy: 97, rx: 12, ry: 3 },
+  { key: 'parpado_inferior', cx: 99, cy: 109.4, rx: 15, ry: 3 },
+  { key: 'parpado_inferior', cx: 160, cy: 109, rx: 11, ry: 3 },
+  { key: 'surco_lagrimal', cx: 107, cy: 116, rx: 9, ry: 3 },
+  { key: 'periocular_lateral', cx: 77, cy: 104, rx: 5, ry: 7 },
+  { key: 'nasogeniano', cx: 116, cy: 156, rx: 4.5, ry: 12 },
+  { key: 'marioneta', cx: 111, cy: 187.5, rx: 4.5, ry: 9 },
+  { key: 'labios', cx: 130, cy: 171, rx: 24, ry: 12 },
+  { key: 'nariz', cx: 133, cy: 125, rx: 12, ry: 23 },
+  { key: 'glabela', cx: 135.4, cy: 86, rx: 6, ry: 6 },
 ];
+
+/** En 45° el ojo y la ceja del fondo pertenecen al otro lado del paciente. */
+const OBLIQUE_FAR_X = 148;
 
 const mirror = (z: RegionShape): RegionShape => ({ ...z, cx: 200 - z.cx });
 
@@ -159,6 +165,8 @@ export function lateralityAt(view: AesView, x: number, region: string): AesLater
     if (Math.abs(x - 100) <= 4) return 'CENTRAL';
     return x < 100 ? 'DERECHA' : 'IZQUIERDA';
   }
-  if (view === 'DERECHO' || view === 'OBLICUA_DER') return 'DERECHA';
+  if (view === 'OBLICUA_DER') return x > OBLIQUE_FAR_X ? 'IZQUIERDA' : 'DERECHA';
+  if (view === 'OBLICUA_IZQ') return x < 200 - OBLIQUE_FAR_X ? 'DERECHA' : 'IZQUIERDA';
+  if (view === 'DERECHO') return 'DERECHA';
   return 'IZQUIERDA';
 }

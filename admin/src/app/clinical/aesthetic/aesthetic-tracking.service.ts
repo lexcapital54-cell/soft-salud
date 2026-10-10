@@ -3,6 +3,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { API } from '../../api.config';
 import { AesTrackingData, emptyTrackingData, normalizeTracking } from './aesthetic-tracking.models';
+import { FaceSex, faceSexFrom } from './facial-map/facial-map.config';
 
 interface TrackingResponse {
   data: unknown;
@@ -30,6 +31,8 @@ export class AestheticTrackingService {
   /** Sube con cada cambio para que las vistas recalculen. */
   readonly rev = signal(0);
   readonly loaded = signal(false);
+  /** Rostro de referencia del mapa; solo visual, no se guarda en la historia. */
+  readonly faceSex = signal<FaceSex>('F');
 
   data: AesTrackingData = emptyTrackingData();
 
@@ -39,8 +42,9 @@ export class AestheticTrackingService {
   private dirty = false;
   private chain: Promise<boolean> = Promise.resolve(true);
 
-  load(patientId: string) {
+  load(patientId: string, sexAtBirth?: string | null) {
     this.flush();
+    this.faceSex.set(faceSexFrom(sexAtBirth));
     this.patientId = patientId;
     this.version = null;
     this.data = emptyTrackingData();

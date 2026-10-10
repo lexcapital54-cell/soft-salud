@@ -69,9 +69,9 @@ const SAVE_LABEL: Record<string, string> = {
     @let lock = ro();
     <section class="aes-block fm" id="aes-mapa" [class.present]="presentation()" (keydown)="key($event)">
       <header class="fm-head">
-        <span class="aes-head-icon"><hab-icon name="eye" /></span>
         <div class="fm-title">
-          <h4>Mapa facial interactivo</h4>
+          <h4>Mapa facial</h4>
+          <p class="fm-kicker">Procedimientos estéticos</p>
           <p>
             {{ session() ? 'Sesión del ' + day(session()) : 'Todas las sesiones' }} · {{ stats().total }}
             {{ stats().total === 1 ? 'marca' : 'marcas' }}
@@ -80,27 +80,33 @@ const SAVE_LABEL: Record<string, string> = {
             }
           </p>
         </div>
-        <span class="fm-save" [attr.data-state]="tracking.status()" role="status" aria-live="polite">
-          <span class="fm-save-dot" aria-hidden="true"></span>{{ saveLabel() }}
-        </span>
-        @if (tracking.status() === 'error') {
-          <button type="button" class="fm-btn ghost sm" (click)="tracking.retry()"><hab-icon name="refresh" [size]="16" /> Reintentar</button>
-        }
-        <label class="fm-session">
-          <span>Sesión</span>
-          <select (change)="setSession(val($event))">
-            <option value="" [selected]="!session()">Todas</option>
-            @for (s of sessions(); track s) {
-              <option [value]="s" [selected]="s === session()">{{ day(s) }}</option>
-            }
-          </select>
-        </label>
-        @if (!disabled() && session() !== today) {
-          <button type="button" class="fm-btn ghost sm" (click)="setSession(today)"><hab-icon name="plus" [size]="16" /> Sesión de hoy</button>
-        }
-        <button type="button" class="fm-btn ghost sm" [attr.aria-pressed]="presentation()" (click)="togglePresentation()">
-          <hab-icon [name]="presentation() ? 'x' : 'monitor'" [size]="16" /> {{ presentation() ? 'Salir de presentación' : 'Presentación' }}
-        </button>
+        <div class="fm-head-tools">
+          <div class="fm-sex" role="radiogroup" aria-label="Rostro de referencia">
+            <button type="button" role="radio" [attr.aria-checked]="sex() === 'F'" [class.on]="sex() === 'F'" (click)="tracking.faceSex.set('F')">Mujer</button>
+            <button type="button" role="radio" [attr.aria-checked]="sex() === 'M'" [class.on]="sex() === 'M'" (click)="tracking.faceSex.set('M')">Hombre</button>
+          </div>
+          <span class="fm-save" [attr.data-state]="tracking.status()" role="status" aria-live="polite">
+            <span class="fm-save-dot" aria-hidden="true"></span>{{ saveLabel() }}
+          </span>
+          @if (tracking.status() === 'error') {
+            <button type="button" class="fm-btn ghost sm" (click)="tracking.retry()"><hab-icon name="refresh" [size]="16" /> Reintentar</button>
+          }
+          <label class="fm-session">
+            <span>Sesión</span>
+            <select (change)="setSession(val($event))">
+              <option value="" [selected]="!session()">Todas</option>
+              @for (s of sessions(); track s) {
+                <option [value]="s" [selected]="s === session()">{{ day(s) }}</option>
+              }
+            </select>
+          </label>
+          @if (!disabled() && session() !== today) {
+            <button type="button" class="fm-btn ghost sm" (click)="setSession(today)"><hab-icon name="plus" [size]="16" /> Sesión de hoy</button>
+          }
+          <button type="button" class="fm-btn ghost sm" [attr.aria-pressed]="presentation()" (click)="togglePresentation()">
+            <hab-icon [name]="presentation() ? 'x' : 'monitor'" [size]="16" /> {{ presentation() ? 'Salir de presentación' : 'Presentación' }}
+          </button>
+        </div>
       </header>
 
       @if (tracking.status() === 'conflict' || (tracking.status() === 'error' && tracking.message())) {
@@ -112,132 +118,15 @@ const SAVE_LABEL: Record<string, string> = {
 
       @if (!tracking.loaded()) {
         <div class="fm-skeleton" aria-busy="true">
-          <span></span><span class="big"></span><span></span>
+          <span class="big"></span><span></span>
           <p class="empty">{{ tracking.status() === 'error' ? tracking.message() : 'Cargando mapa facial…' }}</p>
         </div>
       } @else {
-        <div class="fm-work" [class.no-left]="!leftOpen()" [class.no-right]="!rightOpen()">
-          <!-- Panel izquierdo: qué se registra y con qué herramienta -->
-          <aside class="fm-panel fm-left" aria-label="Herramientas del mapa facial">
-            @if (leftOpen()) {
-              <div class="fm-panel-head">
-                <h5>Herramientas</h5>
-                <button type="button" class="icon-btn" aria-label="Contraer herramientas" (click)="leftOpen.set(false)">
-                  <hab-icon name="arrowLeft" [size]="16" />
-                </button>
-              </div>
-
-              <div class="fm-group">
-                <span class="fm-label" id="fm-cat">Registrar</span>
-                <div class="fm-seg" role="radiogroup" aria-labelledby="fm-cat">
-                  @for (c of categories; track c.key) {
-                    <button type="button" role="radio" [attr.aria-checked]="category() === c.key" [class.on]="category() === c.key"
-                      [disabled]="lock" (click)="category.set(c.key)">{{ c.label }}</button>
-                  }
-                </div>
-              </div>
-
-              @if (category() === 'PROCEDIMIENTO') {
-                <div class="fm-group">
-                  <label class="fm-label" for="fm-proc-search">Procedimiento activo</label>
-                  <div class="fm-search">
-                    <hab-icon name="search" [size]="16" />
-                    <input id="fm-proc-search" type="search" placeholder="Buscar procedimiento" [value]="procSearch()"
-                      (input)="procSearch.set(val($event))" />
-                  </div>
-                  <ul class="fm-proc-list" role="radiogroup" aria-label="Procedimiento activo">
-                    @for (p of filteredTypes(); track p.key) {
-                      @let s = styleOf(p.key);
-                      <li>
-                        <button type="button" role="radio" [attr.aria-checked]="procType() === p.key" [class.on]="procType() === p.key"
-                          [disabled]="lock" (click)="procType.set(p.key)">
-                          <svg class="fm-swatch" viewBox="-6 -6 12 12" aria-hidden="true"><path [attr.d]="sym(s.symbol)" [attr.fill]="s.color" /></svg>
-                          {{ p.label }}
-                        </button>
-                      </li>
-                    } @empty {
-                      <li class="empty">Sin coincidencias.</li>
-                    }
-                  </ul>
-                  <span class="fm-label" id="fm-newstatus">Estado al marcar</span>
-                  <div class="fm-seg" role="radiogroup" aria-labelledby="fm-newstatus">
-                    <button type="button" role="radio" [attr.aria-checked]="newStatus() === 'PLANEADO'" [class.on]="newStatus() === 'PLANEADO'"
-                      [disabled]="lock" (click)="newStatus.set('PLANEADO')">Planeado</button>
-                    <button type="button" role="radio" [attr.aria-checked]="newStatus() === 'REALIZADO'" [class.on]="newStatus() === 'REALIZADO'"
-                      [disabled]="lock" (click)="newStatus.set('REALIZADO')">Realizado</button>
-                  </div>
-                  @if (newStatus() === 'REALIZADO') {
-                    <p class="fm-hint warn">Las marcas nuevas quedarán como realizadas. Úselo solo para lo efectivamente aplicado.</p>
-                  }
-                </div>
-              }
-
-              <div class="fm-group">
-                <span class="fm-label" id="fm-tools">Herramienta</span>
-                <div class="fm-tools" role="toolbar" aria-labelledby="fm-tools">
-                  @for (t of tools; track t.key) {
-                    <button type="button" class="fm-tool" [class.on]="tool() === t.key" [attr.aria-pressed]="tool() === t.key"
-                      [attr.title]="t.label + ': ' + t.hint" [attr.aria-label]="t.label"
-                      [disabled]="lock && t.key !== 'select' && t.key !== 'hand'" (click)="setTool(t.key)">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="toolIcon(t.key)" /></svg>
-                      <span>{{ t.label }}</span>
-                    </button>
-                  }
-                </div>
-              </div>
-
-              <div class="fm-group">
-                <span class="fm-label">Capas</span>
-                @for (l of layerDefs; track l.key) {
-                  <label class="fm-check">
-                    <input type="checkbox" [checked]="layers().has(l.key)" (change)="toggleLayer(l.key)" /> {{ l.label }}
-                  </label>
-                }
-                <button type="button" class="fm-btn ghost sm block" (click)="toggleClean()">
-                  <hab-icon name="eye" [size]="16" /> {{ clean() ? 'Mostrar anotaciones' : 'Ver sin anotaciones' }}
-                </button>
-              </div>
-
-              <details class="fm-group fm-regions">
-                <summary>Regiones de esta vista</summary>
-                <ul>
-                  @for (r of regionList(); track $index) {
-                    <li [class.hl]="highlight() === r.key">
-                      <button type="button" class="link" (click)="toggleHighlight(r.key)" [attr.aria-pressed]="highlight() === r.key">
-                        {{ r.label }}
-                        @if (r.count) {
-                          <span class="fm-count">{{ r.count }}</span>
-                        }
-                      </button>
-                      @if (!lock) {
-                        <button type="button" class="icon-btn" [attr.aria-label]="'Marcar zona ' + r.label" (click)="createAtRegion(r)">
-                          <hab-icon name="plus" [size]="16" />
-                        </button>
-                      }
-                    </li>
-                  }
-                </ul>
-              </details>
-            } @else {
-              <button type="button" class="fm-rail" aria-label="Mostrar herramientas" (click)="leftOpen.set(true)">
-                <hab-icon name="menu" [size]="18" />
-              </button>
-            }
-          </aside>
-
-          <!-- Centro: rostro -->
+        <div class="fm-work" [class.no-right]="!rightOpen()">
+          <!-- Centro: rostro con leyenda y rótulos -->
           <div class="fm-center">
             <div class="fm-bar">
-              <div class="fm-views" role="tablist" aria-label="Vista del rostro">
-                @for (v of views; track v.key) {
-                  <button type="button" role="tab" [attr.aria-selected]="view() === v.key" [class.on]="view() === v.key" (click)="setView(v.key)">
-                    {{ v.label }}
-                    @if (viewCount().get(v.key); as c) {
-                      <span class="fm-count">{{ c }}</span>
-                    }
-                  </button>
-                }
-              </div>
+              <span class="fm-view-name">{{ viewLabel() }}</span>
               <div class="fm-zoom" role="group" aria-label="Zoom y edición">
                 <button type="button" class="icon-btn" aria-label="Deshacer (Ctrl+Z)" title="Deshacer (Ctrl+Z)" [disabled]="lock || !canUndo()" (click)="undo()">
                   <hab-icon name="restore" [size]="16" />
@@ -261,6 +150,7 @@ const SAVE_LABEL: Record<string, string> = {
             <div class="fm-canvas-wrap">
               <app-facial-map-canvas
                 [view]="view()"
+                [sex]="sex()"
                 [marks]="visibleMarks()"
                 [selected]="selectedIds()"
                 [tool]="lock && tool() !== 'hand' ? 'select' : tool()"
@@ -269,6 +159,7 @@ const SAVE_LABEL: Record<string, string> = {
                 [highlight]="highlight()"
                 [regionCounts]="regionCounts()"
                 [draftColor]="activeColor()"
+                [reserveTopLeft]="legendH()"
                 (created)="create($event)"
                 (picked)="pick($event.id, $event.additive)"
                 (erased)="erase($event)"
@@ -276,6 +167,23 @@ const SAVE_LABEL: Record<string, string> = {
                 (dragged)="drag($event.id, $event.dx, $event.dy)"
                 (cleared)="clearSelection()"
               />
+
+              <div class="fm-legend" #legend aria-label="Leyenda de procedimientos">
+                @for (t of legendTypes(); track t.key) {
+                  <button type="button" class="fm-legend-item" [class.off]="hiddenTypes().has(t.key)" [attr.aria-pressed]="!hiddenTypes().has(t.key)"
+                    [attr.aria-label]="(hiddenTypes().has(t.key) ? 'Mostrar ' : 'Ocultar ') + t.label" (click)="toggleType(t.key)">
+                    <svg class="fm-swatch" viewBox="-6 -6 12 12" aria-hidden="true"><path [attr.d]="sym(t.symbol)" [attr.fill]="t.color" /></svg>
+                    {{ t.label }}
+                  </button>
+                }
+                <span class="fm-legend-states" aria-hidden="true">
+                  <span><i class="st planned"></i>Planeado</span>
+                  <span><i class="st done"></i>Realizado</span>
+                  <span><i class="st susp"></i>Suspendido</span>
+                  <span><i class="st cancel"></i>Cancelado</span>
+                </span>
+              </div>
+
               @if (!viewMarks().length) {
                 <p class="fm-empty-over">
                   {{ lock ? 'No hay anotaciones en esta vista.' : 'No hay anotaciones en esta vista. Elija un procedimiento y marque una zona del rostro para comenzar.' }}
@@ -283,22 +191,6 @@ const SAVE_LABEL: Record<string, string> = {
               }
             </div>
             <p class="fm-hint">{{ toolHint() }} · Ctrl + rueda o pellizco para acercar.</p>
-
-            <div class="fm-legend" aria-label="Leyenda">
-              @for (t of legendTypes(); track t.key) {
-                <button type="button" class="fm-legend-item" [class.off]="hiddenTypes().has(t.key)" [attr.aria-pressed]="!hiddenTypes().has(t.key)"
-                  [attr.aria-label]="(hiddenTypes().has(t.key) ? 'Mostrar ' : 'Ocultar ') + t.label" (click)="toggleType(t.key)">
-                  <svg class="fm-swatch" viewBox="-6 -6 12 12" aria-hidden="true"><path [attr.d]="sym(t.symbol)" [attr.fill]="t.color" /></svg>
-                  {{ t.label }}
-                </button>
-              }
-              <span class="fm-legend-states" aria-hidden="true">
-                <span><i class="st planned"></i>Planeado</span>
-                <span><i class="st done"></i>Realizado</span>
-                <span><i class="st susp"></i>Suspendido</span>
-                <span><i class="st cancel"></i>Cancelado</span>
-              </span>
-            </div>
           </div>
 
           <!-- Panel derecho: detalle clínico y resumen -->
@@ -544,6 +436,124 @@ const SAVE_LABEL: Record<string, string> = {
             }
           </aside>
         </div>
+
+        <!-- Barra inferior: vistas, capas, procedimientos y herramientas -->
+        <div class="fm-dock">
+          <section class="fm-dock-col fm-dock-views" aria-labelledby="fm-d-views">
+            <h5 id="fm-d-views">Vistas</h5>
+            <div class="fm-thumbs" role="tablist" aria-label="Vista del rostro">
+              @for (v of views; track v.key) {
+                <button type="button" role="tab" class="fm-thumb" [attr.aria-selected]="view() === v.key" [class.on]="view() === v.key" (click)="setView(v.key)">
+                  <span class="fm-thumb-img" [class.mirror]="v.key === 'IZQUIERDO' || v.key === 'OBLICUA_IZQ'">
+                    <img [src]="thumb(v.key)" alt="" loading="lazy" width="150" height="200" />
+                  </span>
+                  <span class="fm-thumb-label">
+                    {{ v.label }}
+                    @if (viewCount().get(v.key); as c) {
+                      <span class="fm-count">{{ c }}</span>
+                    }
+                  </span>
+                </button>
+              }
+            </div>
+          </section>
+
+          <section class="fm-dock-col" aria-labelledby="fm-d-layers">
+            <h5 id="fm-d-layers">Capas</h5>
+            @for (l of layerDefs; track l.key) {
+              <label class="fm-switch">
+                <input type="checkbox" role="switch" [checked]="layers().has(l.key)" (change)="toggleLayer(l.key)" />
+                <span class="fm-switch-track" aria-hidden="true"></span>
+                {{ l.label }}
+              </label>
+            }
+            <button type="button" class="fm-btn ghost sm block" (click)="toggleClean()">
+              <hab-icon name="eye" [size]="16" /> {{ clean() ? 'Mostrar anotaciones' : 'Ver sin anotaciones' }}
+            </button>
+            <details class="fm-regions">
+              <summary>Regiones de esta vista</summary>
+              <ul>
+                @for (r of regionList(); track $index) {
+                  <li [class.hl]="highlight() === r.key">
+                    <button type="button" class="link" (click)="toggleHighlight(r.key)" [attr.aria-pressed]="highlight() === r.key">
+                      {{ r.label }}
+                      @if (r.count) {
+                        <span class="fm-count">{{ r.count }}</span>
+                      }
+                    </button>
+                    @if (!lock) {
+                      <button type="button" class="icon-btn" [attr.aria-label]="'Marcar zona ' + r.label" (click)="createAtRegion(r)">
+                        <hab-icon name="plus" [size]="16" />
+                      </button>
+                    }
+                  </li>
+                }
+              </ul>
+            </details>
+          </section>
+
+          <section class="fm-dock-col" aria-labelledby="fm-d-procs">
+            <h5 id="fm-d-procs">Procedimientos</h5>
+            <div class="fm-seg" role="radiogroup" aria-label="Qué se registra">
+              @for (c of categories; track c.key) {
+                <button type="button" role="radio" [attr.aria-checked]="category() === c.key" [class.on]="category() === c.key"
+                  [disabled]="lock" (click)="category.set(c.key)">{{ c.label }}</button>
+              }
+            </div>
+            @if (category() === 'PROCEDIMIENTO') {
+              <div class="fm-search">
+                <hab-icon name="search" [size]="16" />
+                <input type="search" aria-label="Buscar procedimiento" placeholder="Buscar procedimiento" [value]="procSearch()"
+                  (input)="procSearch.set(val($event))" />
+              </div>
+              <ul class="fm-proc-list" role="radiogroup" aria-label="Procedimiento activo">
+                @for (p of filteredTypes(); track p.key) {
+                  @let s = styleOf(p.key);
+                  <li>
+                    <button type="button" role="radio" [attr.aria-checked]="procType() === p.key" [class.on]="procType() === p.key"
+                      [disabled]="lock" (click)="procType.set(p.key)">
+                      <span class="fm-radio" aria-hidden="true"></span>
+                      <svg class="fm-swatch" viewBox="-6 -6 12 12" aria-hidden="true"><path [attr.d]="sym(s.symbol)" [attr.fill]="s.color" /></svg>
+                      {{ p.label }}
+                    </button>
+                  </li>
+                } @empty {
+                  <li class="empty">Sin coincidencias.</li>
+                }
+              </ul>
+              <span class="fm-label" id="fm-newstatus">Estado al marcar</span>
+              <div class="fm-seg" role="radiogroup" aria-labelledby="fm-newstatus">
+                <button type="button" role="radio" [attr.aria-checked]="newStatus() === 'PLANEADO'" [class.on]="newStatus() === 'PLANEADO'"
+                  [disabled]="lock" (click)="newStatus.set('PLANEADO')">Planeado</button>
+                <button type="button" role="radio" [attr.aria-checked]="newStatus() === 'REALIZADO'" [class.on]="newStatus() === 'REALIZADO'"
+                  [disabled]="lock" (click)="newStatus.set('REALIZADO')">Realizado</button>
+              </div>
+              @if (newStatus() === 'REALIZADO') {
+                <p class="fm-hint warn">Las marcas nuevas quedarán como realizadas. Úselo solo para lo efectivamente aplicado.</p>
+              }
+            }
+          </section>
+
+          <section class="fm-dock-col" aria-labelledby="fm-d-tools">
+            <h5 id="fm-d-tools">Herramientas</h5>
+            <div class="fm-tools" role="toolbar" aria-labelledby="fm-d-tools">
+              @for (t of tools; track t.key) {
+                <button type="button" class="fm-tool" [class.on]="tool() === t.key" [attr.aria-pressed]="tool() === t.key"
+                  [attr.title]="t.label + ': ' + t.hint" [attr.aria-label]="t.label"
+                  [disabled]="lock && t.key !== 'select' && t.key !== 'hand'" (click)="setTool(t.key)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="toolIcon(t.key)" /></svg>
+                  <span>{{ t.label }}</span>
+                </button>
+              }
+            </div>
+            @if (!lock) {
+              <button type="button" class="fm-btn sm block" [disabled]="!tracking.hasUnsaved() || tracking.status() === 'saving'" (click)="saveNow()">
+                <hab-icon name="check" [size]="16" /> Guardar mapa
+              </button>
+              <p class="fm-hint">Los cambios también se guardan solos a los pocos segundos.</p>
+            }
+          </section>
+        </div>
       }
     </section>
   `,
@@ -554,6 +564,9 @@ export class AestheticFaceMap {
   readonly disabled = input(false);
   readonly canSign = input(false);
   readonly canvas = viewChild(FacialMapCanvas);
+  private readonly legendRef = viewChild<ElementRef<HTMLElement>>('legend');
+  /** Alto que ocupa la leyenda flotante sobre el lienzo (0 cuando va debajo, en pantallas angostas). */
+  readonly legendH = signal(0);
 
   readonly views = AES_VIEWS;
   readonly zones = AES_ZONES;
@@ -581,7 +594,6 @@ export class AestheticFaceMap {
   readonly layers = signal<Set<FacialLayer>>(new Set(FACIAL_LAYERS.map((l) => l.key)));
   readonly hiddenTypes = signal<Set<string>>(new Set());
   readonly highlight = signal<string | null>(null);
-  readonly leftOpen = signal(true);
   readonly rightOpen = signal(true);
   readonly presentation = signal(false);
   readonly procSearch = signal('');
@@ -603,6 +615,8 @@ export class AestheticFaceMap {
     return this.redoStack.length > 0;
   });
   readonly zoomPct = computed(() => Math.round((this.canvas()?.k() ?? 1) * 100));
+  readonly sex = computed(() => this.tracking.faceSex());
+  readonly viewLabel = computed(() => AES_VIEWS.find((v) => v.key === this.view())?.label ?? '');
   readonly saveLabel = computed(() => SAVE_LABEL[this.tracking.status()] ?? '');
   readonly clean = computed(() => !['planned', 'performed', 'findings', 'drawings'].some((l) => this.layers().has(l as FacialLayer)));
 
@@ -616,6 +630,15 @@ export class AestheticFaceMap {
         this.histRev.update((v) => v + 1);
         this.selectedIds.set(new Set());
       });
+    });
+    effect((onCleanup) => {
+      const el = this.legendRef()?.nativeElement;
+      if (!el || typeof ResizeObserver === 'undefined') return;
+      const ro = new ResizeObserver(() =>
+        this.legendH.set(getComputedStyle(el).position === 'absolute' ? el.offsetTop + el.offsetHeight + 6 : 0),
+      );
+      ro.observe(el);
+      onCleanup(() => ro.disconnect());
     });
   }
 
@@ -748,6 +771,15 @@ export class AestheticFaceMap {
     return TOOL_ICONS[t];
   }
 
+  thumb(v: AesView) {
+    const family = v === 'FRONTAL' ? 'frontal' : v === 'OBLICUA_DER' || v === 'OBLICUA_IZQ' ? 'oblicua' : 'perfil';
+    return `facial-map/${this.sex() === 'M' ? 'hombre' : 'mujer'}-${family}-mini.jpg`;
+  }
+
+  saveNow() {
+    if (!this.ro()) void this.tracking.commit();
+  }
+
   styleOf(type: string) {
     return procedureStyle(type);
   }
@@ -834,7 +866,7 @@ export class AestheticFaceMap {
 
   toggleClean() {
     const next = new Set(this.layers());
-    const annotationLayers: FacialLayer[] = ['planned', 'performed', 'findings', 'drawings', 'labels'];
+    const annotationLayers: FacialLayer[] = ['planned', 'performed', 'findings', 'drawings', 'labels', 'callouts'];
     if (this.clean()) annotationLayers.forEach((l) => next.add(l));
     else annotationLayers.forEach((l) => next.delete(l));
     this.layers.set(next);

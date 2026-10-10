@@ -8,7 +8,7 @@ export const AES_MAX_PROCEDURES = 400;
 export const AES_MAX_ANNOTATIONS = 1500;
 
 /** Tipos inyectables o implantables: exigen producto, lote y cantidad al firmar. */
-const TRACEABLE_TYPES = new Set(['TOXINA', 'ACIDO_HIALURONICO', 'BIOESTIMULADOR', 'MESOTERAPIA', 'HILOS']);
+const TRACEABLE_TYPES = new Set(['TOXINA', 'ACIDO_HIALURONICO', 'RADIESSE', 'BIOESTIMULADOR', 'SKINBOOSTER', 'MESOTERAPIA', 'HILOS']);
 
 /** Campos que solo escribe el servidor. */
 const SERVER_KEYS = ['_audit', 'signedAt', 'signedBy', 'signedById', 'lockedAt', 'lockedBy'];

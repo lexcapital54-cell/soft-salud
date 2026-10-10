@@ -1,29 +1,55 @@
-import { Component, ElementRef, computed, input, output, signal, viewChild } from '@angular/core';
-import { EAR, FACE_OUTLINE, MIRROR, faceFeatures } from '../../dentistry/ortho-face-outline';
-import { zoneLabel } from '../aesthetic.models';
-import { AesAnnotation, AesShape, AesView, markStatus } from '../aesthetic-tracking.models';
-import { FacialLayer, FacialTool, inkOn, markStyle } from './facial-map.config';
+import { Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, output, signal, viewChild } from '@angular/core';
+import { procedureTypeLabel, zoneLabel } from '../aesthetic.models';
+import { AES_MARK_STATUSES, AesAnnotation, AesShape, AesView, isProcedureMark, markKind, markStatus } from '../aesthetic-tracking.models';
+import { FACE_PHOTOS, FACE_PHOTO_H, FaceSex, FacialLayer, FacialTool, inkOn, markStyle } from './facial-map.config';
 import { RegionShape, lateralityAt, regionsFor } from './facial-regions';
-import { VB_H, VB_W, arrowHead, clampX, clampY, polyline, simplify, symbolPath } from './facial-map.utils';
+import { VB_H, VB_W, arrowHead, clampX, clampY, fmtQty, parseQty, polyline, simplify, symbolPath } from './facial-map.utils';
 
-const OBLIQUE_OUTLINE =
-  'M100,16 C140,16 158,40 156,70 C156,84 152,92 154,100 L166,122 C168,126 164,129 158,129 ' +
-  'C158,136 160,140 156,144 C158,150 156,156 150,158 C152,168 148,180 140,188 C130,198 116,202 104,200 ' +
-  'C84,198 64,186 56,168 C48,150 44,130 44,108 C44,60 62,16 100,16 ' +
-  'M56,100 C46,98 42,110 44,120 C46,130 52,134 58,132 ' +
-  'M70,186 C72,210 70,236 66,256 M136,192 C134,215 136,240 140,256';
-const OBLIQUE_DETAIL =
-  'M70,84 Q84,78 98,82 M112,82 Q124,79 136,84 M72,96 Q84,90 96,96 Q84,101 72,96 ' +
-  'M114,96 Q124,91 134,96 Q124,100 114,96 M128,92 C132,106 140,116 146,124 Q140,130 130,128 ' +
-  'M118,152 Q132,147 146,152 Q132,158 118,152';
-const PROFILE_OUTLINE =
-  'M110,16 C150,16 160,40 158,66 C158,76 156,82 158,88 C160,92 156,96 156,100 L172,124 C174,128 170,132 162,132 ' +
-  'C164,138 166,142 162,146 C166,150 164,156 158,158 C162,166 160,176 154,184 C150,196 140,198 128,196 L112,200 ' +
-  'C112,215 114,235 116,256 M58,256 C60,230 62,212 60,196 C48,184 40,160 40,120 C40,60 60,16 110,16';
-const PROFILE_DETAIL =
-  'M88,96 C98,96 100,128 88,128 C80,128 78,96 88,96 M86,130 C92,170 108,190 128,196 M144,100 Q149,97 153,100';
-const FRONT = faceFeatures(84, 130, 208);
-const NECK = 'M80,198 C80,220 78,240 76,256 M120,198 C120,220 122,240 124,256';
+const MIRROR = 'translate(200,0) scale(-1,1)';
+/** Ancho de cada columna de rótulos a los lados del rostro (unidades del lienzo). */
+const SIDE = 120;
+/** Ancho mínimo del lienzo en pantalla para mostrar los rótulos laterales. */
+const WIDE_MIN_PX = 720;
+const CALLOUT_MAX_LINES = 3;
+/** Caracteres por renglón que caben en la columna (título en mayúsculas y detalle). */
+const TITLE_CHARS = 28;
+const LINE_CHARS = 44;
+const TITLE_LH = 5.6;
+const LINE_LH = 5.6;
+
+export interface Callout {
+  id: string;
+  zone: string;
+  side: 'L' | 'R';
+  ax: number;
+  ay: number;
+  y: number;
+  h: number;
+  title: string;
+  titleLines: string[];
+  lines: Array<{ text: string; color: string }>;
+  ids: string[];
+}
+
+/** Parte un texto en renglones por palabras sin pasar del ancho dado. */
+function wrapWords(text: string, max: number): string[] {
+  const out: string[] = [];
+  let cur = '';
+  for (const w of text.split(/\s+/)) {
+    if (cur && (cur + ' ' + w).length > max) {
+      out.push(cur);
+      cur = w;
+    } else {
+      cur = cur ? `${cur} ${w}` : w;
+    }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+function clip(text: string, max: number) {
+  return text.length > max ? text.slice(0, max - 1).trimEnd() + '…' : text;
+}
 
 export interface NumberedMark {
   a: AesAnnotation;
@@ -56,6 +82,8 @@ const DRAG_TOL_PX = 4;
       <svg
         #svg
         class="fm-svg"
+        [class.wide]="wide()"
+        [style.aspect-ratio]="frame().w + ' / ' + vbH"
         [attr.viewBox]="viewBox()"
         role="group"
         tabindex="0"
@@ -69,47 +97,37 @@ const DRAG_TOL_PX = 4;
         (wheel)="wheel($event)"
       >
         <defs>
-          <radialGradient id="fm-halo" cx="50%" cy="42%" r="60%">
-            <stop offset="0%" stop-color="#ffffff" />
-            <stop offset="70%" stop-color="#f3f5f8" />
-            <stop offset="100%" stop-color="#e9edf2" />
-          </radialGradient>
-          <linearGradient id="fm-skin" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#fbf4ef" />
-            <stop offset="100%" stop-color="#f3e6dd" />
+          <linearGradient id="fm-fade" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#000" />
+            <stop offset="0.05" stop-color="#fff" />
+            <stop offset="0.95" stop-color="#fff" />
+            <stop offset="1" stop-color="#000" />
           </linearGradient>
+          <mask id="fm-photo-mask" maskContentUnits="objectBoundingBox">
+            <rect width="1" height="1" fill="url(#fm-fade)" />
+          </mask>
         </defs>
-        <rect x="-400" y="-400" width="1000" height="1060" fill="#f7f8fa" />
-        <rect x="0" y="0" [attr.width]="vbW" [attr.height]="vbH" rx="10" fill="url(#fm-halo)" />
+        <rect x="-600" y="-400" width="1400" height="1060" [attr.fill]="layers().has('base') ? photo().bg : '#f7f8fa'" />
 
         @if (layers().has('base')) {
-          <g class="fm-base" aria-hidden="true">
-            @switch (family()) {
-              @case ('front') {
-                <path class="skin" [attr.d]="outline" />
-                <path [attr.d]="outline" />
-                <path [attr.d]="ear" />
-                <path [attr.d]="ear" [attr.transform]="mirror" />
-                <path [attr.d]="neck" />
-                <path class="fine" [attr.d]="front.brows" />
-                <path class="fine" [attr.d]="front.eyes" />
-                <path class="fine" [attr.d]="front.nose" />
-                <path class="fine" [attr.d]="front.lips" />
-              }
-              @case ('oblique') {
-                <g [attr.transform]="mirrored() ? mirror : null">
-                  <path [attr.d]="oblique" />
-                  <path class="fine" [attr.d]="obliqueDetail" />
-                </g>
-              }
-              @default {
-                <g [attr.transform]="mirrored() ? mirror : null">
-                  <path [attr.d]="profile" />
-                  <path class="fine" [attr.d]="profileDetail" />
-                </g>
-              }
-            }
+          <g class="fm-base" aria-hidden="true" [attr.transform]="mirrored() ? mirror : null">
+            <image
+              [attr.href]="photo().src"
+              [attr.x]="photo().x"
+              [attr.y]="photo().y"
+              width="200"
+              [attr.height]="photoH"
+              preserveAspectRatio="xMidYMid slice"
+              mask="url(#fm-photo-mask)"
+              (load)="photoState.set('ok')"
+              (error)="photoState.set('error')"
+            />
           </g>
+          @if (photoState() === 'error') {
+            <text class="fm-photo-err" x="100" y="130">No se pudo cargar el rostro de referencia</text>
+          }
+        } @else {
+          <rect x="0" y="0" [attr.width]="vbW" [attr.height]="vbH" rx="10" class="fm-plain" />
         }
 
         @if (layers().has('regions') || highlight()) {
@@ -133,6 +151,36 @@ const DRAG_TOL_PX = 4;
               >
                 <title>{{ regionName(z) }}{{ count ? ' · ' + count + (count === 1 ? ' marca' : ' marcas') : '' }}</title>
               </ellipse>
+            }
+          </g>
+        }
+
+        @if (callouts().length) {
+          <g class="fm-callouts">
+            @for (c of callouts(); track c.id) {
+              @let left = c.side === 'L';
+              @let tx = left ? -12 : vbW + 12;
+              <g
+                class="fm-callout"
+                [class.hl]="highlight() === c.zone"
+                role="button"
+                tabindex="0"
+                [attr.aria-label]="c.title + ': ' + calloutText(c)"
+                (pointerdown)="calloutDown($event, c)"
+                (keydown.enter)="picked.emit({ id: c.ids[0], additive: false })"
+              >
+                <path class="fm-leader" [attr.d]="leader(c)" />
+                <circle class="fm-anchor" [attr.cx]="c.ax" [attr.cy]="c.ay" r="1.4" />
+                <rect class="fm-co-hit" [attr.x]="left ? -SIDE + 2 : vbW + 2" [attr.y]="c.y - 1" [attr.width]="SIDE - 4" [attr.height]="c.h + 2" rx="2" />
+                @for (t of c.titleLines; track $index) {
+                  <text class="fm-co-title" [attr.x]="tx" [attr.y]="c.y + 5 + $index * 5.6" [attr.text-anchor]="left ? 'end' : 'start'">{{ t }}</text>
+                }
+                @for (l of c.lines; track $index) {
+                  @let ly = c.y + 6.6 + c.titleLines.length * 5.6 + $index * 5.6;
+                  <circle [attr.cx]="left ? tx + 3.6 : tx - 3.6" [attr.cy]="ly - 1.5" r="1.6" [attr.fill]="l.color" />
+                  <text class="fm-co-line" [attr.x]="tx" [attr.y]="ly" [attr.text-anchor]="left ? 'end' : 'start'">{{ l.text }}</text>
+                }
+              </g>
             }
           </g>
         }
@@ -255,18 +303,10 @@ const DRAG_TOL_PX = 4;
       @if (k() > 1.35) {
         <button type="button" class="fm-minimap" aria-label="Mini mapa: toque para centrar la vista" (click)="miniClick($event)">
           <svg viewBox="0 0 200 260" aria-hidden="true">
-            <rect x="0" y="0" width="200" height="260" fill="#f7f8fa" />
-            @switch (family()) {
-              @case ('front') {
-                <path [attr.d]="outline" />
-              }
-              @case ('oblique') {
-                <path [attr.d]="oblique" [attr.transform]="mirrored() ? mirror : null" />
-              }
-              @default {
-                <path [attr.d]="profile" [attr.transform]="mirrored() ? mirror : null" />
-              }
-            }
+            <rect x="0" y="0" width="200" height="260" [attr.fill]="photo().bg" />
+            <g [attr.transform]="mirrored() ? mirror : null">
+              <image [attr.href]="photo().src" [attr.x]="photo().x" [attr.y]="photo().y" width="200" [attr.height]="photoH" />
+            </g>
             @let r = vbRect();
             <rect class="fm-mini-view" [attr.x]="r.x" [attr.y]="r.y" [attr.width]="r.w" [attr.height]="r.h" />
           </svg>
@@ -286,6 +326,9 @@ export class FacialMapCanvas {
   readonly regionCounts = input<Map<string, number>>(new Map());
   /** Color del trazo en curso (el del procedimiento o tipo activo). */
   readonly draftColor = input('#1F3653');
+  readonly sex = input<FaceSex>('F');
+  /** Alto en píxeles que ocupa la leyenda flotante arriba a la izquierda (los rótulos empiezan debajo). */
+  readonly reserveTopLeft = input(0);
 
   readonly created = output<CreateRequest>();
   readonly picked = output<{ id: string; additive: boolean }>();
@@ -298,15 +341,9 @@ export class FacialMapCanvas {
 
   readonly vbW = VB_W;
   readonly vbH = VB_H;
-  readonly outline = FACE_OUTLINE;
-  readonly ear = EAR;
+  readonly SIDE = SIDE;
   readonly mirror = MIRROR;
-  readonly neck = NECK;
-  readonly front = FRONT;
-  readonly profile = PROFILE_OUTLINE;
-  readonly profileDetail = PROFILE_DETAIL;
-  readonly oblique = OBLIQUE_OUTLINE;
-  readonly obliqueDetail = OBLIQUE_DETAIL;
+  readonly photoH = FACE_PHOTO_H;
   readonly markStyle = markStyle;
 
   readonly k = signal(1);
@@ -315,6 +352,29 @@ export class FacialMapCanvas {
   readonly draft = signal<Draft | null>(null);
   readonly panning = signal(false);
   readonly hoverRegion = signal<string | null>(null);
+  readonly photoState = signal<'loading' | 'ok' | 'error'>('loading');
+  private readonly stageW = signal(0);
+  private readonly svgW = signal(0);
+
+  constructor() {
+    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      if (typeof ResizeObserver === 'undefined') return;
+      const svg = this.svgRef().nativeElement;
+      const ro = new ResizeObserver(() => {
+        this.stageW.set(host.clientWidth);
+        this.svgW.set(svg.clientWidth);
+      });
+      ro.observe(host);
+      ro.observe(svg);
+      destroyRef.onDestroy(() => ro.disconnect());
+    });
+  }
+
+  /** Con espacio suficiente, el lienzo se ensancha para los rótulos a ambos lados del rostro. */
+  readonly wide = computed(() => this.layers().has('callouts') && this.stageW() >= WIDE_MIN_PX);
+  readonly frame = computed(() => (this.wide() ? { x: -SIDE, w: VB_W + 2 * SIDE } : { x: 0, w: VB_W }));
 
   readonly viewBox = computed(() => {
     const r = this.vbRect();
@@ -323,15 +383,16 @@ export class FacialMapCanvas {
 
   readonly vbRect = computed(() => {
     const k = this.k();
-    const w = VB_W / k;
+    const w = this.frame().w / k;
     const h = VB_H / k;
     return { x: this.cx() - w / 2, y: this.cy() - h / 2, w, h };
   });
 
   readonly family = computed(() => {
     const v = this.view();
-    return v === 'FRONTAL' ? 'front' : v === 'OBLICUA_DER' || v === 'OBLICUA_IZQ' ? 'oblique' : 'profile';
+    return v === 'FRONTAL' ? 'frontal' : v === 'OBLICUA_DER' || v === 'OBLICUA_IZQ' ? 'oblicua' : 'perfil';
   });
+  readonly photo = computed(() => FACE_PHOTOS[this.sex()][this.family()]);
   readonly mirrored = computed(() => this.view() === 'IZQUIERDO' || this.view() === 'OBLICUA_IZQ');
   readonly regions = computed(() => regionsFor(this.view()));
   /** Las marcas conservan su tamaño en pantalla al acercar. */
@@ -366,6 +427,111 @@ export class FacialMapCanvas {
     }
     return out;
   });
+
+  /** Rótulos por región con lo registrado (nunca sugerencias), repartidos a cada lado sin solaparse. */
+  readonly callouts = computed<Callout[]>(() => {
+    if (!this.wide()) return [];
+    const groups = new Map<RegionShape, AesAnnotation[]>();
+    for (const { a } of this.marks()) {
+      const z = a.zone ? this.nearestRegion(a.zone, a.x, a.y) : null;
+      if (!z) continue;
+      const list = groups.get(z) ?? [];
+      list.push(a);
+      groups.set(z, list);
+    }
+    const items: Callout[] = [];
+    const pxPerUnit = this.svgW() / this.frame().w || 1;
+    const leftTop = this.reserveTopLeft() ? this.reserveTopLeft() / pxPerUnit : 0;
+    let left = 0;
+    let right = 0;
+    const entries = [...groups.entries()].sort((p, q) => p[0].cy - q[0].cy);
+    for (const [z, list] of entries) {
+      const lines = this.calloutLines(list);
+      const side: 'L' | 'R' = z.cx < 100 ? 'L' : z.cx > 100 ? 'R' : z.cy < leftTop || left > right ? 'R' : 'L';
+      if (side === 'L') left++;
+      else right++;
+      const title = this.regionName(z).toLocaleUpperCase('es');
+      const titleLines = wrapWords(title, TITLE_CHARS).slice(0, 2);
+      items.push({
+        id: `${z.key}-${z.cx}-${z.cy}`,
+        zone: z.key,
+        side,
+        ax: z.cx,
+        ay: z.cy,
+        y: 0,
+        h: 2.4 + titleLines.length * TITLE_LH + lines.length * LINE_LH,
+        title,
+        titleLines,
+        lines,
+        ids: list.map((a) => a.id),
+      });
+    }
+    for (const side of ['L', 'R'] as const) {
+      const col = items.filter((c) => c.side === side).sort((p, q) => p.ay - q.ay);
+      let bottom = side === 'L' ? Math.max(2, leftTop) : 2;
+      for (const c of col) {
+        c.y = Math.max(c.ay - c.h / 2, bottom + 3);
+        bottom = c.y + c.h;
+      }
+      let limit = VB_H - 2;
+      for (let i = col.length - 1; i >= 0; i--) {
+        const c = col[i];
+        if (c.y + c.h > limit) c.y = limit - c.h;
+        limit = c.y - 3;
+      }
+    }
+    return items;
+  });
+
+  private calloutLines(list: AesAnnotation[]): Callout['lines'] {
+    const rows = new Map<string, { label: string; color: string; status: string; unit: string; qty: number; count: number }>();
+    for (const a of list) {
+      const st = markStatus(a);
+      const proc = isProcedureMark(a);
+      const full = proc ? (a.procType ? procedureTypeLabel(a.procType) : 'Procedimiento') : markKind(a.kind).label;
+      const label = full.replace(/\s*\(.*\)\s*$/, '');
+      const unit = proc ? (a.unit ?? '') : '';
+      const key = `${label}|${st ?? ''}|${unit}`;
+      const row = rows.get(key) ?? { label, color: markStyle(a).color, status: st ?? '', unit, qty: 0, count: 0 };
+      const q = proc && a.quantity ? parseQty(a.quantity) : null;
+      if (q !== null) row.qty += q;
+      row.count++;
+      rows.set(key, row);
+    }
+    const out = [...rows.values()].map((r) => {
+      const parts = [r.label];
+      if (r.qty && r.unit) parts.push(`${fmtQty(r.qty)} ${r.unit}`);
+      else if (r.count > 1) parts.push(`${r.count} marcas`);
+      if (r.status) parts.push((AES_MARK_STATUSES.find((s) => s.key === r.status)?.label ?? r.status).toLowerCase());
+      return { text: clip(parts.join(' · '), LINE_CHARS), color: r.color };
+    });
+    if (out.length <= CALLOUT_MAX_LINES) return out;
+    return [...out.slice(0, CALLOUT_MAX_LINES - 1), { text: `y ${out.length - CALLOUT_MAX_LINES + 1} más`, color: '#98A2B3' }];
+  }
+
+  calloutText(c: Callout) {
+    return c.lines.map((l) => l.text).join('; ');
+  }
+
+  leader(c: Callout) {
+    const y = c.y + 3.6;
+    return c.side === 'L' ? `M-4,${y} H2 L${c.ax},${c.ay}` : `M${VB_W + 4},${y} H${VB_W - 2} L${c.ax},${c.ay}`;
+  }
+
+  calloutDown(e: PointerEvent, c: Callout) {
+    e.stopPropagation();
+    this.markPressed = true;
+    this.picked.emit({ id: c.ids[0], additive: false });
+  }
+
+  private nearestRegion(key: string, x: number, y: number): RegionShape | null {
+    let best: RegionShape | null = null;
+    for (const z of this.regions()) {
+      if (z.key !== key) continue;
+      if (!best || Math.hypot(z.cx - x, z.cy - y) < Math.hypot(best.cx - x, best.cy - y)) best = z;
+    }
+    return best;
+  }
 
   private readonly repeated = computed(() => {
     const seen = new Map<string, number>();
@@ -439,11 +605,7 @@ export class FacialMapCanvas {
 
   /** Elipse de la región de una marca de zona (la más cercana a su centro, por las bilaterales). */
   zoneShape(a: AesAnnotation): RegionShape | null {
-    const list = this.regions().filter((z) => z.key === a.zone);
-    if (!list.length) return null;
-    return list.reduce((best, z) =>
-      Math.hypot(z.cx - a.x, z.cy - a.y) < Math.hypot(best.cx - a.x, best.cy - a.y) ? z : best,
-    );
+    return a.zone ? this.nearestRegion(a.zone, a.x, a.y) : null;
   }
 
   badgeAt(a: AesAnnotation) {
@@ -493,8 +655,14 @@ export class FacialMapCanvas {
   }
 
   private clampCenter() {
-    this.cx.set(Math.min(VB_W, Math.max(0, this.cx())));
+    const f = this.frame();
+    this.cx.set(Math.min(f.x + f.w, Math.max(f.x, this.cx())));
     this.cy.set(Math.min(VB_H, Math.max(0, this.cy())));
+  }
+
+  /** Solo el rostro admite marcas; los costados son para los rótulos. */
+  private inFace(p: { x: number; y: number }) {
+    return p.x >= 0 && p.x <= VB_W && p.y >= 0 && p.y <= VB_H;
   }
 
   wheel(e: WheelEvent) {
@@ -578,7 +746,7 @@ export class FacialMapCanvas {
       this.panning.set(true);
       return;
     }
-    if (this.readOnly()) return;
+    if (this.readOnly() || !this.inFace(p)) return;
     const x = clampX(p.x);
     const y = clampY(p.y);
     if (tool === 'line' || tool === 'arrow' || tool === 'ellipse' || tool === 'rect') {
@@ -678,8 +846,8 @@ export class FacialMapCanvas {
       this.created.emit({ shape: d.shape, x: x1, y: y1, points: [x1, y1, x2, y2] });
       return;
     }
-    if (g?.moved || this.readOnly()) {
-      if (!g?.moved && tool === 'select') this.cleared.emit();
+    if (g?.moved || this.readOnly() || !this.inFace(p)) {
+      if (!g?.moved && (tool === 'select' || !this.inFace(p))) this.cleared.emit();
       return;
     }
 

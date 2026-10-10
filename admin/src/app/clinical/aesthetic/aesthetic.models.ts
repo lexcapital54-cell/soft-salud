@@ -56,13 +56,15 @@ export const AES_CONDITIONS: AesCondition[] = [
 export const AES_PROCEDURE_TYPES = [
   { key: 'TOXINA', label: 'Toxina botulínica' },
   { key: 'ACIDO_HIALURONICO', label: 'Ácido hialurónico (relleno)' },
+  { key: 'RADIESSE', label: 'Radiesse® (hidroxiapatita de calcio)' },
   { key: 'BIOESTIMULADOR', label: 'Bioestimulador de colágeno' },
+  { key: 'HILOS', label: 'Hilos tensores' },
+  { key: 'SKINBOOSTER', label: 'Skinbooster' },
   { key: 'MESOTERAPIA', label: 'Mesoterapia' },
   { key: 'PEELING', label: 'Peeling químico' },
   { key: 'MICRONEEDLING', label: 'Microneedling' },
   { key: 'LASER', label: 'Láser' },
   { key: 'ENERGIA', label: 'Tecnología basada en energía' },
-  { key: 'HILOS', label: 'Hilos tensores' },
   { key: 'CIRUGIA', label: 'Cirugía estética' },
   { key: 'COMBINADO', label: 'Procedimiento combinado' },
   { key: 'OTRO', label: 'Otro' },
@@ -76,9 +78,9 @@ export function procedureTypeLabel(key: string) {
 /** Plantillas de consentimiento de estética (códigos de la API) y tipos que cubren. */
 export const AES_CONSENTS = [
   { code: 'AES_TOXINA', label: 'Toxina botulínica (CI-EST-01)', types: ['TOXINA'] },
-  { code: 'AES_RADIESSE', label: 'Radiesse® (CI-EST-02)', types: ['BIOESTIMULADOR'] },
+  { code: 'AES_RADIESSE', label: 'Radiesse® (CI-EST-02)', types: ['RADIESSE', 'BIOESTIMULADOR'] },
   { code: 'AES_ACIDO_HIALURONICO', label: 'Ácido hialurónico reticulado (CI-EST-04)', types: ['ACIDO_HIALURONICO'] },
-  { code: 'AES_SKINBOOSTER', label: 'Skinbooster (CI-EST-05)', types: ['ACIDO_HIALURONICO', 'MESOTERAPIA'] },
+  { code: 'AES_SKINBOOSTER', label: 'Skinbooster (CI-EST-05)', types: ['SKINBOOSTER', 'ACIDO_HIALURONICO', 'MESOTERAPIA'] },
   { code: 'AES_MESOTERAPIA', label: 'Mesoterapia Mesohyal™ X-DNA (CI-EST-07)', types: ['MESOTERAPIA'] },
   { code: 'AES_PEELING_MELANOSTOP', label: 'Peeling Melanostop Tranex', types: ['PEELING'] },
   { code: 'AES_PEELING_EYECON', label: 'Peeling periocular Global Eyecon®', types: ['PEELING'] },

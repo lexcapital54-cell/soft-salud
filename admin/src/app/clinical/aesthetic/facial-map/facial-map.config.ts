@@ -10,18 +10,18 @@ export interface ProcedureStyle {
 
 /** Identidad visual por tipo de procedimiento; los tipos nuevos sin estilo usan el gris. */
 export const PROCEDURE_STYLES: Record<string, ProcedureStyle> = {
-  TOXINA: { color: '#D65D91', symbol: 'circle' },
-  RADIESSE: { color: '#477CC5', symbol: 'square' },
-  ACIDO_HIALURONICO: { color: '#C99740', symbol: 'diamond' },
-  BIOESTIMULADOR: { color: '#9461B7', symbol: 'hexagon' },
-  HILOS: { color: '#299E89', symbol: 'triangle' },
-  MESOTERAPIA: { color: '#40A6BA', symbol: 'ring' },
-  SKINBOOSTER: { color: '#40A6BA', symbol: 'pentagon' },
-  PRP: { color: '#C48A35', symbol: 'pentagon' },
-  LASER: { color: '#D77060', symbol: 'star' },
-  ENERGIA: { color: '#D77060', symbol: 'hexagon' },
-  PEELING: { color: '#778394', symbol: 'diamond' },
-  MICRONEEDLING: { color: '#778394', symbol: 'ring' },
+  TOXINA: { color: '#8B5CC8', symbol: 'circle' },
+  ACIDO_HIALURONICO: { color: '#3A6FD0', symbol: 'diamond' },
+  RADIESSE: { color: '#4C9A5E', symbol: 'square' },
+  BIOESTIMULADOR: { color: '#C9961E', symbol: 'hexagon' },
+  HILOS: { color: '#D9578A', symbol: 'triangle' },
+  SKINBOOSTER: { color: '#2FA8BC', symbol: 'pentagon' },
+  MESOTERAPIA: { color: '#2A8C80', symbol: 'ring' },
+  PRP: { color: '#B5532F', symbol: 'pentagon' },
+  LASER: { color: '#DD6A3A', symbol: 'star' },
+  ENERGIA: { color: '#A8553A', symbol: 'hexagon' },
+  PEELING: { color: '#8A7564', symbol: 'diamond' },
+  MICRONEEDLING: { color: '#5F6F82', symbol: 'ring' },
 };
 
 const OTHER: ProcedureStyle = { color: '#778394', symbol: 'square' };
@@ -96,7 +96,7 @@ export const TOOL_ICONS: Record<FacialTool, string> = {
   eraser: 'M16 3l5 5-11 11H5l-2-2z M9 9l6 6 M10 19h11',
 };
 
-export type FacialLayer = 'base' | 'regions' | 'planned' | 'performed' | 'findings' | 'drawings' | 'labels';
+export type FacialLayer = 'base' | 'regions' | 'planned' | 'performed' | 'findings' | 'drawings' | 'labels' | 'callouts';
 
 export const FACIAL_LAYERS: Array<{ key: FacialLayer; label: string }> = [
   { key: 'base', label: 'Rostro base' },
@@ -106,7 +106,35 @@ export const FACIAL_LAYERS: Array<{ key: FacialLayer; label: string }> = [
   { key: 'findings', label: 'Hallazgos y eventos' },
   { key: 'drawings', label: 'Notas y trazos' },
   { key: 'labels', label: 'Numeración' },
+  { key: 'callouts', label: 'Rótulos de regiones' },
 ];
+
+export type FaceSex = 'F' | 'M';
+export type FaceFamily = 'frontal' | 'oblicua' | 'perfil';
+
+/**
+ * Rostros de referencia (personas ficticias, sin marcas) y su ubicación en el viewBox 200×260.
+ * El desplazamiento alinea ojos, labios y mentón con la geometría de facial-regions.ts.
+ */
+export const FACE_PHOTOS: Record<FaceSex, Record<FaceFamily, { src: string; x: number; y: number; bg: string }>> = {
+  F: {
+    frontal: { src: 'facial-map/mujer-frontal.jpg', x: -2, y: 0, bg: '#F0EBE7' },
+    oblicua: { src: 'facial-map/mujer-oblicua.jpg', x: 0, y: 0, bg: '#EEE9E5' },
+    perfil: { src: 'facial-map/mujer-perfil.jpg', x: 0, y: 0, bg: '#F0EBE7' },
+  },
+  M: {
+    frontal: { src: 'facial-map/hombre-frontal.jpg', x: -2.5, y: 0.5, bg: '#EEE9E5' },
+    oblicua: { src: 'facial-map/hombre-oblicua.jpg', x: -7.3, y: 0.8, bg: '#ECE7E3' },
+    perfil: { src: 'facial-map/hombre-perfil.jpg', x: -16.9, y: -5.2, bg: '#ECE7E3' },
+  },
+};
+
+/** Alto de la foto en unidades del lienzo (ancho 200, proporción 3:4). */
+export const FACE_PHOTO_H = 266.67;
+
+export function faceSexFrom(sexAtBirth: string | null | undefined): FaceSex {
+  return /^m/i.test(sexAtBirth ?? '') ? 'M' : 'F';
+}
 
 export function layerOf(a: AesAnnotation): FacialLayer {
   const status = markStatus(a);

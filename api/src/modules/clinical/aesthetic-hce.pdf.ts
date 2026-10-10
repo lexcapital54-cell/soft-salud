@@ -36,7 +36,9 @@ const CONDITIONS: Array<[key: string, label: string]> = [
 const PROCEDURE_TYPES: Record<string, string> = {
   TOXINA: 'Toxina botulínica',
   ACIDO_HIALURONICO: 'Ácido hialurónico (relleno)',
+  RADIESSE: 'Radiesse® (hidroxiapatita de calcio)',
   BIOESTIMULADOR: 'Bioestimulador de colágeno',
+  SKINBOOSTER: 'Skinbooster',
   MESOTERAPIA: 'Mesoterapia',
   PEELING: 'Peeling químico',
   MICRONEEDLING: 'Microneedling',

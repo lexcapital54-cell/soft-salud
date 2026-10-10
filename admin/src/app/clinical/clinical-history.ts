@@ -4408,7 +4408,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       });
     }
     if (this.isAestheticClinic()) {
-      this.aestheticTracking.load(enc.patient.id);
+      this.aestheticTracking.load(enc.patient.id, enc.patient.sexAtBirth);
     }
   }
 

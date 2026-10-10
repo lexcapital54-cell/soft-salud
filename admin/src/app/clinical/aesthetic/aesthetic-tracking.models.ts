@@ -199,7 +199,7 @@ export function emptyTrackingData(): AesTrackingData {
 }
 
 /** Inyectables e implantables: producto, lote, cantidad y unidad son obligatorios al firmar. */
-export const TRACEABLE_TYPES = new Set(['TOXINA', 'ACIDO_HIALURONICO', 'BIOESTIMULADOR', 'MESOTERAPIA', 'HILOS']);
+export const TRACEABLE_TYPES = new Set(['TOXINA', 'ACIDO_HIALURONICO', 'RADIESSE', 'BIOESTIMULADOR', 'SKINBOOSTER', 'MESOTERAPIA', 'HILOS']);
 /** Tecnologías y peelings: se registran equipo/agente y parámetros. */
 export const DEVICE_TYPES = new Set(['LASER', 'ENERGIA', 'PEELING', 'MICRONEEDLING']);
 
