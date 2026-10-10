@@ -1,5 +1,6 @@
-import { Component, OnInit, inject, input, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { AgendaApiService } from '../agenda/agenda-api.service';
 import { AgendaStaffMember, STAFF_ACCENTS } from '../agenda/agenda.models';
 
@@ -24,13 +25,27 @@ const EMPTY: Draft = { name: '', roleLabel: 'Estética corporal', shiftStart: '0
         <p class="muted small">Cargando asistentes…</p>
       } @else if (loadError()) {
         <p class="err" role="alert">{{ loadError() }} <button type="button" class="st-ghost" (click)="load()">Reintentar</button></p>
-      } @else if (!staff().length) {
-        <p class="muted small">Aún no hay asistentes registradas.</p>
-        @if (isAdmin()) {
-          <button type="button" class="st-ghost" [disabled]="provisioning()" (click)="provision()">
-            {{ provisioning() ? 'Creando…' : 'Crear Asistente 1, 2 y 3 (8:00 a. m. – 6:00 p. m.)' }}
+      } @else {
+        <div class="st-master">
+          <div>
+            <strong id="st-master-label">Asistentes en la agenda</strong>
+            <small>
+              {{ anyActive() ? activeCount() + ' activa(s): tienen columna en la vista Día.' : staff().length ? 'Desactivadas: la agenda muestra solo a la profesional.' : 'Al activarlas se crean Asistente 1, 2 y 3 (8:00 a. m. – 6:00 p. m.).' }}
+            </small>
+          </div>
+          <button
+            type="button"
+            class="switch"
+            role="switch"
+            aria-labelledby="st-master-label"
+            [attr.aria-checked]="anyActive()"
+            [class.on]="anyActive()"
+            [disabled]="!isAdmin() || busy()"
+            (click)="toggleAll()"
+          >
+            <span class="knob"></span>
           </button>
-        }
+        </div>
       }
       @if (notice()) {
         <p class="ok" role="status">{{ notice() }}</p>
@@ -48,6 +63,18 @@ const EMPTY: Draft = { name: '', roleLabel: 'Estética corporal', shiftStart: '0
               @if (isAdmin()) {
                 <button type="button" class="st-ghost" (click)="edit(m)">Editar</button>
               }
+              <button
+                type="button"
+                class="switch"
+                role="switch"
+                [attr.aria-label]="(m.active ? 'Desactivar ' : 'Activar ') + m.name"
+                [attr.aria-checked]="m.active"
+                [class.on]="m.active"
+                [disabled]="!isAdmin() || busy()"
+                (click)="toggle(m)"
+              >
+                <span class="knob"></span>
+              </button>
             </li>
           }
         </ul>
@@ -60,7 +87,20 @@ const EMPTY: Draft = { name: '', roleLabel: 'Estética corporal', shiftStart: '0
           <label>Rol <input [(ngModel)]="draft.roleLabel" maxlength="120" /></label>
           <label>Entrada <input type="time" [(ngModel)]="draft.shiftStart" /></label>
           <label>Salida <input type="time" [(ngModel)]="draft.shiftEnd" /></label>
-          <label class="check"><input type="checkbox" [(ngModel)]="draft.active" /> Activa (aparece en la agenda)</label>
+          <div class="check">
+            <button
+              type="button"
+              class="switch"
+              role="switch"
+              aria-labelledby="st-draft-active"
+              [attr.aria-checked]="draft.active"
+              [class.on]="draft.active"
+              (click)="draft.active = !draft.active"
+            >
+              <span class="knob"></span>
+            </button>
+            <span id="st-draft-active">Activa (aparece en la agenda)</span>
+          </div>
         </div>
         @if (error()) {
           <p class="err" role="alert">{{ error() }}</p>
@@ -94,9 +134,16 @@ const EMPTY: Draft = { name: '', roleLabel: 'Estética corporal', shiftStart: '0
     .st-dot { width: 12px; height: 12px; border-radius: 999px; flex: none; }
     .st-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     label { display: flex; flex-direction: column; gap: 5px; font-size: 0.85rem; color: #405a5f; }
-    label.check { flex-direction: row; align-items: center; gap: 8px; grid-column: 1 / -1; }
+    .check { display: flex; align-items: center; gap: 10px; grid-column: 1 / -1; font-size: 0.85rem; color: #405a5f; }
+    .st-master { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: #f2f8f9; border: 1px solid #d7e3e6; margin-bottom: 12px; }
+    .st-master small { display: block; color: #5c7378; margin-top: 2px; }
+    .switch { position: relative; flex: none; width: 46px; height: 26px; border: 0; border-radius: 999px; background: #9fb3b7; cursor: pointer; padding: 0; transition: background 0.15s; }
+    .switch .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 999px; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); transition: transform 0.15s; }
+    .switch.on { background: #0d7377; }
+    .switch.on .knob { transform: translateX(20px); }
+    .switch:focus-visible { outline: 3px solid #1d4e89; outline-offset: 2px; }
+    .switch:disabled { opacity: 0.55; cursor: not-allowed; }
     input { font: inherit; padding: 9px 11px; border: 1px solid #d3e0e1; border-radius: 10px; }
-    input[type='checkbox'] { padding: 0; width: 18px; height: 18px; }
     .st-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 16px; }
     .st-ghost { border: 1px solid #d3e0e1; background: #fff; border-radius: 999px; padding: 7px 14px; font: inherit; font-size: 0.85rem; cursor: pointer; }
     .primary { border: 0; background: #003d4c; color: #fff; border-radius: 999px; padding: 12px 20px; font: inherit; cursor: pointer; }
@@ -114,7 +161,9 @@ export class AgendaStaffCard implements OnInit {
   readonly loading = signal(true);
   readonly loadError = signal('');
   readonly saving = signal(false);
-  readonly provisioning = signal(false);
+  readonly busy = signal(false);
+  readonly activeCount = computed(() => this.staff().filter((m) => m.active).length);
+  readonly anyActive = computed(() => this.activeCount() > 0);
   readonly error = signal('');
   readonly notice = signal('');
   readonly editingId = signal<string | null>(null);
@@ -193,20 +242,61 @@ export class AgendaStaffCard implements OnInit {
       });
   }
 
-  provision() {
-    this.provisioning.set(true);
+  /** Interruptor general: crea las tres asistentes la primera vez; luego activa o desactiva todas. */
+  toggleAll() {
+    if (this.busy()) return;
     this.notice.set('');
     this.error.set('');
-    this.api.provisionDefaultStaff().subscribe({
-      next: (r) => {
-        this.provisioning.set(false);
-        this.notice.set(r.created ? `Se crearon ${r.created} asistentes.` : 'El consultorio ya tenía asistentes.');
+    if (!this.staff().length) {
+      this.busy.set(true);
+      this.api.provisionDefaultStaff().subscribe({
+        next: () => {
+          this.busy.set(false);
+          this.notice.set('Asistentes activadas en la agenda.');
+          this.load();
+        },
+        error: (err) => this.fail(err, 'No se pudieron activar las asistentes.'),
+      });
+      return;
+    }
+    const target = !this.anyActive();
+    const rows = this.staff().filter((m) => m.active !== target);
+    this.busy.set(true);
+    forkJoin(rows.map((m) => this.api.saveStaff(m.id, this.bodyOf(m, target)))).subscribe({
+      next: () => {
+        this.busy.set(false);
+        this.notice.set(target ? 'Asistentes activadas en la agenda.' : 'Asistentes desactivadas.');
         this.load();
       },
       error: (err) => {
-        this.provisioning.set(false);
-        this.error.set(err?.error?.message || 'No se pudieron crear las asistentes.');
+        this.load();
+        this.fail(err, 'No se pudo cambiar el estado de las asistentes.');
       },
     });
+  }
+
+  toggle(m: AgendaStaffMember) {
+    if (this.busy()) return;
+    this.busy.set(true);
+    this.notice.set('');
+    this.error.set('');
+    this.api.saveStaff(m.id, this.bodyOf(m, !m.active)).subscribe({
+      next: (row) => {
+        this.busy.set(false);
+        this.staff.update((list) => list.map((x) => (x.id === row.id ? row : x)));
+        this.notice.set(`${row.name} ${row.active ? 'activada' : 'desactivada'}.`);
+      },
+      error: (err) => this.fail(err, 'No se pudo cambiar el estado de la asistente.'),
+    });
+  }
+
+  private bodyOf(m: AgendaStaffMember, active: boolean) {
+    return { name: m.name, roleLabel: m.roleLabel, shiftStart: m.shiftStart, shiftEnd: m.shiftEnd, active };
+  }
+
+  private fail(err: { error?: { message?: string | string[] } } | null, fallback: string) {
+    this.busy.set(false);
+    const msg = err?.error?.message;
+    this.error.set(Array.isArray(msg) ? msg.join(' ') : msg || fallback);
   }
 }
