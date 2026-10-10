@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { API } from '../../api.config';
-import { AesTrackingData, normalizeTracking } from './aesthetic-tracking.models';
+import { AesTrackingData, emptyTrackingData, normalizeTracking } from './aesthetic-tracking.models';
 
 interface TrackingResponse {
   data: unknown;
@@ -31,7 +31,7 @@ export class AestheticTrackingService {
   readonly rev = signal(0);
   readonly loaded = signal(false);
 
-  data: AesTrackingData = { annotations: [], procedures: [] };
+  data: AesTrackingData = emptyTrackingData();
 
   private patientId: string | null = null;
   private version: number | null = null;
@@ -43,7 +43,7 @@ export class AestheticTrackingService {
     this.flush();
     this.patientId = patientId;
     this.version = null;
-    this.data = { annotations: [], procedures: [] };
+    this.data = emptyTrackingData();
     this.dirty = false;
     this.loaded.set(false);
     this.savedAt.set(null);
@@ -161,6 +161,14 @@ export class AestheticTrackingService {
     const anns = new Map(server.annotations.map((a) => [a.id, a]));
     this.data.annotations = this.data.annotations.map((local) => {
       const s = anns.get(local.id);
+      if (!s) return local;
+      if (s.lockedAt) return s;
+      local._audit = s._audit;
+      return local;
+    });
+    const photos = new Map(server.photos.map((f) => [f.id, f]));
+    this.data.photos = this.data.photos.map((local) => {
+      const s = photos.get(local.id);
       if (!s) return local;
       if (s.lockedAt) return s;
       local._audit = s._audit;

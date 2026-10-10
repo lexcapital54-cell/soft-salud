@@ -100,9 +100,47 @@ export interface AesProcedure {
   _audit?: AesAudit;
 }
 
+export type AesPhotoAngle = 'FRONTAL' | 'PERFIL_DER' | 'PERFIL_IZQ' | 'OBLICUA_DER' | 'OBLICUA_IZQ' | 'DETALLE';
+export type AesPhotoMoment = 'ANTES' | 'DESPUES' | 'CONTROL';
+
+export const AES_PHOTO_ANGLES: Array<{ key: AesPhotoAngle; label: string }> = [
+  { key: 'FRONTAL', label: 'Frontal' },
+  { key: 'OBLICUA_DER', label: '45° derecho' },
+  { key: 'PERFIL_DER', label: 'Perfil derecho' },
+  { key: 'OBLICUA_IZQ', label: '45° izquierdo' },
+  { key: 'PERFIL_IZQ', label: 'Perfil izquierdo' },
+  { key: 'DETALLE', label: 'Detalle' },
+];
+
+export const AES_PHOTO_MOMENTS: Array<{ key: AesPhotoMoment; label: string }> = [
+  { key: 'ANTES', label: 'Antes' },
+  { key: 'DESPUES', label: 'Después' },
+  { key: 'CONTROL', label: 'Control' },
+];
+
+/** Foto clínica clasificada; el archivo es un adjunto de la atención en que se subió. */
+export interface AesPhoto {
+  id: string;
+  attachmentId: string;
+  encounterId: string;
+  angle: AesPhotoAngle;
+  moment: AesPhotoMoment;
+  date: string;
+  procedureId: string;
+  note: string;
+  lockedAt?: string;
+  lockedBy?: string;
+  _audit?: AesAudit;
+}
+
 export interface AesTrackingData {
   annotations: AesAnnotation[];
   procedures: AesProcedure[];
+  photos: AesPhoto[];
+}
+
+export function emptyTrackingData(): AesTrackingData {
+  return { annotations: [], procedures: [], photos: [] };
 }
 
 /** Inyectables e implantables: producto, lote, cantidad y unidad son obligatorios al firmar. */
@@ -227,11 +265,32 @@ export function normalizeAnnotation(raw: unknown): AesAnnotation {
   };
 }
 
+export function normalizePhoto(raw: unknown): AesPhoto {
+  const r = obj(raw);
+  const angle = str(r['angle']);
+  const moment = str(r['moment']);
+  return {
+    id: str(r['id']),
+    attachmentId: str(r['attachmentId']),
+    encounterId: str(r['encounterId']),
+    angle: AES_PHOTO_ANGLES.some((a) => a.key === angle) ? (angle as AesPhotoAngle) : 'FRONTAL',
+    moment: AES_PHOTO_MOMENTS.some((m) => m.key === moment) ? (moment as AesPhotoMoment) : 'CONTROL',
+    date: str(r['date']),
+    procedureId: str(r['procedureId']),
+    note: str(r['note']),
+    ...(str(r['lockedAt']) ? { lockedAt: str(r['lockedAt']), lockedBy: str(r['lockedBy']) } : {}),
+    ...(audit(r['_audit']) ? { _audit: audit(r['_audit']) } : {}),
+  };
+}
+
 export function normalizeTracking(raw: unknown): AesTrackingData {
   const r = obj(raw);
   return {
     annotations: Array.isArray(r['annotations']) ? (r['annotations'] as unknown[]).map(normalizeAnnotation).filter((a) => a.id) : [],
     procedures: Array.isArray(r['procedures']) ? (r['procedures'] as unknown[]).map(normalizeProcedure).filter((p) => p.id) : [],
+    photos: Array.isArray(r['photos'])
+      ? (r['photos'] as unknown[]).map(normalizePhoto).filter((p) => p.id && p.attachmentId)
+      : [],
   };
 }
 

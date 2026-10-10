@@ -79,4 +79,25 @@ describe('applyAestheticIntegrity', () => {
     expect(next.procedures[0].signedBy).toBeUndefined();
     expect(next.procedures[0].signedAt).toBeUndefined();
   });
+
+  it('cierra las fotos del procedimiento firmado y no deja quitarlas ni cambiarlas', () => {
+    const foto = { id: 'f1', attachmentId: 'att-1', angle: 'FRONTAL', moment: 'ANTES', date: '2026-01-10', procedureId: 'p1' };
+    const prev = pickAesthetic({ procedures: [toxina({ status: 'FIRMADO' })], photos: [foto] });
+    applyAestheticIntegrity(pickAesthetic({}), prev, medico, t1);
+    expect(prev.photos[0].lockedAt).toBe(t1.toISOString());
+
+    const edit = pickAesthetic(JSON.parse(JSON.stringify(prev)));
+    edit.photos[0].angle = 'DETALLE';
+    expect(() => applyAestheticIntegrity(prev, edit, medico, t2)).toThrow(/foto pertenece/);
+    const removed = pickAesthetic({ procedures: prev.procedures, photos: [] });
+    expect(() => applyAestheticIntegrity(prev, removed, medico, t2)).toThrow(/quitar una foto/);
+  });
+
+  it('permite quitar una foto abierta y exige ángulo y momento', () => {
+    const prev = pickAesthetic({ photos: [{ id: 'f1', attachmentId: 'att-1', angle: 'PERFIL_DER', moment: 'CONTROL' }] });
+    applyAestheticIntegrity(pickAesthetic({}), prev, auxiliar, t1);
+    expect(() => applyAestheticIntegrity(prev, pickAesthetic({ photos: [] }), auxiliar, t2)).not.toThrow();
+    const bad = pickAesthetic({ photos: [{ id: 'f2', attachmentId: 'att-2', angle: 'LADO', moment: 'ANTES' }] });
+    expect(() => applyAestheticIntegrity(pickAesthetic({}), bad, auxiliar, t2)).toThrow(/ángulo y el momento/);
+  });
 });

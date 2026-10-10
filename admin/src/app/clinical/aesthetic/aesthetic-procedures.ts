@@ -1,6 +1,13 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { HabIcon } from '../../habilitation/hab-icon';
-import { AES_PROCEDURE_TYPES, AES_ZONES, newId, procedureTypeLabel, zoneLabel } from './aesthetic.models';
+import {
+  AES_PROCEDURE_TYPES,
+  AES_ZONES,
+  consentsForProcedureType,
+  newId,
+  procedureTypeLabel,
+  zoneLabel,
+} from './aesthetic.models';
 import {
   AES_UNITS,
   AesProcedure,
@@ -85,6 +92,9 @@ type TextKey =
                 @if (expired(p)) {
                   <span class="badge warn">Producto vencido</span>
                 }
+                @if (!signed && pendingConsent(p)) {
+                  <span class="badge warn">Consentimiento pendiente</span>
+                }
                 @if (p.addenda.length) {
                   <span class="badge">{{ p.addenda.length }} adenda(s)</span>
                 }
@@ -138,6 +148,12 @@ type TextKey =
                       </select>
                     </label>
                   </div>
+                  @if (pendingConsent(p); as names) {
+                    <p class="alert-line" role="status">
+                      <hab-icon name="alert" /> El paciente no tiene firmado un consentimiento para este procedimiento
+                      ({{ names }}). Fírmelo en la sección de consentimientos o registre abajo el documento en papel.
+                    </p>
+                  }
 
                   <div>
                     <span class="aes-sub req">Zonas tratadas</span>
@@ -305,6 +321,8 @@ export class AestheticProcedures {
   readonly disabled = input(false);
   readonly canSign = input(false);
   readonly encounterId = input('');
+  /** Códigos de plantilla con consentimiento firmado y no revocado; null mientras carga. */
+  readonly signedConsentCodes = input<string[] | null>(null);
 
   readonly types = AES_PROCEDURE_TYPES;
   readonly zones = AES_ZONES;
@@ -341,6 +359,19 @@ export class AestheticProcedures {
 
   expired(p: AesProcedure) {
     return expiredAtProcedure(p);
+  }
+
+  /**
+   * Nombres de las plantillas aplicables si ninguna está firmada y vigente; vacío si
+   * hay una firmada, si se registró un consentimiento en papel, si el tipo no tiene
+   * plantilla o si aún no se conoce la lista.
+   */
+  pendingConsent(p: AesProcedure): string {
+    const signed = this.signedConsentCodes();
+    if (!signed || p.consentRef.trim()) return '';
+    const options = consentsForProcedureType(p.type);
+    if (!options.length || options.some((c) => signed.includes(c.code))) return '';
+    return options.map((c) => c.label).join(' o ');
   }
 
   linkedMarks(id: string) {
@@ -397,7 +428,9 @@ export class AestheticProcedures {
       this.error.set(`Para firmar el procedimiento complete: ${missing.join(', ')}.`);
       return;
     }
-    const warn = expiredAtProcedure(p) ? '\n\nAtención: el producto figura vencido a la fecha del procedimiento.' : '';
+    let warn = expiredAtProcedure(p) ? '\n\nAtención: el producto figura vencido a la fecha del procedimiento.' : '';
+    const consent = this.pendingConsent(p);
+    if (consent) warn += `\n\nAtención: no hay consentimiento firmado en el sistema (${consent}).`;
     if (!confirm(`Al firmar, el procedimiento no se podrá modificar ni eliminar; solo admitirá adendas.${warn}\n\n¿Firmar ahora?`)) return;
     p.status = 'FIRMADO';
     this.busy.set(true);

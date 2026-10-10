@@ -63,6 +63,7 @@ export interface TodayAppointment {
   requestDate: string | null;
   opportunityDays: number | null;
   reason: string | null;
+  serviceId?: string | null;
   notes: string | null;
   cancelledAt: string | null;
   /** Hasta cuándo se puede reocupar la franja liberada por una cancelación. */
@@ -162,6 +163,37 @@ export const NOTIFICATION_CHANNEL_LABELS: Record<NotificationChannel, string> = 
   WHATSAPP: 'WhatsApp',
   EMAIL: 'Correo',
 };
+
+export type ServiceCategory = 'FACIAL' | 'CORPORAL' | 'OTRO';
+
+export const SERVICE_CATEGORY_LABELS: Record<ServiceCategory, string> = {
+  FACIAL: 'Estética facial',
+  CORPORAL: 'Estética corporal',
+  OTRO: 'Otros',
+};
+
+/** Servicio del catálogo del consultorio. */
+export interface ClinicServiceItem {
+  id: string;
+  name: string;
+  category: ServiceCategory;
+  subcategory: string | null;
+  durationMinutes: number;
+  durationNote: string | null;
+  /** Null = precio a consultar. */
+  price: number | null;
+  description: string | null;
+  procedureType: string | null;
+  consentCode: string | null;
+  assistantService: boolean;
+  active: boolean;
+  sortOrder: number;
+}
+
+export function formatCop(value: number | null | undefined) {
+  if (value === null || value === undefined) return 'Consultar';
+  return value.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+}
 
 export interface AgendaProfessional {
   id: string;

@@ -345,6 +345,7 @@ model Clinic {
   patients             Patient[]
   orthoTracking        OrthoTracking[]
   aestheticTracking    AestheticTracking[]
+  services             ClinicService[]
   appointments         Appointment[]
   encounters           Encounter[]
   formTemplates        FormTemplate[]
@@ -532,6 +533,9 @@ model Appointment {
   /// Link de videollamada cuando modality = VIRTUAL
   meetingUrl     String?           @map("meeting_url")
   reason         String?
+  /// Servicio del catálogo del consultorio; `reason` guarda su nombre como copia.
+  serviceId      String?               @map("service_id") @db.Uuid
+  service        ClinicService?        @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   notes          String?
   /// Momento de la cancelación; marca el inicio de la ventana de reagendamiento.
   cancelledAt    DateTime?         @map("cancelled_at") @db.Timestamptz(6)
@@ -1489,6 +1493,39 @@ model AestheticTracking {
 
   @@index([clinicId])
   @@map("aesthetic_tracking")
+}
+
+/// Servicios que ofrece el consultorio (duración y precio para agenda y recibos).
+model ClinicService {
+  id               String        @id @default(uuid()) @db.Uuid
+  clinicId         String        @map("clinic_id") @db.Uuid
+  clinic           Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  name             String        @db.VarChar(160)
+  /// FACIAL | CORPORAL | OTRO
+  category         String        @default("OTRO") @db.VarChar(20)
+  subcategory      String?       @db.VarChar(80)
+  durationMinutes  Int           @default(30) @map("duration_minutes")
+  /// Texto libre para paquetes ("4-8 sesiones").
+  durationNote     String?       @map("duration_note") @db.VarChar(60)
+  /// Null = precio a consultar.
+  price            Decimal?      @db.Decimal(12, 2)
+  description      String?
+  /// Tipo de procedimiento estético (TOXINA, ACIDO_HIALURONICO…) para precargar el registro.
+  procedureType    String?       @map("procedure_type") @db.VarChar(40)
+  /// Código de la plantilla de consentimiento que exige el servicio.
+  consentCode      String?       @map("consent_code") @db.VarChar(60)
+  /// Servicio que puede atender personal auxiliar (masajes).
+  assistantService Boolean       @default(false) @map("assistant_service")
+  active           Boolean       @default(true)
+  sortOrder        Int           @default(0) @map("sort_order")
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  appointments Appointment[]
+
+  @@unique([clinicId, name])
+  @@index([clinicId, active, sortOrder])
+  @@map("clinic_services")
 }
 
 model AuditLog {

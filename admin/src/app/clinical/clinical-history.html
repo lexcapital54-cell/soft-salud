@@ -3909,6 +3909,13 @@
                       [disabled]="orthoLiveDisabled()"
                       [canSign]="canWrite()"
                       [encounterId]="encounter()?.id || ''"
+                      [signedConsentCodes]="signedConsentCodes()"
+                    />
+                    <app-aesthetic-photos
+                      [disabled]="orthoLiveDisabled()"
+                      [encounterId]="encounter()?.id || ''"
+                      [uploader]="aestheticPhotoUploader"
+                      [url]="aestheticPhotoUrl"
                     />
                   } @placeholder {
                     <p class="muted small">Cargando mapa facial y procedimientos…</p>

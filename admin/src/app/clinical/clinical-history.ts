@@ -3,6 +3,7 @@ import { AestheticAnamnesis } from './aesthetic/aesthetic-anamnesis';
 import { AestheticExam } from './aesthetic/aesthetic-exam';
 import { AestheticFaceMap } from './aesthetic/aesthetic-face-map';
 import { AestheticProcedures } from './aesthetic/aesthetic-procedures';
+import { AestheticPhotos } from './aesthetic/aesthetic-photos';
 import { AestheticTrackingService } from './aesthetic/aesthetic-tracking.service';
 import {
   AestheticContent,
@@ -386,6 +387,7 @@ function emptyContent(): ClinicalContent {
     AestheticExam,
     AestheticFaceMap,
     AestheticProcedures,
+    AestheticPhotos,
     OrthoFaceProportions,
     OrthoMovementPlan,
     OrthoArchAnalysis,
@@ -956,6 +958,16 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   sessionPhotoUrl(id: string) {
     return this.attachmentUrl(id);
   }
+
+  // ── Fotos estéticas: adjuntos de la atención clasificados en el seguimiento ──
+  readonly aestheticPhotoUrl = (id: string) => this.attachmentUrl(id);
+  readonly aestheticPhotoUploader = (file: File, label: string) =>
+    this.uploadDentalFile(file, label, 'PHOTO')?.pipe(
+      tap((att) => {
+        this.dentalPhotoUrls.update((m) => ({ ...m, [att.id]: URL.createObjectURL(file) }));
+        this.attachments.set([att, ...this.attachments()]);
+      }),
+    ) ?? null;
 
   isImageAttachment(id: string) {
     return !!this.attachments().find((a) => a.id === id)?.mimeType?.startsWith('image/');
@@ -2458,6 +2470,16 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   readonly patientSigPreview = signal<string | null>(null);
   /** Consentimientos sellados del paciente (se listan al consultar una HC cerrada). */
   readonly sealedConsents = signal<PatientConsentRecord[]>([]);
+  private readonly sealedConsentsLoaded = signal(false);
+  /** Códigos de plantilla firmados y vigentes; null si la lista no se pudo cargar. */
+  readonly signedConsentCodes = computed(() =>
+    this.sealedConsentsLoaded()
+      ? this.sealedConsents()
+          .filter((c) => c.status !== 'REVOCADO' && c.status !== 'PENDIENTE_FIRMA' && !c.revokedAt)
+          .map((c) => c.template?.code || '')
+          .filter(Boolean)
+      : null,
+  );
   readonly attendanceMetaSaving = signal(false);
 
   // Firma manuscrita (Ley 527): se dibuja una vez y queda en el perfil.
@@ -5014,6 +5036,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     this.api.listPatientConsents({ patientId }).subscribe({
       next: (rows) => {
         this.sealedConsents.set(rows);
+        this.sealedConsentsLoaded.set(true);
         if (!this.patientSigPreview()) {
           const encId = this.encounter()?.id;
           const match =
@@ -5025,7 +5048,10 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
           }
         }
       },
-      error: () => this.sealedConsents.set([]),
+      error: () => {
+        this.sealedConsents.set([]);
+        this.sealedConsentsLoaded.set(false);
+      },
     });
   }
 

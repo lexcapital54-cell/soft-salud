@@ -271,6 +271,27 @@
         <div class="modal-col">
         <section class="step">
           <h3><span class="step-num">3</span> Detalles de la cita</h3>
+          @if (services().length) {
+            <label class="service-pick">
+              Servicio
+              <select [ngModel]="bookingForm.serviceId" (ngModelChange)="chooseService($event)">
+                <option value="">Sin servicio del catálogo</option>
+                @for (g of serviceGroups(); track g.label) {
+                  <optgroup [label]="g.label">
+                    @for (s of g.items; track s.id) {
+                      <option [value]="s.id">{{ s.name }} · {{ s.durationMinutes }} min</option>
+                    }
+                  </optgroup>
+                }
+              </select>
+            </label>
+            @if (selectedService(); as svc) {
+              <p class="muted small service-info">
+                {{ svc.subcategory || '' }}{{ svc.subcategory ? ' · ' : '' }}{{ svc.durationNote || svc.durationMinutes + ' min' }}
+                · {{ formatCop(svc.price) }}
+              </p>
+            }
+          }
           <div class="detail-grid">
             <label>
               Hora
@@ -686,7 +707,8 @@
                   [queryParams]="{
                     patientId: appt.patient.id,
                     appointmentId: appt.id,
-                    patientName: appt.patient.firstName + ' ' + appt.patient.lastName
+                    patientName: appt.patient.firstName + ' ' + appt.patient.lastName,
+                    serviceId: appt.serviceId || null
                   }"
                 >
                   Cobrar
@@ -864,7 +886,8 @@
               [queryParams]="{
                 patientId: appt.patient.id,
                 appointmentId: appt.id,
-                patientName: appt.patient.firstName + ' ' + appt.patient.lastName
+                patientName: appt.patient.firstName + ' ' + appt.patient.lastName,
+                serviceId: appt.serviceId || null
               }"
             >
               Cobrar

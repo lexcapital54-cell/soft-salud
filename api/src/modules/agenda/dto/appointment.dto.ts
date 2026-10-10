@@ -104,6 +104,11 @@ export class CreateAppointmentDto {
   @MaxLength(500)
   meetingUrl?: string;
 
+  /** Servicio del catálogo del consultorio; fija la duración si no se envía. */
+  @IsOptional()
+  @IsUUID()
+  serviceId?: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(500)
@@ -143,6 +148,11 @@ export class UpdateAppointmentDto {
   @IsUrl({ require_tld: false })
   @MaxLength(500)
   meetingUrl?: string;
+
+  /** Servicio del catálogo del consultorio; fija la duración si no se envía. */
+  @IsOptional()
+  @IsUUID()
+  serviceId?: string;
 
   @IsOptional()
   @IsString()

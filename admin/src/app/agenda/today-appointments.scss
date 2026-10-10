@@ -1402,6 +1402,20 @@ select {
   grid-column: 1 / -1;
 }
 
+.service-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+  select {
+    width: 100%;
+  }
+}
+
+.service-info {
+  margin: 0 0 12px;
+}
+
 .pro-list {
   display: flex;
   flex-direction: column;

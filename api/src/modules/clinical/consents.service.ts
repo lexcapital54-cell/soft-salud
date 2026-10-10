@@ -10,6 +10,7 @@ import { ClinicSpecialty, ConsentSignerRole, Prisma } from '@prisma/client';
 import { User } from '../../users/user.entity';
 import { PrismaService } from '../../prisma/prisma.module';
 import { seedCiConsents } from './consent-ci/ci-consent.seed';
+import { seedAestheticConsents } from './consent-aesthetic/aesthetic-consents';
 import { CiConsentDetails, isCiConsentSpec } from './consent-ci/ci-consent.types';
 import { ciDetailsSummary, validateCiDetails } from './consent-ci/ci-consent.validation';
 import { fillConsentPlaceholders } from './consent-placeholders';
@@ -33,6 +34,15 @@ export class ConsentsService implements OnModuleInit {
     } catch (error) {
       this.logger.warn(
         `No se pudieron aprovisionar las plantillas CI: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+    try {
+      await seedAestheticConsents(this.prisma);
+    } catch (error) {
+      this.logger.warn(
+        `No se pudieron aprovisionar las plantillas de estética: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );

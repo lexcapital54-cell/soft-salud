@@ -3,6 +3,7 @@ import { HabIcon } from '../../habilitation/hab-icon';
 import {
   AES_CONDITIONS,
   AES_CONDITION_GROUPS,
+  AES_HABITS,
   AES_PROCEDURE_TYPES,
   AES_SYSTEMS,
   AES_ZONES,
@@ -255,6 +256,36 @@ const SYSTEM_STATUSES: Array<Exclude<SystemStatus, ''>> = ['POS', 'NEG', 'NE'];
       }
     </section>
 
+    <section class="aes-block" id="aes-habitos">
+      <div class="aes-head">
+        <span class="aes-head-icon"><hab-icon name="clock" /></span>
+        <h4>Hábitos</h4>
+      </div>
+      <div class="cond-list">
+        @for (h of habits; track h.key) {
+          @let cur = d.habits[h.key] || '';
+          <div class="cond" [class.no]="!!cur">
+            <div class="cond-top">
+              <span class="cond-label" [id]="'aes-h-' + h.key">{{ h.label }}</span>
+              <div class="chips" role="group" [attr.aria-labelledby]="'aes-h-' + h.key">
+                @for (o of h.options; track o.key) {
+                  <button type="button" class="chip" [class.on]="cur === o.key" [attr.aria-pressed]="cur === o.key"
+                    [disabled]="ro" (click)="setHabit(h.key, o.key)">
+                    {{ o.label }}
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+      <label class="aes-field" style="margin-top: 10px">
+        Otros hábitos y observaciones
+        <textarea rows="2" [value]="d.habitsNotes" [readOnly]="ro" (input)="setHabitsNotes($event)"
+          placeholder="Dieta, cuidado de la piel en casa, exposición laboral…"></textarea>
+      </label>
+    </section>
+
     <section class="aes-block" id="aes-sistemas">
       <div class="aes-head">
         <span class="aes-head-icon"><hab-icon name="activity" /></span>
@@ -296,6 +327,7 @@ export class AestheticAnamnesis {
   readonly conditions = AES_CONDITIONS;
   readonly groups = AES_CONDITION_GROUPS;
   readonly systems = AES_SYSTEMS;
+  readonly habits = AES_HABITS;
   readonly answers = ANSWERS;
   readonly answerLabel = ANSWER_LABEL;
   readonly systemStatuses = SYSTEM_STATUSES;
@@ -388,6 +420,17 @@ export class AestheticAnamnesis {
     const d = this.data();
     d.medicationsAnswer = 'SI';
     d.medications.push({ id: newId(), name: '', concentration: '', route: '', frequency: '', notes: '' });
+    this.commit();
+  }
+
+  setHabit(key: string, value: string) {
+    const h = this.data().habits;
+    h[key] = h[key] === value ? '' : value;
+    this.commit();
+  }
+
+  setHabitsNotes(ev: Event) {
+    this.data().habitsNotes = (ev.target as HTMLTextAreaElement).value;
     this.commit();
   }
 

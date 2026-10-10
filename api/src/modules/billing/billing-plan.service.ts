@@ -21,6 +21,7 @@ const RECORD_BY_SPECIALTY: Record<string, { code: string; specialty: string }> =
   ORTHODONTICS: { code: 'HC-ORT-001', specialty: 'Ortodoncia' },
   PHYSIOTHERAPY: { code: 'HC-FT-001', specialty: 'Fisioterapia' },
   PSYCHOLOGY: { code: 'HC-PSI', specialty: 'Psicología' },
+  AESTHETIC: { code: 'HC-AES', specialty: 'Medicina estética' },
 };
 
 export interface PlanItemBalance extends BillablePlanItem {

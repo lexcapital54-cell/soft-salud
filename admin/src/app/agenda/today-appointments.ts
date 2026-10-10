@@ -24,12 +24,16 @@ import {
   APPOINTMENT_STATUS_LABELS,
   AppointmentStatus,
   CareModality,
+  ClinicServiceItem,
   COLUMN_ACCENTS,
+  formatCop,
   NOTIFICATION_CHANNEL_LABELS,
   NOTIFICATION_KIND_LABELS,
   NotificationChannel,
   NotificationLogRow,
   PatientOption,
+  SERVICE_CATEGORY_LABELS,
+  ServiceCategory,
   STATUS_FILTERS,
   TRANSITION_LABELS,
   TodayAppointment,
@@ -182,8 +186,10 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
   readonly isPsychology = computed(() => this.user()?.specialty === 'PSYCHOLOGY');
   /** Mismas especialidades que muestran «Recibos de caja» en el dashboard. */
   readonly billingEnabled = computed(() =>
-    ['PSYCHOLOGY', 'PHYSIOTHERAPY', 'DENTISTRY', 'ORTHODONTICS'].includes(this.user()?.specialty ?? ''),
+    ['PSYCHOLOGY', 'PHYSIOTHERAPY', 'DENTISTRY', 'ORTHODONTICS', 'AESTHETIC'].includes(this.user()?.specialty ?? ''),
   );
+  /** El catálogo de servicios es exclusivo de medicina estética. */
+  readonly isAesthetic = computed(() => this.user()?.specialty === 'AESTHETIC');
   readonly newPatientMode = signal<'quick' | 'full'>('quick');
   readonly showIntake = signal(false);
   patientQuery = '';
@@ -218,7 +224,21 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
     modality: CareModality;
     meetingUrl: string;
     notes: string;
+    serviceId: string;
   } = this.emptyBookingForm();
+
+  /** Catálogo de servicios del consultorio (vacío si no se ha configurado). */
+  readonly services = signal<ClinicServiceItem[]>([]);
+  readonly serviceGroups = computed(() => {
+    const groups = new Map<ServiceCategory, ClinicServiceItem[]>();
+    for (const s of this.services()) {
+      const list = groups.get(s.category) ?? [];
+      list.push(s);
+      groups.set(s.category, list);
+    }
+    return [...groups.entries()].map(([key, items]) => ({ label: SERVICE_CATEGORY_LABELS[key] ?? key, items }));
+  });
+  readonly formatCop = formatCop;
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private patientTimer: ReturnType<typeof setTimeout> | null = null;
@@ -231,6 +251,7 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
       modality: 'IN_PERSON' as CareModality,
       meetingUrl: '',
       notes: '',
+      serviceId: '',
     };
   }
 
@@ -465,7 +486,24 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
         },
         error: () => undefined,
       });
+      if (this.isAesthetic()) {
+        this.api.listServices().subscribe({
+          next: (rows) => this.services.set(rows),
+          error: () => undefined,
+        });
+      }
     }
+  }
+
+  selectedService() {
+    return this.services().find((s) => s.id === this.bookingForm.serviceId) ?? null;
+  }
+
+  /** Al elegir el servicio, la cita toma su duración (se puede ajustar a mano). */
+  chooseService(id: string) {
+    this.bookingForm.serviceId = id;
+    const service = this.selectedService();
+    if (service) this.bookingForm.durationMinutes = service.durationMinutes;
   }
 
   ngOnDestroy() {
@@ -912,6 +950,8 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
         professionalId: form.professionalId,
         startsAt: startsAt.toISOString(),
         durationMinutes: Number(form.durationMinutes) || 40,
+        serviceId: form.serviceId || undefined,
+        reason: this.selectedService()?.name,
         modality: form.modality,
         meetingUrl: this.isVirtualBooking()
           ? form.meetingUrl || undefined
@@ -1096,7 +1136,12 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
       modality: (appointment.isTelemedicine
         ? 'VIRTUAL'
         : 'IN_PERSON') as CareModality,
-      notes: appointment.reason ?? '',
+      notes: appointment.serviceId ? '' : (appointment.reason ?? ''),
+      serviceId: appointment.serviceId ?? '',
+      durationMinutes: Math.max(
+        5,
+        Math.round((new Date(appointment.endsAt).getTime() - startsAt.getTime()) / 60000),
+      ),
     };
     this.bookingDate.set(toDateKey(startsAt));
     this.openBooking();

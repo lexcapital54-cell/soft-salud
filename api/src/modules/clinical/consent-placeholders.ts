@@ -92,7 +92,7 @@ export function fillConsentPlaceholders(
     `$1 <strong>${escapeHtml(patient || '[Paciente / menor]')}</strong>`,
   );
   out = out.replace(
-    /((?:psicólogo\(a\)|odontólogo\(a\)|fisioterapeuta)\s*)_{5,}/gi,
+    /((?:psicólogo\(a\)|odontólogo\(a\)|médico\(a\)|fisioterapeuta)\s*)_{5,}/gi,
     `$1<strong>${escapeHtml(professional || '[Profesional]')}</strong>`,
   );
   out = out.replace(

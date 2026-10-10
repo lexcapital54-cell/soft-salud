@@ -761,7 +761,7 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
       `$1 <strong class="filled">${this.escapeHtml(patient || '[Paciente / menor]')}</strong>`,
     );
     out = out.replace(
-      /((?:psicólogo\(a\)|odontólogo\(a\)|fisioterapeuta)\s*)_{5,}/gi,
+      /((?:psicólogo\(a\)|odontólogo\(a\)|médico\(a\)|fisioterapeuta)\s*)_{5,}/gi,
       `$1<strong class="filled">${this.escapeHtml(professional || '[Profesional]')}</strong>`,
     );
     out = out.replace(

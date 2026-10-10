@@ -33,9 +33,13 @@ function clinicalPart(row: Json, extra: string[] = []) {
   return stable(copy);
 }
 
+export const AES_MAX_PHOTOS = 2000;
+const PHOTO_ANGLES = new Set(['FRONTAL', 'PERFIL_DER', 'PERFIL_IZQ', 'OBLICUA_DER', 'OBLICUA_IZQ', 'DETALLE']);
+const PHOTO_MOMENTS = new Set(['ANTES', 'DESPUES', 'CONTROL']);
+
 export function pickAesthetic(data: unknown) {
   const src = obj(data);
-  return { annotations: arr(src.annotations), procedures: arr(src.procedures) };
+  return { annotations: arr(src.annotations), procedures: arr(src.procedures), photos: arr(src.photos) };
 }
 
 export type AestheticData = ReturnType<typeof pickAesthetic>;
@@ -58,7 +62,11 @@ export function applyAestheticIntegrity(
   user: { id: string; name: string; canSign: boolean },
   now: Date,
 ): AestheticChange {
-  if (next.procedures.length > AES_MAX_PROCEDURES || next.annotations.length > AES_MAX_ANNOTATIONS) {
+  if (
+    next.procedures.length > AES_MAX_PROCEDURES ||
+    next.annotations.length > AES_MAX_ANNOTATIONS ||
+    next.photos.length > AES_MAX_PHOTOS
+  ) {
     throw new AestheticIntegrityError('El seguimiento estético supera el número de registros permitido.');
   }
   const at = now.toISOString();
@@ -185,5 +193,50 @@ export function applyAestheticIntegrity(
       change.lockedAnnotations += 1;
     }
   }
+
+  // Fotos: ligadas a un procedimiento firmado quedan cerradas. Quitar una foto
+  // abierta solo la saca del comparador; el archivo sigue anexo a la atención.
+  const prevPhotos = new Map(previous.photos.map((p) => [text(p.id), p]));
+  const nextPhotoIds = new Set(next.photos.map((p) => text(p.id)));
+  const photoLocked = (p: Json) => !!text(p.lockedAt) || (!!text(p.procedureId) && signedIds.has(text(p.procedureId)));
+  for (const [id, prev] of prevPhotos) {
+    if (photoLocked(prev) && !nextPhotoIds.has(id)) {
+      throw new AestheticIntegrityError('No se puede quitar una foto de un procedimiento firmado.');
+    }
+  }
+  for (const row of next.photos) {
+    const id = text(row.id);
+    if (!id || !text(row.attachmentId)) throw new AestheticIntegrityError('Foto sin identificador o sin archivo.');
+    if (!PHOTO_ANGLES.has(text(row.angle)) || !PHOTO_MOMENTS.has(text(row.moment))) {
+      throw new AestheticIntegrityError('Indique el ángulo y el momento de la foto.');
+    }
+    const prev = prevPhotos.get(id);
+    if (prev && text(prev.lockedAt)) {
+      if (clinicalPart(prev) !== clinicalPart(row)) {
+        throw new AestheticIntegrityError('La foto pertenece a un procedimiento firmado y no se puede modificar.');
+      }
+      Object.assign(row, { lockedAt: prev.lockedAt, lockedBy: prev.lockedBy, _audit: prev._audit });
+      continue;
+    }
+    for (const k of SERVER_KEYS) delete row[k];
+    const prevAudit = obj(prev?._audit);
+    const changed = !prev || clinicalPart(prev) !== clinicalPart(row);
+    row._audit = {
+      createdAt: text(prevAudit.createdAt) || at,
+      createdBy: text(prevAudit.createdBy) || user.name,
+      updatedAt: changed ? at : text(prevAudit.updatedAt) || at,
+      updatedBy: changed ? user.name : text(prevAudit.updatedBy) || user.name,
+    };
+    if (text(row.procedureId) && signedIds.has(text(row.procedureId))) {
+      row.lockedAt = at;
+      row.lockedBy = user.name;
+    }
+  }
   return change;
+}
+
+/** Adjuntos nuevos referenciados por las fotos (para validar que son del paciente). */
+export function newPhotoAttachmentIds(previous: AestheticData, next: AestheticData): string[] {
+  const known = new Set(previous.photos.map((p) => text(p.attachmentId)));
+  return [...new Set(next.photos.map((p) => text(p.attachmentId)).filter((id) => id && !known.has(id)))];
 }

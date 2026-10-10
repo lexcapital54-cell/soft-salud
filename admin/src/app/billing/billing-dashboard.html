@@ -95,6 +95,21 @@
         </div>
         <h3 class="span-2 manual-title">{{ planLines().length ? 'Línea adicional (opcional)' : 'Concepto del recibo' }}</h3>
       }
+      @if (serviceGroups().length) {
+        <label class="span-2">
+          Servicio del catálogo (opcional)
+          <select [ngModel]="serviceId" (ngModelChange)="chooseService($event)">
+            <option value="">— Concepto libre —</option>
+            @for (g of serviceGroups(); track g.label) {
+              <optgroup [label]="g.label">
+                @for (s of g.items; track s.id) {
+                  <option [value]="s.id">{{ s.name }} · {{ cop(s.price) }}</option>
+                }
+              </optgroup>
+            }
+          </select>
+        </label>
+      }
       <label>
         Descripción
         <input [(ngModel)]="receiptForm.description" />

@@ -11,5 +11,8 @@
 
   @if (canWriteClinical()) {
     <app-assistants-card [isAdmin]="isClinicAdmin()" />
+    @if (isAesthetic()) {
+      <app-services-card [isAdmin]="isClinicAdmin()" [aesthetic]="true" />
+    }
   }
 </section>

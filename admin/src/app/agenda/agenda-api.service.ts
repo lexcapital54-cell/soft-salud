@@ -7,6 +7,7 @@ import {
   AppointmentEventType,
   AppointmentStatus,
   CareModality,
+  ClinicServiceItem,
   NotificationChannel,
   NotificationLogRow,
   PatientOption,
@@ -88,9 +89,27 @@ export class AgendaApiService {
     modality?: CareModality;
     meetingUrl?: string;
     reason?: string;
+    serviceId?: string;
     notes?: string;
   }) {
     return this.http.post<TodayAppointment>(`${API}/appointments`, body);
+  }
+
+  listServices(includeInactive = false) {
+    const params = includeInactive ? new HttpParams().set('all', '1') : new HttpParams();
+    return this.http
+      .get<ClinicServiceItem[]>(`${API}/clinic-services`, { params })
+      .pipe(retryOnDisconnect());
+  }
+
+  saveService(id: string | null, body: Omit<ClinicServiceItem, 'id' | 'sortOrder'>) {
+    return id
+      ? this.http.post<ClinicServiceItem>(`${API}/clinic-services/${id}`, body)
+      : this.http.post<ClinicServiceItem>(`${API}/clinic-services`, body);
+  }
+
+  importAestheticServices() {
+    return this.http.post<{ imported: number }>(`${API}/clinic-services/import-aesthetic-base`, {});
   }
 
   /**

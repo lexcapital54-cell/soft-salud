@@ -73,6 +73,27 @@ export function procedureTypeLabel(key: string) {
   return AES_PROCEDURE_TYPES.find((t) => t.key === key)?.label || key || '—';
 }
 
+/** Plantillas de consentimiento de estética (códigos de la API) y tipos que cubren. */
+export const AES_CONSENTS = [
+  { code: 'AES_TOXINA', label: 'Toxina botulínica (CI-EST-01)', types: ['TOXINA'] },
+  { code: 'AES_RADIESSE', label: 'Radiesse® (CI-EST-02)', types: ['BIOESTIMULADOR'] },
+  { code: 'AES_ACIDO_HIALURONICO', label: 'Ácido hialurónico reticulado (CI-EST-04)', types: ['ACIDO_HIALURONICO'] },
+  { code: 'AES_SKINBOOSTER', label: 'Skinbooster (CI-EST-05)', types: ['ACIDO_HIALURONICO', 'MESOTERAPIA'] },
+  { code: 'AES_MESOTERAPIA', label: 'Mesoterapia Mesohyal™ X-DNA (CI-EST-07)', types: ['MESOTERAPIA'] },
+  { code: 'AES_PEELING_MELANOSTOP', label: 'Peeling Melanostop Tranex', types: ['PEELING'] },
+  { code: 'AES_PEELING_EYECON', label: 'Peeling periocular Global Eyecon®', types: ['PEELING'] },
+  { code: 'AES_EXILIS', label: 'Exilis Ultra 360®', types: ['ENERGIA'] },
+] as const;
+
+export function aesConsentLabel(code: string) {
+  return AES_CONSENTS.find((c) => c.code === code)?.label || code;
+}
+
+/** Consentimientos que respaldan un tipo de procedimiento (vacío si no hay plantilla). */
+export function consentsForProcedureType(type: string) {
+  return AES_CONSENTS.filter((c) => (c.types as readonly string[]).includes(type));
+}
+
 export const AES_ZONES = [
   { key: 'frente', label: 'Frente' },
   { key: 'glabela', label: 'Glabela' },
@@ -175,6 +196,55 @@ export const EXAM_FIELDS = [
   { key: 'volume', label: 'Alteraciones de volumen' },
 ] as const;
 
+/** Hábitos de estilo de vida que influyen en la piel y la recuperación. */
+export const AES_HABITS = [
+  {
+    key: 'water',
+    label: 'Consumo de agua',
+    options: [
+      { key: 'MENOS_1L', label: 'Menos de 1 L/día' },
+      { key: '1_2L', label: '1 a 2 L/día' },
+      { key: 'MAS_2L', label: 'Más de 2 L/día' },
+    ],
+  },
+  {
+    key: 'activity',
+    label: 'Actividad física',
+    options: [
+      { key: 'SEDENTARIO', label: 'Sedentario' },
+      { key: 'MODERADO', label: 'Moderada' },
+      { key: 'INTENSO', label: 'Intensa' },
+    ],
+  },
+  {
+    key: 'sleep',
+    label: 'Horas de sueño',
+    options: [
+      { key: 'MENOS_6H', label: 'Menos de 6 h' },
+      { key: '6_8H', label: '6 a 8 h' },
+      { key: 'MAS_8H', label: 'Más de 8 h' },
+    ],
+  },
+  {
+    key: 'sunscreen',
+    label: 'Protección solar',
+    options: [
+      { key: 'NUNCA', label: 'Nunca' },
+      { key: 'OCASIONAL', label: 'Ocasional' },
+      { key: 'DIARIO', label: 'Diaria' },
+    ],
+  },
+  {
+    key: 'stress',
+    label: 'Nivel de estrés',
+    options: [
+      { key: 'BAJO', label: 'Bajo' },
+      { key: 'MODERADO', label: 'Moderado' },
+      { key: 'ALTO', label: 'Alto' },
+    ],
+  },
+] as const;
+
 export const CONTRAINDICATION_RESULTS = [
   { key: 'NINGUNA', label: 'Sin contraindicaciones identificadas' },
   { key: 'RELATIVAS', label: 'Contraindicaciones relativas' },
@@ -217,6 +287,9 @@ export interface AestheticContent {
   previousTreatments: AesPreviousTreatment[];
   medicationsAnswer: AesAnswer;
   medications: AesMedication[];
+  /** Clave de AES_HABITS → opción elegida; '' = no preguntado. */
+  habits: Record<string, string>;
+  habitsNotes: string;
   systems: Record<string, { status: SystemStatus; detail: string }>;
   vitals: {
     bloodPressure: string;
@@ -273,6 +346,8 @@ export function emptyAesthetic(): AestheticContent {
     previousTreatments: [],
     medicationsAnswer: '',
     medications: [],
+    habits: {},
+    habitsNotes: '',
     systems: {},
     vitals: {
       bloodPressure: '',
@@ -349,6 +424,8 @@ export function normalizeAesthetic(raw?: Partial<AestheticContent> | null): Aest
       frequency: str(m.frequency),
       notes: str(m.notes),
     })),
+    habits: { ...(raw.habits || {}) },
+    habitsNotes: str(raw.habitsNotes),
     systems: { ...(raw.systems || {}) },
     vitals: { ...base.vitals, ...(raw.vitals || {}) },
     exam: { ...(raw.exam || {}) },
@@ -376,6 +453,12 @@ export function aestheticAntecedentsText(a: AestheticContent): string {
     const parts = [procedureTypeLabel(t.type), t.zone, t.date, t.product, t.complications && `complicaciones: ${t.complications}`];
     lines.push(`Estético previo: ${parts.filter((p) => p && String(p).trim()).join(' · ')}`);
   }
+  const habits = AES_HABITS.map((h) => {
+    const opt = h.options.find((o) => o.key === a.habits[h.key]);
+    return opt ? `${h.label}: ${opt.label}` : '';
+  }).filter(Boolean);
+  if (habits.length) lines.push(`Hábitos: ${habits.join(' · ')}`);
+  if (a.habitsNotes.trim()) lines.push(`Otros hábitos: ${a.habitsNotes.trim()}`);
   return lines.join('\n');
 }
 

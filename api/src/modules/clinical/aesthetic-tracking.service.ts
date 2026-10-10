@@ -12,6 +12,7 @@ import { User } from '../../users/user.entity';
 import {
   AestheticIntegrityError,
   applyAestheticIntegrity,
+  newPhotoAttachmentIds,
   pickAesthetic,
 } from './aesthetic-tracking.integrity';
 
@@ -99,6 +100,15 @@ export class AestheticTrackingService {
       if (error instanceof AestheticIntegrityError) throw new BadRequestException(error.message);
       throw error;
     }
+    const attachmentIds = newPhotoAttachmentIds(before, after);
+    if (attachmentIds.length) {
+      const owned = await this.prisma.clinicalAttachment.count({
+        where: { id: { in: attachmentIds }, encounter: { patientId, clinicId } },
+      });
+      if (owned !== attachmentIds.length) {
+        throw new BadRequestException('Alguna foto no corresponde a una atención de este paciente.');
+      }
+    }
     const data = after as unknown as Prisma.InputJsonValue;
 
     return this.prisma.$transaction(async (tx) => {
@@ -130,6 +140,7 @@ export class AestheticTrackingService {
             version: row.version,
             procedures: after.procedures.length,
             annotations: after.annotations.length,
+            photos: after.photos.length,
             addenda: change.addenda,
           },
         },

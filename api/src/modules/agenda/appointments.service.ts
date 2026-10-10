@@ -309,10 +309,15 @@ export class AppointmentsService {
       dto.professionalId ?? user.id,
     );
 
+    const service =
+      !isBlock && dto.serviceId
+        ? await this.resolveService(clinicId, dto.serviceId)
+        : null;
+
     const { startsAt, endsAt } = this.resolveSlot({
       startsAt: dto.startsAt,
       endsAt: dto.endsAt,
-      durationMinutes: dto.durationMinutes,
+      durationMinutes: dto.durationMinutes ?? service?.durationMinutes,
     });
 
     const requestDate = dto.requestDate ? new Date(dto.requestDate) : new Date();
@@ -341,7 +346,8 @@ export class AppointmentsService {
         modality,
         meetingUrl:
           !isBlock && modality === CareModality.VIRTUAL ? dto.meetingUrl : null,
-        reason: isBlock ? null : dto.reason,
+        reason: isBlock ? null : (dto.reason?.trim() || service?.name),
+        serviceId: service?.id ?? null,
         notes: dto.notes,
       },
       include: appointmentInclude,
@@ -405,6 +411,9 @@ export class AppointmentsService {
     const professionalId = dto.professionalId
       ? await this.resolveProfessionalId(clinicId, dto.professionalId)
       : existing.professionalId;
+    const service = dto.serviceId
+      ? await this.resolveService(clinicId, dto.serviceId)
+      : null;
 
     const reschedule =
       dto.startsAt !== undefined ||
@@ -440,7 +449,8 @@ export class AppointmentsService {
           modality === CareModality.VIRTUAL
             ? (dto.meetingUrl ?? existing.meetingUrl)
             : null,
-        reason: dto.reason ?? existing.reason,
+        reason: dto.reason ?? service?.name ?? existing.reason,
+        ...(service ? { serviceId: service.id } : {}),
         notes: dto.notes ?? existing.notes,
       },
       include: appointmentInclude,
@@ -479,6 +489,19 @@ export class AppointmentsService {
     }
 
     return serialized;
+  }
+
+  private async resolveService(clinicId: string, serviceId: string) {
+    const service = await this.prisma.clinicService.findFirst({
+      where: { id: serviceId, clinicId },
+    });
+    if (!service) {
+      throw new BadRequestException('El servicio seleccionado no existe en este consultorio.');
+    }
+    if (!service.active) {
+      throw new BadRequestException('El servicio seleccionado está inactivo.');
+    }
+    return service;
   }
 
   private async resolveProfessionalId(clinicId: string, professionalId: string) {
@@ -960,6 +983,7 @@ export class AppointmentsService {
       requestDate: row.requestDate,
       opportunityDays,
       reason: row.reason,
+      serviceId: row.serviceId,
       notes: row.notes,
       cancelledAt: row.cancelledAt,
       // Hasta cuándo se puede volver a ocupar la franja liberada.

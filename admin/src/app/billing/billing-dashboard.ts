@@ -1,7 +1,9 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { AgendaApiService } from '../agenda/agenda-api.service';
+import { ClinicServiceItem, SERVICE_CATEGORY_LABELS, ServiceCategory, formatCop } from '../agenda/agenda.models';
 import { AuthService } from '../auth.service';
 import { ClinicalApiService } from '../clinical/clinical-api.service';
 import { Patient } from '../clinical/clinical.models';
@@ -28,7 +30,17 @@ export class BillingDashboard implements OnInit {
   private readonly clinical = inject(ClinicalApiService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
+  private readonly agenda = inject(AgendaApiService);
   readonly isReceptionist = this.auth.isReceptionist;
+
+  /** Catálogo de servicios activos: llena descripción y valor del recibo. */
+  readonly services = signal<ClinicServiceItem[]>([]);
+  readonly serviceGroups = computed(() =>
+    (Object.entries(SERVICE_CATEGORY_LABELS) as Array<[ServiceCategory, string]>)
+      .map(([category, label]) => ({ label, items: this.services().filter((s) => s.category === category) }))
+      .filter((g) => g.items.length),
+  );
+  serviceId = '';
 
   readonly tab = signal<Tab>('recibos');
   readonly loading = signal(false);
@@ -86,6 +98,7 @@ export class BillingDashboard implements OnInit {
     const patientId = q.get('patientId') || '';
     const appointmentId = q.get('appointmentId') || '';
     const patientName = q.get('patientName') || '';
+    const serviceId = q.get('serviceId') || '';
     if (patientId) {
       this.receiptForm.patientId = patientId;
       this.receiptForm.appointmentId = appointmentId;
@@ -95,6 +108,15 @@ export class BillingDashboard implements OnInit {
       this.tab.set('nuevo');
     }
     this.loadPatients();
+    if (this.auth.user()?.specialty === 'AESTHETIC') {
+      this.agenda.listServices().subscribe({
+        next: (rows) => {
+          this.services.set(rows);
+          if (serviceId) this.chooseService(serviceId);
+        },
+        error: () => undefined,
+      });
+    }
     this.reload();
   }
 
@@ -216,6 +238,7 @@ export class BillingDashboard implements OnInit {
           this.receiptForm.appointmentId = '';
           this.receiptForm.notes = '';
           this.receiptForm.packageId = '';
+          this.serviceId = '';
           this.planReloadKey.update((k) => k + 1);
           this.tab.set('recibos');
           this.reload();
@@ -245,6 +268,18 @@ export class BillingDashboard implements OnInit {
           ]
         : [];
     return [...plan, ...manual];
+  }
+
+  chooseService(id: string) {
+    this.serviceId = id;
+    const service = this.services().find((s) => s.id === id);
+    if (!service) return;
+    this.receiptForm.description = service.name;
+    this.receiptForm.unitPrice = service.price ?? 0;
+  }
+
+  cop(value: number | null) {
+    return formatCop(value);
   }
 
   receiptTotal() {
