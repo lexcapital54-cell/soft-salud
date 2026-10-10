@@ -55,6 +55,35 @@ const PROFILE_ZONES: ZoneShape[] = [
   { key: 'glabela', cx: 155, cy: 84, rx: 5, ry: 5 },
 ];
 
+/** Vista a 45° derecha (nariz hacia la derecha del lector); la izquierda se refleja. */
+const OBLIQUE_ZONES: ZoneShape[] = [
+  { key: 'cuello', cx: 100, cy: 232, rx: 28, ry: 16 },
+  { key: 'frente', cx: 108, cy: 50, rx: 36, ry: 18 },
+  { key: 'temporal', cx: 64, cy: 82, rx: 10, ry: 14 },
+  { key: 'pomulos', cx: 76, cy: 114, rx: 12, ry: 9 },
+  { key: 'malar', cx: 94, cy: 132, rx: 12, ry: 8 },
+  { key: 'mandibular', cx: 80, cy: 172, rx: 16, ry: 8 },
+  { key: 'submentoniana', cx: 118, cy: 203, rx: 14, ry: 6 },
+  { key: 'menton', cx: 134, cy: 182, rx: 11, ry: 9 },
+  { key: 'periorbitaria', cx: 85, cy: 96, rx: 14, ry: 8 },
+  { key: 'periorbitaria', cx: 124, cy: 96, rx: 9, ry: 7 },
+  { key: 'nasogeniano', cx: 116, cy: 140, rx: 4, ry: 10 },
+  { key: 'labios', cx: 132, cy: 153, rx: 13, ry: 6 },
+  { key: 'nariz', cx: 138, cy: 112, rx: 7, ry: 15 },
+  { key: 'glabela', cx: 112, cy: 82, rx: 6, ry: 5 },
+];
+
+const OBLIQUE_OUTLINE =
+  'M100,16 C140,16 158,40 156,70 C156,84 152,92 154,100 L166,122 C168,126 164,129 158,129 ' +
+  'C158,136 160,140 156,144 C158,150 156,156 150,158 C152,168 148,180 140,188 C130,198 116,202 104,200 ' +
+  'C84,198 64,186 56,168 C48,150 44,130 44,108 C44,60 62,16 100,16 ' +
+  'M56,100 C46,98 42,110 44,120 C46,130 52,134 58,132 ' +
+  'M70,186 C72,210 70,236 66,256 M136,192 C134,215 136,240 140,256';
+const OBLIQUE_DETAIL =
+  'M70,84 Q84,78 98,82 M112,82 Q124,79 136,84 M72,96 Q84,90 96,96 Q84,101 72,96 ' +
+  'M114,96 Q124,91 134,96 Q124,100 114,96 M128,92 C132,106 140,116 146,124 Q140,130 130,128 ' +
+  'M118,152 Q132,147 146,152 Q132,158 118,152';
+
 const PROFILE_OUTLINE =
   'M110,16 C150,16 160,40 158,66 C158,76 156,82 158,88 C160,92 156,96 156,100 L172,124 C174,128 170,132 162,132 ' +
   'C164,138 166,142 162,146 C166,150 164,156 158,158 C162,166 160,176 154,184 C150,196 140,198 128,196 L112,200 ' +
@@ -131,6 +160,11 @@ const NECK = 'M80,198 C80,220 78,240 76,256 M120,198 C120,220 122,240 124,256';
                   <path class="fine" [attr.d]="front.eyes" />
                   <path class="fine" [attr.d]="front.nose" />
                   <path class="fine" [attr.d]="front.lips" />
+                </g>
+              } @else if (isOblique()) {
+                <g class="outline" [attr.transform]="view() === 'OBLICUA_IZQ' ? mirror : null">
+                  <path [attr.d]="oblique" />
+                  <path class="fine" [attr.d]="obliqueDetail" />
                 </g>
               } @else {
                 <g class="outline" [attr.transform]="view() === 'IZQUIERDO' ? mirror : null">
@@ -282,6 +316,8 @@ export class AestheticFaceMap {
   readonly front = FRONT;
   readonly profile = PROFILE_OUTLINE;
   readonly profileDetail = PROFILE_DETAIL;
+  readonly oblique = OBLIQUE_OUTLINE;
+  readonly obliqueDetail = OBLIQUE_DETAIL;
 
   readonly view = signal<AesView>('FRONTAL');
   readonly kind = signal<AesMarkKind>('HALLAZGO');
@@ -294,8 +330,16 @@ export class AestheticFaceMap {
     if (v === 'FRONTAL') {
       return FRONTAL_ZONES.flatMap((z) => (z.both ? [z, { ...z, cx: 200 - z.cx }] : [z]));
     }
+    if (v === 'OBLICUA_DER' || v === 'OBLICUA_IZQ') {
+      return v === 'OBLICUA_IZQ' ? OBLIQUE_ZONES.map((z) => ({ ...z, cx: 200 - z.cx })) : OBLIQUE_ZONES;
+    }
     return v === 'IZQUIERDO' ? PROFILE_ZONES.map((z) => ({ ...z, cx: 200 - z.cx })) : PROFILE_ZONES;
   });
+
+  isOblique() {
+    const v = this.view();
+    return v === 'OBLICUA_DER' || v === 'OBLICUA_IZQ';
+  }
 
   private readonly all = computed(() => {
     this.tracking.rev();

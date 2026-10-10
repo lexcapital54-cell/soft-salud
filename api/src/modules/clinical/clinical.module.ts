@@ -31,6 +31,7 @@ import { OrthoTrackingService } from './ortho-tracking.service';
 import { AestheticTrackingController } from './aesthetic-tracking.controller';
 import { AestheticIndicatorsController } from './aesthetic-indicators.controller';
 import { AestheticIndicatorsService } from './aesthetic-indicators.service';
+import { AestheticPhotoReportService } from './aesthetic-photo-report.service';
 import { AestheticTrackingService } from './aesthetic-tracking.service';
 
 @Module({
@@ -70,6 +71,7 @@ import { AestheticTrackingService } from './aesthetic-tracking.service';
     OrthoTrackingService,
     AestheticTrackingService,
     AestheticIndicatorsService,
+    AestheticPhotoReportService,
   ],
   exports: [
     FormTemplatesService,

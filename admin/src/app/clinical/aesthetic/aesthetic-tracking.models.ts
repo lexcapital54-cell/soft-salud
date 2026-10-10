@@ -3,11 +3,13 @@
  * Se guarda en `aesthetic_tracking`; las firmas, cierres y adendas los sella el servidor.
  */
 
-export type AesView = 'FRONTAL' | 'DERECHO' | 'IZQUIERDO';
+export type AesView = 'FRONTAL' | 'OBLICUA_DER' | 'DERECHO' | 'OBLICUA_IZQ' | 'IZQUIERDO';
 
 export const AES_VIEWS: Array<{ key: AesView; label: string }> = [
   { key: 'FRONTAL', label: 'Frontal' },
+  { key: 'OBLICUA_DER', label: '45° derecho' },
   { key: 'DERECHO', label: 'Perfil derecho' },
+  { key: 'OBLICUA_IZQ', label: '45° izquierdo' },
   { key: 'IZQUIERDO', label: 'Perfil izquierdo' },
 ];
 
@@ -252,7 +254,7 @@ export function normalizeAnnotation(raw: unknown): AesAnnotation {
   const kind = str(r['kind']);
   return {
     id: str(r['id']),
-    view: view === 'DERECHO' || view === 'IZQUIERDO' ? view : 'FRONTAL',
+    view: AES_VIEWS.some((v) => v.key === view) ? (view as AesView) : 'FRONTAL',
     x: num(r['x'], 200),
     y: num(r['y'], 260),
     zone: str(r['zone']),

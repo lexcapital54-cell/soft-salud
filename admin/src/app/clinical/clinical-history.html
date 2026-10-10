@@ -3958,6 +3958,7 @@
                       [encounterId]="encounter()?.id || ''"
                       [uploader]="aestheticPhotoUploader"
                       [url]="aestheticPhotoUrl"
+                      [canExport]="canWrite()"
                     />
                   } @placeholder {
                     <p class="muted small">Cargando mapa facial y procedimientos…</p>

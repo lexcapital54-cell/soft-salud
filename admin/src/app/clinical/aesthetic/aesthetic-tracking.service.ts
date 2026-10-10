@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { API } from '../../api.config';
@@ -69,6 +69,13 @@ export class AestheticTrackingService {
         this.message.set('No se pudo cargar el mapa facial y los procedimientos. Recargue la historia.');
       },
     });
+  }
+
+  /** Informe fotográfico en PDF del paciente cargado (todas las fotos o un ángulo, con comparativo opcional). */
+  photoReport(query: { angle?: string; before?: string; after?: string }) {
+    let params = new HttpParams();
+    for (const [k, v] of Object.entries(query)) if (v) params = params.set(k, v);
+    return this.http.get(`${API}/patients/${this.patientId}/aesthetic-tracking/photo-report`, { params, responseType: 'blob' });
   }
 
   /** Cambio de borrador: se guarda con espera corta. */

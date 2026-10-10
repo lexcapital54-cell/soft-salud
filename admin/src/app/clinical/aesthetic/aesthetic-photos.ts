@@ -118,6 +118,16 @@ export type AesPhotoUploader = (file: File, label: string) => Observable<Clinica
 
           @let b = byId(beforeId());
           @let a = byId(afterId());
+          @if (canExport()) {
+            <div class="card-actions report-actions">
+              <button type="button" class="btn-add" [disabled]="!!exporting()" (click)="downloadReport(false)">
+                <hab-icon name="download" /> {{ exporting() === 'all' ? 'Generando…' : 'Informe fotográfico PDF' }}
+              </button>
+              <button type="button" class="btn-add ghost" [disabled]="!!exporting()" (click)="downloadReport(true)">
+                <hab-icon name="printer" /> {{ exporting() === 'angle' ? 'Generando…' : 'Solo ' + angleLabel() + ' con comparativo' }}
+              </button>
+            </div>
+          }
           <app-ortho-compare-slider
             [beforeUrl]="b ? url()(b.attachmentId) : null"
             [afterUrl]="a ? url()(a.attachmentId) : null"
@@ -138,6 +148,8 @@ export type AesPhotoUploader = (file: File, label: string) => Observable<Clinica
     .photo-actions { display: flex; flex-wrap: wrap; gap: 4px; }
     .photo-actions .chip { padding: 4px 10px; font-size: 0.78rem; }
     label.btn-add { cursor: pointer; }
+    .report-actions { margin-top: 4px; }
+    .report-actions .btn-add.ghost { background: #fff; color: #173b3a; border: 1px solid #c9d8d5; }
     label.btn-add.busy { opacity: 0.6; pointer-events: none; }
   `,
 })
@@ -149,6 +161,8 @@ export class AestheticPhotos {
   readonly uploader = input<AesPhotoUploader | null>(null);
   /** URL local de la imagen (la descarga la historia una sola vez). */
   readonly url = input<(attachmentId: string) => string | null>(() => null);
+  /** Solo quien puede escribir la historia genera el informe (el servidor lo valida). */
+  readonly canExport = input(false);
 
   readonly angles = AES_PHOTO_ANGLES;
   readonly moments = AES_PHOTO_MOMENTS;
@@ -159,6 +173,7 @@ export class AestheticPhotos {
   readonly date = signal(todayIso());
   readonly procedureId = signal('');
   readonly uploading = signal(false);
+  readonly exporting = signal<'all' | 'angle' | null>(null);
   readonly error = signal<string | null>(null);
 
   readonly viewAngle = signal<AesPhotoAngle | null>(null);
@@ -219,6 +234,40 @@ export class AestheticPhotos {
     const moment = AES_PHOTO_MOMENTS.find((m) => m.key === f.moment)?.label ?? '';
     const date = f.date ? new Date(`${f.date}T12:00:00`).toLocaleDateString('es-CO') : 'sin fecha';
     return `${moment} · ${date}`;
+  }
+
+  angleLabel() {
+    return AES_PHOTO_ANGLES.find((a) => a.key === this.currentAngle())?.label ?? '';
+  }
+
+  downloadReport(onlyAngle: boolean) {
+    const angle = this.currentAngle();
+    const query = onlyAngle && angle
+      ? { angle, before: this.beforeId() || '', after: this.afterId() || '' }
+      : {};
+    this.exporting.set(onlyAngle ? 'angle' : 'all');
+    this.error.set(null);
+    this.tracking.photoReport(query).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Informe_fotografico.pdf';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        this.exporting.set(null);
+      },
+      error: async (err) => {
+        let msg = '';
+        try {
+          msg = JSON.parse(await (err?.error as Blob).text())?.message || '';
+        } catch {
+          msg = '';
+        }
+        this.error.set(msg || 'No se pudo generar el informe fotográfico.');
+        this.exporting.set(null);
+      },
+    });
   }
 
   selectAngle(key: AesPhotoAngle) {
