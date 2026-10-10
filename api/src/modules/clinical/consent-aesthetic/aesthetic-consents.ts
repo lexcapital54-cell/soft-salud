@@ -376,6 +376,138 @@ ${declarations('Exilis Ultra 360®')}
 ${DISCLOSURE}
 </section>`.trim(),
   },
+  // Plantillas generales de HabiliSALUD (no provienen de los formatos de la Dra. Quintero).
+  {
+    code: 'AES_LASER',
+    title: 'Consentimiento informado para procedimientos con láser',
+    bodyHtml: ciEst({
+      heading: 'CONSENTIMIENTO INFORMADO PARA PROCEDIMIENTOS DERMATOLÓGICOS Y ESTÉTICOS CON LÁSER',
+      areas: 'las definidas en la valoración médica y registradas en la historia clínica',
+      description: [
+        'El tratamiento consiste en la aplicación de energía lumínica de un equipo láser sobre la piel, con el fin de actuar sobre estructuras específicas (pigmento, vasos sanguíneos, folículo piloso o tejido cutáneo) según el tipo de láser y la indicación definida por el profesional.',
+        'El equipo, los parámetros y el número de sesiones los define el profesional tratante según el fototipo, la zona y la indicación, y quedan registrados en la historia clínica.',
+        'Los resultados son progresivos y suelen requerir varias sesiones. ' + NO_GUARANTEE,
+      ],
+      contraindications: [
+        'Embarazo.',
+        'Exposición solar intensa o bronceado reciente en la zona a tratar.',
+        'Infección, herpes activo o heridas en la zona.',
+        'Uso de isotretinoína oral en los últimos 6 meses o de medicamentos fotosensibilizantes, según criterio médico.',
+        'Antecedente de epilepsia fotosensible, cuando aplique.',
+        'Lesiones pigmentadas sin diagnóstico previo.',
+        'Cualquier otra condición que el profesional considere una contraindicación.',
+      ],
+      riskIntro: 'He sido informado(a) de que el uso de láser puede presentar riesgos y efectos secundarios, que dependen del tipo de equipo, la zona y la respuesta individual.',
+      frequent: ['Enrojecimiento.', 'Sensación de calor o ardor.', 'Edema leve.', 'Sensibilidad local.', 'Costras o descamación superficial.'],
+      uncommon: ['Hiperpigmentación postinflamatoria.', 'Hipopigmentación.', 'Ampollas.', 'Reactivación de herpes.', 'Respuesta insuficiente al tratamiento.'],
+      exceptional: ['Quemaduras.', 'Cicatrices.', 'Infección.', 'Cambios de pigmentación persistentes.', 'Lesión ocular si no se usa la protección indicada.'],
+      riskClosing: 'Entiendo que, aunque estas complicaciones son poco frecuentes o excepcionales, ningún procedimiento médico está completamente libre de riesgos.',
+      care: [
+        'Usar la protección ocular indicada durante el procedimiento.',
+        'Aplicar protector solar de amplio espectro y evitar la exposición solar durante el periodo indicado.',
+        'No manipular costras ni descamación.',
+        'Evitar calor intenso, saunas y ejercicio fuerte durante el periodo indicado.',
+        'Utilizar únicamente los productos recomendados por el profesional.',
+        'Asistir a los controles y reportar cualquier reacción inusual.',
+      ],
+    }),
+  },
+  {
+    code: 'AES_MICRONEEDLING',
+    title: 'Consentimiento informado para microneedling (inducción percutánea de colágeno)',
+    bodyHtml: ciEst({
+      heading: 'CONSENTIMIENTO INFORMADO PARA MICRONEEDLING (INDUCCIÓN PERCUTÁNEA DE COLÁGENO)',
+      areas: 'las definidas en la valoración médica y registradas en la historia clínica',
+      description: [
+        'El microneedling consiste en realizar microperforaciones controladas en la piel con un dispositivo de microagujas, con el fin de estimular la producción de colágeno y elastina y mejorar la textura, las cicatrices, los poros y la calidad de la piel.',
+        'Durante el procedimiento pueden aplicarse activos tópicos indicados por el profesional. El dispositivo, la profundidad y el número de sesiones los define el profesional tratante y quedan registrados en la historia clínica.',
+        'Los resultados son progresivos y suelen requerir varias sesiones. ' + NO_GUARANTEE,
+      ],
+      contraindications: [
+        'Embarazo o lactancia.',
+        'Acné inflamatorio activo, infección o herpes activo en la zona.',
+        'Trastornos de coagulación o uso de anticoagulantes sin autorización médica.',
+        'Tendencia a cicatrices queloides o hipertróficas.',
+        'Uso de isotretinoína oral en los últimos 6 meses, según criterio médico.',
+        'Enfermedades autoinmunes activas o inmunosupresión.',
+        'Alergia conocida a los productos que se aplicarán.',
+      ],
+      riskIntro: 'He sido informado(a) de que el microneedling puede presentar riesgos y efectos secundarios.',
+      frequent: ['Enrojecimiento.', 'Sensibilidad o ardor leve.', 'Edema leve.', 'Pequeños puntos de sangrado.', 'Descamación leve.'],
+      uncommon: ['Hematomas.', 'Hiperpigmentación postinflamatoria.', 'Brote de acné o milia.', 'Reactivación de herpes.'],
+      exceptional: ['Infección.', 'Cicatrices.', 'Reacción alérgica a los activos aplicados.', 'Granulomas.'],
+      riskClosing: 'Entiendo que, aunque estas complicaciones son poco frecuentes o excepcionales, ningún procedimiento médico está completamente libre de riesgos.',
+      care: [
+        'No aplicar maquillaje durante las primeras 24 horas o según indicación médica.',
+        'Aplicar protector solar de amplio espectro y evitar la exposición solar.',
+        'Evitar exfoliantes, retinoides y ácidos durante el periodo indicado.',
+        'Evitar piscinas, saunas y ejercicio intenso durante las primeras 24 a 48 horas.',
+        'No manipular la piel tratada.',
+        'Asistir a los controles y reportar cualquier reacción inusual.',
+      ],
+    }),
+  },
+  {
+    code: 'AES_HILOS',
+    title: 'Consentimiento informado para aplicación de hilos tensores',
+    bodyHtml: ciEst({
+      heading: 'CONSENTIMIENTO INFORMADO PARA APLICACIÓN DE HILOS TENSORES',
+      areas: 'las definidas en la valoración médica y registradas en la historia clínica',
+      description: [
+        'El procedimiento consiste en la inserción en el tejido subcutáneo de hilos reabsorbibles, mediante agujas o cánulas, con el fin de reposicionar tejidos, mejorar la flacidez y estimular la producción de colágeno.',
+        'El tipo de hilo, el número de hilos y la técnica los define el profesional tratante según la valoración, y quedan registrados en la historia clínica junto con el producto y el lote utilizados.',
+        'Los hilos se reabsorben de forma progresiva y el efecto es temporal. ' + NO_GUARANTEE,
+      ],
+      contraindications: [
+        'Embarazo o lactancia.',
+        'Infección activa en la zona a tratar.',
+        'Trastornos de coagulación o uso de anticoagulantes sin autorización médica.',
+        'Enfermedades autoinmunes activas.',
+        'Tendencia a cicatrices queloides.',
+        'Alergia conocida al material de los hilos.',
+        'Expectativas no realistas sobre el resultado.',
+      ],
+      riskIntro: 'He sido informado(a) de que la aplicación de hilos tensores puede presentar riesgos y efectos secundarios.',
+      frequent: ['Dolor o sensibilidad en la zona.', 'Edema.', 'Hematomas.', 'Sensación de tirantez.', 'Pequeñas irregularidades o depresiones transitorias de la piel.'],
+      uncommon: ['Asimetría.', 'Palpación o visibilidad del hilo.', 'Extrusión del hilo.', 'Limitación transitoria de la apertura bucal o de la gesticulación.'],
+      exceptional: ['Infección.', 'Granulomas.', 'Lesión de estructuras nerviosas o vasculares.', 'Necesidad de retirar el hilo.'],
+      riskClosing: 'Entiendo que, aunque estas complicaciones son poco frecuentes o excepcionales, ningún procedimiento médico está completamente libre de riesgos.',
+      care: [
+        'Evitar gesticulación exagerada, masajes y presión en la zona durante el periodo indicado.',
+        'Dormir boca arriba durante los días indicados.',
+        'Evitar ejercicio intenso, saunas y calor intenso durante el periodo indicado.',
+        'No realizar tratamientos dentales ni faciales en la zona sin consultar.',
+        'Tomar únicamente los medicamentos indicados por el profesional.',
+        'Asistir a los controles y reportar dolor intenso, fiebre o enrojecimiento progresivo.',
+      ],
+    }),
+  },
+  {
+    code: 'AES_USO_IMAGEN',
+    title: 'Autorización para el uso de imágenes con fines de divulgación, publicidad o redes sociales',
+    bodyHtml: `
+<section>
+  <h2>AUTORIZACIÓN PARA EL USO DE IMÁGENES CON FINES DE DIVULGACIÓN, PUBLICIDAD O REDES SOCIALES</h2>
+  <p><strong>Ciudad y Fecha:</strong> ___________________________</p>
+  <p>Yo, ________________________________________________, identificado(a) con C.C. / C.E. / T.I. No. _________________, obrando en nombre propio o como representante legal del paciente ________________________________________________, en relación con las fotografías y videos clínicos tomados durante mi atención por el/la médico(a) _____________________________________, con Registro Profesional No. ______________, declaro:</p>
+  <h3>1. Carácter voluntario</h3>
+  <p>Esta autorización es independiente del consentimiento para el procedimiento y del registro fotográfico que hace parte de la historia clínica. Negarme a firmarla no afecta mi atención ni las condiciones del tratamiento.</p>
+  <h3>2. Usos que autorizo</h3>
+  ${ul([
+    'Publicaciones en redes sociales y página web del consultorio.',
+    'Material informativo o publicitario del consultorio, impreso o digital.',
+    'Fines académicos o científicos (congresos, publicaciones, docencia).',
+  ])}
+  <h3>3. Condiciones de identificación</h3>
+  <p>Solo podrán usarse imágenes en las que no se me pueda reconocer: recorte de la zona tratada, ojos cubiertos o sin rostro completo, y sin tatuajes, lunares u otros rasgos que permitan identificarme. Cualquier uso de imágenes en las que se me pueda reconocer requiere una autorización escrita adicional y específica.</p>
+  <p>En ningún caso se publicarán mi nombre, documento, datos de contacto ni información clínica distinta a la descripción general del tratamiento.</p>
+  <h3>4. Vigencia y revocatoria</h3>
+  <p>Puedo revocar esta autorización en cualquier momento, por escrito o por el canal de atención del consultorio. La revocatoria impide nuevos usos y obliga a retirar las publicaciones que estén bajo control del consultorio; entiendo que no es posible retirar copias que terceros hayan hecho de contenidos ya publicados.</p>
+  <h3>5. Gratuidad</h3>
+  <p>Autorizo el uso de forma gratuita, sin que genere pago o compensación, salvo acuerdo escrito distinto.</p>
+  <p><strong>Abajo figura mi firma y certifico que he leído y entendido perfectamente los contenidos de esta autorización.</strong></p>
+</section>`.trim(),
+  },
 ];
 
 type ConsentTemplateClient = Pick<PrismaClient, 'consentTemplate'>;

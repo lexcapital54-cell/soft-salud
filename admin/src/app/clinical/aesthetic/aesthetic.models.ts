@@ -83,6 +83,10 @@ export const AES_CONSENTS = [
   { code: 'AES_PEELING_MELANOSTOP', label: 'Peeling Melanostop Tranex', types: ['PEELING'] },
   { code: 'AES_PEELING_EYECON', label: 'Peeling periocular Global Eyecon®', types: ['PEELING'] },
   { code: 'AES_EXILIS', label: 'Exilis Ultra 360®', types: ['ENERGIA'] },
+  { code: 'AES_LASER', label: 'Procedimientos con láser', types: ['LASER'] },
+  { code: 'AES_MICRONEEDLING', label: 'Microneedling', types: ['MICRONEEDLING'] },
+  { code: 'AES_HILOS', label: 'Hilos tensores', types: ['HILOS'] },
+  { code: 'AES_USO_IMAGEN', label: 'Uso de imagen con fines de divulgación', types: [] },
 ] as const;
 
 export function aesConsentLabel(code: string) {
