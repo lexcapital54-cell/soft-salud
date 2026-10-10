@@ -29,3 +29,19 @@
   --pd-muted: #587078;
   --pd-line: #dcebea;
 }
+
+/* Medicina estética: azul medianoche y dorado. */
+:host(.theme-aesthetic) {
+  --pd-navy: #0f2747;
+  --pd-navy-2: #1c3f6e;
+  --pd-soft: #eef2f8;
+  --pd-gold: #b8925a;
+  --pd-gold-rgb: 184, 146, 90;
+  --pd-gold-soft: #e3cf9e;
+  --pd-gold-ink: #7a5a24;
+  --pd-shadow-rgb: 15, 39, 71;
+  --pd-bg: #f5f7fb;
+  --pd-ink: #142033;
+  --pd-muted: #4b5b74;
+  --pd-line: #e1e6ef;
+}

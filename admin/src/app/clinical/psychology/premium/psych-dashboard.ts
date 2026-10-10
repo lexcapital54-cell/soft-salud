@@ -78,7 +78,7 @@ const VARIANTS: Record<GeneralDashboardVariant, { title: string; subtitle: strin
   ],
   templateUrl: './psych-dashboard.html',
   styleUrls: ['../../physio/premium/physio-dashboard.scss', './psych-dashboard.scss'],
-  host: { '[class.theme-petrol]': "variant() !== 'PSYCHOLOGY'" },
+  host: { '[class.theme-petrol]': "variant() !== 'PSYCHOLOGY'", '[class.theme-aesthetic]': "variant() === 'AESTHETIC'" },
 })
 export class PsychDashboard {
   private readonly api = inject(ClinicalApiService);

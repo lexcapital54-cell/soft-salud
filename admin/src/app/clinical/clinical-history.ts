@@ -420,9 +420,10 @@ function emptyContent(): ClinicalContent {
   ],
   providers: [ClinicalAutosaveService, OrthoTrackingService, AestheticTrackingService],
   templateUrl: './clinical-history.html',
-  styleUrls: ['./clinical-history.scss', './clinical-history-ux.scss', './clinical-history-premium.scss'],
+  styleUrls: ['./clinical-history.scss', './clinical-history-ux.scss', './clinical-history-premium.scss', './clinical-history-aesthetic.scss'],
   host: {
     '[class.embedded]': 'embedded()',
+    '[class.hc-aesthetic]': "generalPremiumVariant() === 'AESTHETIC'",
   },
 })
 export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {

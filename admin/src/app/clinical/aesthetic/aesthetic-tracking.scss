@@ -12,7 +12,7 @@
   display: inline-flex;
   flex-wrap: wrap;
   max-width: 100%;
-  border: 1px solid #cfdad4;
+  border: 1px solid #d5dce8;
   border-radius: 12px;
   overflow: hidden;
   button {
@@ -24,7 +24,7 @@
     font-size: 0.85rem;
     cursor: pointer;
     & + button {
-      border-left: 1px solid #cfdad4;
+      border-left: 1px solid #d5dce8;
     }
     &.on {
       background: var(--aes-primary);
@@ -54,7 +54,7 @@ label.aes-field.inline {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid #cfdad4;
+  border: 1px solid #d5dce8;
   background: #fff;
   color: var(--aes-ink);
   border-radius: 999px;
@@ -65,7 +65,7 @@ label.aes-field.inline {
   &.on {
     border-color: var(--aes-primary);
     box-shadow: inset 0 0 0 1px var(--aes-primary);
-    background: #eef3f0;
+    background: #eef2f8;
     font-weight: 600;
   }
   &:disabled {
@@ -107,19 +107,19 @@ label.aes-field.inline {
 
 .outline path {
   fill: none;
-  stroke: #6f8a80;
+  stroke: #6d7f9c;
   stroke-width: 1.4;
   stroke-linecap: round;
   stroke-linejoin: round;
   &.fine {
     stroke-width: 1;
-    stroke: #8aa197;
+    stroke: #8c9bb5;
   }
 }
 
 .zone {
-  fill: rgba(121, 155, 139, 0.08);
-  stroke: rgba(121, 155, 139, 0.45);
+  fill: rgba(109, 134, 173, 0.08);
+  stroke: rgba(109, 134, 173, 0.45);
   stroke-width: 0.6;
   stroke-dasharray: 2 2;
   cursor: crosshair;
@@ -131,13 +131,13 @@ label.aes-field.inline {
     outline: none;
   }
   &.marked {
-    fill: rgba(23, 59, 58, 0.1);
+    fill: rgba(15, 39, 71, 0.1);
   }
   &.ro {
     cursor: default;
     &:hover {
-      fill: rgba(121, 155, 139, 0.08);
-      stroke: rgba(121, 155, 139, 0.45);
+      fill: rgba(109, 134, 173, 0.08);
+      stroke: rgba(109, 134, 173, 0.45);
     }
   }
 }
@@ -207,7 +207,7 @@ label.aes-field.inline {
   font-size: 0.75rem;
   font-weight: 600;
   background: #fff;
-  border: 1px solid #cfdad4;
+  border: 1px solid #d5dce8;
   color: var(--aes-muted);
   &.signed {
     background: var(--aes-primary);
@@ -229,7 +229,7 @@ label.aes-field.inline {
   border-radius: 8px;
   cursor: pointer;
   &:hover {
-    background: #e7eeea;
+    background: #e9eef6;
   }
   &:focus-visible {
     outline: 2px solid var(--aes-primary);
@@ -263,7 +263,7 @@ label.aes-field.inline {
   font-size: 0.85rem;
   cursor: pointer;
   &:hover:not(:disabled) {
-    background: #0f2b2a;
+    background: #1c3f6e;
   }
   &:disabled {
     opacity: 0.6;
@@ -300,8 +300,8 @@ label.aes-field.inline {
     cursor: pointer;
     &:hover,
     &.sel {
-      border-color: #cfdad4;
-      background: #eef3f0;
+      border-color: #d5dce8;
+      background: #eef2f8;
     }
     &:focus-visible {
       outline: 2px solid var(--aes-primary);

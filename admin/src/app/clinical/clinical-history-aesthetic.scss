@@ -1,0 +1,12 @@
+@use './premium-hc' as *;
+
+/* Medicina estética: azul medianoche con filetes dorados. */
+:host(.hc-aesthetic) .hce-page.specialty-general {
+  @include premium-hc(
+    $navy: #0f2747, $navy-2: #1c3f6e, $gold: #b8925a, $shadow: #0f2747,
+    $line: #e1e6ef, $soft: #f3f5fa, $bg: #f5f7fb, $ink: #142033,
+    $field-border: #d5dce8, $field-hover: #b6c2d6, $readonly-bg: #f2f4f9, $readonly-ink: #4b5b74, $placeholder: #8f9bb0, $arrow: '0f2747',
+    $row-line: #e5e9f1, $row-even: #f8f9fc, $row-hover: #eff3f9, $ghost-border: #c8d1e0,
+    $chip-border: #e3cf9e, $chip-bg: #fbf5e6, $chip-ink: #6f5418
+  );
+}

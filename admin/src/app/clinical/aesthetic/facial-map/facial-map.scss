@@ -3,11 +3,11 @@
 :host {
   --fm-bg: #f7f8fa;
   --fm-surface: #ffffff;
-  --fm-blue: #1f3653;
+  --fm-blue: #0f2747;
   --fm-ink: #19252e;
   --fm-muted: #4a5565;
   --fm-line: #e4e7eb;
-  --fm-gold: #b8955c;
+  --fm-gold: #b8925a;
   --fm-gold-ink: #85642f;
   --fm-ok: #16866a;
   --fm-warn: #8a5a00;
@@ -203,9 +203,9 @@
   &.ghost {
     background: #fff;
     color: var(--aes-primary);
-    border-color: #cfd8d5;
+    border-color: #d5dce8;
     &:hover:not(:disabled) {
-      background: #eef3f0;
+      background: #eef2f8;
       border-color: var(--aes-primary);
     }
   }
@@ -245,7 +245,7 @@
   cursor: pointer;
   transition: background var(--fm-ease);
   &:hover:not(:disabled) {
-    background: #e9efec;
+    background: #e9eef6;
   }
   &:disabled {
     opacity: 0.4;
@@ -314,7 +314,7 @@
   border-radius: 10px;
   cursor: pointer;
   &:hover {
-    background: #eef3f0;
+    background: #eef2f8;
   }
   &:focus-visible {
     outline: 2px solid var(--fm-gold);
@@ -394,7 +394,7 @@
   color: var(--fm-muted);
   &:focus-within {
     border-color: var(--aes-primary);
-    box-shadow: 0 0 0 3px rgba(23, 59, 58, 0.12);
+    box-shadow: 0 0 0 3px rgba(15, 39, 71, 0.12);
   }
   input {
     flex: 1;
@@ -426,7 +426,7 @@
     &:focus-visible {
       outline: 0;
       border-color: var(--aes-primary);
-      box-shadow: 0 0 0 3px rgba(23, 59, 58, 0.12);
+      box-shadow: 0 0 0 3px rgba(15, 39, 71, 0.12);
     }
   }
   input[aria-invalid='true'] {
@@ -460,10 +460,10 @@
     cursor: pointer;
     transition: background var(--fm-ease);
     &:hover:not(:disabled) {
-      background: #f2f5f4;
+      background: #f3f5fa;
     }
     &.on {
-      background: #eef3f0;
+      background: #eef2f8;
       border-color: var(--aes-primary);
       font-weight: 600;
     }
@@ -998,7 +998,7 @@
   &:hover,
   &:focus-visible {
     fill: rgba(184, 149, 92, 0.2);
-    stroke: #b8955c;
+    stroke: #b8925a;
     stroke-dasharray: none;
     outline: none;
   }
@@ -1045,7 +1045,7 @@
     stroke-width: 0.6;
   }
   .fm-lock {
-    fill: var(--aes-primary, #173b3a);
+    fill: var(--aes-primary, #0f2747);
     stroke: #fff;
     stroke-width: 0.6;
   }
@@ -1087,7 +1087,7 @@
     .fm-area,
     .fm-stroke,
     .fm-badge {
-      filter: drop-shadow(0 0 1.2px #b8955c) drop-shadow(0 0 1.2px #b8955c);
+      filter: drop-shadow(0 0 1.2px #b8925a) drop-shadow(0 0 1.2px #b8925a);
     }
   }
 }

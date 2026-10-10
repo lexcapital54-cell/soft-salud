@@ -141,15 +141,15 @@ export type AesPhotoUploader = (file: File, label: string) => Observable<Clinica
   `,
   styles: `
     .photo-strip { list-style: none; margin: 12px 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-    .photo-strip li { display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 1px solid #d7e3e6; border-radius: 12px; background: #fff; }
-    .photo-strip li.picked { border-color: #173b3a; box-shadow: 0 0 0 2px rgba(23, 59, 58, 0.18); }
+    .photo-strip li { display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 1px solid #dbe2ec; border-radius: 12px; background: #fff; }
+    .photo-strip li.picked { border-color: #0f2747; box-shadow: 0 0 0 2px rgba(15, 39, 71, 0.18); }
     .photo-strip img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 8px; background: #0f172a; }
-    .photo-wait { display: grid; place-items: center; aspect-ratio: 3 / 4; border-radius: 8px; background: #eef3f4; color: #4b5f63; font-size: 0.8rem; }
+    .photo-wait { display: grid; place-items: center; aspect-ratio: 3 / 4; border-radius: 8px; background: #eef2f8; color: #4b5b74; font-size: 0.8rem; }
     .photo-actions { display: flex; flex-wrap: wrap; gap: 4px; }
     .photo-actions .chip { padding: 4px 10px; font-size: 0.78rem; }
     label.btn-add { cursor: pointer; }
     .report-actions { margin-top: 4px; }
-    .report-actions .btn-add.ghost { background: #fff; color: #173b3a; border: 1px solid #c9d8d5; }
+    .report-actions .btn-add.ghost { background: #fff; color: #0f2747; border: 1px solid #d5dce8; }
     label.btn-add.busy { opacity: 0.6; pointer-events: none; }
   `,
 })

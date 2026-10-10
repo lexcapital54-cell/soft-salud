@@ -1,14 +1,15 @@
-// Paleta AUREA: petróleo #173B3A, salvia #799B8B (solo decorativo), champagne #C6A57B (acentos),
-// texto #263735, bordes #E3EAE5. Los textos usan petróleo o #4A5F5B para contraste AA.
+// Paleta de medicina estética: azul medianoche #0f2747, azul acero #6d86ad (solo decorativo),
+// dorado #b8925a (filetes y acentos; para texto, #7a5a24), texto #142033, bordes #e1e6ef.
+// Los textos usan azul medianoche o #4b5b74 para contraste AA.
 :host {
-  --aes-ink: #263735;
-  --aes-primary: #173b3a;
-  --aes-sage: #799b8b;
-  --aes-gold: #c6a57b;
-  --aes-gold-ink: #7a5a2c;
-  --aes-muted: #4a5f5b;
-  --aes-line: #e3eae5;
-  --aes-bg: #f8f9f6;
+  --aes-ink: #142033;
+  --aes-primary: #0f2747;
+  --aes-sage: #6d86ad;
+  --aes-gold: #b8925a;
+  --aes-gold-ink: #7a5a24;
+  --aes-muted: #4b5b74;
+  --aes-line: #e1e6ef;
+  --aes-bg: #f6f7fb;
   display: block;
   color: var(--aes-ink);
 }
@@ -19,7 +20,9 @@
   border: 1px solid var(--aes-line);
   border-radius: 16px;
   background: #fff;
-  box-shadow: 0 1px 2px rgba(23, 59, 58, 0.04);
+  box-shadow:
+    0 1px 2px rgba(15, 39, 71, 0.04),
+    0 12px 30px -24px rgba(15, 39, 71, 0.35);
   scroll-margin-top: 96px;
 }
 
@@ -27,20 +30,25 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--aes-line);
+  background: linear-gradient(var(--aes-gold), var(--aes-gold)) left bottom / 48px 2px no-repeat;
   h4 {
     margin: 0;
     flex: 1;
-    font-size: 1.02rem;
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    font-size: 1.08rem;
     font-weight: 700;
+    letter-spacing: 0.01em;
     color: var(--aes-primary);
   }
   .aes-head-icon {
     display: inline-flex;
     padding: 7px;
     border-radius: 10px;
-    background: #eef3f0;
-    color: var(--aes-primary);
+    background: var(--aes-primary);
+    color: #f3e3c3;
   }
 }
 
@@ -95,7 +103,7 @@ textarea {
 input,
 select,
 textarea {
-  border: 1px solid #cfdad4;
+  border: 1px solid #d5dce8;
   border-radius: 10px;
   padding: 7px 10px;
   font: inherit;
@@ -118,7 +126,7 @@ textarea {
 }
 
 .chip {
-  border: 1px solid #cfdad4;
+  border: 1px solid #d5dce8;
   background: #fff;
   color: var(--aes-primary);
   border-radius: 999px;
@@ -136,8 +144,8 @@ textarea {
     color: #fff;
   }
   &.on.neg {
-    background: #4a5f5b;
-    border-color: #4a5f5b;
+    background: #4b5b74;
+    border-color: #4b5b74;
   }
   &.on.unk {
     background: #fff7ea;
@@ -179,10 +187,10 @@ textarea {
   }
   &.no {
     border-left-color: var(--aes-sage);
-    background: #fbfcfb;
+    background: #fafbfd;
   }
   &.unk {
-    border-left-color: #b9c6bf;
+    border-left-color: #c3ccda;
   }
   .cond-top {
     display: flex;
@@ -231,7 +239,7 @@ textarea {
 
 .link-btn {
   margin-left: auto;
-  border: 1px dashed #9fb2a9;
+  border: 1px dashed #a9b6ca;
   background: #fff;
   color: var(--aes-primary);
   border-radius: 999px;
@@ -288,7 +296,7 @@ textarea {
   background: #fff;
   color: var(--aes-primary);
   &:hover {
-    background: #eef3f0;
+    background: #eef2f8;
   }
 }
 
@@ -304,7 +312,7 @@ textarea {
 .empty {
   margin: 0;
   padding: 12px;
-  border: 1px dashed #cfdad4;
+  border: 1px dashed #d5dce8;
   border-radius: 12px;
   font-size: 0.85rem;
   color: var(--aes-muted);
@@ -323,7 +331,7 @@ textarea {
   flex-direction: column;
   gap: 2px;
   padding: 8px 10px;
-  border: 1px solid #cfdad4;
+  border: 1px solid #d5dce8;
   border-radius: 12px;
   background: #fff;
   font: inherit;
@@ -340,7 +348,7 @@ textarea {
   &.on {
     border-color: var(--aes-primary);
     box-shadow: inset 0 0 0 1px var(--aes-primary);
-    background: #eef3f0;
+    background: #eef2f8;
   }
   &:disabled {
     cursor: default;
@@ -373,7 +381,7 @@ textarea {
   gap: 6px;
   padding: 7px 10px;
   border-radius: 10px;
-  background: #eef3f0;
+  background: #eef2f8;
   font-size: 0.85rem;
   color: var(--aes-primary);
 }
