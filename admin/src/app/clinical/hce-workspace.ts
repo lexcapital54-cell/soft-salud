@@ -44,6 +44,7 @@ export class HceWorkspace implements OnInit, OnDestroy {
     if (specialty === 'MEDICINE' || specialty === 'AESTHETIC') return 'general';
     return null;
   });
+  readonly aesthetic = computed(() => String(this.user()?.specialty || '').toUpperCase() === 'AESTHETIC');
   readonly sidebar = computed(() => {
     const specialty = String(this.user()?.specialty || '').toUpperCase();
     switch (specialty) {

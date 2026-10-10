@@ -5,6 +5,7 @@
   [class.ws-psych]="premium() === 'psych'"
   [class.ws-dental]="premium() === 'dental'"
   [class.ws-general]="premium() === 'general'"
+  [class.ws-aesthetic]="aesthetic()"
 >
 @if (premium() === 'physio') {
   <app-physio-sidebar [clinicName]="user()?.clinicName || ''" [logo]="clinicLogo()" />

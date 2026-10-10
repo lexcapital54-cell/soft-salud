@@ -306,6 +306,18 @@
   --ws-bg: #f5f9f9;
 }
 
+/* Medicina estética: azul medianoche y dorado, como su historia. */
+.ws-shell.ws-general.ws-aesthetic {
+  --pd-navy: #0f2747;
+  --pd-navy-2: #1c3f6e;
+  --sb-nav-2: #0a1d38;
+  --pd-gold: #b8925a;
+  --pd-gold-rgb: 184, 146, 90;
+  --pd-gold-soft: #e3cf9e;
+  --pd-shadow-rgb: 15, 39, 71;
+  --ws-bg: #f5f7fb;
+}
+
 .ws-shell.ws-premium {
   display: flex;
   align-items: flex-start;
