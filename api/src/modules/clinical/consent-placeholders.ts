@@ -17,6 +17,32 @@ function escapeHtml(value: string) {
     .replace(/"/g, '&quot;');
 }
 
+/** Quita prefijos como "TP", "T.P.", "RP/TP" o "Tarjeta profesional No." que el profesional escribe en su perfil. */
+export function bareProfessionalCard(value: string | null | undefined): string {
+  return String(value ?? '')
+    .trim()
+    .replace(
+      /^(?:(?:RP|R\.\s*P\.?)\s*\/\s*(?:TP|T\.\s*P\.?)|TP|T\.\s*P\.?|RP|R\.\s*P\.?|Tarjeta\s+profesional|Registro\s+profesional)(?![A-Za-z])(?:\s*(?:No\.?|N[°º]\.?))?\s*[:.\-]?\s*/i,
+      '',
+    )
+    .trim();
+}
+
+/**
+ * Número de documento tras una etiqueta "C.C. / C.E. No.": el tipo solo se
+ * añade si la etiqueta no lo menciona ya.
+ */
+export function documentAfterLabel(label: string, docType: string, docNum: string): string {
+  const num = docNum || '[Número]';
+  const type = docType.replace(/\./g, '').toUpperCase();
+  const listed = label
+    .replace(/No\.?$/i, '')
+    .split('/')
+    .map((t) => t.replace(/[.\s]/g, '').toUpperCase())
+    .filter(Boolean);
+  return listed.includes(type) ? num : `${num} (${docType})`;
+}
+
 /**
  * Rellena guiones de plantillas legales con datos del firmante/paciente.
  * Misma lógica que la vista previa Angular (ConsentSigner).
@@ -31,7 +57,7 @@ export function fillConsentPlaceholders(
   const city = (data.city || 'Manizales').replace(/\s+/g, ' ').trim();
   const patient = (data.patientName || name).replace(/\s+/g, ' ').trim();
   const professional = (data.professionalName || '').replace(/\s+/g, ' ').trim();
-  const card = (data.professionalCard || 'Pendiente').trim();
+  const card = bareProfessionalCard(data.professionalCard) || 'Pendiente';
   const when = data.signedAt || new Date();
   const today = when.toLocaleDateString('es-CO', {
     timeZone: 'America/Bogota',
@@ -54,7 +80,8 @@ export function fillConsentPlaceholders(
   );
   out = out.replace(
     /(C\.C\. \/ C\.E\. \/ T\.I\. No\.|C\.C\. \/ C\.E\. No\.|C\.C\. No\.|documento No\.)\s*_{5,}/gi,
-    `$1 <strong>${escapeHtml(`${docType} ${docNum || '[Número]'}`)}</strong>`,
+    (_m, label: string) =>
+      `${label} <strong>${escapeHtml(documentAfterLabel(label, docType, docNum))}</strong>`,
   );
   out = out.replace(
     /(\bde\s)_{5,}(,|\s)/gi,

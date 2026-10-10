@@ -28,6 +28,8 @@ import { RemoteConsentController } from './remote-consent.controller';
 import { RemoteConsentService } from './remote-consent.service';
 import { OrthoTrackingController } from './ortho-tracking.controller';
 import { OrthoTrackingService } from './ortho-tracking.service';
+import { AestheticTrackingController } from './aesthetic-tracking.controller';
+import { AestheticTrackingService } from './aesthetic-tracking.service';
 
 @Module({
   imports: [NotificationsModule],
@@ -42,6 +44,7 @@ import { OrthoTrackingService } from './ortho-tracking.service';
     SivigilaController,
     HceExportController,
     OrthoTrackingController,
+    AestheticTrackingController,
   ],
   providers: [
     CatalogsService,
@@ -62,6 +65,7 @@ import { OrthoTrackingService } from './ortho-tracking.service';
     HceExportService,
     RemoteConsentService,
     OrthoTrackingService,
+    AestheticTrackingService,
   ],
   exports: [
     FormTemplatesService,

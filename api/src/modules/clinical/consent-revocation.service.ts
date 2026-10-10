@@ -7,6 +7,7 @@ import {
 import { User } from '../../users/user.entity';
 import { PrismaService } from '../../prisma/prisma.module';
 import { ConsentPdfService } from './consent-pdf.service';
+import { bareProfessionalCard } from './consent-placeholders';
 import { ConsentsService } from './consents.service';
 import { RevokePatientConsentDto } from './dto/consent.dto';
 
@@ -69,7 +70,7 @@ export class ConsentRevocationService {
       revokedAt,
       ipAddress: meta.ipAddress,
       userAgent: meta.userAgent,
-      registeredBy: [user.fullName, user.professionalCard ? `TP ${user.professionalCard}` : null]
+      registeredBy: [user.fullName, bareProfessionalCard(user.professionalCard) ? `TP ${bareProfessionalCard(user.professionalCard)}` : null]
         .filter(Boolean)
         .join(' · '),
     });

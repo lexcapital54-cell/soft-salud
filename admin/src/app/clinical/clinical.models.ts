@@ -1,3 +1,4 @@
+import type { AestheticContent } from './aesthetic/aesthetic.models';
 import type { DentistryContent } from './dentistry/dentistry.models';
 import type { PhysioIntake } from './physio/physio-intake.models';
 import type { PatientExtras } from './patient-extras';
@@ -218,6 +219,8 @@ export interface ClinicalContent {
   psychology?: PsychologyContent;
   /** Bloques específicos de HC-ODO-001 (odontología / ortodoncia). */
   dentistry?: DentistryContent;
+  /** Bloques específicos de HC-AES (medicina estética). */
+  aesthetic?: AestheticContent;
   rdaMeta: {
     includedEvents: string[];
     deviceId: string;

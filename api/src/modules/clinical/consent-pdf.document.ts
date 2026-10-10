@@ -10,6 +10,7 @@ import {
   sectionTitle,
   signatureBlock,
 } from './consent-pdf.layout';
+import { bareProfessionalCard } from './consent-placeholders';
 
 export type ConsentPdfInput = {
   consentId: string;
@@ -78,11 +79,8 @@ export function dataTable(rows: Array<[string, string]>): Content {
 
 function professionalLine(input: ConsentPdfInput) {
   if (!input.professionalName) return 'N/A';
-  return [
-    input.professionalName,
-    input.professionalRole,
-    input.professionalCard ? `RP/TP ${input.professionalCard}` : null,
-  ]
+  const card = bareProfessionalCard(input.professionalCard);
+  return [input.professionalName, input.professionalRole, card ? `RP/TP ${card}` : null]
     .filter(Boolean)
     .join(' · ');
 }

@@ -753,6 +753,16 @@
                       (focusout)="onClinicalTextBlur($event)"
                     ></textarea>
                 </label>
+              } @else if (isAestheticClinic()) {
+                <label
+                  >Hallazgos, resultados y efectos secundarios (opcional)
+                  <textarea
+                      rows="5"
+                      [(ngModel)]="evolutionMentalExam"
+                      placeholder="Resultado observado, tolerancia, eventos adversos, conducta y próximo control…"
+                      (focusout)="onClinicalTextBlur($event)"
+                    ></textarea>
+                </label>
               } @else {
                 <label
                   >Examen mental (obligatorio)
@@ -3674,7 +3684,7 @@
               <section class="block" id="hce-section-3">
                 <div class="section3-head">
                   <div>
-                    <h3>3. Datos mínimos de atención (Res. 866)</h3>
+                    <h3>{{ isAestheticClinic() ? '3. Historia clínica estética' : '3. Datos mínimos de atención (Res. 866)' }}</h3>
                     @if (isLocked()) {
                       <p class="muted small">Historia guardada (solo lectura).</p>
                     }
@@ -3737,6 +3747,19 @@
                   </div>
                 </label>
 
+                @if (isAestheticClinic()) {
+                  <app-aesthetic-anamnesis
+                    [data]="aesthetic()"
+                    [disabled]="clinicalFormDisabled()"
+                    (changed)="onClinicalFieldChange()"
+                  />
+                  <app-aesthetic-exam
+                    part="exam"
+                    [data]="aesthetic()"
+                    [disabled]="clinicalFormDisabled()"
+                    (changed)="onClinicalFieldChange()"
+                  />
+                } @else {
                 <h4>Antecedentes</h4>
                 @if (isPsychologyClinic() && intakeHealthSummary(); as intake) {
                   <div class="intake-summary">
@@ -3842,9 +3865,10 @@
                     />
                   </div>
                 </label>
+                }
 
                 <label id="ps-impresion">
-                  Impresión diagnóstica y tratamiento
+                  {{ isAestheticClinic() ? 'Impresión diagnóstica' : 'Impresión diagnóstica y tratamiento' }}
                   <div class="dictation-row">
                     <textarea
                       rows="3"
@@ -3868,6 +3892,28 @@
                     />
                   </div>
                 </label>
+
+                @if (isAestheticClinic()) {
+                  <app-aesthetic-exam
+                    part="plan"
+                    [data]="aesthetic()"
+                    [disabled]="clinicalFormDisabled()"
+                    (changed)="onClinicalFieldChange()"
+                  />
+                  <app-ortho-live-chip [status]="aestheticTracking.status()" [label]="aestheticTrackingLabel()">
+                    <h4 class="odo-sub">Mapa facial y procedimientos del paciente</h4>
+                  </app-ortho-live-chip>
+                  @defer (on viewport) {
+                    <app-aesthetic-face-map [disabled]="orthoLiveDisabled()" [canSign]="canWrite()" />
+                    <app-aesthetic-procedures
+                      [disabled]="orthoLiveDisabled()"
+                      [canSign]="canWrite()"
+                      [encounterId]="encounter()?.id || ''"
+                    />
+                  } @placeholder {
+                    <p class="muted small">Cargando mapa facial y procedimientos…</p>
+                  }
+                }
 
                 <!-- Riesgo suicida integrado en examen mental (ya no bloque aparte). -->
               </section>

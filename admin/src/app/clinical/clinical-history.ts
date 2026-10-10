@@ -1,4 +1,16 @@
 import { DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { AestheticAnamnesis } from './aesthetic/aesthetic-anamnesis';
+import { AestheticExam } from './aesthetic/aesthetic-exam';
+import { AestheticFaceMap } from './aesthetic/aesthetic-face-map';
+import { AestheticProcedures } from './aesthetic/aesthetic-procedures';
+import { AestheticTrackingService } from './aesthetic/aesthetic-tracking.service';
+import {
+  AestheticContent,
+  aestheticAllergyList,
+  aestheticAntecedentsText,
+  aestheticMedicationList,
+  normalizeAesthetic,
+} from './aesthetic/aesthetic.models';
 import { DentalExamGroup } from './dentistry/dental-exam-group';
 import { DentalPeriodontogram } from './dentistry/dental-periodontogram';
 import { ClinicalImageViewer } from './dentistry/clinical-image-viewer';
@@ -370,6 +382,10 @@ function emptyContent(): ClinicalContent {
     PhysioTherapies,
     PhysioIcon,
     PsychPatientExtras,
+    AestheticAnamnesis,
+    AestheticExam,
+    AestheticFaceMap,
+    AestheticProcedures,
     OrthoFaceProportions,
     OrthoMovementPlan,
     OrthoArchAnalysis,
@@ -399,7 +415,7 @@ function emptyContent(): ClinicalContent {
     VoiceDictationBtn,
     ClinicalListenBtn,
   ],
-  providers: [ClinicalAutosaveService, OrthoTrackingService],
+  providers: [ClinicalAutosaveService, OrthoTrackingService, AestheticTrackingService],
   templateUrl: './clinical-history.html',
   styleUrls: ['./clinical-history.scss', './clinical-history-ux.scss', './clinical-history-premium.scss'],
   host: {
@@ -412,6 +428,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
   readonly isClinicAdmin = this.auth.isClinicAdmin;
   private readonly autosave = inject(ClinicalAutosaveService);
   readonly orthoTracking = inject(OrthoTrackingService);
+  readonly aestheticTracking = inject(AestheticTrackingService);
   private readonly localDrafts = inject(HceLocalDraftService);
   private readonly unsaved = inject(UnsavedWorkService);
   private readonly router = inject(Router);
@@ -2288,7 +2305,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   /** Examen mental obligatorio en las notas de control (solo psicología). */
   requiresMentalExamInEvolution() {
-    return !this.isPhysiotherapyClinic() && !this.isDentistryClinic();
+    return !this.isPhysiotherapyClinic() && !this.isDentistryClinic() && !this.isAestheticClinic();
   }
 
   /** Zonas, terapias, valoración rápida y antecedentes con casillas (solo FT, vista sellada). */
@@ -2341,6 +2358,20 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     if (this.isPhysiotherapyClinic() || this.isDentistryClinic()) return false;
     const specialty = String(this.user()?.specialty || '').toUpperCase();
     return specialty === 'PSYCHOLOGY';
+  }
+
+  /** Consultorio de medicina estética (HC-AES): formulario general + bloques estéticos. */
+  isAestheticClinic() {
+    if (this.isPhysiotherapyClinic() || this.isDentistryClinic()) return false;
+    const snap = String(this.encounter()?.specialtySnapshot || '').toUpperCase();
+    if (snap) return snap === 'AESTHETIC' || snap.includes('ESTÉTIC') || snap.includes('ESTETIC');
+    return String(this.user()?.specialty || '').toUpperCase() === 'AESTHETIC';
+  }
+
+  /** Acceso tipado al bloque estético (se completa con defaults si viene parcial). */
+  aesthetic(): AestheticContent {
+    if (!this.content.aesthetic) this.content.aesthetic = normalizeAesthetic();
+    return this.content.aesthetic;
   }
 
   /** Medicina y medicina estética usan el formulario general con el tablero premium. */
@@ -2791,6 +2822,24 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
         return `Seguimiento guardado ${when}${who ? ' · ' + who : ''}`;
       }
       default: return this.isLocked() ? 'Historia firmada: el seguimiento sigue editable' : 'Seguimiento del paciente';
+    }
+  }
+
+  aestheticTrackingLabel(): string {
+    const t = this.aestheticTracking;
+    switch (t.status()) {
+      case 'loading': return 'Cargando mapa y procedimientos…';
+      case 'pending': return 'Cambios sin guardar…';
+      case 'saving': return 'Guardando…';
+      case 'error':
+      case 'conflict': return t.message() || 'No se pudo guardar';
+      case 'saved': {
+        const at = t.savedAt();
+        const when = at ? new Date(at).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : '';
+        const who = t.savedBy();
+        return `Guardado ${when}${who ? ' · ' + who : ''}`;
+      }
+      default: return this.isLocked() ? 'Historia firmada: el mapa y los procedimientos siguen activos' : 'Seguimiento del paciente';
     }
   }
 
@@ -3447,6 +3496,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       ...(this.isDentistryClinic() || draft.content.dentistry
         ? { dentistry: normalizeDentistry(draft.content.dentistry) }
         : {}),
+      ...(this.isAestheticClinic() || draft.content.aesthetic
+        ? { aesthetic: normalizeAesthetic(draft.content.aesthetic) }
+        : {}),
       assessment: {
         ...emptyContent().assessment,
         ...(draft.content.assessment || {}),
@@ -3727,6 +3779,7 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     this.orthoTracking.flush();
+    this.aestheticTracking.flush();
     this.writeLocalDraftNow();
     clearInterval(this.systemClockTimer);
     if (this.saveToastTimer) clearTimeout(this.saveToastTimer);
@@ -4170,6 +4223,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       ...(this.isDentistryClinic() || serverContent.dentistry
         ? { dentistry: normalizeDentistry(serverContent.dentistry) }
         : {}),
+      ...(this.isAestheticClinic() || serverContent.aesthetic
+        ? { aesthetic: normalizeAesthetic(serverContent.aesthetic) }
+        : {}),
       assessment: {
         ...emptyContent().assessment,
         ...(serverContent.assessment || {}),
@@ -4300,6 +4356,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
       this.orthoTracking.load(enc.patient.id, () => this.dental(), () => {
         this.content.dentistry = { ...this.dental() };
       });
+    }
+    if (this.isAestheticClinic()) {
+      this.aestheticTracking.load(enc.patient.id);
     }
   }
 
@@ -5372,7 +5431,9 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
           ? `Respuesta del paciente:\n${mental}`
           : this.isPhysiotherapyClinic()
             ? `Evaluación / hallazgos de la sesión:\n${mental}`
-            : `Examen mental:\n${mental}`,
+            : this.isAestheticClinic()
+              ? `Hallazgos, resultados y efectos secundarios:\n${mental}`
+              : `Examen mental:\n${mental}`,
       );
     }
 
@@ -5529,6 +5590,23 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
             ? `Tóxicos: ${flags.toxicos.detail || 'Aplica'}`
             : 'Tóxicos: No aplica',
         ].join('\n');
+      }
+      if (this.isAestheticClinic()) {
+        // Los datos estructurados de estética alimentan los campos generales; si están vacíos se conserva lo escrito.
+        const aes = this.aesthetic();
+        const antecedents = aestheticAntecedentsText(aes);
+        const legacyFlags = flags && Object.values(flags).some((f) => f.applies);
+        if (antecedents || !legacyFlags) this.content.careMinimum.antecedents = antecedents;
+        const allergies = aestheticAllergyList(aes);
+        if (allergies.length) {
+          this.content.allergies = allergies;
+          this.allergiesText = allergies.join(', ');
+        }
+        const meds = aestheticMedicationList(aes);
+        if (meds.length) {
+          this.content.medications = meds;
+          this.medicationsText = meds.join(', ');
+        }
       }
       this.content.rdaMeta.includedEvents = Object.entries(this.rdaEvents)
         .filter(([, v]) => v)

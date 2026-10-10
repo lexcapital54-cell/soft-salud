@@ -1,0 +1,456 @@
+// Mapa facial y procedimientos estéticos (paleta AUREA definida en aesthetic.scss).
+
+.map-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 16px;
+  margin-bottom: 10px;
+}
+
+.seg {
+  display: inline-flex;
+  border: 1px solid #cfdad4;
+  border-radius: 12px;
+  overflow: hidden;
+  button {
+    border: 0;
+    background: #fff;
+    color: var(--aes-primary);
+    padding: 7px 14px;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    & + button {
+      border-left: 1px solid #cfdad4;
+    }
+    &.on {
+      background: var(--aes-primary);
+      color: #fff;
+    }
+    &:focus-visible {
+      outline: 2px solid var(--aes-gold);
+      outline-offset: -2px;
+    }
+  }
+}
+
+label.aes-field.inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #cfdad4;
+  background: #fff;
+  color: var(--aes-ink);
+  border-radius: 999px;
+  padding: 4px 12px 4px 8px;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  &.on {
+    border-color: var(--aes-primary);
+    box-shadow: inset 0 0 0 1px var(--aes-primary);
+    background: #eef3f0;
+    font-weight: 600;
+  }
+  &:disabled {
+    cursor: default;
+  }
+  &:focus-visible {
+    outline: 2px solid var(--aes-primary);
+    outline-offset: 2px;
+  }
+}
+
+.dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.map-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 380px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.map-canvas {
+  border: 1px solid var(--aes-line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 8px;
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    touch-action: manipulation;
+  }
+}
+
+.outline path {
+  fill: none;
+  stroke: #6f8a80;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  &.fine {
+    stroke-width: 1;
+    stroke: #8aa197;
+  }
+}
+
+.zone {
+  fill: rgba(121, 155, 139, 0.08);
+  stroke: rgba(121, 155, 139, 0.45);
+  stroke-width: 0.6;
+  stroke-dasharray: 2 2;
+  cursor: crosshair;
+  transition: fill 0.15s;
+  &:hover,
+  &:focus-visible {
+    fill: rgba(198, 165, 123, 0.28);
+    stroke: var(--aes-gold);
+    outline: none;
+  }
+  &.marked {
+    fill: rgba(23, 59, 58, 0.1);
+  }
+  &.ro {
+    cursor: default;
+    &:hover {
+      fill: rgba(121, 155, 139, 0.08);
+      stroke: rgba(121, 155, 139, 0.45);
+    }
+  }
+}
+
+.mark {
+  cursor: pointer;
+  circle {
+    stroke: #fff;
+    stroke-width: 1.2;
+  }
+  .lock-ring {
+    fill: none;
+    stroke-width: 1;
+  }
+  text {
+    fill: #fff;
+    font-size: 6.5px;
+    font-weight: 700;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+  &.sel circle:first-child,
+  &:focus-visible circle:first-child {
+    stroke: var(--aes-gold);
+    stroke-width: 2.2;
+    outline: none;
+  }
+}
+
+.map-side {
+  min-width: 0;
+}
+
+.mark-card,
+.proc-card {
+  border: 1px solid var(--aes-line);
+  border-radius: 14px;
+  background: var(--aes-bg);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mark-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  strong {
+    flex: 1;
+    color: var(--aes-primary);
+  }
+}
+
+.aes-grid-narrow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px 12px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #fff;
+  border: 1px solid #cfdad4;
+  color: var(--aes-muted);
+  &.signed {
+    background: var(--aes-primary);
+    border-color: var(--aes-primary);
+    color: #fff;
+  }
+  &.warn {
+    background: #fff4e5;
+    border-color: #e0b56b;
+    color: #7a4b00;
+  }
+}
+
+.icon-btn {
+  border: 0;
+  background: transparent;
+  color: var(--aes-muted);
+  padding: 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  &:hover {
+    background: #e7eeea;
+  }
+  &:focus-visible {
+    outline: 2px solid var(--aes-primary);
+  }
+}
+
+.meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--aes-muted);
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn-sign,
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--aes-primary);
+  background: var(--aes-primary);
+  color: #fff;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  &:hover:not(:disabled) {
+    background: #0f2b2a;
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  &:focus-visible {
+    outline: 2px solid var(--aes-gold);
+    outline-offset: 2px;
+  }
+}
+
+.mark-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow: auto;
+  button {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    border: 1px solid transparent;
+    background: #fff;
+    border-radius: 10px;
+    padding: 6px 8px;
+    font: inherit;
+    font-size: 0.83rem;
+    text-align: left;
+    color: var(--aes-ink);
+    cursor: pointer;
+    &:hover,
+    &.sel {
+      border-color: #cfdad4;
+      background: #eef3f0;
+    }
+    &:focus-visible {
+      outline: 2px solid var(--aes-primary);
+    }
+  }
+  .num {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .txt {
+    flex: 1;
+    min-width: 0;
+    small {
+      display: block;
+      color: var(--aes-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+// Procedimientos
+.proc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.proc-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: var(--aes-ink);
+  cursor: pointer;
+  .title {
+    flex: 1 1 220px;
+    font-weight: 700;
+    color: var(--aes-primary);
+  }
+  .sub {
+    font-size: 0.8rem;
+    color: var(--aes-muted);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--aes-primary);
+    border-radius: 8px;
+  }
+}
+
+.proc-card.signed {
+  background: #fff;
+  border-left: 4px solid var(--aes-primary);
+}
+
+.alert-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.83rem;
+  background: #fff4e5;
+  border: 1px solid #e0b56b;
+  color: #6b4200;
+  &.error {
+    background: #fdf1ef;
+    border-color: #e6c9c4;
+    color: #8a2f22;
+  }
+}
+
+.readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px 14px;
+  margin: 0;
+  div {
+    min-width: 0;
+  }
+  dt {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--aes-muted);
+  }
+  dd {
+    margin: 0;
+    font-size: 0.88rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.addenda {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  li {
+    padding: 8px 10px;
+    border-left: 3px solid var(--aes-gold);
+    background: #fffdf8;
+    border-radius: 0 10px 10px 0;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+  }
+}
+
+.req::after {
+  content: ' *';
+  color: #8a2f22;
+}
+
+@media (max-width: 760px) {
+  .map-layout {
+    grid-template-columns: 1fr;
+  }
+  .map-canvas {
+    max-width: 380px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+@media print {
+  .legend,
+  .card-actions,
+  .icon-btn,
+  .btn-sign,
+  .btn-primary {
+    display: none;
+  }
+}

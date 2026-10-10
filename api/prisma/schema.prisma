@@ -344,6 +344,7 @@ model Clinic {
   users                User[]
   patients             Patient[]
   orthoTracking        OrthoTracking[]
+  aestheticTracking    AestheticTracking[]
   appointments         Appointment[]
   encounters           Encounter[]
   formTemplates        FormTemplate[]
@@ -499,6 +500,7 @@ model Patient {
   notifications    NotificationLog[]
   reportExports    ClinicalReportExport[]
   orthoTracking    OrthoTracking?
+  aestheticTracking AestheticTracking?
   attendanceControls AttendanceControl[]
   psychReports       PsychReport[]
 
@@ -1466,6 +1468,27 @@ model OrthoTracking {
 
   @@index([clinicId])
   @@map("ortho_tracking")
+}
+
+/// Seguimiento longitudinal de medicina estética por paciente: mapa facial y
+/// procedimientos con trazabilidad de producto y lote. Los procedimientos firmados
+/// son inmutables (solo admiten adendas); la historia firmada no se modifica.
+model AestheticTracking {
+  id            String   @id @default(uuid()) @db.Uuid
+  clinicId      String   @map("clinic_id") @db.Uuid
+  clinic        Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patientId     String   @unique @map("patient_id") @db.Uuid
+  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  data          Json     @default("{}")
+  version       Int      @default(1)
+  createdById   String?  @map("created_by_id") @db.Uuid
+  updatedById   String?  @map("updated_by_id") @db.Uuid
+  updatedByName String?  @map("updated_by_name") @db.VarChar(160)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([clinicId])
+  @@map("aesthetic_tracking")
 }
 
 model AuditLog {

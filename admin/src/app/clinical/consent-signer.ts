@@ -711,7 +711,24 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
     const city = (this.patientCity().trim() || 'Manizales').replace(/\s+/g, ' ');
     const patient = this.patientName().trim().replace(/\s+/g, ' ') || name;
     const professional = this.professionalName().trim() || this.userFullName().trim() || '';
-    const card = this.professionalCard().trim() || 'Pendiente';
+    const card =
+      this.professionalCard()
+        .trim()
+        .replace(
+          /^(?:(?:RP|R\.\s*P\.?)\s*\/\s*(?:TP|T\.\s*P\.?)|TP|T\.\s*P\.?|RP|R\.\s*P\.?|Tarjeta\s+profesional|Registro\s+profesional)(?![A-Za-z])(?:\s*(?:No\.?|N[°º]\.?))?\s*[:.\-]?\s*/i,
+          '',
+        )
+        .trim() || 'Pendiente';
+    const docAfterLabel = (label: string) => {
+      const type = docType.replace(/\./g, '').toUpperCase();
+      const listed = label
+        .replace(/No\.?$/i, '')
+        .split('/')
+        .map((t) => t.replace(/[.\s]/g, '').toUpperCase())
+        .filter(Boolean);
+      const num = docNum || '[Número]';
+      return listed.includes(type) ? num : `${num} (${docType})`;
+    };
     const today = new Date().toLocaleDateString('es-CO', {
       year: 'numeric',
       month: 'long',
@@ -732,7 +749,8 @@ export class ConsentSigner implements OnInit, AfterViewInit, OnDestroy {
     );
     out = out.replace(
       /(C\.C\. \/ C\.E\. \/ T\.I\. No\.|C\.C\. \/ C\.E\. No\.|C\.C\. No\.|documento No\.)\s*_{5,}/gi,
-      `$1 <strong class="filled">${this.escapeHtml(`${docType} ${docNum || '[Número]'}`)}</strong>`,
+      (_m: string, label: string) =>
+        `${label} <strong class="filled">${this.escapeHtml(docAfterLabel(label))}</strong>`,
     );
     out = out.replace(
       /(\bde\s)_{5,}(,|\s)/gi,
