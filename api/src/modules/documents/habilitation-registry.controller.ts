@@ -5,6 +5,7 @@ import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 import { UserRole } from '../../common/enums';
 import { User } from '../../users/user.entity';
+import { DocumentsExportService, StandardExportFormat } from './documents-export.service';
 import { HabilitationRegistryService } from './habilitation-registry.service';
 import {
   BulkDeleteDocumentsDto,
@@ -29,7 +30,10 @@ const WRITE_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HEALTH_PROFE
 @Controller('documents/registry')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class HabilitationRegistryController {
-  constructor(private readonly registry: HabilitationRegistryService) {}
+  constructor(
+    private readonly registry: HabilitationRegistryService,
+    private readonly exporter: DocumentsExportService,
+  ) {}
 
   @Get()
   @Roles(...READ_ROLES)
@@ -58,6 +62,18 @@ export class HabilitationRegistryController {
   @Roles(...READ_ROLES)
   masterPdf(@Req() req: AuthedRequest, @Query('clinicId') clinicId?: string, @Query('archived') archived?: string) {
     return this.registry.exportMasterList(req.user, 'pdf', clinicId, archived === 'true');
+  }
+
+  /** Documentación de un estándar (o de todos) en ZIP o PDF unido; el consultorio la recibe con marca de agua. */
+  @Get('export')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
+  exportStandard(
+    @Req() req: AuthedRequest,
+    @Query('format') format: string,
+    @Query('pillar') pillar?: string,
+    @Query('clinicId') clinicId?: string,
+  ) {
+    return this.exporter.exportStandard(req.user, format as StandardExportFormat, pillar, ctx(req), clinicId);
   }
 
   @Post('documents')

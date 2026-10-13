@@ -142,6 +142,14 @@ button { font: inherit; color: inherit; }
 
 .std-head .back { margin-bottom: 12px; }
 .std-head-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; > div { flex: 1; min-width: 220px; } h2 { margin: 0; font-family: Georgia, serif; color: var(--petrol); font-size: 20px; } p { margin: 4px 0 0; color: var(--muted); font-size: 14px; } }
+.export-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg);
+  .export-text { display: flex; flex-direction: column; gap: 2px; min-width: 220px; flex: 1; }
+  strong { color: var(--petrol); font-size: 14px; }
+  small { color: var(--muted); font-size: 12.5px; }
+}
+section.export-bar { margin: 0 0 16px; background: var(--card); }
 .mini-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 16px; div { padding: 10px 12px; background: var(--bg); border-radius: 10px; } small { display: block; color: var(--muted); font-size: 12px; } strong { font-family: Georgia, serif; font-size: 22px; color: var(--petrol); } }
 
 /* Botones */

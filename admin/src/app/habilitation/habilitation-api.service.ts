@@ -68,6 +68,14 @@ export class HabilitationApiService {
     });
   }
 
+  /** Documentación de un estándar (o de todos si no se indica) en ZIP o PDF unido. */
+  exportStandard(format: 'zip' | 'pdf', pillar?: PillarKey) {
+    return this.http.get(this.url('/export', { format, pillar }), {
+      responseType: 'blob',
+      observe: 'response',
+    });
+  }
+
   categories() {
     return this.http.get<DocCategory[]>(`${API}/documents/registry/categories`);
   }

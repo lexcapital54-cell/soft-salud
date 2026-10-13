@@ -825,6 +825,45 @@ export class HabilitationDocs implements OnInit {
     });
   }
 
+  /** Profesional/admin: copias con marca de agua. Superadmin: copias sin marca. */
+  readonly canExport = computed(() => this.canDownload() || this.auth.canDownloadMarkedPdf());
+  readonly exporting = signal<'zip' | 'pdf' | null>(null);
+
+  exportStandard(format: 'zip' | 'pdf', pillar?: PillarKey) {
+    if (this.exporting()) return;
+    this.exporting.set(format);
+    this.error.set('');
+    this.api.exportStandard(format, pillar).subscribe({
+      next: (res) => {
+        this.exporting.set(null);
+        const cd = res.headers.get('content-disposition') || '';
+        const name = /filename="([^"]+)"/.exec(cd)?.[1] || `Documentacion.${format}`;
+        if (res.body) this.saveBlob(res.body, name);
+        this.flash(format === 'zip' ? 'ZIP descargado.' : 'PDF completo descargado.');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.exporting.set(null);
+        // Con responseType blob el mensaje del servidor llega como Blob.
+        if (err.error instanceof Blob) {
+          err.error
+            .text()
+            .then((t) => {
+              let msg = '';
+              try {
+                msg = JSON.parse(t)?.message;
+              } catch {
+                /* respuesta no JSON */
+              }
+              this.error.set(msg || describeError(err));
+            })
+            .catch(() => this.error.set(describeError(err)));
+        } else {
+          this.error.set(describeError(err));
+        }
+      },
+    });
+  }
+
   // ---------- Tipos documentales ----------
 
   loadCategories() {

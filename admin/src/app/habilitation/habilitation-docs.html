@@ -309,6 +309,25 @@
 
       <!-- ===================== 7 ESTÁNDARES ===================== -->
       @if (view() === 'estandares') {
+        @if (canExport() && activeDocs().length) {
+          <section class="card export-bar" aria-label="Descargar toda la documentación">
+            <div class="export-text">
+              <strong>Descargar toda la documentación</strong>
+              <small>
+                Organizada por estándar.
+                @if (!canDownload()) { Los PDF salen con marca de agua de su nombre y del consultorio. }
+              </small>
+            </div>
+            <div class="head-actions">
+              <button type="button" class="btn btn-ghost" [disabled]="!!exporting()" (click)="exportStandard('zip')">
+                <hab-icon name="archive" [size]="16" /> {{ exporting() === 'zip' ? 'Preparando ZIP…' : 'ZIP completo' }}
+              </button>
+              <button type="button" class="btn btn-ghost" [disabled]="!!exporting()" (click)="exportStandard('pdf')">
+                <hab-icon name="download" [size]="16" /> {{ exporting() === 'pdf' ? 'Preparando PDF…' : 'PDF completo' }}
+              </button>
+            </div>
+          </section>
+        }
         <section class="std-grid big">
           @for (p of standardCards(); track p.key) {
             <ng-container *ngTemplateOutlet="stdCard; context: { $implicit: p, num: pillarIndex(p.key) }" />
@@ -342,6 +361,28 @@
                 <button type="button" class="btn btn-primary" (click)="openCreate(p.key)"><hab-icon name="plus" [size]="16" /> Nuevo documento</button>
               }
             </div>
+            @if (canExport() && p.total) {
+              <div class="export-bar" role="group" [attr.aria-label]="'Descargar documentación de ' + p.label">
+                <div class="export-text">
+                  <strong>Descargar documentación del estándar</strong>
+                  <small>
+                    @if (canDownload()) {
+                      Copias de todos los documentos vigentes del estándar.
+                    } @else {
+                      Los PDF salen con marca de agua de su nombre y del consultorio.
+                    }
+                  </small>
+                </div>
+                <div class="head-actions">
+                  <button type="button" class="btn btn-ghost" [disabled]="!!exporting()" (click)="exportStandard('zip', p.key)">
+                    <hab-icon name="archive" [size]="16" /> {{ exporting() === 'zip' ? 'Preparando ZIP…' : 'ZIP por documento' }}
+                  </button>
+                  <button type="button" class="btn btn-ghost" [disabled]="!!exporting()" (click)="exportStandard('pdf', p.key)">
+                    <hab-icon name="download" [size]="16" /> {{ exporting() === 'pdf' ? 'Preparando PDF…' : 'PDF completo' }}
+                  </button>
+                </div>
+              </div>
+            }
             <div class="mini-stats">
               <div><small>Registrados</small><strong>{{ p.total }}</strong></div>
               <div><small>Vigentes</small><strong>{{ p.vigentes }}</strong></div>
