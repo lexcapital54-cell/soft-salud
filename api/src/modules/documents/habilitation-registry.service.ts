@@ -179,9 +179,10 @@ export class HabilitationRegistryService {
     if (!clinic) throw new NotFoundException('Consultorio no encontrado');
     // Habilitación con la gestión documental; SG-SST con su propio módulo.
     const withDocs = clinic.dashboardType === 'CLINICAL_HISTORY_WITH_DOCS';
+    // «0. Documentación general» va en todos los consultorios con documentos; en psicología solo si ya tiene documentos.
     const hasGeneral =
       withDocs &&
-      (['PHYSIOTHERAPY', 'DENTISTRY', 'ORTHODONTICS'].includes(clinic.specialty) ||
+      (clinic.specialty !== 'PSYCHOLOGY' ||
         (await this.prisma.documentRequirement.count({
           where: { clinicId, category: { pillar: DocumentPillar.DOCUMENTACION_GENERAL } },
         })) > 0);
