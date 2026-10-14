@@ -1360,7 +1360,10 @@ td {
 
 .cie-block:focus-within,
 .cups-block:focus-within,
-.search-row:focus-within {
+.search-row:focus-within,
+.cie-block:has(.suggest),
+.cups-block:has(.suggest),
+.search-row:has(.suggest) {
   z-index: 30;
 }
 
