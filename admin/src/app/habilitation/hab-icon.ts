@@ -28,6 +28,7 @@ const ICONS: Record<string, string> = {
   trash: 'M3 6h18 M8 6V4h8v2 M6 6l1 14.5h10L18 6 M10 10.5v6 M14 10.5v6',
   arrowLeft: 'M19 12H5 M11 6l-6 6 6 6',
   image: 'M4 4h16v16H4z M8.5 7.5a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3 M20 15l-5-5L5 20',
+  camera: 'M3 8.5A1.5 1.5 0 0 1 4.5 7h3l1.5-2.5h6L16.5 7h3A1.5 1.5 0 0 1 21 8.5v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z M12 9.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7',
   chevronRight: 'M9 6l6 6-6 6',
   chevronDown: 'M6 9l6 6 6-6',
   menu: 'M4 6h16 M4 12h16 M4 18h16',

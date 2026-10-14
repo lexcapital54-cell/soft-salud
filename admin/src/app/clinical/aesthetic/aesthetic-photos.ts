@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, computed, inject, input, signal, viewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HabIcon } from '../../habilitation/hab-icon';
 import { OrthoCompareSliderComponent } from '../dentistry/ortho-compare-slider';
@@ -50,14 +50,6 @@ export type AesPhotoUploader = (file: File, label: string) => Observable<Clinica
               </select>
             </label>
             <label class="aes-field">
-              Momento
-              <select [value]="moment()" (change)="moment.set($any($event.target).value)">
-                @for (m of moments; track m.key) {
-                  <option [value]="m.key">{{ m.label }}</option>
-                }
-              </select>
-            </label>
-            <label class="aes-field">
               Fecha de la foto
               <input type="date" [value]="date()" [max]="today" (change)="date.set($any($event.target).value)" />
             </label>
@@ -71,11 +63,73 @@ export type AesPhotoUploader = (file: File, label: string) => Observable<Clinica
               </select>
             </label>
           </div>
-          <div class="card-actions">
-            <label class="btn-add" [class.busy]="uploading()">
-              <hab-icon name="upload" /> {{ uploading() ? 'Subiendo…' : 'Subir fotos' }}
-              <input type="file" accept="image/*" multiple hidden [disabled]="uploading()" (change)="upload($event)" />
-            </label>
+        }
+        <div class="shot-grid" role="group" [attr.aria-label]="'Fotos ' + captureAngleLabel()">
+          @for (m of moments; track m.key) {
+            @let last = lastShot()[m.key];
+            <div class="shot-box">
+              <p class="shot-title">{{ m.label }} <span>· {{ captureAngleLabel() }}</span></p>
+              <div class="shot-frame">
+                @if (last && url()(last.attachmentId); as src) {
+                  <img [src]="src" [alt]="'Foto ' + m.label + ' ' + captureAngleLabel()" />
+                } @else if (last) {
+                  <span class="shot-empty">Cargando…</span>
+                } @else {
+                  <span class="shot-empty">Sin foto</span>
+                }
+              </div>
+              @if (last) {
+                <p class="shot-date">{{ caption(last) }}</p>
+              }
+              @if (!ro) {
+                <div class="shot-buttons">
+                  <button type="button" class="photo-btn primary" [disabled]="uploading() || cameraBusy()" (click)="openCamera(m.key)">
+                    <hab-icon name="camera" [size]="16" /> Tomar foto
+                  </button>
+                  <label class="photo-btn" [class.disabled]="uploading()">
+                    <hab-icon name="image" [size]="16" /> Galería
+                    <input type="file" accept="image/*" multiple hidden [disabled]="uploading()" (change)="upload($event, m.key)" />
+                  </label>
+                </div>
+              }
+            </div>
+          }
+        </div>
+        @if (uploading()) {
+          <p class="aes-help" role="status">Guardando foto…</p>
+        }
+
+        @if (cameraOpen()) {
+          <div class="cam-modal" role="dialog" aria-modal="true" aria-labelledby="aes-cam-title" (keydown.escape)="closeCamera()">
+            <div class="cam-dialog">
+              <h4 id="aes-cam-title">Foto {{ momentLabel(moment()) }} · {{ captureAngleLabel() }}</h4>
+              <p class="aes-help">
+                {{ shot() ? 'Revise la foto antes de guardarla.' : 'Mantenga la misma luz y distancia de las otras sesiones y pulse Capturar.' }}
+              </p>
+              <div class="cam-video-wrap">
+                <video #camVideo autoplay playsinline muted [hidden]="!!shot()"></video>
+                @if (shot(); as s) {
+                  <img [src]="s.url" alt="Foto capturada" />
+                } @else if (angle() !== 'DETALLE' && !cameraBusy()) {
+                  <span class="cam-guide" aria-hidden="true"></span>
+                }
+                @if (cameraBusy()) {
+                  <p class="cam-wait">Abriendo cámara…</p>
+                }
+              </div>
+              <div class="cam-actions">
+                <button type="button" class="photo-btn" (click)="closeCamera()">Cancelar</button>
+                @if (shot()) {
+                  <button type="button" class="photo-btn" (click)="retake()">Repetir</button>
+                  <button type="button" class="photo-btn primary" (click)="useShot()">Usar foto</button>
+                } @else {
+                  @if (canSwitch()) {
+                    <button type="button" class="photo-btn" [disabled]="cameraBusy()" (click)="switchCamera()">Cambiar cámara</button>
+                  }
+                  <button type="button" class="photo-btn primary" [disabled]="cameraBusy()" (click)="capture()">Capturar</button>
+                }
+              </div>
+            </div>
           </div>
         }
         @if (error()) {
@@ -151,6 +205,27 @@ export type AesPhotoUploader = (file: File, label: string) => Observable<Clinica
     .report-actions { margin-top: 4px; }
     .report-actions .btn-add.ghost { background: #fff; color: #0f2747; border: 1px solid #d5dce8; }
     label.btn-add.busy { opacity: 0.6; pointer-events: none; }
+    .shot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 12px 0; }
+    .shot-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; border: 1px solid #dbe2ec; border-radius: 16px; background: #f8fafc; }
+    .shot-title { margin: 0; align-self: stretch; font-weight: 700; color: #0f2747; }
+    .shot-title span { font-weight: 500; color: #4b5b74; }
+    .shot-frame { width: 100%; max-width: 220px; aspect-ratio: 3 / 4; border: 1px dashed #8a6d3b; border-radius: 16px; background: #fff; overflow: hidden; display: grid; place-items: center; }
+    .shot-frame img { width: 100%; height: 100%; object-fit: cover; }
+    .shot-empty { color: #5b6b82; font-size: 0.9rem; }
+    .shot-date { margin: 0; font-size: 0.8rem; color: #4b5b74; }
+    .shot-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+    .photo-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid #0f2747; background: #fff; color: #0f2747; font: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+    .photo-btn.primary { background: #0f2747; color: #fff; }
+    .photo-btn:disabled, .photo-btn.disabled { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
+    .photo-btn:focus-visible { outline: 3px solid #8a6d3b; outline-offset: 2px; }
+    .cam-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; background: rgba(15, 23, 42, 0.72); }
+    .cam-dialog { width: min(720px, 100%); max-height: 100%; overflow: auto; padding: 16px; border-radius: 18px; background: #fff; }
+    .cam-dialog h4 { margin: 0 0 4px; color: #0f2747; }
+    .cam-video-wrap { position: relative; margin: 10px 0; border-radius: 14px; overflow: hidden; background: #0f172a; aspect-ratio: 4 / 3; }
+    .cam-video-wrap video, .cam-video-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .cam-guide { position: absolute; left: 50%; top: 50%; width: 46%; height: 78%; transform: translate(-50%, -50%); border: 2px dashed rgba(255, 255, 255, 0.75); border-radius: 50%; pointer-events: none; }
+    .cam-wait { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: #fff; }
+    .cam-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
   `,
 })
 export class AestheticPhotos {
@@ -175,6 +250,26 @@ export class AestheticPhotos {
   readonly uploading = signal(false);
   readonly exporting = signal<'all' | 'angle' | null>(null);
   readonly error = signal<string | null>(null);
+
+  readonly cameraOpen = signal(false);
+  readonly cameraBusy = signal(false);
+  readonly canSwitch = signal(false);
+  readonly shot = signal<{ file: File; url: string } | null>(null);
+  readonly camVideo = viewChild<ElementRef<HTMLVideoElement>>('camVideo');
+  private stream: MediaStream | null = null;
+  /** Quien fotografía a la paciente usa la cámara trasera en celular o tableta. */
+  private facing: 'environment' | 'user' = 'environment';
+
+  /** Última foto de cada momento para el ángulo elegido arriba. */
+  readonly lastShot = computed(() => {
+    const out: Partial<Record<AesPhotoMoment, AesPhoto>> = {};
+    for (const f of this.photos()) if (f.angle === this.angle()) out[f.moment] = f;
+    return out;
+  });
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.closeCamera());
+  }
 
   readonly viewAngle = signal<AesPhotoAngle | null>(null);
   readonly beforePick = signal<string | null>(null);
@@ -276,15 +371,133 @@ export class AestheticPhotos {
     this.afterPick.set(null);
   }
 
-  upload(event: Event) {
+  captureAngleLabel() {
+    return AES_PHOTO_ANGLES.find((a) => a.key === this.angle())?.label ?? '';
+  }
+
+  momentLabel(key: AesPhotoMoment) {
+    return (AES_PHOTO_MOMENTS.find((m) => m.key === key)?.label ?? '').toLowerCase();
+  }
+
+  /** Cámara en vivo como en los datos del paciente; la imagen no se espeja para no invertir los lados. */
+  async openCamera(moment: AesPhotoMoment) {
+    if (this.uploading()) return;
+    this.error.set(null);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      this.error.set('Este navegador no permite cámara en vivo. Use «Galería» o abra la historia en Chrome o Safari.');
+      return;
+    }
+    this.moment.set(moment);
+    this.discardShot();
+    this.cameraOpen.set(true);
+    await this.startStream();
+  }
+
+  private async startStream() {
+    this.stopStream();
+    this.cameraBusy.set(true);
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: this.facing }, width: { ideal: 1920 }, height: { ideal: 1440 } },
+      });
+      if (!this.cameraOpen()) {
+        this.stopStream();
+        return;
+      }
+      const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
+      this.canSwitch.set(devices.filter((d) => d.kind === 'videoinput').length > 1);
+      setTimeout(() => {
+        const video = this.camVideo()?.nativeElement;
+        if (!video || !this.stream) return;
+        video.srcObject = this.stream;
+        void video.play().catch(() => undefined);
+        this.cameraBusy.set(false);
+      }, 50);
+    } catch {
+      this.cameraBusy.set(false);
+      this.cameraOpen.set(false);
+      this.error.set('No se pudo acceder a la cámara. Permita el acceso en el navegador o use «Galería».');
+    }
+  }
+
+  switchCamera() {
+    this.facing = this.facing === 'environment' ? 'user' : 'environment';
+    void this.startStream();
+  }
+
+  capture() {
+    const video = this.camVideo()?.nativeElement;
+    if (!video || !video.videoWidth) {
+      this.error.set('Espere a que la cámara esté lista e intente de nuevo.');
+      return;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          this.error.set('No se pudo capturar la imagen.');
+          return;
+        }
+        const file = new File([blob], `estetica-${this.angle().toLowerCase()}-${this.moment().toLowerCase()}-${Date.now()}.jpg`, {
+          type: 'image/jpeg',
+        });
+        this.shot.set({ file, url: URL.createObjectURL(file) });
+      },
+      'image/jpeg',
+      0.92,
+    );
+  }
+
+  retake() {
+    this.discardShot();
+  }
+
+  useShot() {
+    const s = this.shot();
+    if (!s) return;
+    const moment = this.moment();
+    this.closeCamera();
+    this.uploadFiles([s.file], moment);
+  }
+
+  closeCamera() {
+    this.stopStream();
+    this.discardShot();
+    this.cameraOpen.set(false);
+    this.cameraBusy.set(false);
+  }
+
+  private discardShot() {
+    const s = this.shot();
+    if (s) URL.revokeObjectURL(s.url);
+    this.shot.set(null);
+  }
+
+  private stopStream() {
+    this.stream?.getTracks().forEach((t) => t.stop());
+    this.stream = null;
+    const video = this.camVideo()?.nativeElement;
+    if (video) video.srcObject = null;
+  }
+
+  upload(event: Event, moment: AesPhotoMoment) {
     const input = event.target as HTMLInputElement;
     const files = [...(input.files ?? [])];
     input.value = '';
+    this.uploadFiles(files, moment);
+  }
+
+  private uploadFiles(files: File[], moment: AesPhotoMoment) {
     const uploader = this.uploader();
     if (!uploader || !files.length) return;
     this.error.set(null);
     const angle = this.angle();
-    const moment = this.moment();
     const date = this.date() || todayIso();
     const procedureId = this.procedureId();
     const angleLabel = AES_PHOTO_ANGLES.find((a) => a.key === angle)?.label ?? angle;
