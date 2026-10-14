@@ -141,6 +141,12 @@ const SAVE_LABEL: Record<string, string> = {
           <div class="fm-center">
             <div class="fm-bar">
               <span class="fm-view-name">{{ viewLabel() }}</span>
+              @if (!lock) {
+                <span class="fm-mode" role="status" aria-live="polite">
+                  <svg class="fm-swatch" viewBox="-6 -6 12 12" aria-hidden="true"><path [attr.d]="sym(activeSymbol())" [attr.fill]="activeColor()" /></svg>
+                  {{ modeLabel() }}
+                </span>
+              }
               <div class="fm-zoom" role="group" aria-label="Zoom y edición">
                 <button type="button" class="icon-btn" aria-label="Deshacer (Ctrl+Z)" title="Deshacer (Ctrl+Z)" [disabled]="lock || !canUndo()" (click)="undo()">
                   <hab-icon name="restore" [size]="16" />
@@ -346,7 +352,7 @@ const SAVE_LABEL: Record<string, string> = {
                   }
                   <label class="aes-field">
                     Observación
-                    <textarea rows="3" maxlength="2000" [value]="m.note" [readOnly]="!edit" (focus)="snapshot()"
+                    <textarea id="fm-note-input" rows="3" maxlength="2000" [value]="m.note" [readOnly]="!edit" (focus)="snapshot()"
                       (input)="patch(m, 'note', val($event), false)" placeholder="Lo observado, planeado o realizado en esta zona"></textarea>
                   </label>
 
@@ -507,13 +513,19 @@ const SAVE_LABEL: Record<string, string> = {
           </section>
 
           <section class="fm-dock-col" aria-labelledby="fm-d-procs">
-            <h5 id="fm-d-procs">Procedimientos</h5>
+            <h5 id="fm-d-procs">Qué registrar</h5>
             <div class="fm-seg" role="radiogroup" aria-label="Qué se registra">
               @for (c of categories; track c.key) {
                 <button type="button" role="radio" [attr.aria-checked]="category() === c.key" [class.on]="category() === c.key"
-                  [disabled]="lock" (click)="category.set(c.key)">{{ c.label }}</button>
+                  [disabled]="lock" (click)="selectCategory(c.key)">{{ c.label }}</button>
               }
             </div>
+            @if (category() !== 'PROCEDIMIENTO') {
+              <p class="fm-hint">
+                {{ categoryHint() }} Toque el rostro con la herramienta elegida (Punto, Zona o un trazo) y escriba la descripción en
+                «Observación», en el detalle de la marca.
+              </p>
+            }
             @if (category() === 'PROCEDIMIENTO') {
               <div class="fm-search">
                 <hab-icon name="search" [size]="16" />
@@ -771,6 +783,33 @@ export class AestheticFaceMap {
     this.category() === 'PROCEDIMIENTO' ? procedureStyle(this.procType()).color : markKind(this.category()).color,
   );
 
+  readonly activeSymbol = computed(() =>
+    this.category() === 'PROCEDIMIENTO'
+      ? procedureStyle(this.procType()).symbol
+      : markStyle({ kind: this.category() } as AesAnnotation).symbol,
+  );
+
+  /** Lo que se va a marcar y con qué herramienta, visible junto al rostro. */
+  readonly modeLabel = computed(() => {
+    const what =
+      this.category() === 'PROCEDIMIENTO'
+        ? procedureTypeLabel(this.procType())
+        : (this.categories.find((c) => c.key === this.category())?.label ?? '');
+    const tool = FACIAL_TOOLS.find((t) => t.key === this.tool())?.label ?? '';
+    return this.tool() === 'select' || this.tool() === 'hand' || this.tool() === 'eraser' ? tool : `${what} · ${tool}`;
+  });
+
+  readonly categoryHint = computed(() => {
+    switch (this.category()) {
+      case 'HALLAZGO':
+        return 'Hallazgo: lo que observa en la valoración (lesión, asimetría, cicatriz…).';
+      case 'EVENTO':
+        return 'Evento adverso: lo ocurrido durante o después de un procedimiento (hematoma, edema, nódulo…).';
+      default:
+        return 'Nota: aclaración o trazo de referencia sobre el rostro.';
+    }
+  });
+
   readonly toolHint = computed(() => {
     if (this.ro()) return 'Modo consulta: seleccione una marca para ver su detalle';
     return FACIAL_TOOLS.find((t) => t.key === this.tool())?.hint ?? '';
@@ -891,6 +930,22 @@ export class AestheticFaceMap {
   setTool(t: FacialTool) {
     this.canvas()?.cancelDraft();
     this.tool.set(t);
+    if (t !== 'select' && t !== 'hand') this.revealCanvas();
+  }
+
+  selectCategory(c: Category) {
+    this.category.set(c);
+    // Seleccionar o mover no crean marcas: al elegir qué registrar se vuelve a una herramienta de marcado.
+    if (this.tool() === 'select' || this.tool() === 'hand' || this.tool() === 'eraser') this.tool.set('point');
+    this.revealCanvas();
+  }
+
+  /** En pantallas angostas la barra queda debajo del rostro: lo trae a la vista si no se ve. */
+  private revealCanvas() {
+    const el = this.host.nativeElement.querySelector<HTMLElement>('.fm-canvas-wrap');
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (r.bottom < 80 || r.top > window.innerHeight - 80) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }
 
   toggleLayer(l: FacialLayer) {
@@ -999,6 +1054,13 @@ export class AestheticFaceMap {
     else if (mark.status && !mark.quantity && (req.shape === 'point' || req.shape === 'zone')) {
       this.rightOpen.set(true);
       setTimeout(() => this.host.nativeElement.querySelector<HTMLInputElement>('#fm-qty-input')?.focus({ preventScroll: true }));
+    } else if (!mark.status) {
+      this.rightOpen.set(true);
+      this.say(`${markKind(category).label} marcado. Describa lo observado en «Observación», en el detalle de la marca.`);
+      // En pantallas táctiles no se enfoca para no abrir el teclado en cada marca.
+      if (window.matchMedia?.('(pointer: fine)').matches) {
+        setTimeout(() => this.host.nativeElement.querySelector<HTMLTextAreaElement>('#fm-note-input')?.focus({ preventScroll: true }));
+      }
     }
   }
 

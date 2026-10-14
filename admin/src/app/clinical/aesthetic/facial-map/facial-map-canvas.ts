@@ -889,7 +889,6 @@ export class FacialMapCanvas {
   finishPolygon() {
     const d = this.draft();
     if (!d || d.shape !== 'polygon') return;
-    this.draft.set(null);
     // El doble toque agrega vértices repetidos al final: se descartan.
     const pts: number[] = [];
     for (let i = 0; i + 1 < d.points.length; i += 2) {
@@ -897,7 +896,13 @@ export class FacialMapCanvas {
       if (n && Math.hypot(d.points[i] - pts[n - 2], d.points[i + 1] - pts[n - 1]) < 1) continue;
       pts.push(d.points[i], d.points[i + 1]);
     }
-    if (pts.length >= 6) this.created.emit({ shape: 'polygon', x: pts[0], y: pts[1], points: pts });
+    // Con menos de tres vértices se conserva el contorno en curso para seguir agregando.
+    if (pts.length < 6) {
+      this.draft.set({ shape: 'polygon', points: pts });
+      return;
+    }
+    this.draft.set(null);
+    this.created.emit({ shape: 'polygon', x: pts[0], y: pts[1], points: pts });
   }
 
   /** Cancela el trazo en curso; devuelve si había uno. */
