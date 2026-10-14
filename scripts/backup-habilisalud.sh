@@ -64,9 +64,33 @@ else
   fail=1
 fi
 
+# 2b) Paquetes maestros de documentación por especialidad (montados en la API).
+PACKS_TMP="$TMP/paquetes"
+mkdir -p "$PACKS_TMP"
+packs_ok=0
+for pair in "habilitation-pack:psicologia" "habilitation-packs/fisioterapia:fisioterapia" \
+  "habilitation-packs/odontologia:odontologia" "habilitation-packs/estetica:estetica"; do
+  src="${pair%%:*}" name="${pair##*:}"
+  if docker exec "$API_CONTAINER" test -d "/app/$src"; then
+    docker cp "$API_CONTAINER:/app/$src/." "$PACKS_TMP/$name" >/dev/null && packs_ok=$((packs_ok + 1))
+  fi
+done
+if [ "$packs_ok" -gt 0 ]; then
+  log "Paquetes maestros: $packs_ok ($(du -sh "$PACKS_TMP" | cut -f1))"
+else
+  log "AVISO: no se encontraron paquetes maestros en $API_CONTAINER"
+  PACKS_TMP=""
+fi
+
 save_to() {
   local root="$1" db_days="$2" label="$3"
   mkdir -p "$root/db" "$root/storage/actual" "$root/storage/cambios" || return 1
+  if [ -n "$PACKS_TMP" ]; then
+    mkdir -p "$root/paquetes/actual" "$root/paquetes/cambios" || return 1
+    rsync -a --delete --backup --backup-dir="$root/paquetes/cambios/$STAMP" \
+      "$PACKS_TMP/" "$root/paquetes/actual/" || return 1
+    find "$root/paquetes/cambios" -mindepth 1 -maxdepth 1 -type d -mtime +"$CHANGES_DAYS" -exec rm -rf {} +
+  fi
   if [ -s "$DUMP" ]; then
     cp "$DUMP" "$root/db/" || return 1
     (cd "$root/db" && shasum -a 256 "habilisalud_$STAMP.dump" >"habilisalud_$STAMP.dump.sha256")
@@ -100,8 +124,10 @@ if [ -d "$EXTERNAL_VOLUME" ]; then
       dst=/vol/$(basename "$EXTERNAL_ROOT")
       mkdir -p \$dst
       rsync -a /src/db /src/storage \$dst/
+      if [ -d /src/paquetes ]; then rsync -a /src/paquetes \$dst/; fi
       find \$dst/db -name 'habilisalud_*.dump*' -type f -mtime +$EXTERNAL_DB_DAYS -delete
       find \$dst/storage/cambios -mindepth 1 -maxdepth 1 -type d -mtime +$CHANGES_DAYS -exec rm -rf {} +
+      if [ -d \$dst/paquetes/cambios ]; then find \$dst/paquetes/cambios -mindepth 1 -maxdepth 1 -type d -mtime +$CHANGES_DAYS -exec rm -rf {} +; fi
     "; then
     log "Disco externo: copia guardada en $EXTERNAL_ROOT"
   else
