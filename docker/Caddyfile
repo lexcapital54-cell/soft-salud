@@ -76,6 +76,10 @@
 		root * /srv
 		@html path *.html /index.html
 		header @html Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+		# Rutas de la app sin extensión (/consultorio/historia-clinica…) responden index.html:
+		# sin esto el navegador guarda la versión anterior y no carga la nueva tras desplegar.
+		@spaRoute not path_regexp \.[A-Za-z0-9]+$
+		header @spaRoute Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
 		try_files {path} /index.html
 		file_server
 	}
