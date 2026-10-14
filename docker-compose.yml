@@ -31,6 +31,7 @@ services:
       - "./DOCUMENOS PDF PSICOLOGIA:/app/habilitation-pack:ro"
       - "./DOCUMENTOS PDF FISIOTERAPIA:/app/habilitation-packs/fisioterapia:ro"
       - "./DOCUMENTOS PDF ODONTOLOGIA:/app/habilitation-packs/odontologia:ro"
+      - "./DOCUMENTOS PDF ESTETICA:/app/habilitation-packs/estetica:ro"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

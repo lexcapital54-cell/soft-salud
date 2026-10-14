@@ -1,0 +1,4212 @@
+{
+  "version": 1,
+  "specialty": "AESTHETIC",
+  "exportedAt": "2026-10-14T16:55:43.075Z",
+  "categories": [
+    {
+      "code": "GEN_00_GENERAL",
+      "name": "0. Documentación general",
+      "pillar": "DOCUMENTACION_GENERAL",
+      "sortOrder": 0
+    },
+    {
+      "code": "FT_01_LEGAL",
+      "name": "01. Legal y administrativo",
+      "pillar": "TALENTO_HUMANO",
+      "sortOrder": 1
+    },
+    {
+      "code": "02_TALENTO_HUMANO",
+      "name": "Talento Humano",
+      "pillar": "TALENTO_HUMANO",
+      "sortOrder": 2
+    },
+    {
+      "code": "03_INFRAESTRUCTURA",
+      "name": "Infraestructura",
+      "pillar": "INFRAESTRUCTURA",
+      "sortOrder": 3
+    },
+    {
+      "code": "FT_03_INFRA",
+      "name": "03. Infraestructura",
+      "pillar": "INFRAESTRUCTURA",
+      "sortOrder": 3
+    },
+    {
+      "code": "FT_04_DOTACION",
+      "name": "04. Dotación",
+      "pillar": "DOTACION",
+      "sortOrder": 4
+    },
+    {
+      "code": "FT_05_MEDICAMENTOS",
+      "name": "5. Medicamentos",
+      "pillar": "MEDICAMENTOS_INSUMOS",
+      "sortOrder": 5
+    },
+    {
+      "code": "FT_06_PROCESOS",
+      "name": "06. Procesos prioritarios",
+      "pillar": "PROCESOS_PRIORITARIOS",
+      "sortOrder": 6
+    },
+    {
+      "code": "FT_07_HC",
+      "name": "07. Historia clínica",
+      "pillar": "HISTORIA_CLINICA",
+      "sortOrder": 7
+    },
+    {
+      "code": "FT_10_INTERDEPENDENCIA",
+      "name": "10. Interdependencia",
+      "pillar": "INTERDEPENDENCIA",
+      "sortOrder": 10
+    },
+    {
+      "code": "01_DOCUMENTACION_LEGAL",
+      "name": "Documentación Legal",
+      "pillar": "DOCUMENTACION_LEGAL",
+      "sortOrder": 1
+    }
+  ],
+  "requirements": [
+    {
+      "code": "GEN_00_GENER-001",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "000 GUIA IMPLEMENTACION Y ADVERTENCIAS",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/000_GUIA_IMPLEMENTACION_Y_ADVERTENCIAS.pdf",
+          "originalName": "000_GUIA_IMPLEMENTACION_Y_ADVERTENCIAS.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-002",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-001 indice maestro de auditoria",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-001_indice_maestro_de_auditoria.pdf",
+          "originalName": "EST-00-001_indice_maestro_de_auditoria.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-003",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-002 matriz de requisitos y aplicabilidad",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-002_matriz_de_requisitos_y_aplicabilidad.pdf",
+          "originalName": "EST-00-002_matriz_de_requisitos_y_aplicabilidad.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-004",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-003 control documental y versionamiento",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-003_control_documental_y_versionamiento.pdf",
+          "originalName": "EST-00-003_control_documental_y_versionamiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-005",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-004 manual de organizacion del consultorio",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-004_manual_de_organizacion_del_consultorio.pdf",
+          "originalName": "EST-00-004_manual_de_organizacion_del_consultorio.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-006",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-005 manual administrativo del servicio",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-005_manual_administrativo_del_servicio.pdf",
+          "originalName": "EST-00-005_manual_administrativo_del_servicio.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-007",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-006 manual de funciones y responsabilidades",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-006_manual_de_funciones_y_responsabilidades.pdf",
+          "originalName": "EST-00-006_manual_de_funciones_y_responsabilidades.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-008",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-007 politica de calidad y mejora continua",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-007_politica_de_calidad_y_mejora_continua.pdf",
+          "originalName": "EST-00-007_politica_de_calidad_y_mejora_continua.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-009",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-008 manual de seguridad del paciente",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-008_manual_de_seguridad_del_paciente.pdf",
+          "originalName": "EST-00-008_manual_de_seguridad_del_paciente.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-010",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-009 manual de proteccion de datos y privacidad",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-009_manual_de_proteccion_de_datos_y_privacidad.pdf",
+          "originalName": "EST-00-009_manual_de_proteccion_de_datos_y_privacidad.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-011",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-010 manual de gestion documental",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-010_manual_de_gestion_documental.pdf",
+          "originalName": "EST-00-010_manual_de_gestion_documental.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-012",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-011 manual de atencion al usuario",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-011_manual_de_atencion_al_usuario.pdf",
+          "originalName": "EST-00-011_manual_de_atencion_al_usuario.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-013",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-012 procedimiento de pqrs",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-012_procedimiento_de_pqrs.pdf",
+          "originalName": "EST-00-012_procedimiento_de_pqrs.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-014",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-013 procedimiento de mejora continua",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-013_procedimiento_de_mejora_continua.pdf",
+          "originalName": "EST-00-013_procedimiento_de_mejora_continua.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-015",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-014 matriz de riesgos asistenciales",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-014_matriz_de_riesgos_asistenciales.pdf",
+          "originalName": "EST-00-014_matriz_de_riesgos_asistenciales.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-016",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-015 tablero de indicadores",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-015_tablero_de_indicadores.pdf",
+          "originalName": "EST-00-015_tablero_de_indicadores.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-017",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-016 plan anual de auditoria interna",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-016_plan_anual_de_auditoria_interna.pdf",
+          "originalName": "EST-00-016_plan_anual_de_auditoria_interna.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-018",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-017 procedimiento de autoevaluacion reps",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-017_procedimiento_de_autoevaluacion_reps.pdf",
+          "originalName": "EST-00-017_procedimiento_de_autoevaluacion_reps.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-019",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-018 plan de acciones correctivas y preventivas",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-018_plan_de_acciones_correctivas_y_preventivas.pdf",
+          "originalName": "EST-00-018_plan_de_acciones_correctivas_y_preventivas.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-020",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-019 matriz de cartera de procedimientos esteticos y alcance habilitado",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-019_matriz_de_cartera_de_procedimientos_esteticos_y_alcance_habilitado.pdf",
+          "originalName": "EST-00-019_matriz_de_cartera_de_procedimientos_esteticos_y_alcance_habilitado.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-021",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-00-020 matriz de exclusiones y limites de practica estetica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-00-020_matriz_de_exclusiones_y_limites_de_practica_estetica.pdf",
+          "originalName": "EST-00-020_matriz_de_exclusiones_y_limites_de_practica_estetica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-022",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-03-001 inventario de dotacion y equipos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-03-001_inventario_de_dotacion_y_equipos.pdf",
+          "originalName": "EST-03-001_inventario_de_dotacion_y_equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-023",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-03-006 verificacion funcional de equipos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-03-006_verificacion_funcional_de_equipos.pdf",
+          "originalName": "EST-03-006_verificacion_funcional_de_equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-024",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-03-008 contingencia por falla de equipos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-03-008_contingencia_por_falla_de_equipos.pdf",
+          "originalName": "EST-03-008_contingencia_por_falla_de_equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-025",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-03-009 procedimiento de seguridad informatica y backups",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-03-009_procedimiento_de_seguridad_informatica_y_backups.pdf",
+          "originalName": "EST-03-009_procedimiento_de_seguridad_informatica_y_backups.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-026",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-03-010 guia de uso seguro de equipos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-03-010_guia_de_uso_seguro_de_equipos.pdf",
+          "originalName": "EST-03-010_guia_de_uso_seguro_de_equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "GEN_00_GENER-027",
+      "categoryCode": "GEN_00_GENERAL",
+      "title": "EST-03-014 control de mantenimiento de equipos esteticos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "0. DOCUMENTACION GENERAL/0. Documentación general/EST-03-014_control_de_mantenimiento_de_equipos_esteticos.pdf",
+          "originalName": "EST-03-014_control_de_mantenimiento_de_equipos_esteticos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_01_LEGAL-001",
+      "categoryCode": "FT_01_LEGAL",
+      "title": "EST-01-001 perfil del profesional medico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/01. Legal y administrativo/EST-01-001_perfil_del_profesional_medico.pdf",
+          "originalName": "EST-01-001_perfil_del_profesional_medico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_01_LEGAL-002",
+      "categoryCode": "FT_01_LEGAL",
+      "title": "EST-01-002 manual de funciones del profesional medico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/01. Legal y administrativo/EST-01-002_manual_de_funciones_del_profesional_medico.pdf",
+          "originalName": "EST-01-002_manual_de_funciones_del_profesional_medico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_01_LEGAL-003",
+      "categoryCode": "FT_01_LEGAL",
+      "title": "EST-01-003 procedimiento de verificacion de titulos rethus",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/01. Legal y administrativo/EST-01-003_procedimiento_de_verificacion_de_titulos_rethus.pdf",
+          "originalName": "EST-01-003_procedimiento_de_verificacion_de_titulos_rethus.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_01_LEGAL-004",
+      "categoryCode": "FT_01_LEGAL",
+      "title": "EST-01-006 matriz de competencias y alcance profesional",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/01. Legal y administrativo/EST-01-006_matriz_de_competencias_y_alcance_profesional.pdf",
+          "originalName": "EST-01-006_matriz_de_competencias_y_alcance_profesional.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_01_LEGAL-005",
+      "categoryCode": "FT_01_LEGAL",
+      "title": "EST-01-007 plan de induccion y reinduccion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/01. Legal y administrativo/EST-01-007_plan_de_induccion_y_reinduccion.pdf",
+          "originalName": "EST-01-007_plan_de_induccion_y_reinduccion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_01_LEGAL-006",
+      "categoryCode": "FT_01_LEGAL",
+      "title": "EST-01-008 registro de capacitaciones",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/01. Legal y administrativo/EST-01-008_registro_de_capacitaciones.pdf",
+          "originalName": "EST-01-008_registro_de_capacitaciones.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_01_LEGAL-007",
+      "categoryCode": "FT_01_LEGAL",
+      "title": "EST-01-010 verificacion de vacunas ocupacionales",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/01. Legal y administrativo/EST-01-010_verificacion_de_vacunas_ocupacionales.pdf",
+          "originalName": "EST-01-010_verificacion_de_vacunas_ocupacionales.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_01_LEGAL-008",
+      "categoryCode": "FT_01_LEGAL",
+      "title": "EST-01-011 evaluacion de aptitud ocupacional",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/01. Legal y administrativo/EST-01-011_evaluacion_de_aptitud_ocupacional.pdf",
+          "originalName": "EST-01-011_evaluacion_de_aptitud_ocupacional.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_01_LEGAL-009",
+      "categoryCode": "FT_01_LEGAL",
+      "title": "EST-01-012 compromiso de confidencialidad",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/01. Legal y administrativo/EST-01-012_compromiso_de_confidencialidad.pdf",
+          "originalName": "EST-01-012_compromiso_de_confidencialidad.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_01_LEGAL-010",
+      "categoryCode": "FT_01_LEGAL",
+      "title": "EST-01-013 verificacion de entrenamiento documentado por procedimiento",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/01. Legal y administrativo/EST-01-013_verificacion_de_entrenamiento_documentado_por_procedimiento.pdf",
+          "originalName": "EST-01-013_verificacion_de_entrenamiento_documentado_por_procedimiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_01_LEGAL-011",
+      "categoryCode": "FT_01_LEGAL",
+      "title": "EST-01-014 evaluacion de competencias de procedimientos esteticos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/01. Legal y administrativo/EST-01-014_evaluacion_de_competencias_de_procedimientos_esteticos.pdf",
+          "originalName": "EST-01-014_evaluacion_de_competencias_de_procedimientos_esteticos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "02_001_COPIA_DE_LA_CEDULA",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Copia de la cédula",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_002_TARJETA_PROFESIONAL",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Tarjeta Profesional",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_003_CERTIFICADO_DE_INSCRIPCION_EN_RETHUS",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Certificado de inscripción en RETHUS",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_004_CERTIFICADO_DE_ANTECEDENTES_DISCIPLINARI",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Certificado de antecedentes disciplinarios",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_005_CERTIFICADO_DE_ANTECEDENTES_FISCALES",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Certificado de antecedentes fiscales",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_006_CERTIFICADO_DE_ANTECEDENTES_JUDICIALES",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Certificado de antecedentes judiciales",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_007_INDUCCION",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Inducción",
+      "description": "Sección: 1. Identificación del profesional | APLICA PARA IPS",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_008_REINDUCCION",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Reinducción",
+      "description": "Sección: 1. Identificación del profesional | APLICA PARA IPS",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_009_CAPACITACIONES",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Capacitaciones",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_010_VACUNACION",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Vacunación",
+      "description": "Sección: 1. Identificación del profesional",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_012_DIPLOMA_PROFESIONAL",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Diploma profesional",
+      "description": "Sección: 2. Formación",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_013_ACTA_DE_GRADO",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Acta de grado",
+      "description": "Sección: 2. Formación",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_014_CERTIFICADOS_DE_EDUCACION_CONTINUA",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Certificados de educación continua",
+      "description": "Sección: 2. Formación",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/EST-01-009_plan_de_educacion_continua.pdf",
+          "originalName": "EST-01-009_plan_de_educacion_continua.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "02_015_CERTIFICADO_DE_CURSOS_RELACIONADOS_CON_L",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Certificado de cursos relacionados con la especialidad",
+      "description": "Sección: 2. Formación",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_016_HOJA_DE_VIDA",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Hoja de vida",
+      "description": "Sección: 3. Vinculación",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/EST-01-004_lista_de_chequeo_de_hoja_de_vida.pdf",
+          "originalName": "EST-01-004_lista_de_chequeo_de_hoja_de_vida.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/EST-01-005_formato_de_hoja_de_vida_del_talento_humano.pdf",
+          "originalName": "EST-01-005_formato_de_hoja_de_vida_del_talento_humano.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/EST-03-002_hoja_de_vida_de_equipo_biomedico.pdf",
+          "originalName": "EST-03-002_hoja_de_vida_de_equipo_biomedico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/EST-03-011_hoja_de_vida_laser_o_ipl_cuando_aplique.pdf",
+          "originalName": "EST-03-011_hoja_de_vida_laser_o_ipl_cuando_aplique.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "1. TALENTO HUMANO/Talento Humano/EST-03-012_hoja_de_vida_radiofrecuencia_ultrasonido_cuando_aplique.pdf",
+          "originalName": "EST-03-012_hoja_de_vida_radiofrecuencia_ultrasonido_cuando_aplique.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "02_017_CONTRATO_LABORAL_O_DE_PRESTACION_DE_SERV",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Contrato laboral o de prestación de servicios",
+      "description": "Sección: 3. Vinculación",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "02_026_EXAMENES_OCUPACIONALES",
+      "categoryCode": "02_TALENTO_HUMANO",
+      "title": "Exámenes ocupacionales",
+      "description": "Sección: 5. Seguridad y Salud en el Trabajo",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_003_PLANO_DE_RUTAS_DE_EMERGENCIA",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Plano de rutas de emergencia",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_004_PLANO_DE_RUTA_DE_RESIDUOS",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Plano de ruta de residuos",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_005_CERTIFICACION_RETIE",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Certificación RETIE",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_006_CERTIFICACION_DE_USO_DEL_SUELO",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Certificación de uso del suelo",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "03_007_CONCEPTO_SANITARIO_CUANDO_APLIQUE",
+      "categoryCode": "03_INFRAESTRUCTURA",
+      "title": "Concepto sanitario (cuando aplique)",
+      "description": "Sección: Documentos",
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "FT_03_INFRA-001",
+      "categoryCode": "FT_03_INFRA",
+      "title": "EST-02-001 procedimiento de inspeccion de infraestructura",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-02-001_procedimiento_de_inspeccion_de_infraestructura.pdf",
+          "originalName": "EST-02-001_procedimiento_de_inspeccion_de_infraestructura.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_03_INFRA-002",
+      "categoryCode": "FT_03_INFRA",
+      "title": "EST-02-002 lista de chequeo del consultorio",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-02-002_lista_de_chequeo_del_consultorio.pdf",
+          "originalName": "EST-02-002_lista_de_chequeo_del_consultorio.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-03-013_lista_de_chequeo_equipos_y_dispositivos_de_emergencia.pdf",
+          "originalName": "EST-03-013_lista_de_chequeo_equipos_y_dispositivos_de_emergencia.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_03_INFRA-003",
+      "categoryCode": "FT_03_INFRA",
+      "title": "EST-02-003 ficha de distribucion y plano de areas",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-02-003_ficha_de_distribucion_y_plano_de_areas.pdf",
+          "originalName": "EST-02-003_ficha_de_distribucion_y_plano_de_areas.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_03_INFRA-004",
+      "categoryCode": "FT_03_INFRA",
+      "title": "EST-02-004 programa de mantenimiento locativo",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-02-004_programa_de_mantenimiento_locativo.pdf",
+          "originalName": "EST-02-004_programa_de_mantenimiento_locativo.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-03-003_programa_de_mantenimiento_de_equipos.pdf",
+          "originalName": "EST-03-003_programa_de_mantenimiento_de_equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_03_INFRA-005",
+      "categoryCode": "FT_03_INFRA",
+      "title": "EST-02-005 cronograma de mantenimiento locativo",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-02-005_cronograma_de_mantenimiento_locativo.pdf",
+          "originalName": "EST-02-005_cronograma_de_mantenimiento_locativo.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-03-004_cronograma_de_mantenimiento_de_equipos.pdf",
+          "originalName": "EST-03-004_cronograma_de_mantenimiento_de_equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_03_INFRA-006",
+      "categoryCode": "FT_03_INFRA",
+      "title": "EST-02-006 registro de mantenimiento locativo",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-02-006_registro_de_mantenimiento_locativo.pdf",
+          "originalName": "EST-02-006_registro_de_mantenimiento_locativo.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        },
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-03-005_registro_de_mantenimiento_preventivo_correctivo.pdf",
+          "originalName": "EST-03-005_registro_de_mantenimiento_preventivo_correctivo.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_03_INFRA-007",
+      "categoryCode": "FT_03_INFRA",
+      "title": "EST-02-007 protocolo de privacidad y accesibilidad",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-02-007_protocolo_de_privacidad_y_accesibilidad.pdf",
+          "originalName": "EST-02-007_protocolo_de_privacidad_y_accesibilidad.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_03_INFRA-008",
+      "categoryCode": "FT_03_INFRA",
+      "title": "EST-02-008 plan de emergencias y evacuacion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-02-008_plan_de_emergencias_y_evacuacion.pdf",
+          "originalName": "EST-02-008_plan_de_emergencias_y_evacuacion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_03_INFRA-009",
+      "categoryCode": "FT_03_INFRA",
+      "title": "EST-02-009 inspeccion de seguridad y riesgos locativos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-02-009_inspeccion_de_seguridad_y_riesgos_locativos.pdf",
+          "originalName": "EST-02-009_inspeccion_de_seguridad_y_riesgos_locativos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_03_INFRA-010",
+      "categoryCode": "FT_03_INFRA",
+      "title": "EST-02-010 registro de control de limpieza de superficies",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-02-010_registro_de_control_de_limpieza_de_superficies.pdf",
+          "originalName": "EST-02-010_registro_de_control_de_limpieza_de_superficies.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_03_INFRA-011",
+      "categoryCode": "FT_03_INFRA",
+      "title": "EST-02-011 verificacion de ventilacion iluminacion y agua",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-02-011_verificacion_de_ventilacion_iluminacion_y_agua.pdf",
+          "originalName": "EST-02-011_verificacion_de_ventilacion_iluminacion_y_agua.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_03_INFRA-012",
+      "categoryCode": "FT_03_INFRA",
+      "title": "EST-02-012 lista de verificacion area de procedimientos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-02-012_lista_de_verificacion_area_de_procedimientos.pdf",
+          "originalName": "EST-02-012_lista_de_verificacion_area_de_procedimientos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_03_INFRA-013",
+      "categoryCode": "FT_03_INFRA",
+      "title": "EST-02-013 verificacion de privacidad fotografica y almacenamiento",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "2. INFRAESTRUCTURA/03. Infraestructura/EST-02-013_verificacion_de_privacidad_fotografica_y_almacenamiento.pdf",
+          "originalName": "EST-02-013_verificacion_de_privacidad_fotografica_y_almacenamiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-001",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-001 inventario de dotacion y equipos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-001_inventario_de_dotacion_y_equipos.pdf",
+          "originalName": "EST-03-001_inventario_de_dotacion_y_equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-002",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-002 hoja de vida de equipo biomedico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-002_hoja_de_vida_de_equipo_biomedico.pdf",
+          "originalName": "EST-03-002_hoja_de_vida_de_equipo_biomedico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-003",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-003 programa de mantenimiento de equipos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-003_programa_de_mantenimiento_de_equipos.pdf",
+          "originalName": "EST-03-003_programa_de_mantenimiento_de_equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-004",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-004 cronograma de mantenimiento de equipos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-004_cronograma_de_mantenimiento_de_equipos.pdf",
+          "originalName": "EST-03-004_cronograma_de_mantenimiento_de_equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-005",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-005 registro de mantenimiento preventivo correctivo",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-005_registro_de_mantenimiento_preventivo_correctivo.pdf",
+          "originalName": "EST-03-005_registro_de_mantenimiento_preventivo_correctivo.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-006",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-006 verificacion funcional de equipos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-006_verificacion_funcional_de_equipos.pdf",
+          "originalName": "EST-03-006_verificacion_funcional_de_equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-007",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-007 plan de calibracion y metrologia cuando aplique",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-007_plan_de_calibracion_y_metrologia_cuando_aplique.pdf",
+          "originalName": "EST-03-007_plan_de_calibracion_y_metrologia_cuando_aplique.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-008",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-008 contingencia por falla de equipos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-008_contingencia_por_falla_de_equipos.pdf",
+          "originalName": "EST-03-008_contingencia_por_falla_de_equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-009",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-009 procedimiento de seguridad informatica y backups",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-009_procedimiento_de_seguridad_informatica_y_backups.pdf",
+          "originalName": "EST-03-009_procedimiento_de_seguridad_informatica_y_backups.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-010",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-010 guia de uso seguro de equipos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-010_guia_de_uso_seguro_de_equipos.pdf",
+          "originalName": "EST-03-010_guia_de_uso_seguro_de_equipos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-011",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-011 hoja de vida laser o ipl cuando aplique",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-011_hoja_de_vida_laser_o_ipl_cuando_aplique.pdf",
+          "originalName": "EST-03-011_hoja_de_vida_laser_o_ipl_cuando_aplique.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-012",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-012 hoja de vida radiofrecuencia ultrasonido cuando aplique",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-012_hoja_de_vida_radiofrecuencia_ultrasonido_cuando_aplique.pdf",
+          "originalName": "EST-03-012_hoja_de_vida_radiofrecuencia_ultrasonido_cuando_aplique.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-013",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-013 lista de chequeo equipos y dispositivos de emergencia",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-013_lista_de_chequeo_equipos_y_dispositivos_de_emergencia.pdf",
+          "originalName": "EST-03-013_lista_de_chequeo_equipos_y_dispositivos_de_emergencia.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_04_DOTACI-014",
+      "categoryCode": "FT_04_DOTACION",
+      "title": "EST-03-014 control de mantenimiento de equipos esteticos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "3. DOTACION/04. Dotación/EST-03-014_control_de_mantenimiento_de_equipos_esteticos.pdf",
+          "originalName": "EST-03-014_control_de_mantenimiento_de_equipos_esteticos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-001",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-001 inventario de medicamentos dispositivos e insumos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-001_inventario_de_medicamentos_dispositivos_e_insumos.pdf",
+          "originalName": "EST-04-001_inventario_de_medicamentos_dispositivos_e_insumos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-002",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-002 procedimiento de recepcion tecnica de productos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-002_procedimiento_de_recepcion_tecnica_de_productos.pdf",
+          "originalName": "EST-04-002_procedimiento_de_recepcion_tecnica_de_productos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-003",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-003 control de lotes y vencimientos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-003_control_de_lotes_y_vencimientos.pdf",
+          "originalName": "EST-04-003_control_de_lotes_y_vencimientos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-004",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-004 registro de temperatura y almacenamiento cuando aplique",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-004_registro_de_temperatura_y_almacenamiento_cuando_aplique.pdf",
+          "originalName": "EST-04-004_registro_de_temperatura_y_almacenamiento_cuando_aplique.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-005",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-005 procedimiento de almacenamiento seguro",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-005_procedimiento_de_almacenamiento_seguro.pdf",
+          "originalName": "EST-04-005_procedimiento_de_almacenamiento_seguro.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-006",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-006 control de stock y reposicion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-006_control_de_stock_y_reposicion.pdf",
+          "originalName": "EST-04-006_control_de_stock_y_reposicion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-007",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-007 verificacion de registros sanitarios invima",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-007_verificacion_de_registros_sanitarios_invima.pdf",
+          "originalName": "EST-04-007_verificacion_de_registros_sanitarios_invima.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-008",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-008 programa de farmacovigilancia",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-008_programa_de_farmacovigilancia.pdf",
+          "originalName": "EST-04-008_programa_de_farmacovigilancia.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-009",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-009 programa de tecnovigilancia",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-009_programa_de_tecnovigilancia.pdf",
+          "originalName": "EST-04-009_programa_de_tecnovigilancia.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-010",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-010 registro de alertas sanitarias y retiro de productos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-010_registro_de_alertas_sanitarias_y_retiro_de_productos.pdf",
+          "originalName": "EST-04-010_registro_de_alertas_sanitarias_y_retiro_de_productos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-011",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-011 procedimiento de manejo de derrames y cortopunzantes",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-011_procedimiento_de_manejo_de_derrames_y_cortopunzantes.pdf",
+          "originalName": "EST-04-011_procedimiento_de_manejo_de_derrames_y_cortopunzantes.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-012",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-012 procedimiento de gestion integral de residuos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-012_procedimiento_de_gestion_integral_de_residuos.pdf",
+          "originalName": "EST-04-012_procedimiento_de_gestion_integral_de_residuos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-013",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-013 matriz de sustancias modelantes permitidas y registros",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-013_matriz_de_sustancias_modelantes_permitidas_y_registros.pdf",
+          "originalName": "EST-04-013_matriz_de_sustancias_modelantes_permitidas_y_registros.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-014",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-014 trazabilidad de rellenos e inyectables por paciente",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-014_trazabilidad_de_rellenos_e_inyectables_por_paciente.pdf",
+          "originalName": "EST-04-014_trazabilidad_de_rellenos_e_inyectables_por_paciente.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-015",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-015 control de cadena de suministro productos inyectables",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-015_control_de_cadena_de_suministro_productos_inyectables.pdf",
+          "originalName": "EST-04-015_control_de_cadena_de_suministro_productos_inyectables.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-016",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-016 protocolo de custodia y verificacion de toxina botulinica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-016_protocolo_de_custodia_y_verificacion_de_toxina_botulinica.pdf",
+          "originalName": "EST-04-016_protocolo_de_custodia_y_verificacion_de_toxina_botulinica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_05_MEDICA-017",
+      "categoryCode": "FT_05_MEDICAMENTOS",
+      "title": "EST-04-017 registro individual lote fabricante y etiqueta de producto",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "4. MEDICAMENTOS/5. Medicamentos/EST-04-017_registro_individual_lote_fabricante_y_etiqueta_de_producto.pdf",
+          "originalName": "EST-04-017_registro_individual_lote_fabricante_y_etiqueta_de_producto.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-001",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-001 manual de procesos asistenciales",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-001_manual_de_procesos_asistenciales.pdf",
+          "originalName": "EST-05-001_manual_de_procesos_asistenciales.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-002",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-002 protocolo de identificacion inequivoca del paciente",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-002_protocolo_de_identificacion_inequivoca_del_paciente.pdf",
+          "originalName": "EST-05-002_protocolo_de_identificacion_inequivoca_del_paciente.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-003",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-003 protocolo de anamnesis y valoracion integral",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-003_protocolo_de_anamnesis_y_valoracion_integral.pdf",
+          "originalName": "EST-05-003_protocolo_de_anamnesis_y_valoracion_integral.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-004",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-004 protocolo de higiene de manos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-004_protocolo_de_higiene_de_manos.pdf",
+          "originalName": "EST-05-004_protocolo_de_higiene_de_manos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-005",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-005 manual de bioseguridad y elementos de proteccion personal",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-005_manual_de_bioseguridad_y_elementos_de_proteccion_personal.pdf",
+          "originalName": "EST-05-005_manual_de_bioseguridad_y_elementos_de_proteccion_personal.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-006",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-006 protocolo de limpieza y desinfeccion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-006_protocolo_de_limpieza_y_desinfeccion.pdf",
+          "originalName": "EST-05-006_protocolo_de_limpieza_y_desinfeccion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-007",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-007 protocolo de antisepsia de piel",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-007_protocolo_de_antisepsia_de_piel.pdf",
+          "originalName": "EST-05-007_protocolo_de_antisepsia_de_piel.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-008",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-008 protocolo de prevencion de infecciones",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-008_protocolo_de_prevencion_de_infecciones.pdf",
+          "originalName": "EST-05-008_protocolo_de_prevencion_de_infecciones.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-009",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-009 procedimiento de manejo de eventos adversos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-009_procedimiento_de_manejo_de_eventos_adversos.pdf",
+          "originalName": "EST-05-009_procedimiento_de_manejo_de_eventos_adversos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-010",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-010 metodologia de analisis causal protocolo de londres",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-010_metodologia_de_analisis_causal_protocolo_de_londres.pdf",
+          "originalName": "EST-05-010_metodologia_de_analisis_causal_protocolo_de_londres.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-011",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-011 procedimiento de reporte de incidentes",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-011_procedimiento_de_reporte_de_incidentes.pdf",
+          "originalName": "EST-05-011_procedimiento_de_reporte_de_incidentes.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-012",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-012 protocolo de emergencia medica y respuesta inicial",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-012_protocolo_de_emergencia_medica_y_respuesta_inicial.pdf",
+          "originalName": "EST-05-012_protocolo_de_emergencia_medica_y_respuesta_inicial.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-013",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-013 procedimiento de traslado y referencia urgente",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-013_procedimiento_de_traslado_y_referencia_urgente.pdf",
+          "originalName": "EST-05-013_procedimiento_de_traslado_y_referencia_urgente.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-014",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-014 protocolo de seguridad en medicamentos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-014_protocolo_de_seguridad_en_medicamentos.pdf",
+          "originalName": "EST-05-014_protocolo_de_seguridad_en_medicamentos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-015",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-015 protocolo de manejo de reacciones alergicas",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-015_protocolo_de_manejo_de_reacciones_alergicas.pdf",
+          "originalName": "EST-05-015_protocolo_de_manejo_de_reacciones_alergicas.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-016",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-016 procedimiento de consentimiento informado",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-016_procedimiento_de_consentimiento_informado.pdf",
+          "originalName": "EST-05-016_procedimiento_de_consentimiento_informado.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-017",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-017 protocolo de comunicacion efectiva",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-017_protocolo_de_comunicacion_efectiva.pdf",
+          "originalName": "EST-05-017_protocolo_de_comunicacion_efectiva.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-018",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-018 protocolo de control y seguimiento post atencion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-018_protocolo_de_control_y_seguimiento_post_atencion.pdf",
+          "originalName": "EST-05-018_protocolo_de_control_y_seguimiento_post_atencion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-019",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-019 procedimiento de auditoria de historias clinicas",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-019_procedimiento_de_auditoria_de_historias_clinicas.pdf",
+          "originalName": "EST-05-019_procedimiento_de_auditoria_de_historias_clinicas.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-020",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-020 protocolo de trato digno y enfoque diferencial",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-020_protocolo_de_trato_digno_y_enfoque_diferencial.pdf",
+          "originalName": "EST-05-020_protocolo_de_trato_digno_y_enfoque_diferencial.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-021",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-021 programa de mejoramiento de la experiencia del paciente",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-021_programa_de_mejoramiento_de_la_experiencia_del_paciente.pdf",
+          "originalName": "EST-05-021_programa_de_mejoramiento_de_la_experiencia_del_paciente.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-022",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-022 registro diario de limpieza y desinfeccion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-022_registro_diario_de_limpieza_y_desinfeccion.pdf",
+          "originalName": "EST-05-022_registro_diario_de_limpieza_y_desinfeccion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-023",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-023 protocolo de valoracion y seleccion del paciente estetico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-023_protocolo_de_valoracion_y_seleccion_del_paciente_estetico.pdf",
+          "originalName": "EST-05-023_protocolo_de_valoracion_y_seleccion_del_paciente_estetico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-024",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-024 protocolo de tamizaje de dismorfia corporal y expectativas",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-024_protocolo_de_tamizaje_de_dismorfia_corporal_y_expectativas.pdf",
+          "originalName": "EST-05-024_protocolo_de_tamizaje_de_dismorfia_corporal_y_expectativas.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-025",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-025 protocolo de fotografia clinica estandarizada",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-025_protocolo_de_fotografia_clinica_estandarizada.pdf",
+          "originalName": "EST-05-025_protocolo_de_fotografia_clinica_estandarizada.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-026",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-026 protocolo de toxina botulinica estetica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-026_protocolo_de_toxina_botulinica_estetica.pdf",
+          "originalName": "EST-05-026_protocolo_de_toxina_botulinica_estetica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-027",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-027 protocolo de rellenos de acido hialuronico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-027_protocolo_de_rellenos_de_acido_hialuronico.pdf",
+          "originalName": "EST-05-027_protocolo_de_rellenos_de_acido_hialuronico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-028",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-028 protocolo de prevencion y deteccion de oclusion vascular",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-028_protocolo_de_prevencion_y_deteccion_de_oclusion_vascular.pdf",
+          "originalName": "EST-05-028_protocolo_de_prevencion_y_deteccion_de_oclusion_vascular.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-029",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-029 protocolo de actuacion ante compromiso visual posrelleno",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-029_protocolo_de_actuacion_ante_compromiso_visual_posrelleno.pdf",
+          "originalName": "EST-05-029_protocolo_de_actuacion_ante_compromiso_visual_posrelleno.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-030",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-030 protocolo de eventos graves y remision inmediata",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-030_protocolo_de_eventos_graves_y_remision_inmediata.pdf",
+          "originalName": "EST-05-030_protocolo_de_eventos_graves_y_remision_inmediata.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-031",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-031 protocolo de reacciones por toxina botulinica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-031_protocolo_de_reacciones_por_toxina_botulinica.pdf",
+          "originalName": "EST-05-031_protocolo_de_reacciones_por_toxina_botulinica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-032",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-032 protocolo de peelings quimicos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-032_protocolo_de_peelings_quimicos.pdf",
+          "originalName": "EST-05-032_protocolo_de_peelings_quimicos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-033",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-033 protocolo de microneedling",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-033_protocolo_de_microneedling.pdf",
+          "originalName": "EST-05-033_protocolo_de_microneedling.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-034",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-034 protocolo de aplicacion de tecnologias laser ipl",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-034_protocolo_de_aplicacion_de_tecnologias_laser_ipl.pdf",
+          "originalName": "EST-05-034_protocolo_de_aplicacion_de_tecnologias_laser_ipl.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-035",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-035 protocolo de seguridad ocular en laser",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-035_protocolo_de_seguridad_ocular_en_laser.pdf",
+          "originalName": "EST-05-035_protocolo_de_seguridad_ocular_en_laser.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-036",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-036 protocolo de radiofrecuencia y ultrasonido estetico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-036_protocolo_de_radiofrecuencia_y_ultrasonido_estetico.pdf",
+          "originalName": "EST-05-036_protocolo_de_radiofrecuencia_y_ultrasonido_estetico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-037",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-037 protocolo de procedimientos inyectables cuando autorizados",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-037_protocolo_de_procedimientos_inyectables_cuando_autorizados.pdf",
+          "originalName": "EST-05-037_protocolo_de_procedimientos_inyectables_cuando_autorizados.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-038",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-038 protocolo de seguimiento de resultado estetico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-038_protocolo_de_seguimiento_de_resultado_estetico.pdf",
+          "originalName": "EST-05-038_protocolo_de_seguimiento_de_resultado_estetico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-039",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-039 protocolo de manejo de quemaduras y lesiones cutaneas",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-039_protocolo_de_manejo_de_quemaduras_y_lesiones_cutaneas.pdf",
+          "originalName": "EST-05-039_protocolo_de_manejo_de_quemaduras_y_lesiones_cutaneas.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-040",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-040 protocolo de manejo de infecciones cutaneas",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-040_protocolo_de_manejo_de_infecciones_cutaneas.pdf",
+          "originalName": "EST-05-040_protocolo_de_manejo_de_infecciones_cutaneas.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-041",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-041 protocolo de valoracion contraindicaciones embarazo lactancia",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-041_protocolo_de_valoracion_contraindicaciones_embarazo_lactancia.pdf",
+          "originalName": "EST-05-041_protocolo_de_valoracion_contraindicaciones_embarazo_lactancia.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-042",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-042 protocolo de recuperacion y alerta posterior",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-042_protocolo_de_recuperacion_y_alerta_posterior.pdf",
+          "originalName": "EST-05-042_protocolo_de_recuperacion_y_alerta_posterior.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-043",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-043 protocolo de procedimiento estetico combinado",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-043_protocolo_de_procedimiento_estetico_combinado.pdf",
+          "originalName": "EST-05-043_protocolo_de_procedimiento_estetico_combinado.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-044",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-044 protocolo de no realizacion de procedimientos prohibidos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-044_protocolo_de_no_realizacion_de_procedimientos_prohibidos.pdf",
+          "originalName": "EST-05-044_protocolo_de_no_realizacion_de_procedimientos_prohibidos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_06_PROCES-045",
+      "categoryCode": "FT_06_PROCESOS",
+      "title": "EST-05-045 lista de chequeo de seguridad pre procedimiento",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "5. PROCESOS PRIORITARIOS/06. Procesos prioritarios/EST-05-045_lista_de_chequeo_de_seguridad_pre_procedimiento.pdf",
+          "originalName": "EST-05-045_lista_de_chequeo_de_seguridad_pre_procedimiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-001",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-001 historia clinica integral de consulta",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-001_historia_clinica_integral_de_consulta.pdf",
+          "originalName": "EST-06-001_historia_clinica_integral_de_consulta.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-002",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-002 formato de evolucion medica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-002_formato_de_evolucion_medica.pdf",
+          "originalName": "EST-06-002_formato_de_evolucion_medica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-003",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-003 formato de plan de tratamiento y seguimiento",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-003_formato_de_plan_de_tratamiento_y_seguimiento.pdf",
+          "originalName": "EST-06-003_formato_de_plan_de_tratamiento_y_seguimiento.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-004",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-004 formato de formulacion y recomendaciones",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-004_formato_de_formulacion_y_recomendaciones.pdf",
+          "originalName": "EST-06-004_formato_de_formulacion_y_recomendaciones.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-005",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-005 formato de remision a especialista o urgencias",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-005_formato_de_remision_a_especialista_o_urgencias.pdf",
+          "originalName": "EST-06-005_formato_de_remision_a_especialista_o_urgencias.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-006",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-006 resumen clinico y epicrisis cuando aplique",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-006_resumen_clinico_y_epicrisis_cuando_aplique.pdf",
+          "originalName": "EST-06-006_resumen_clinico_y_epicrisis_cuando_aplique.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-007",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-007 registro de llamada y seguimiento telefonico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-007_registro_de_llamada_y_seguimiento_telefonico.pdf",
+          "originalName": "EST-06-007_registro_de_llamada_y_seguimiento_telefonico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-008",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-008 formato de inasistencia y reprogramacion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-008_formato_de_inasistencia_y_reprogramacion.pdf",
+          "originalName": "EST-06-008_formato_de_inasistencia_y_reprogramacion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-009",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-009 formato de solicitud y entrega de historia clinica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-009_formato_de_solicitud_y_entrega_de_historia_clinica.pdf",
+          "originalName": "EST-06-009_formato_de_solicitud_y_entrega_de_historia_clinica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-010",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-010 formato de reporte de evento adverso",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-010_formato_de_reporte_de_evento_adverso.pdf",
+          "originalName": "EST-06-010_formato_de_reporte_de_evento_adverso.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-011",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-011 registro de negativa o rechazo de indicaciones",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-011_registro_de_negativa_o_rechazo_de_indicaciones.pdf",
+          "originalName": "EST-06-011_registro_de_negativa_o_rechazo_de_indicaciones.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-012",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-012 historia clinica especializada en evaluacion estetica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-012_historia_clinica_especializada_en_evaluacion_estetica.pdf",
+          "originalName": "EST-06-012_historia_clinica_especializada_en_evaluacion_estetica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-013",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-013 ficha de valoracion facial y cutanea",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-013_ficha_de_valoracion_facial_y_cutanea.pdf",
+          "originalName": "EST-06-013_ficha_de_valoracion_facial_y_cutanea.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-014",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-014 mapa anatomico de zonas tratadas",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-014_mapa_anatomico_de_zonas_tratadas.pdf",
+          "originalName": "EST-06-014_mapa_anatomico_de_zonas_tratadas.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-015",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-015 registro estetico de producto volumen y lote",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-015_registro_estetico_de_producto_volumen_y_lote.pdf",
+          "originalName": "EST-06-015_registro_estetico_de_producto_volumen_y_lote.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-016",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-016 formato de seguimiento y control fotografico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-016_formato_de_seguimiento_y_control_fotografico.pdf",
+          "originalName": "EST-06-016_formato_de_seguimiento_y_control_fotografico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-017",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-017 formato de complicaciones esteticas y conducta",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-017_formato_de_complicaciones_esteticas_y_conducta.pdf",
+          "originalName": "EST-06-017_formato_de_complicaciones_esteticas_y_conducta.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-018",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-018 formato de expectativas y satisfaccion informada",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-018_formato_de_expectativas_y_satisfaccion_informada.pdf",
+          "originalName": "EST-06-018_formato_de_expectativas_y_satisfaccion_informada.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-019",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-019 lista de chequeo preprocedimiento estetico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-019_lista_de_chequeo_preprocedimiento_estetico.pdf",
+          "originalName": "EST-06-019_lista_de_chequeo_preprocedimiento_estetico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-020",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-06-020 formato de alta post procedimiento ambulatorio",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-06-020_formato_de_alta_post_procedimiento_ambulatorio.pdf",
+          "originalName": "EST-06-020_formato_de_alta_post_procedimiento_ambulatorio.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-021",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-001 consentimiento consulta y evaluacion de medicina estetica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-001_consentimiento_consulta_y_evaluacion_de_medicina_estetica.pdf",
+          "originalName": "EST-CI-001_consentimiento_consulta_y_evaluacion_de_medicina_estetica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-022",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-002 consentimiento toxina botulinica tipo a",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-002_consentimiento_toxina_botulinica_tipo_a.pdf",
+          "originalName": "EST-CI-002_consentimiento_toxina_botulinica_tipo_a.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-023",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-003 consentimiento relleno facial de acido hialuronico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-003_consentimiento_relleno_facial_de_acido_hialuronico.pdf",
+          "originalName": "EST-CI-003_consentimiento_relleno_facial_de_acido_hialuronico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-024",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-004 consentimiento aumento y definicion labial con acido hialuronico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-004_consentimiento_aumento_y_definicion_labial_con_acido_hialuronico.pdf",
+          "originalName": "EST-CI-004_consentimiento_aumento_y_definicion_labial_con_acido_hialuronico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-025",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-005 consentimiento correccion de surcos nasogenianos con relleno",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-005_consentimiento_correccion_de_surcos_nasogenianos_con_relleno.pdf",
+          "originalName": "EST-CI-005_consentimiento_correccion_de_surcos_nasogenianos_con_relleno.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-026",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-006 consentimiento relleno de ojeras y surco lagrimal",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-006_consentimiento_relleno_de_ojeras_y_surco_lagrimal.pdf",
+          "originalName": "EST-CI-006_consentimiento_relleno_de_ojeras_y_surco_lagrimal.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-027",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-007 consentimiento rinomodelacion no quirurgica con relleno",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-007_consentimiento_rinomodelacion_no_quirurgica_con_relleno.pdf",
+          "originalName": "EST-CI-007_consentimiento_rinomodelacion_no_quirurgica_con_relleno.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-028",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-008 consentimiento bioestimuladores de colageno",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-008_consentimiento_bioestimuladores_de_colageno.pdf",
+          "originalName": "EST-CI-008_consentimiento_bioestimuladores_de_colageno.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-029",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-009 consentimiento peeling quimico superficial",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-009_consentimiento_peeling_quimico_superficial.pdf",
+          "originalName": "EST-CI-009_consentimiento_peeling_quimico_superficial.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-030",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-010 consentimiento peeling quimico de profundidad media",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-010_consentimiento_peeling_quimico_de_profundidad_media.pdf",
+          "originalName": "EST-CI-010_consentimiento_peeling_quimico_de_profundidad_media.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-031",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-011 consentimiento microneedling medico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-011_consentimiento_microneedling_medico.pdf",
+          "originalName": "EST-CI-011_consentimiento_microneedling_medico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-032",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-012 consentimiento mesoterapia estetica cuando autorizada",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-012_consentimiento_mesoterapia_estetica_cuando_autorizada.pdf",
+          "originalName": "EST-CI-012_consentimiento_mesoterapia_estetica_cuando_autorizada.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-033",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-013 consentimiento skinbooster de acido hialuronico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-013_consentimiento_skinbooster_de_acido_hialuronico.pdf",
+          "originalName": "EST-CI-013_consentimiento_skinbooster_de_acido_hialuronico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-034",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-014 consentimiento plasma rico en plaquetas facial cuando autorizado",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-014_consentimiento_plasma_rico_en_plaquetas_facial_cuando_autorizado.pdf",
+          "originalName": "EST-CI-014_consentimiento_plasma_rico_en_plaquetas_facial_cuando_autorizado.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-035",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-015 consentimiento depilacion con laser",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-015_consentimiento_depilacion_con_laser.pdf",
+          "originalName": "EST-CI-015_consentimiento_depilacion_con_laser.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-036",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-016 consentimiento rejuvenecimiento con laser fraccionado",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-016_consentimiento_rejuvenecimiento_con_laser_fraccionado.pdf",
+          "originalName": "EST-CI-016_consentimiento_rejuvenecimiento_con_laser_fraccionado.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-037",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-017 consentimiento luz pulsada intensa ipl",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-017_consentimiento_luz_pulsada_intensa_ipl.pdf",
+          "originalName": "EST-CI-017_consentimiento_luz_pulsada_intensa_ipl.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-038",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-018 consentimiento radiofrecuencia facial no invasiva",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-018_consentimiento_radiofrecuencia_facial_no_invasiva.pdf",
+          "originalName": "EST-CI-018_consentimiento_radiofrecuencia_facial_no_invasiva.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-039",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-019 consentimiento ultrasonido focalizado hifu estetico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-019_consentimiento_ultrasonido_focalizado_hifu_estetico.pdf",
+          "originalName": "EST-CI-019_consentimiento_ultrasonido_focalizado_hifu_estetico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-040",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-020 consentimiento criolipolisis corporal",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-020_consentimiento_criolipolisis_corporal.pdf",
+          "originalName": "EST-CI-020_consentimiento_criolipolisis_corporal.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-041",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-021 consentimiento hilos tensores reabsorbibles",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-021_consentimiento_hilos_tensores_reabsorbibles.pdf",
+          "originalName": "EST-CI-021_consentimiento_hilos_tensores_reabsorbibles.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-042",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-022 consentimiento carboxiterapia cuando autorizada",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-022_consentimiento_carboxiterapia_cuando_autorizada.pdf",
+          "originalName": "EST-CI-022_consentimiento_carboxiterapia_cuando_autorizada.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-043",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-023 consentimiento mesoterapia capilar cuando autorizada",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-023_consentimiento_mesoterapia_capilar_cuando_autorizada.pdf",
+          "originalName": "EST-CI-023_consentimiento_mesoterapia_capilar_cuando_autorizada.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-044",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-024 consentimiento tratamiento medico estetico de cicatrices",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-024_consentimiento_tratamiento_medico_estetico_de_cicatrices.pdf",
+          "originalName": "EST-CI-024_consentimiento_tratamiento_medico_estetico_de_cicatrices.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-045",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-025 consentimiento tratamiento de hiperpigmentacion",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-025_consentimiento_tratamiento_de_hiperpigmentacion.pdf",
+          "originalName": "EST-CI-025_consentimiento_tratamiento_de_hiperpigmentacion.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-046",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-026 consentimiento tratamiento de acne y secuelas cutaneas",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-026_consentimiento_tratamiento_de_acne_y_secuelas_cutaneas.pdf",
+          "originalName": "EST-CI-026_consentimiento_tratamiento_de_acne_y_secuelas_cutaneas.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-047",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-027 consentimiento anestesia local en medicina estetica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-027_consentimiento_anestesia_local_en_medicina_estetica.pdf",
+          "originalName": "EST-CI-027_consentimiento_anestesia_local_en_medicina_estetica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-048",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-028 consentimiento registro de fotografia clinica estetica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-028_consentimiento_registro_de_fotografia_clinica_estetica.pdf",
+          "originalName": "EST-CI-028_consentimiento_registro_de_fotografia_clinica_estetica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-049",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-029 consentimiento uso de imagen clinica para publicidad",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-029_consentimiento_uso_de_imagen_clinica_para_publicidad.pdf",
+          "originalName": "EST-CI-029_consentimiento_uso_de_imagen_clinica_para_publicidad.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-050",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-030 consentimiento tratamiento de datos sensibles en medicina estetica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-030_consentimiento_tratamiento_de_datos_sensibles_en_medicina_estetica.pdf",
+          "originalName": "EST-CI-030_consentimiento_tratamiento_de_datos_sensibles_en_medicina_estetica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-051",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-031 consentimiento rechazo informado a procedimiento estetico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-031_consentimiento_rechazo_informado_a_procedimiento_estetico.pdf",
+          "originalName": "EST-CI-031_consentimiento_rechazo_informado_a_procedimiento_estetico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-052",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-032 consentimiento revocatoria de consentimiento estetico",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-032_consentimiento_revocatoria_de_consentimiento_estetico.pdf",
+          "originalName": "EST-CI-032_consentimiento_revocatoria_de_consentimiento_estetico.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-053",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-033 consentimiento procedimientos esteticos combinados",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-033_consentimiento_procedimientos_esteticos_combinados.pdf",
+          "originalName": "EST-CI-033_consentimiento_procedimientos_esteticos_combinados.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-054",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-034 consentimiento seguimiento y manejo de complicacion estetica",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-034_consentimiento_seguimiento_y_manejo_de_complicacion_estetica.pdf",
+          "originalName": "EST-CI-034_consentimiento_seguimiento_y_manejo_de_complicacion_estetica.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_07_HC-055",
+      "categoryCode": "FT_07_HC",
+      "title": "EST-CI-035 consentimiento atencion estetica de adolescente y representante",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "6. HISTORIA CLINICA/07. Historia clínica/EST-CI-035_consentimiento_atencion_estetica_de_adolescente_y_representante.pdf",
+          "originalName": "EST-CI-035_consentimiento_atencion_estetica_de_adolescente_y_representante.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-001",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "EST-07-001 declaracion de autonomia y alcance del servicio",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/EST-07-001_declaracion_de_autonomia_y_alcance_del_servicio.pdf",
+          "originalName": "EST-07-001_declaracion_de_autonomia_y_alcance_del_servicio.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-002",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "EST-07-002 directorio de remisiones y apoyos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/EST-07-002_directorio_de_remisiones_y_apoyos.pdf",
+          "originalName": "EST-07-002_directorio_de_remisiones_y_apoyos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-003",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "EST-07-003 ruta de traslado a servicio de urgencias",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/EST-07-003_ruta_de_traslado_a_servicio_de_urgencias.pdf",
+          "originalName": "EST-07-003_ruta_de_traslado_a_servicio_de_urgencias.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-004",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "EST-07-004 convenios y acuerdos de apoyo cuando apliquen",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/EST-07-004_convenios_y_acuerdos_de_apoyo_cuando_apliquen.pdf",
+          "originalName": "EST-07-004_convenios_y_acuerdos_de_apoyo_cuando_apliquen.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-005",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "EST-07-005 procedimiento de referencia y contrarreferencia",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/EST-07-005_procedimiento_de_referencia_y_contrarreferencia.pdf",
+          "originalName": "EST-07-005_procedimiento_de_referencia_y_contrarreferencia.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-006",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "EST-07-006 registro de remisiones y trazabilidad",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/EST-07-006_registro_de_remisiones_y_trazabilidad.pdf",
+          "originalName": "EST-07-006_registro_de_remisiones_y_trazabilidad.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-007",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "EST-07-007 mapa de redes y entidades de apoyo",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/EST-07-007_mapa_de_redes_y_entidades_de_apoyo.pdf",
+          "originalName": "EST-07-007_mapa_de_redes_y_entidades_de_apoyo.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-008",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "EST-07-008 plan de contingencia por no disponibilidad de apoyos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/EST-07-008_plan_de_contingencia_por_no_disponibilidad_de_apoyos.pdf",
+          "originalName": "EST-07-008_plan_de_contingencia_por_no_disponibilidad_de_apoyos.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-009",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "EST-07-009 ruta de atencion urgente de oclusion vascular",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/EST-07-009_ruta_de_atencion_urgente_de_oclusion_vascular.pdf",
+          "originalName": "EST-07-009_ruta_de_atencion_urgente_de_oclusion_vascular.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-010",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "EST-07-010 ruta de remision por compromiso ocular",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/EST-07-010_ruta_de_remision_por_compromiso_ocular.pdf",
+          "originalName": "EST-07-010_ruta_de_remision_por_compromiso_ocular.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "FT_10_INTERD-011",
+      "categoryCode": "FT_10_INTERDEPENDENCIA",
+      "title": "EST-07-011 ruta de remision a dermatologia y cirugia plastica cuando aplique",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": [
+        {
+          "path": "7. INTERDEPENDENCIA/10. Interdependencia/EST-07-011_ruta_de_remision_a_dermatologia_y_cirugia_plastica_cuando_aplique.pdf",
+          "originalName": "EST-07-011_ruta_de_remision_a_dermatologia_y_cirugia_plastica_cuando_aplique.pdf",
+          "mimeType": "application/pdf",
+          "periodLabel": null
+        }
+      ]
+    },
+    {
+      "code": "01_001_CAMARA_DE_COMERCIO",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Cámara de Comercio",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_002_RUT",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "RUT",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_003_USO_DEL_SUELO",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Uso del suelo",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_004_REPS_VIGENTE",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "REPS vigente",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_005_AUTOEVALUACION_REPS",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Autoevaluación REPS",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_006_BOMBEROS",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Bomberos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_007_CONTRATOS",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Contratos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_008_POLITICAS_INSTITUCIONALES",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Políticas institucionales",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_009_MANUAL_DE_FUNCIONES",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Manual de funciones",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_010_ORGANIGRAMA",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Organigrama",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_011_PROTECCION_DE_DATOS",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "Protección de datos",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    },
+    {
+      "code": "01_012_TRATAMIENTO_DE_DATOS_PERSONALES",
+      "categoryCode": "01_DOCUMENTACION_LEGAL",
+      "title": "TRATAMIENTO DE DATOS PERSONALES",
+      "description": null,
+      "isMandatory": true,
+      "isEnabled": true,
+      "validityDays": null,
+      "requiresClinicSignature": false,
+      "responsibleArea": null,
+      "files": []
+    }
+  ]
+}

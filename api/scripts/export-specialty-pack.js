@@ -8,10 +8,86 @@
  *
  * Solo toma requisitos no archivados y, por requisito, la última versión
  * vigente de cada archivo (sin historial ni archivos retirados).
+ *
+ * Opcionales:
+ *   ONLY_UPLOADER_ROLE=SUPER_ADMIN  solo archivos cargados por ese rol (plantillas);
+ *                                   lo que subió el consultorio no se replica.
+ *   EXCLUDE_PILLARS=SG_SST          grupos que no entran al paquete (separados por coma).
+ *   STRIP_SOURCE_APPROVER=1         quita de cada PDF el sello «Aprobó» con el nombre del
+ *                                   profesional del consultorio origen; al replicar se
+ *                                   sella con el del consultorio destino.
  */
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
+
+function normalize(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+/** Texto legible de un flujo de contenido (literales y cadenas hexadecimales). */
+function streamText(raw) {
+  return normalize(
+    raw.replace(/<([0-9A-Fa-f\s]{2,})>/g, (_, h) => Buffer.from(h.replace(/\s+/g, ''), 'hex').toString('latin1')),
+  );
+}
+
+/**
+ * Quita los flujos pequeños que solo contienen el sello con el nombre del profesional origen.
+ * Si el nombre aparece en el contenido propio de la plantilla, el archivo se reporta y se omite.
+ */
+async function stripApprover(buffer, names) {
+  const { PDFDocument, PDFArray, PDFName, PDFRawStream, PDFRef } = require('pdf-lib');
+  const pdf = await PDFDocument.load(buffer, { updateMetadata: false });
+  const decode = (stream) => {
+    const filter = stream.dict.get(PDFName.of('Filter'));
+    const bytes = Buffer.from(stream.contents);
+    return filter && String(filter) === '/FlateDecode' ? zlib.inflateSync(bytes).toString('latin1') : bytes.toString('latin1');
+  };
+  let removed = 0;
+  for (const page of pdf.getPages()) {
+    const contents = pdf.context.lookup(page.node.get(PDFName.of('Contents')));
+    const list = contents instanceof PDFArray ? contents : null;
+    if (!list) continue;
+    for (let i = list.size() - 1; i >= 0; i -= 1) {
+      const ref = list.get(i);
+      const stream = pdf.context.lookup(ref);
+      if (!(stream instanceof PDFRawStream)) continue;
+      let text;
+      try {
+        text = decode(stream);
+      } catch {
+        continue;
+      }
+      if (text.length > 2000) continue;
+      const readable = streamText(text);
+      if (names.some((n) => readable.includes(n))) {
+        list.remove(i);
+        // pdf-lib guarda también los objetos huérfanos: se borra el flujo, no solo la referencia.
+        if (ref instanceof PDFRef) pdf.context.delete(ref);
+        removed += 1;
+      }
+    }
+  }
+  const out = Buffer.from(await pdf.save({ useObjectStreams: false }));
+  // Verificación: el nombre no debe quedar en ningún flujo del archivo resultante.
+  const check = await PDFDocument.load(out, { updateMetadata: false });
+  for (const [, obj] of check.context.enumerateIndirectObjects()) {
+    if (!(obj instanceof PDFRawStream)) continue;
+    let text;
+    try {
+      text = streamText(decode(obj));
+    } catch {
+      continue;
+    }
+    if (names.some((n) => text.includes(n))) return { buffer: null, removed };
+  }
+  return { buffer: out, removed };
+}
 
 const PILLAR_FOLDERS = {
   DOCUMENTACION_GENERAL: '0. DOCUMENTACION GENERAL',
@@ -59,12 +135,24 @@ async function main() {
     });
     if (!clinic) throw new Error('Consultorio origen no encontrado');
 
+    const onlyRole = (process.env.ONLY_UPLOADER_ROLE || '').trim();
+    const excludedPillars = (process.env.EXCLUDE_PILLARS || '')
+      .split(',')
+      .map((p) => p.trim())
+      .filter(Boolean);
     const reqs = await prisma.documentRequirement.findMany({
-      where: { clinicId, archivedAt: null },
+      where: {
+        clinicId,
+        archivedAt: null,
+        ...(excludedPillars.length ? { category: { pillar: { notIn: excludedPillars } } } : {}),
+      },
       include: {
         category: true,
         files: {
-          where: { status: { not: 'RETIRED' } },
+          where: {
+            status: { not: 'RETIRED' },
+            ...(onlyRole ? { uploadedBy: { role: onlyRole } } : {}),
+          },
           orderBy: { version: 'desc' },
         },
       },
@@ -76,6 +164,19 @@ async function main() {
         a.category.code.localeCompare(b.category.code) ||
         a.code.localeCompare(b.code),
     );
+
+    let approverNames = [];
+    if (process.env.STRIP_SOURCE_APPROVER === '1') {
+      const staff = await prisma.user.findMany({
+        where: { clinicId, role: { not: 'SUPER_ADMIN' } },
+        select: { fullName: true },
+      });
+      approverNames = [
+        ...new Set(staff.flatMap((u) => normalize(u.fullName).split(/\s+/))),
+      ].filter((w) => w.length >= 5);
+    }
+    const skipped = [];
+    let stripped = 0;
 
     fs.rmSync(outDir, { recursive: true, force: true });
     fs.mkdirSync(outDir, { recursive: true });
@@ -109,8 +210,17 @@ async function main() {
         if (used.has(rel.toLowerCase())) {
           rel = path.join(folder, safeName(`${req.code} ${f.originalName}`));
         }
+        let buffer = await readStored(prisma, f.storageKey);
+        if (approverNames.length && (f.mimeType || '').includes('pdf')) {
+          const clean = await stripApprover(buffer, approverNames);
+          if (!clean.buffer) {
+            skipped.push(rel);
+            continue;
+          }
+          buffer = clean.buffer;
+          stripped += clean.removed;
+        }
         used.add(rel.toLowerCase());
-        const buffer = await readStored(prisma, f.storageKey);
         fs.mkdirSync(path.join(outDir, folder), { recursive: true });
         fs.writeFileSync(path.join(outDir, rel), buffer);
         files.push({
@@ -152,6 +262,12 @@ async function main() {
         `${requirements.length} requisitos, ${fileCount} archivos, ` +
         `${(bytes / 1048576).toFixed(1)} MB → ${outDir}`,
     );
+    if (approverNames.length) {
+      console.log(`Sellos del profesional origen retirados: ${stripped}.`);
+    }
+    if (skipped.length) {
+      console.log(`Omitidos por contener datos del consultorio origen (${skipped.length}):\n  ${skipped.join('\n  ')}`);
+    }
   } finally {
     await prisma.$disconnect();
   }
