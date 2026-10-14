@@ -2849,6 +2849,15 @@ export class ClinicalHistory implements OnInit, AfterViewInit, OnDestroy {
     return !this.canWrite() || !this.encounter();
   }
 
+  /** Motivo visible cuando el mapa facial queda solo en consulta. */
+  aestheticMapLockReason(): string {
+    if (!this.canWrite()) return 'Su usuario solo puede consultar el mapa facial.';
+    if (!this.encounter()) {
+      return 'Para marcar el mapa facial, primero guarde los datos de la paciente y la historia clínica con el botón «Guardar».';
+    }
+    return '';
+  }
+
   /** Controles programados y retención: también los registra el auxiliar. */
   orthoFollowDisabled(): boolean {
     return !this.auth.canEditOrthoFollow() || !this.encounter();

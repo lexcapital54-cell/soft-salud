@@ -3946,7 +3946,7 @@
                     <h4 class="odo-sub" id="aes-seguimiento">Mapa facial y procedimientos del paciente</h4>
                   </app-ortho-live-chip>
                   @defer (on viewport) {
-                    <app-aesthetic-face-map [disabled]="orthoLiveDisabled()" [canSign]="canWrite()" />
+                    <app-aesthetic-face-map [disabled]="orthoLiveDisabled()" [lockReason]="aestheticMapLockReason()" [canSign]="canWrite()" />
                     <app-aesthetic-procedures
                       [disabled]="orthoLiveDisabled()"
                       [canSign]="canWrite()"

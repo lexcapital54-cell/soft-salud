@@ -127,7 +127,9 @@ const SAVE_LABEL: Record<string, string> = {
       }
 
       @if (noPatient()) {
-        <p class="alert-line" role="status"><hab-icon name="alert" /> Seleccione o cree el paciente para abrir su historia; luego podrá marcar el mapa facial.</p>
+        <p class="alert-line" role="status"><hab-icon name="alert" /> {{ lockReason() || 'Seleccione o cree el paciente para abrir su historia; luego podrá marcar el mapa facial.' }}</p>
+      } @else if (disabled() && lockReason()) {
+        <p class="alert-line" role="status"><hab-icon name="alert" /> {{ lockReason() }}</p>
       }
 
       @if (!tracking.loaded() && !noPatient()) {
@@ -604,6 +606,7 @@ export class AestheticFaceMap {
   readonly tracking = inject(AestheticTrackingService);
   private readonly host: ElementRef<HTMLElement> = inject(ElementRef);
   readonly disabled = input(false);
+  readonly lockReason = input('');
   readonly canSign = input(false);
   readonly canvas = viewChild(FacialMapCanvas);
   private readonly legendRef = viewChild<ElementRef<HTMLElement>>('legend');
