@@ -30,6 +30,24 @@
   --pd-line: #dcebea;
 }
 
+/* Psicología: tarjeta del consultorio en aguamarina pastel con texto oscuro. */
+:host(.theme-pastel) {
+  .pd-brand-sp {
+    color: #0f2f38;
+  }
+
+  .pd-brand {
+    color: #0f2f38;
+    background:
+      radial-gradient(240px 160px at 85% 0%, rgba(255, 255, 255, 0.35), transparent 70%),
+      linear-gradient(160deg, #54acbf 0%, #7cc3d2 100%);
+  }
+
+  .pd-brand-tags {
+    color: rgba(15, 47, 56, 0.8);
+  }
+}
+
 /* Medicina estética: azul medianoche y dorado. */
 :host(.theme-aesthetic) {
   --pd-navy: #0f2747;

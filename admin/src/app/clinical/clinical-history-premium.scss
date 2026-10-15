@@ -12,10 +12,11 @@
   );
 }
 
-/* Psicología: paleta HABILISALUD (petróleo + aguamarina), igual que medicina. */
+/* Psicología: paleta HABILISALUD con barras en aguamarina pastel y texto oscuro. */
 .hce-page.specialty-psychology {
   @include premium-hc(
-    $navy: #003d4c, $navy-2: #0d5c66, $gold: #3aa6a0, $shadow: #003d4c,
+    $navy: #003d4c, $navy-2: #0d5c66, $gold: #2b8597, $shadow: #003d4c,
+    $bar: #54acbf, $on-bar: #0f2f38, $on-bar-muted: rgba(15, 47, 56, 0.8),
     $line: #dcebea, $soft: #f2f8f8, $bg: #f5f9f9, $ink: #12303a,
     $field-border: #cfe1e0, $field-hover: #a8c9c7, $readonly-bg: #f1f6f6, $readonly-ink: #4f6870, $placeholder: #93abb0, $arrow: '003d4c',
     $row-line: #e2eded, $row-even: #f7fbfb, $row-hover: #eef5f5, $ghost-border: #bcd7d5,
