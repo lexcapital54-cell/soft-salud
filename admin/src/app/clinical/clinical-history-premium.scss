@@ -12,14 +12,14 @@
   );
 }
 
-/* Psicología: paleta HABILISALUD (petróleo + aguamarina), igual que medicina. */
+/* Psicología: paleta petróleo y mocha. */
 .hce-page.specialty-psychology {
   @include premium-hc(
-    $navy: #003d4c, $navy-2: #0d5c66, $gold: #3aa6a0, $shadow: #003d4c,
-    $line: #dcebea, $soft: #f2f8f8, $bg: #f5f9f9, $ink: #12303a,
-    $field-border: #cfe1e0, $field-hover: #a8c9c7, $readonly-bg: #f1f6f6, $readonly-ink: #4f6870, $placeholder: #93abb0, $arrow: '003d4c',
-    $row-line: #e2eded, $row-even: #f7fbfb, $row-hover: #eef5f5, $ghost-border: #bcd7d5,
-    $chip-border: #a8dedb, $chip-bg: #e6f4f3, $chip-ink: #0d5c66
+    $navy: #1f3d47, $navy-2: #183843, $gold: #8a6a55, $shadow: #1f3d47,
+    $line: #e6dfd8, $soft: #f6f3f0, $bg: #f4f2f1, $ink: #1e2a2e,
+    $field-border: #e0d6cc, $field-hover: #cbb49a, $readonly-bg: #f5f1ed, $readonly-ink: #5f6b6e, $placeholder: #9aa3a6, $arrow: '1f3d47',
+    $row-line: #ece6e0, $row-even: #faf8f6, $row-hover: #f3eee9, $ghost-border: #cbb49a,
+    $chip-border: #cbb49a, $chip-bg: #f6f0e9, $chip-ink: #6b5040
   );
 }
 

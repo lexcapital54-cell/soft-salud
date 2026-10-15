@@ -427,46 +427,46 @@ app-consent-ci-details {
   margin: 4px 0 14px;
 }
 
-/* Paleta HABILISALUD cuando la HC es de psicología */
+/* Paleta petróleo y mocha cuando la HC es de psicología */
 :host-context(.specialty-psychology) {
   .signer-head h3,
   .pads-title {
-    color: #12303a;
+    color: #4a3c33;
   }
 
   .eyebrow,
   button.linkish {
-    color: #0d7377;
+    color: #8a6a55;
   }
 
   .remote-invite {
-    border-color: #a8c9c7;
-    background: #f2f8f8;
+    border-color: #cbb49a;
+    background: #f6f3f0;
   }
 
   .remote-invite .primary,
   button.primary {
-    background: #0d7377;
-    border-color: #0d7377;
+    background: #8a6a55;
+    border-color: #8a6a55;
     color: #ffffff;
   }
 
   .remote-invite .secondary,
   button.ghost {
-    background: #ffffff;
-    border-color: #a8c9c7;
-    color: #12303a;
+    background: #fffdfc;
+    border-color: #cbb49a;
+    color: #4a3c33;
   }
 
   .pads-highlight {
-    border-color: #a8c9c7;
-    background: #f2f8f8;
+    border-color: #cbb49a;
+    background: #f6f3f0;
   }
 
   .lead,
   .muted,
   .pad-label {
-    color: #4f6870;
+    color: #5c4a46;
   }
 }
 
