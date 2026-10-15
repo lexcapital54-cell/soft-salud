@@ -12,12 +12,19 @@ import {
   PlatformBillingApiService,
   PlatformReceipt,
 } from '../platform-billing/platform-billing-api.service';
+import {
+  FinanceApiService,
+  FinanceInventorySummary,
+  FinanceSupplyItem,
+  NoveltyType,
+  PayStatus,
+  SupplyCategory,
+  SupplyMovementType,
+} from './finance-api.service';
 import { ARL_RATES, ArlClass, PayrollInput, PayrollParams, PayrollResult, calcPayroll } from './payroll-calc';
 
 type Section = 'dashboard' | 'empleados' | 'facturacion' | 'tesoreria' | 'nomina' | 'inventarios' | 'reportes' | 'config';
 type PayrollTab = 'liquidacion' | 'pila' | 'novedades' | 'reportes';
-type PayStatus = 'LIQUIDADO' | 'PAGADO' | 'PENDIENTE';
-type NoveltyType = 'INGRESO' | 'VACACIONES' | 'INCAPACIDAD' | 'LICENCIA_REM' | 'LICENCIA_NO_REM' | 'RETIRO';
 
 interface EmployeeForm {
   name: string;
@@ -90,8 +97,7 @@ const emptyInput = (): PayrollInput => ({
 /**
  * Operación y Finanzas: nómina y PILA (calculadora de referencia), facturación, tesorería e inventario.
  * En el superadmin usa los cobros de la plataforma; en el consultorio (ruta con data.mode = 'clinic'),
- * sus recibos de caja y gastos.
- * Las liquidaciones y novedades viven solo en memoria: no se guardan en el servidor ni en el navegador.
+ * sus recibos de caja, gastos, liquidaciones, novedades e inventario persistidos en el servidor.
  */
 @Component({
   selector: 'app-finance-ops',
@@ -108,6 +114,7 @@ export class FinanceOpsPage implements OnInit {
   private readonly adminApi = inject(AdminApiService);
   private readonly auth = inject(AuthService);
   private readonly clinicBilling = inject(BillingApiService);
+  private readonly financeApi = inject(FinanceApiService);
   private readonly route = inject(ActivatedRoute);
 
   readonly isClinic = this.route.snapshot.data['mode'] === 'clinic';
@@ -196,6 +203,28 @@ export class FinanceOpsPage implements OnInit {
   readonly runs = signal<PayrollRun[]>([]);
   readonly novelties = signal<Novelty[]>([]);
   noveltyForm: Omit<Novelty, 'id'> = { employee: '', type: 'INGRESO', from: today(), to: today(), notes: '' };
+
+  readonly supplyItems = signal<FinanceSupplyItem[]>([]);
+  readonly inventorySummary = signal<FinanceInventorySummary | null>(null);
+  readonly saving = signal(false);
+  supplyForm = {
+    name: '',
+    sku: '',
+    unit: 'und',
+    category: 'CONSUMABLE' as SupplyCategory,
+    unitCost: 0,
+    minStock: 0,
+    initialQuantity: 0,
+    lotNumber: '',
+    notes: '',
+  };
+  movementForm = { itemId: '', type: 'IN' as SupplyMovementType, quantity: 1, notes: '' };
+
+  readonly categoryLabels: Record<SupplyCategory, string> = {
+    CONSUMABLE: 'Consumible',
+    MEDICATION: 'Medicamento',
+    AESTHETIC: 'Estética',
+  };
 
   readonly notice = signal('');
   readonly formError = signal('');
@@ -482,7 +511,7 @@ export class FinanceOpsPage implements OnInit {
     this.adminApi.listClinics().subscribe({ next: (rows) => (this.clinics.set(rows), done()), error: fail });
   }
 
-  /** Recibos y gastos de los últimos tres meses, y resúmenes de caja del mes, el mes anterior y el año. */
+  /** Recibos, gastos, nómina e inventario del consultorio. */
   private loadClinicData() {
     this.loading.set(true);
     this.loadError.set('');
@@ -490,23 +519,85 @@ export class FinanceOpsPage implements OnInit {
     const y = now.getFullYear();
     const m = now.getMonth();
     const listFrom = ymd(new Date(y, m - 2, 1));
-    let pendingCalls = 5;
+    let pendingCalls = 9;
     const done = () => {
       pendingCalls -= 1;
       if (pendingCalls === 0) this.loading.set(false);
     };
-    const fail = () => {
-      this.loadError.set('No se pudieron cargar los recibos y gastos del consultorio.');
+    const fail = (msg = 'No se pudieron cargar los datos de Operación y Finanzas del consultorio.') => {
+      this.loadError.set(msg);
       done();
     };
     const api = this.clinicBilling;
-    api.listReceipts(listFrom).subscribe({ next: (rows) => (this.clinicReceipts.set(rows), done()), error: fail });
-    api.listExpenses(listFrom).subscribe({ next: (rows) => (this.expenses.set(rows), done()), error: fail });
-    api.summary(ymd(new Date(y, m, 1)), ymd(now)).subscribe({ next: (s) => (this.summaryMonth.set(s), done()), error: fail });
+    const fin = this.financeApi;
+    api.listReceipts(listFrom).subscribe({ next: (rows) => (this.clinicReceipts.set(rows), done()), error: () => fail() });
+    api.listExpenses(listFrom).subscribe({ next: (rows) => (this.expenses.set(rows), done()), error: () => fail() });
+    api.summary(ymd(new Date(y, m, 1)), ymd(now)).subscribe({ next: (s) => (this.summaryMonth.set(s), done()), error: () => fail() });
     api
       .summary(ymd(new Date(y, m - 1, 1)), ymd(new Date(y, m, 0)))
-      .subscribe({ next: (s) => (this.summaryPrev.set(s), done()), error: fail });
-    api.summary(ymd(new Date(y, 0, 1)), ymd(now)).subscribe({ next: (s) => (this.summaryYear.set(s), done()), error: fail });
+      .subscribe({ next: (s) => (this.summaryPrev.set(s), done()), error: () => fail() });
+    api.summary(ymd(new Date(y, 0, 1)), ymd(now)).subscribe({ next: (s) => (this.summaryYear.set(s), done()), error: () => fail() });
+    fin.getPayrollSettings().subscribe({
+      next: (s) => {
+        this.params.set({ smmlv: s.smmlv, transportAid: s.transportAid, exempt114: s.exempt114 });
+        done();
+      },
+      error: () => fail('No se pudieron cargar los parámetros de nómina.'),
+    });
+    fin.listPayrollRuns().subscribe({
+      next: (rows) => {
+        this.runs.set(
+          rows.map((r) => ({
+            id: r.id,
+            name: r.name,
+            idNumber: r.idNumber,
+            role: r.role,
+            department: r.department,
+            period: r.period,
+            payDate: r.payDate || today(),
+            status: r.status,
+            input: r.input,
+            result: r.result,
+          })),
+        );
+        done();
+      },
+      error: () => fail('No se pudieron cargar las liquidaciones de nómina.'),
+    });
+    fin.listNovelties().subscribe({
+      next: (rows) => {
+        this.novelties.set(rows.map((n) => ({ id: n.id, employee: n.employee, type: n.type, from: n.from, to: n.to, notes: n.notes })));
+        done();
+      },
+      error: () => fail('No se pudieron cargar las novedades de nómina.'),
+    });
+    this.reloadInventory(done, () => fail('No se pudo cargar el inventario.'));
+  }
+
+  private reloadInventory(done?: () => void, fail?: () => void) {
+    let left = 2;
+    const step = () => {
+      left -= 1;
+      if (left === 0) done?.();
+    };
+    const onFail = () => {
+      fail?.();
+      step();
+    };
+    this.financeApi.listSupplyItems().subscribe({
+      next: (rows) => {
+        this.supplyItems.set(rows);
+        step();
+      },
+      error: onFail,
+    });
+    this.financeApi.inventorySummary().subscribe({
+      next: (s) => {
+        this.inventorySummary.set(s);
+        step();
+      },
+      error: onFail,
+    });
   }
 
   go(section: Section) {
@@ -535,6 +626,25 @@ export class FinanceOpsPage implements OnInit {
     this.params.update((p) => ({ ...p, [key]: typeof value === 'boolean' ? value : Number(value) || 0 }));
   }
 
+  /** Guarda en el servidor los parámetros de la calculadora (solo consultorio). */
+  saveParams() {
+    if (!this.isClinic) {
+      this.notice.set('Parámetros actualizados en esta sesión.');
+      return;
+    }
+    this.saving.set(true);
+    this.financeApi.savePayrollSettings(this.params()).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.notice.set('Parámetros de nómina guardados.');
+      },
+      error: (err) => {
+        this.saving.set(false);
+        this.loadError.set(err?.error?.message || 'No se pudieron guardar los parámetros.');
+      },
+    });
+  }
+
   /** Agrega o reemplaza la liquidación del empleado en el periodo y muestra la planilla. */
   generate() {
     const emp = this.employee();
@@ -544,7 +654,7 @@ export class FinanceOpsPage implements OnInit {
     if (!(this.input().salary > 0)) return this.formError.set('Indique el salario básico mensual.');
     if (!(this.input().days > 0)) return this.formError.set('Los días trabajados deben ser entre 1 y 30.');
 
-    const run: PayrollRun = {
+    const draft: PayrollRun = {
       ...emp,
       name: emp.name.trim(),
       idNumber: emp.idNumber.trim(),
@@ -553,12 +663,59 @@ export class FinanceOpsPage implements OnInit {
       input: { ...this.input() },
       result: this.result(),
     };
-    const exists = this.runs().some((r) => r.id === run.id);
-    this.runs.update((rows) => (exists ? rows.map((r) => (r.id === run.id ? run : r)) : [...rows, run]));
-    this.payrollTab.set('pila');
-    this.notice.set(
-      `${exists ? 'Liquidación actualizada' : 'Liquidación agregada'}: ${run.name}, ${this.monthLabel(run.period)}. Neto a pagar ${this.cop(run.result.net)}.`,
-    );
+
+    if (!this.isClinic) {
+      const exists = this.runs().some((r) => r.id === draft.id);
+      this.runs.update((rows) => (exists ? rows.map((r) => (r.id === draft.id ? draft : r)) : [...rows, draft]));
+      this.payrollTab.set('pila');
+      this.notice.set(
+        `${exists ? 'Liquidación actualizada' : 'Liquidación agregada'}: ${draft.name}, ${this.monthLabel(draft.period)}. Neto a pagar ${this.cop(draft.result.net)}.`,
+      );
+      return;
+    }
+
+    this.saving.set(true);
+    this.financeApi
+      .upsertPayrollRun({
+        period: draft.period,
+        employeeName: draft.name,
+        idNumber: draft.idNumber,
+        role: draft.role,
+        department: draft.department,
+        payDate: draft.payDate,
+        status: draft.status,
+        input: draft.input,
+        result: draft.result,
+      })
+      .subscribe({
+        next: (saved) => {
+          const run: PayrollRun = {
+            id: saved.id,
+            name: saved.name,
+            idNumber: saved.idNumber,
+            role: saved.role,
+            department: saved.department,
+            period: saved.period,
+            payDate: saved.payDate || today(),
+            status: saved.status,
+            input: saved.input,
+            result: saved.result,
+          };
+          this.runs.update((rows) => {
+            const i = rows.findIndex((r) => r.id === run.id || (r.idNumber === run.idNumber && r.period === run.period));
+            return i >= 0 ? rows.map((r, idx) => (idx === i ? run : r)) : [...rows, run];
+          });
+          this.saving.set(false);
+          this.payrollTab.set('pila');
+          this.notice.set(
+            `Liquidación guardada: ${run.name}, ${this.monthLabel(run.period)}. Neto a pagar ${this.cop(run.result.net)}.`,
+          );
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.formError.set(err?.error?.message || 'No se pudo guardar la liquidación.');
+        },
+      });
   }
 
   newLiquidation() {
@@ -578,12 +735,32 @@ export class FinanceOpsPage implements OnInit {
   }
 
   setStatus(run: PayrollRun, status: PayStatus) {
-    this.runs.update((rows) => rows.map((r) => (r.id === run.id ? { ...r, status } : r)));
+    if (!this.isClinic) {
+      this.runs.update((rows) => rows.map((r) => (r.id === run.id ? { ...r, status } : r)));
+      return;
+    }
+    this.financeApi.updatePayrollRunStatus(run.id, status).subscribe({
+      next: (saved) => {
+        this.runs.update((rows) => rows.map((r) => (r.id === run.id ? { ...r, status: saved.status } : r)));
+        this.notice.set(`Estado de ${run.name}: ${this.statusLabels[saved.status]}.`);
+      },
+      error: (err) => this.loadError.set(err?.error?.message || 'No se pudo actualizar el estado.'),
+    });
   }
 
   removeRun(run: PayrollRun) {
     if (!window.confirm(`¿Quitar la liquidación de ${run.name} del periodo ${this.monthLabel(run.period)}?`)) return;
-    this.runs.update((rows) => rows.filter((r) => r.id !== run.id));
+    if (!this.isClinic) {
+      this.runs.update((rows) => rows.filter((r) => r.id !== run.id));
+      return;
+    }
+    this.financeApi.deletePayrollRun(run.id).subscribe({
+      next: () => {
+        this.runs.update((rows) => rows.filter((r) => r.id !== run.id));
+        this.notice.set(`Liquidación de ${run.name} eliminada.`);
+      },
+      error: (err) => this.loadError.set(err?.error?.message || 'No se pudo eliminar la liquidación.'),
+    });
   }
 
   addNovelty() {
@@ -591,12 +768,106 @@ export class FinanceOpsPage implements OnInit {
     if (!f.employee.trim()) return this.formError.set('Escriba el empleado de la novedad.');
     if (f.to && f.from && f.to < f.from) return this.formError.set('La fecha final no puede ser anterior a la inicial.');
     this.formError.set('');
-    this.novelties.update((rows) => [{ ...f, employee: f.employee.trim(), id: crypto.randomUUID() }, ...rows]);
-    this.noveltyForm = { employee: '', type: f.type, from: today(), to: today(), notes: '' };
+    const payload = { employee: f.employee.trim(), type: f.type, from: f.from, to: f.to, notes: f.notes };
+    if (!this.isClinic) {
+      this.novelties.update((rows) => [{ ...payload, id: crypto.randomUUID() }, ...rows]);
+      this.noveltyForm = { employee: '', type: f.type, from: today(), to: today(), notes: '' };
+      return;
+    }
+    this.financeApi.createNovelty(payload).subscribe({
+      next: (n) => {
+        this.novelties.update((rows) => [
+          { id: n.id, employee: n.employee, type: n.type, from: n.from, to: n.to, notes: n.notes },
+          ...rows,
+        ]);
+        this.noveltyForm = { employee: '', type: f.type, from: today(), to: today(), notes: '' };
+        this.notice.set(`Novedad registrada: ${this.noveltyLabel(n.type)} · ${n.employee}.`);
+      },
+      error: (err) => this.formError.set(err?.error?.message || 'No se pudo registrar la novedad.'),
+    });
   }
 
   removeNovelty(n: Novelty) {
-    this.novelties.update((rows) => rows.filter((r) => r.id !== n.id));
+    if (!this.isClinic) {
+      this.novelties.update((rows) => rows.filter((r) => r.id !== n.id));
+      return;
+    }
+    this.financeApi.deleteNovelty(n.id).subscribe({
+      next: () => this.novelties.update((rows) => rows.filter((r) => r.id !== n.id)),
+      error: (err) => this.loadError.set(err?.error?.message || 'No se pudo eliminar la novedad.'),
+    });
+  }
+
+  createSupply() {
+    const f = this.supplyForm;
+    if (!f.name.trim()) return this.formError.set('Escriba el nombre del insumo.');
+    if (!this.isClinic) return this.formError.set('El inventario solo se guarda en el consultorio.');
+    this.formError.set('');
+    this.saving.set(true);
+    this.financeApi
+      .createSupplyItem({
+        name: f.name.trim(),
+        sku: f.sku.trim() || undefined,
+        unit: f.unit.trim() || 'und',
+        category: f.category,
+        unitCost: Number(f.unitCost) || 0,
+        minStock: Number(f.minStock) || 0,
+        initialQuantity: Number(f.initialQuantity) || 0,
+        lotNumber: f.lotNumber.trim() || undefined,
+        notes: f.notes.trim() || undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.supplyForm = {
+            name: '', sku: '', unit: 'und', category: 'CONSUMABLE', unitCost: 0, minStock: 0, initialQuantity: 0, lotNumber: '', notes: '',
+          };
+          this.notice.set('Insumo registrado en el inventario.');
+          this.reloadInventory();
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.formError.set(err?.error?.message || 'No se pudo registrar el insumo.');
+        },
+      });
+  }
+
+  registerMovement() {
+    const f = this.movementForm;
+    if (!f.itemId) return this.formError.set('Elija el insumo.');
+    if (!(f.quantity > 0) && f.type !== 'ADJUST') return this.formError.set('Indique la cantidad.');
+    if (!this.isClinic) return;
+    this.formError.set('');
+    this.saving.set(true);
+    this.financeApi
+      .createSupplyMovement(f.itemId, {
+        type: f.type,
+        quantity: Number(f.quantity) || 0,
+        notes: f.notes.trim() || undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.movementForm = { itemId: f.itemId, type: f.type, quantity: 1, notes: '' };
+          this.notice.set('Movimiento de inventario registrado.');
+          this.reloadInventory();
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.formError.set(err?.error?.message || 'No se pudo registrar el movimiento.');
+        },
+      });
+  }
+
+  removeSupply(item: FinanceSupplyItem) {
+    if (!window.confirm(`¿Eliminar el insumo «${item.name}» y su historial de movimientos?`)) return;
+    this.financeApi.deleteSupplyItem(item.id).subscribe({
+      next: () => {
+        this.notice.set(`Insumo «${item.name}» eliminado.`);
+        this.reloadInventory();
+      },
+      error: (err) => this.loadError.set(err?.error?.message || 'No se pudo eliminar el insumo.'),
+    });
   }
 
   /** Abre el formulario de novedades con el tipo ya elegido. */
@@ -710,7 +981,8 @@ export class FinanceOpsPage implements OnInit {
   }
 
   onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.runs().length || this.novelties().length) event.preventDefault();
+    // En el consultorio los datos ya están en el servidor; solo avisa en el panel del superadmin.
+    if (!this.isClinic && (this.runs().length || this.novelties().length)) event.preventDefault();
   }
 
   cop(n: number) {

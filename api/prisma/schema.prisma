@@ -265,6 +265,28 @@ enum SupplyCategory {
   MEDICATION
 }
 
+/// Estado de una liquidación de nómina (calculadora de referencia del módulo Finanzas).
+enum PayrollRunStatus {
+  LIQUIDADO
+  PAGADO
+  PENDIENTE
+}
+
+enum PayrollNoveltyType {
+  INGRESO
+  VACACIONES
+  INCAPACIDAD
+  LICENCIA_REM
+  LICENCIA_NO_REM
+  RETIRO
+}
+
+enum SupplyMovementType {
+  IN
+  OUT
+  ADJUST
+}
+
 enum ExpiryAlertChannel {
   UI
   EMAIL
@@ -374,6 +396,10 @@ model Clinic {
   logos                ClinicLogo[]
   attendanceControls   AttendanceControl[]
   psychReports         PsychReport[]
+  payrollSettings      PayrollSettings?
+  payrollRuns          PayrollRun[]
+  payrollNovelties     PayrollNovelty[]
+  supplyMovements      SupplyMovement[]
 
   @@map("clinics")
 }
@@ -417,6 +443,9 @@ model User {
   clinicalReportExports      ClinicalReportExport[] @relation("ReportExportedBy")
   remoteConsentInvitesSent   RemoteConsentInvite[]  @relation("RemoteConsentInvitedBy")
   platformReceiptsCreated    PlatformReceipt[]      @relation("PlatformReceiptCreatedBy")
+  payrollRunsCreated         PayrollRun[]           @relation("PayrollRunCreatedBy")
+  payrollNoveltiesCreated    PayrollNovelty[]       @relation("PayrollNoveltyCreatedBy")
+  supplyMovementsCreated     SupplyMovement[]       @relation("SupplyMovementCreatedBy")
 
   @@index([clinicId])
   @@map("users")
@@ -1421,15 +1450,107 @@ model SupplyItem {
   clinicId  String         @map("clinic_id") @db.Uuid
   clinic    Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   name      String         @db.VarChar(160)
+  sku       String?        @db.VarChar(60)
+  unit      String         @default("und") @db.VarChar(20)
   lotNumber String?        @map("lot_number") @db.VarChar(80)
   expiresAt DateTime?      @map("expires_at") @db.Timestamptz(6)
   quantity  Int            @default(0)
+  /// Costo unitario de referencia (COP) para valorizar el inventario.
+  unitCost  Decimal        @default(0) @map("unit_cost") @db.Decimal(12, 2)
+  /// Cantidad mínima; por debajo se marca alerta de stock bajo.
+  minStock  Int            @default(0) @map("min_stock")
+  notes     String?
   category  SupplyCategory @default(CONSUMABLE)
   createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  movements SupplyMovement[]
+
   @@index([clinicId, expiresAt])
+  @@index([clinicId, name])
   @@map("supply_items")
+}
+
+/// Entrada, salida o ajuste de un ítem de inventario del consultorio.
+model SupplyMovement {
+  id           String             @id @default(uuid()) @db.Uuid
+  clinicId     String             @map("clinic_id") @db.Uuid
+  clinic       Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  supplyItemId String             @map("supply_item_id") @db.Uuid
+  supplyItem   SupplyItem         @relation(fields: [supplyItemId], references: [id], onDelete: Cascade)
+  type         SupplyMovementType
+  /// Cantidad absoluta del movimiento (siempre positiva). OUT reduce el stock.
+  quantity     Int
+  unitCost     Decimal?           @map("unit_cost") @db.Decimal(12, 2)
+  notes        String?
+  movedAt      DateTime           @map("moved_at") @db.Timestamptz(6)
+  createdById  String?            @map("created_by_id") @db.Uuid
+  createdBy    User?              @relation("SupplyMovementCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([clinicId, movedAt])
+  @@index([supplyItemId, movedAt])
+  @@map("supply_movements")
+}
+
+/// Parámetros de la calculadora de nómina por consultorio (SMMLV, auxilio, art. 114-1).
+model PayrollSettings {
+  id           String   @id @default(uuid()) @db.Uuid
+  clinicId     String   @unique @map("clinic_id") @db.Uuid
+  clinic       Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  smmlv        Decimal  @db.Decimal(12, 2)
+  transportAid Decimal  @map("transport_aid") @db.Decimal(12, 2)
+  exempt114    Boolean  @default(true) @map("exempt_114")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("payroll_settings")
+}
+
+/// Liquidación de nómina / PILA de un empleado en un periodo (YYYY-MM).
+/// Es cálculo de referencia: el consultorio debe validarlo con su contador.
+model PayrollRun {
+  id           String           @id @default(uuid()) @db.Uuid
+  clinicId     String           @map("clinic_id") @db.Uuid
+  clinic       Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  /// Periodo de liquidación en formato YYYY-MM.
+  period       String           @db.VarChar(7)
+  employeeName String           @map("employee_name") @db.VarChar(160)
+  idNumber     String           @map("id_number") @db.VarChar(40)
+  role         String?          @db.VarChar(120)
+  department   String?          @db.VarChar(120)
+  payDate      DateTime?        @map("pay_date") @db.Date
+  status       PayrollRunStatus @default(LIQUIDADO)
+  /// Entradas de la calculadora (salario, días, extras, ARL, etc.).
+  input        Json
+  /// Resultado de la calculadora (devengados, IBC, PILA, neto).
+  result       Json
+  createdById  String?          @map("created_by_id") @db.Uuid
+  createdBy    User?            @relation("PayrollRunCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([clinicId, idNumber, period])
+  @@index([clinicId, period])
+  @@map("payroll_runs")
+}
+
+/// Novedad laboral asociada al consultorio (vacaciones, incapacidad, retiro, etc.).
+model PayrollNovelty {
+  id           String              @id @default(uuid()) @db.Uuid
+  clinicId     String              @map("clinic_id") @db.Uuid
+  clinic       Clinic              @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  employeeName String              @map("employee_name") @db.VarChar(160)
+  type         PayrollNoveltyType
+  fromDate     DateTime            @map("from_date") @db.Date
+  toDate       DateTime            @map("to_date") @db.Date
+  notes        String?
+  createdById  String?             @map("created_by_id") @db.Uuid
+  createdBy    User?               @relation("PayrollNoveltyCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([clinicId, fromDate])
+  @@map("payroll_novelties")
 }
 
 model ExpiryAlert {

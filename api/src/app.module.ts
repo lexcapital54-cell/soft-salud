@@ -8,6 +8,7 @@ import { ClinicsModule } from './clinics/clinics.module';
 import { SeedService } from './database/seed.service';
 import { AgendaModule } from './modules/agenda/agenda.module';
 import { BillingModule } from './modules/billing/billing.module';
+import { FinanceModule } from './modules/finance/finance.module';
 import { PlatformBillingModule } from './modules/platform-billing/platform-billing.module';
 import { ClinicalModule } from './modules/clinical/clinical.module';
 import { DemoModule } from './modules/demo/demo.module';
@@ -49,6 +50,7 @@ import { UsersModule } from './users/users.module';
     AgendaModule,
     DocumentsModule,
     BillingModule,
+    FinanceModule,
     PlatformBillingModule,
     DemoModule,
     PsychAdminModule,

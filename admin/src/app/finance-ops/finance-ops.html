@@ -84,6 +84,9 @@
         <button type="button" class="btn ghost sm" (click)="loadPlatformData()">Reintentar</button>
       </p>
     }
+    @if (formError() && section() === 'inventarios') {
+      <p class="alert-error" role="alert"><hab-icon name="alert" [size]="16" />{{ formError() }}</p>
+    }
 
     @if (isClinic) {
       <ng-container [ngTemplateOutlet]="clinicKpis" />
@@ -375,7 +378,7 @@
         </article>
       }
       @case ('inventarios') {
-        <ng-container [ngTemplateOutlet]="inventoryWidget" />
+        <ng-container [ngTemplateOutlet]="inventoryPanel" />
       }
       @case ('reportes') {
         <ng-container [ngTemplateOutlet]="payrollCard" />
@@ -385,7 +388,12 @@
           <header class="card-head">
             <h2><hab-icon name="settings" [size]="18" />Parámetros de nómina</h2>
           </header>
-          <p class="hint">Valores usados por la calculadora. Verifíquelos con el decreto vigente antes de liquidar.</p>
+          <p class="hint">
+            Valores usados por la calculadora. Verifíquelos con el decreto vigente antes de liquidar.
+            @if (isClinic) {
+              En el consultorio se guardan en el servidor.
+            }
+          </p>
           <div class="form-grid">
             <label>
               <span>Salario mínimo (SMMLV)</span>
@@ -400,6 +408,11 @@
             <input type="checkbox" [ngModel]="params().exempt114" (ngModelChange)="patchParams('exempt114', $event)" />
             <span>Aplicar exoneración del art. 114-1 E.T. (salud de la empresa, SENA e ICBF para salarios menores a 10 SMMLV)</span>
           </label>
+          @if (isClinic) {
+            <button type="button" class="btn primary" [disabled]="saving()" (click)="saveParams()">
+              <hab-icon name="check" [size]="15" />{{ saving() ? 'Guardando…' : 'Guardar parámetros' }}
+            </button>
+          }
         </article>
       }
     }
@@ -532,7 +545,7 @@
                 <div><dt>Costo para la empresa</dt><dd>{{ cop(result().employerCost) }}</dd></div>
                 <div><dt>Aportes PILA (total)</dt><dd>{{ cop(result().pilaTotal) }}</dd></div>
               </dl>
-              <button type="button" class="btn primary block-btn" (click)="generate()">
+              <button type="button" class="btn primary block-btn" [disabled]="saving()" (click)="generate()">
                 <hab-icon name="check" [size]="16" />Calcular y Generar Planilla PILA
               </button>
               <button type="button" class="btn ghost block-btn" (click)="newLiquidation()">
@@ -1032,22 +1045,177 @@
   }
 </ng-template>
 
-<!-- 08. Inventarios -->
+<!-- 08. Inventarios (resumen en dashboard / nómina) -->
 <ng-template #inventoryWidget>
   <article class="card widget">
     <header class="card-head">
       <h2><hab-icon name="package" [size]="18" />08. Inventarios e Insumos</h2>
     </header>
-    <dl class="mini-dl">
-      <div><dt>Entradas del mes</dt><dd>—</dd></div>
-      <div><dt>Salidas del mes</dt><dd>—</dd></div>
-      <div><dt>Costo del inventario</dt><dd>—</dd></div>
-    </dl>
-    <div class="empty compact">
-      <hab-icon name="package" [size]="24" />
-      <p>Aún no hay insumos registrados. Las alertas de stock bajo aparecerán aquí cuando se conecte el inventario.</p>
-    </div>
+    @if (!isClinic) {
+      <dl class="mini-dl">
+        <div><dt>Entradas del mes</dt><dd>—</dd></div>
+        <div><dt>Salidas del mes</dt><dd>—</dd></div>
+        <div><dt>Costo del inventario</dt><dd>—</dd></div>
+      </dl>
+      <div class="empty compact">
+        <hab-icon name="package" [size]="24" />
+        <p>El inventario se gestiona en cada consultorio con el módulo Finanzas activo.</p>
+      </div>
+    } @else if (loading()) {
+      <span class="skel"></span><span class="skel"></span>
+    } @else {
+      <dl class="mini-dl">
+        <div><dt>Entradas del mes</dt><dd>{{ inventorySummary()?.monthEntries?.quantity ?? 0 }} · {{ cop(inventorySummary()?.monthEntries?.cost ?? 0) }}</dd></div>
+        <div><dt>Salidas del mes</dt><dd>{{ inventorySummary()?.monthExits?.quantity ?? 0 }} · {{ cop(inventorySummary()?.monthExits?.cost ?? 0) }}</dd></div>
+        <div><dt>Valor del inventario</dt><dd>{{ cop(inventorySummary()?.stockValue ?? 0) }}</dd></div>
+      </dl>
+      @if (inventorySummary()?.lowStock) {
+        <p class="hint warn-hint">{{ inventorySummary()!.lowStock }} {{ inventorySummary()!.lowStock === 1 ? 'insumo' : 'insumos' }} con stock bajo.</p>
+      }
+      @if (!supplyItems().length) {
+        <div class="empty compact">
+          <hab-icon name="package" [size]="24" />
+          <p>Aún no hay insumos registrados.</p>
+        </div>
+      }
+      <button type="button" class="btn ghost block-btn" (click)="go('inventarios')">Ver inventario</button>
+    }
   </article>
+</ng-template>
+
+<!-- Panel completo de inventario (solo consultorio) -->
+<ng-template #inventoryPanel>
+  <ng-container [ngTemplateOutlet]="inventoryWidget" />
+  @if (isClinic) {
+    <div class="two even">
+      <article class="card">
+        <header class="card-head"><h2><hab-icon name="plus" [size]="18" />Registrar insumo</h2></header>
+        <div class="form-grid">
+          <label>
+            <span>Nombre</span>
+            <input type="text" [(ngModel)]="supplyForm.name" autocomplete="off" />
+          </label>
+          <label>
+            <span>SKU / código</span>
+            <input type="text" [(ngModel)]="supplyForm.sku" autocomplete="off" />
+          </label>
+          <label>
+            <span>Unidad</span>
+            <input type="text" [(ngModel)]="supplyForm.unit" autocomplete="off" />
+          </label>
+          <label>
+            <span>Categoría</span>
+            <select [(ngModel)]="supplyForm.category">
+              <option value="CONSUMABLE">Consumible</option>
+              <option value="MEDICATION">Medicamento</option>
+              <option value="AESTHETIC">Estética</option>
+            </select>
+          </label>
+          <label>
+            <span>Costo unitario</span>
+            <input type="number" min="0" step="1" inputmode="numeric" [(ngModel)]="supplyForm.unitCost" />
+          </label>
+          <label>
+            <span>Stock mínimo</span>
+            <input type="number" min="0" step="1" inputmode="numeric" [(ngModel)]="supplyForm.minStock" />
+          </label>
+          <label>
+            <span>Cantidad inicial</span>
+            <input type="number" min="0" step="1" inputmode="numeric" [(ngModel)]="supplyForm.initialQuantity" />
+          </label>
+          <label>
+            <span>Lote</span>
+            <input type="text" [(ngModel)]="supplyForm.lotNumber" autocomplete="off" />
+          </label>
+        </div>
+        <button type="button" class="btn primary" [disabled]="saving()" (click)="createSupply()">
+          <hab-icon name="plus" [size]="15" />{{ saving() ? 'Guardando…' : 'Guardar insumo' }}
+        </button>
+      </article>
+      <article class="card">
+        <header class="card-head"><h2><hab-icon name="activity" [size]="18" />Entrada o salida</h2></header>
+        <div class="form-grid">
+          <label>
+            <span>Insumo</span>
+            <select [(ngModel)]="movementForm.itemId">
+              <option value="">Seleccione…</option>
+              @for (i of supplyItems(); track i.id) {
+                <option [value]="i.id">{{ i.name }} ({{ i.quantity }} {{ i.unit }})</option>
+              }
+            </select>
+          </label>
+          <label>
+            <span>Tipo</span>
+            <select [(ngModel)]="movementForm.type">
+              <option value="IN">Entrada</option>
+              <option value="OUT">Salida</option>
+              <option value="ADJUST">Ajuste (stock absoluto)</option>
+            </select>
+          </label>
+          <label>
+            <span>Cantidad</span>
+            <input type="number" min="0" step="1" inputmode="numeric" [(ngModel)]="movementForm.quantity" />
+          </label>
+          <label>
+            <span>Observación</span>
+            <input type="text" [(ngModel)]="movementForm.notes" autocomplete="off" />
+          </label>
+        </div>
+        <button type="button" class="btn primary" [disabled]="saving() || !supplyItems().length" (click)="registerMovement()">
+          <hab-icon name="check" [size]="15" />Registrar movimiento
+        </button>
+      </article>
+    </div>
+    <article class="card">
+      <header class="card-head"><h2><hab-icon name="list" [size]="18" />Existencias</h2></header>
+      @if (!supplyItems().length) {
+        <div class="empty compact"><hab-icon name="package" [size]="24" /><p>No hay insumos registrados.</p></div>
+      } @else {
+        <div class="table-wrap">
+          <table class="emp">
+            <thead>
+              <tr>
+                <th scope="col">Insumo</th>
+                <th scope="col">Categoría</th>
+                <th scope="col" class="r">Stock</th>
+                <th scope="col" class="r">Mínimo</th>
+                <th scope="col" class="r">Costo unit.</th>
+                <th scope="col" class="r">Valor</th>
+                <th scope="col">Estado</th>
+                <th scope="col"><span class="sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (i of supplyItems(); track i.id) {
+                <tr>
+                  <th scope="row">{{ i.name }}@if (i.sku) { <span class="muted small"> · {{ i.sku }}</span> }</th>
+                  <td>{{ categoryLabels[i.category] }}</td>
+                  <td class="r num">{{ i.quantity }} {{ i.unit }}</td>
+                  <td class="r num">{{ i.minStock }}</td>
+                  <td class="r num">{{ cop(i.unitCost) }}</td>
+                  <td class="r num">{{ cop(i.stockValue) }}</td>
+                  <td>
+                    @if (i.lowStock) {
+                      <span class="badge amber">Stock bajo</span>
+                    } @else {
+                      <span class="badge mint">Ok</span>
+                    }
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button type="button" class="icon-btn" (click)="removeSupply(i)" [attr.aria-label]="'Eliminar ' + i.name">
+                        <hab-icon name="trash" [size]="16" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </article>
+  }
 </ng-template>
 
 <!-- Empleados del periodo -->
