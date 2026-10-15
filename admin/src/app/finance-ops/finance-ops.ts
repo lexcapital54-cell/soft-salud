@@ -16,7 +16,7 @@ import { ARL_RATES, ArlClass, PayrollInput, PayrollParams, PayrollResult, calcPa
 type Section = 'dashboard' | 'empleados' | 'facturacion' | 'tesoreria' | 'nomina' | 'inventarios' | 'reportes' | 'config';
 type PayrollTab = 'liquidacion' | 'pila' | 'novedades' | 'reportes';
 type PayStatus = 'LIQUIDADO' | 'PAGADO' | 'PENDIENTE';
-type NoveltyType = 'INGRESO' | 'VACACIONES' | 'INCAPACIDAD' | 'LICENCIA_REM' | 'LICENCIA_NO_REM';
+type NoveltyType = 'INGRESO' | 'VACACIONES' | 'INCAPACIDAD' | 'LICENCIA_REM' | 'LICENCIA_NO_REM' | 'RETIRO';
 
 interface EmployeeForm {
   name: string;
@@ -88,15 +88,33 @@ export class FinanceOpsPage implements OnInit {
   readonly user = this.auth.user;
   readonly navOpen = signal(false);
 
-  readonly sections: Array<{ id: Section; num: string; label: string; icon: string }> = [
-    { id: 'dashboard', num: '01', label: 'Dashboard', icon: 'dashboard' },
-    { id: 'empleados', num: '02', label: 'Empleados', icon: 'users' },
-    { id: 'facturacion', num: '05', label: 'Facturación y RIPS', icon: 'receipt' },
-    { id: 'tesoreria', num: '06', label: 'Tesorería y Cartera', icon: 'scale' },
-    { id: 'nomina', num: '07', label: 'Nómina y PILA', icon: 'clipboard' },
-    { id: 'inventarios', num: '08', label: 'Inventarios', icon: 'package' },
-    { id: 'reportes', num: '', label: 'Reportes', icon: 'activity' },
-    { id: 'config', num: '', label: 'Configuración', icon: 'settings' },
+  readonly sections: Array<{ id: Section; num: string; label: string; icon: string; subtitle: string }> = [
+    {
+      id: 'dashboard', num: '01', label: 'Dashboard', icon: 'dashboard',
+      subtitle: 'Resumen de nómina, facturación, cartera e inventario.',
+    },
+    {
+      id: 'empleados', num: '02', label: 'Empleados', icon: 'users',
+      subtitle: 'Empleados liquidados en el periodo y novedades de nómina.',
+    },
+    {
+      id: 'facturacion', num: '05', label: 'Facturación y RIPS', icon: 'receipt',
+      subtitle: 'Cobros emitidos por la plataforma, estado de pago y activación de RIPS por consultorio.',
+    },
+    {
+      id: 'tesoreria', num: '06', label: 'Tesorería y Cartera', icon: 'scale',
+      subtitle: 'Recaudos, cuentas de cobro pendientes y envejecimiento de cartera por consultorio.',
+    },
+    {
+      id: 'nomina', num: '07', label: 'Nómina y PILA', icon: 'clipboard',
+      subtitle: 'Cálculo de referencia de devengados, deducciones y aportes a seguridad social y parafiscales.',
+    },
+    {
+      id: 'inventarios', num: '08', label: 'Inventarios', icon: 'package',
+      subtitle: 'Insumos, entradas, salidas y alertas de stock.',
+    },
+    { id: 'reportes', num: '', label: 'Reportes', icon: 'activity', subtitle: 'Totales del periodo y descarga del resumen.' },
+    { id: 'config', num: '', label: 'Configuración', icon: 'settings', subtitle: 'Parámetros usados por la calculadora de nómina.' },
   ];
   readonly section = signal<Section>('nomina');
   readonly sectionInfo = computed(() => this.sections.find((s) => s.id === this.section())!);
@@ -120,6 +138,7 @@ export class FinanceOpsPage implements OnInit {
     { value: 'INCAPACIDAD', label: 'Incapacidad médica' },
     { value: 'LICENCIA_REM', label: 'Licencia remunerada' },
     { value: 'LICENCIA_NO_REM', label: 'Licencia no remunerada' },
+    { value: 'RETIRO', label: 'Retiro' },
   ];
 
   readonly statusLabels: Record<PayStatus, string> = {
@@ -188,12 +207,20 @@ export class FinanceOpsPage implements OnInit {
     const list = this.novelties();
     const count = (...types: NoveltyType[]) => list.filter((n) => types.includes(n.type)).length;
     return [
-      { label: 'Ingresos', icon: 'userPlus', value: count('INGRESO') },
-      { label: 'Vacaciones', icon: 'calendar', value: count('VACACIONES') },
-      { label: 'Incapacidades médicas', icon: 'activity', value: count('INCAPACIDAD') },
-      { label: 'Licencias remuneradas', icon: 'check', value: count('LICENCIA_REM') },
-      { label: 'Licencias no remuneradas', icon: 'clock', value: count('LICENCIA_NO_REM') },
+      { type: 'INGRESO' as const, label: 'Ingresos', icon: 'userPlus', value: count('INGRESO') },
+      { type: 'VACACIONES' as const, label: 'Vacaciones', icon: 'calendar', value: count('VACACIONES') },
+      { type: 'INCAPACIDAD' as const, label: 'Incapacidades médicas', icon: 'activity', value: count('INCAPACIDAD') },
+      { type: 'LICENCIA_REM' as const, label: 'Licencias remuneradas', icon: 'check', value: count('LICENCIA_REM') },
+      { type: 'LICENCIA_NO_REM' as const, label: 'Licencias no remuneradas', icon: 'clock', value: count('LICENCIA_NO_REM') },
+      { type: 'RETIRO' as const, label: 'Retiros', icon: 'logout', value: count('RETIRO') },
     ];
+  });
+  /** Estado de la planilla del periodo: lista cuando todas las liquidaciones están hechas. */
+  readonly pilaStatus = computed(() => {
+    const rows = this.periodRuns();
+    if (!rows.length) return { label: 'Sin liquidaciones', tone: 'gray' };
+    if (rows.some((r) => r.status === 'PENDIENTE')) return { label: 'Con pagos pendientes', tone: 'amber' };
+    return { label: 'Lista para pagar', tone: 'mint' };
   });
   readonly employeeNames = computed(() => [...new Set(this.runs().map((r) => r.name))]);
 
@@ -217,17 +244,70 @@ export class FinanceOpsPage implements OnInit {
     const max = Math.max(1, ...buckets.map((b) => b.value));
     return buckets.map((b) => ({ ...b, height: b.value > 0 ? Math.max(6, Math.round((b.value / max) * 100)) : 0 }));
   });
+  /** Cartera con más de 60 días desde la emisión. */
+  readonly overdue60 = computed(() =>
+    this.aging()
+      .slice(2)
+      .reduce((s, b) => ({ value: s.value + b.value, count: s.count + b.count }), { value: 0, count: 0 }),
+  );
+  /** Consultorios con mayor saldo pendiente, con su último pago y el periodo de arrendamiento más antiguo sin pagar. */
   readonly topDebtors = computed(() => {
-    const map = new Map<string, { name: string; amount: number; count: number }>();
+    const lastPaid = new Map<string, string>();
+    for (const r of this.receipts()) {
+      if (r.status === 'PAID' && r.paidAt && (!lastPaid.has(r.clinicId) || r.paidAt > lastPaid.get(r.clinicId)!)) {
+        lastPaid.set(r.clinicId, r.paidAt);
+      }
+    }
+    const map = new Map<
+      string,
+      { clinicId: string; name: string; amount: number; count: number; lastPaidAt: string | null; hostingPeriod: string | null }
+    >();
     for (const r of this.pending()) {
       const name = r.clinic?.name || r.payerName || 'Sin consultorio';
-      const row = map.get(r.clinicId) ?? { name, amount: 0, count: 0 };
+      const row = map.get(r.clinicId) ?? {
+        clinicId: r.clinicId, name, amount: 0, count: 0, lastPaidAt: lastPaid.get(r.clinicId) ?? null, hostingPeriod: null,
+      };
       row.amount += r.amount;
       row.count += 1;
+      if (r.kind === 'MONTHLY_HOSTING' && r.periodMonth && (!row.hostingPeriod || r.periodMonth < row.hostingPeriod)) {
+        row.hostingPeriod = r.periodMonth;
+      }
       map.set(r.clinicId, row);
     }
-    return [...map.values()].sort((a, b) => b.amount - a.amount).slice(0, 3);
+    return [...map.values()].sort((a, b) => b.amount - a.amount).slice(0, 5);
   });
+  /** Variación del recaudo del mes frente al mes anterior (mismo año). */
+  readonly monthVariation = computed(() => {
+    const inc = this.income();
+    if (!inc) return null;
+    const i = inc.months.findIndex((m) => m.month === inc.currentMonth.month);
+    if (i <= 0) return null;
+    const prev = inc.months[i - 1].total;
+    if (!prev) return null;
+    return Math.round(((inc.currentMonth.total - prev) / prev) * 100);
+  });
+
+  // Filtros de movimientos (cobros de la plataforma).
+  readonly movFrom = signal('');
+  readonly movTo = signal('');
+  readonly movStatus = signal<'' | 'PAID' | 'PENDING'>('');
+  readonly movClinic = signal('');
+  readonly movClinics = computed(() => {
+    const map = new Map<string, string>();
+    for (const r of this.receipts()) map.set(r.clinicId, r.clinic?.name || r.payerName || 'Sin consultorio');
+    return [...map.entries()].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  });
+  readonly movements = computed(() => {
+    const from = this.movFrom();
+    const to = this.movTo();
+    const status = this.movStatus();
+    const clinic = this.movClinic();
+    return this.receipts().filter((r) => {
+      const day = (r.paidAt || r.createdAt).slice(0, 10);
+      return (!from || day >= from) && (!to || day <= to) && (!status || r.status === status) && (!clinic || r.clinicId === clinic);
+    });
+  });
+  readonly busyDebtor = signal<string | null>(null);
   readonly monthReceipts = computed(() => {
     const ym = new Date().toISOString().slice(0, 7);
     const rows = this.receipts().filter((r) => r.createdAt.slice(0, 7) === ym);
@@ -354,6 +434,89 @@ export class FinanceOpsPage implements OnInit {
     this.novelties.update((rows) => rows.filter((r) => r.id !== n.id));
   }
 
+  /** Abre el formulario de novedades con el tipo ya elegido. */
+  quickNovelty(type: NoveltyType) {
+    this.noveltyForm = { ...this.noveltyForm, type };
+    this.section.set('nomina');
+    this.payrollTab.set('novedades');
+    this.formError.set('');
+    this.navOpen.set(false);
+  }
+
+  /** Envía al admin del consultorio el aviso de mora del arrendamiento pendiente más antiguo. */
+  notifyDebtor(d: { clinicId: string; name: string; hostingPeriod: string | null }) {
+    if (!d.hostingPeriod) return;
+    const ok = window.confirm(
+      `Se enviará al administrador de ${d.name} el aviso de mora del arrendamiento ${this.monthLabel(d.hostingPeriod)}. ¿Continuar?`,
+    );
+    if (!ok) return;
+    this.busyDebtor.set(d.clinicId);
+    this.loadError.set('');
+    this.billingApi.notifyHostingDue({ periodMonth: d.hostingPeriod, clinicId: d.clinicId }).subscribe({
+      next: (res) => {
+        this.busyDebtor.set(null);
+        this.notice.set(
+          res.count
+            ? `Aviso de cobro enviado a ${d.name} (${this.monthLabel(d.hostingPeriod!)}).`
+            : `No se envió aviso: ${d.name} no tiene arrendamiento pendiente en ${this.monthLabel(d.hostingPeriod!)}.`,
+        );
+      },
+      error: (err) => {
+        this.busyDebtor.set(null);
+        this.loadError.set(err?.error?.message || 'No se pudo enviar el aviso de cobro.');
+      },
+    });
+  }
+
+  openPdf(id: string) {
+    const token = this.auth.token();
+    fetch(this.billingApi.receiptPdfUrl(id), { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.blob();
+      })
+      .then((blob) => window.open(URL.createObjectURL(blob), '_blank'))
+      .catch(() => this.loadError.set('No se pudo abrir el PDF del cobro.'));
+  }
+
+  clearMovementFilters() {
+    this.movFrom.set('');
+    this.movTo.set('');
+    this.movStatus.set('');
+    this.movClinic.set('');
+  }
+
+  /** Descarga los movimientos filtrados como CSV (se abre en Excel). */
+  exportMovementsCsv() {
+    const rows = this.movements();
+    if (!rows.length) return;
+    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const header = ['Número', 'Consultorio', 'Concepto', 'Emitido', 'Pagado', 'Medio de pago', 'Monto', 'Estado'];
+    const lines = rows.map((r) =>
+      [
+        r.number, r.clinic?.name || r.payerName || '', r.kindLabel, r.createdAt.slice(0, 10), r.paidAt?.slice(0, 10) || '',
+        r.methodLabel, r.amount, r.statusLabel,
+      ]
+        .map(esc)
+        .join(';'),
+    );
+    this.download(`movimientos-${today()}.csv`, [header.map(esc).join(';'), ...lines]);
+  }
+
+  initials(name: string) {
+    const parts = (name || '').trim().split(/\s+/);
+    return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '—';
+  }
+
+  private download(filename: string, lines: string[]) {
+    const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
   noveltyLabel(type: NoveltyType) {
     return this.noveltyTypes.find((t) => t.value === type)?.label ?? type;
   }
@@ -376,14 +539,7 @@ export class FinanceOpsPage implements OnInit {
         .map(esc)
         .join(';'),
     );
-    const blob = new Blob(['\ufeff' + [header.map(esc).join(';'), ...lines].join('\r\n')], {
-      type: 'text/csv;charset=utf-8',
-    });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `nomina-${this.employee().period}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    this.download(`nomina-${this.employee().period}.csv`, [header.map(esc).join(';'), ...lines]);
   }
 
   onBeforeUnload(event: BeforeUnloadEvent) {

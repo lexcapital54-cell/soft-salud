@@ -275,6 +275,7 @@ h1 {
 .card {
   min-width: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   align-content: start;
   padding: 18px;
@@ -353,6 +354,62 @@ h1 {
   font-size: 12px;
 }
 
+.kpi-value small {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.kpi-value.muted {
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.kpi-ico.danger {
+  color: #b42318;
+  background: #fee4e2;
+}
+
+.kpi-ico.muted-ico {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.kpi-alert {
+  border-color: #fecdca;
+  box-shadow: inset 4px 0 0 #ef4444;
+
+  .kpi-value {
+    color: #b42318;
+  }
+}
+
+.var {
+  margin-left: 4px;
+  font-weight: 700;
+
+  &.up {
+    color: var(--teal-text);
+  }
+
+  &.down {
+    color: #b42318;
+  }
+}
+
+.top-sub {
+  margin-top: 4px;
+  max-width: 62rem;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.top-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
@@ -384,6 +441,10 @@ h1 {
   grid-template-columns: 360px minmax(0, 1fr);
   gap: 18px;
   align-items: start;
+}
+
+.two.even {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .config {
@@ -611,26 +672,10 @@ input[type='number'] {
   gap: 16px;
 }
 
-.lines {
-  display: grid;
-  gap: 2px;
-  margin-top: 12px;
-
-  li {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 6px 2px;
-    font-size: 14px;
-    border-bottom: 1px dashed var(--line);
-  }
-
-  .total {
-    margin-top: 4px;
-    border-bottom: 0;
-    color: var(--forest);
-    font-weight: 800;
-  }
+.net-row th,
+.net-row td {
+  border-top: 1px solid #c9d6e6;
+  font-size: 16px;
 }
 
 .net {
@@ -711,6 +756,7 @@ input[type='number'] {
 
 /* ---------- Tablas ---------- */
 .table-wrap {
+  position: relative;
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -807,6 +853,11 @@ table {
   &.gray {
     color: #475569;
     background: #f1f5f9;
+  }
+
+  &.blue {
+    color: #1d4ed8;
+    background: #e0ebff;
   }
 }
 
@@ -937,21 +988,121 @@ table {
   max-width: 44px;
   border-radius: 6px 6px 2px 2px;
 
-  &.s0 {
-    background: #a6ece5;
-  }
+}
 
-  &.s1 {
+/* Colores de riesgo de la cartera: al día, atención, vencida y crítica */
+.aging-bar,
+.sw {
+  &.s0 {
     background: var(--mint);
   }
 
+  &.s1 {
+    background: #f59e0b;
+  }
+
   &.s2 {
-    background: var(--mint-2);
+    background: #f97316;
   }
 
   &.s3 {
-    background: var(--forest);
+    background: #ef4444;
   }
+}
+
+.aging-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  color: var(--muted);
+  font-size: 12px;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.sw {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.debtor-cards {
+  display: grid;
+  gap: 8px;
+
+  li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+
+    .btn {
+      grid-column: 1 / -1;
+      justify-self: start;
+    }
+  }
+}
+
+.dc-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+
+  strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.dc-amount {
+  color: var(--forest);
+  font-weight: 800;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+
+  label {
+    flex: 1 1 160px;
+  }
+}
+
+.pila-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.who {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  color: var(--forest);
+  background: var(--soft-2);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .aging-label {
@@ -1005,20 +1156,35 @@ table {
   display: grid;
   gap: 8px;
 
-  li {
+  button {
     display: flex;
     align-items: center;
     gap: 10px;
+    width: 100%;
     padding: 8px 10px;
+    border: 1px solid transparent;
     border-radius: 10px;
+    color: var(--ink);
     background: var(--bg);
+    font: inherit;
     font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      border-color: #c9d6e6;
+      background: #eef3fa;
+    }
 
     strong {
       margin-left: auto;
       color: var(--forest);
       font-size: 16px;
     }
+  }
+
+  .nc-add {
+    color: var(--muted);
   }
 }
 
@@ -1158,6 +1324,7 @@ table {
 
   .bottom,
   .two,
+  .two.even,
   .liq-grid {
     grid-template-columns: minmax(0, 1fr);
   }

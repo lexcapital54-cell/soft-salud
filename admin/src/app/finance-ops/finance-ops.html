@@ -57,9 +57,15 @@
       <div>
         <p class="eyebrow">Operación y Finanzas</p>
         <h1>{{ sectionInfo().num ? sectionInfo().num + '. ' : '' }}{{ sectionInfo().label }}</h1>
+        <p class="top-sub">{{ sectionInfo().subtitle }}</p>
       </div>
       <div class="top-meta">
-        <span class="chip"><hab-icon name="calendar" [size]="15" />Periodo: {{ monthLabel(employee().period) }}</span>
+        @if (section() === 'facturacion') {
+          <a routerLink="/admin/ingresos" [queryParams]="{ tab: 'nuevo' }" class="btn ghost"><hab-icon name="plus" [size]="15" />Nuevo cobro individual</a>
+          <a routerLink="/admin/ingresos" [queryParams]="{ tab: 'mensual' }" class="btn primary"><hab-icon name="layers" [size]="15" />Generación masiva de cobros</a>
+        } @else {
+          <span class="chip"><hab-icon name="calendar" [size]="15" />Periodo: {{ monthLabel(employee().period) }}</span>
+        }
       </div>
     </header>
 
@@ -82,7 +88,10 @@
             <span class="skel"></span>
           } @else {
             <p class="kpi-value">{{ cop(income()?.currentMonth?.total ?? 0) }}</p>
-            <p class="kpi-hint">{{ income()?.currentMonth?.count ?? 0 }} recibos pagados</p>
+            <p class="kpi-hint">
+              {{ income()?.currentMonth?.count ?? 0 }} recibos pagados
+              <ng-container [ngTemplateOutlet]="variation" />
+            </p>
           }
         </article>
         <article class="kpi">
@@ -109,6 +118,88 @@
           } @else {
             <p class="kpi-value">{{ cop(receivable()) }}</p>
             <p class="kpi-hint">{{ pending().length }} cuentas de cobro pendientes</p>
+          }
+        </article>
+      </section>
+    } @else if (section() === 'facturacion') {
+      <section class="kpis" aria-label="Indicadores de facturación">
+        <article class="kpi">
+          <span class="kpi-ico"><hab-icon name="receipt" [size]="18" /></span>
+          <p class="kpi-label">Total cobrado del mes</p>
+          @if (loading()) {
+            <span class="skel"></span>
+          } @else {
+            <p class="kpi-value">{{ cop(income()?.currentMonth?.total ?? 0) }}</p>
+            <p class="kpi-hint">{{ monthReceipts().total }} cobros emitidos <ng-container [ngTemplateOutlet]="variation" /></p>
+          }
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico"><hab-icon name="file" [size]="18" /></span>
+          <p class="kpi-label">Consultorios con RIPS activo</p>
+          @if (loading()) {
+            <span class="skel"></span>
+          } @else {
+            <p class="kpi-value">{{ rips().enabled }} <small>de {{ rips().active }}</small></p>
+            <p class="kpi-hint">Generan el JSON RIPS al firmar la historia</p>
+          }
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico muted-ico"><hab-icon name="shield" [size]="18" /></span>
+          <p class="kpi-label">Validación RIPS (Minsalud)</p>
+          <p class="kpi-value muted">Sin datos</p>
+          <p class="kpi-hint">El resultado de la validación aún no se registra</p>
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico warn"><hab-icon name="clock" [size]="18" /></span>
+          <p class="kpi-label">Cuentas de cobro pendientes</p>
+          @if (loading()) {
+            <span class="skel"></span>
+          } @else {
+            <p class="kpi-value">{{ cop(receivable()) }}</p>
+            <p class="kpi-hint">{{ pending().length }} por cobrar</p>
+          }
+        </article>
+      </section>
+    } @else if (section() === 'tesoreria') {
+      <section class="kpis" aria-label="Indicadores de tesorería">
+        <article class="kpi">
+          <span class="kpi-ico"><hab-icon name="receipt" [size]="18" /></span>
+          <p class="kpi-label">Recaudos del mes</p>
+          @if (loading()) {
+            <span class="skel"></span>
+          } @else {
+            <p class="kpi-value">{{ cop(income()?.currentMonth?.total ?? 0) }}</p>
+            <p class="kpi-hint">{{ income()?.currentMonth?.count ?? 0 }} pagos <ng-container [ngTemplateOutlet]="variation" /></p>
+          }
+        </article>
+        <article class="kpi" [class.kpi-alert]="overdue60().value > 0">
+          <span class="kpi-ico danger"><hab-icon name="alert" [size]="18" /></span>
+          <p class="kpi-label">Cartera vencida (más de 60 días)</p>
+          @if (loading()) {
+            <span class="skel"></span>
+          } @else {
+            <p class="kpi-value">{{ cop(overdue60().value) }}</p>
+            <p class="kpi-hint">{{ overdue60().count }} cuentas de cobro</p>
+          }
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico warn"><hab-icon name="clock" [size]="18" /></span>
+          <p class="kpi-label">Cartera total por cobrar</p>
+          @if (loading()) {
+            <span class="skel"></span>
+          } @else {
+            <p class="kpi-value">{{ cop(receivable()) }}</p>
+            <p class="kpi-hint">{{ pending().length }} cuentas de cobro pendientes</p>
+          }
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico"><hab-icon name="scale" [size]="18" /></span>
+          <p class="kpi-label">Recaudado en el año</p>
+          @if (loading()) {
+            <span class="skel"></span>
+          } @else {
+            <p class="kpi-value">{{ cop(income()?.yearTotal ?? 0) }}</p>
+            <p class="kpi-hint">Saldos bancarios y egresos aún no se registran</p>
           }
         </article>
       </section>
@@ -156,22 +247,88 @@
         </div>
       }
       @case ('facturacion') {
-        <div class="two">
+        <div class="two even">
           <ng-container [ngTemplateOutlet]="billingWidget" />
-          <article class="card">
-            <header class="card-head"><h2><hab-icon name="list" [size]="18" />Últimos cobros emitidos</h2></header>
-            <ng-container [ngTemplateOutlet]="receiptsTable" [ngTemplateOutletContext]="{ $implicit: receipts().slice(0, 10) }" />
-          </article>
+          <ng-container [ngTemplateOutlet]="treasuryWidget" />
         </div>
+        <article class="card">
+          <header class="card-head"><h2><hab-icon name="list" [size]="18" />Documentos emitidos</h2></header>
+          <ng-container [ngTemplateOutlet]="receiptsTable" [ngTemplateOutletContext]="{ $implicit: receipts().slice(0, 15) }" />
+        </article>
       }
       @case ('tesoreria') {
-        <div class="two">
-          <ng-container [ngTemplateOutlet]="treasuryWidget" />
+        <div class="two even">
           <article class="card">
-            <header class="card-head"><h2><hab-icon name="clock" [size]="18" />Cuentas de cobro pendientes</h2></header>
-            <ng-container [ngTemplateOutlet]="receiptsTable" [ngTemplateOutletContext]="{ $implicit: pending() }" />
+            <header class="card-head"><h2><hab-icon name="activity" [size]="18" />Envejecimiento de cartera</h2></header>
+            <ng-container [ngTemplateOutlet]="agingChart" />
+          </article>
+          <article class="card">
+            <header class="card-head"><h2><hab-icon name="building" [size]="18" />Top 5 consultorios con saldo pendiente</h2></header>
+            @if (loading()) {
+              <span class="skel tall"></span>
+            } @else if (!topDebtors().length) {
+              <div class="empty compact"><hab-icon name="check" [size]="24" /><p>No hay saldos pendientes.</p></div>
+            } @else {
+              <ol class="debtor-cards">
+                @for (d of topDebtors(); track d.clinicId) {
+                  <li>
+                    <div class="dc-main">
+                      <strong>{{ d.name }}</strong>
+                      <span class="muted small">
+                        {{ d.count }} {{ d.count === 1 ? 'cuenta' : 'cuentas' }} ·
+                        Último pago: {{ d.lastPaidAt ? (d.lastPaidAt | date: 'dd/MM/yyyy') : 'sin pagos' }}
+                      </span>
+                    </div>
+                    <span class="num dc-amount">{{ cop(d.amount) }}</span>
+                    @if (d.hostingPeriod) {
+                      <button type="button" class="btn ghost sm" [disabled]="busyDebtor() === d.clinicId" (click)="notifyDebtor(d)">
+                        <hab-icon name="external" [size]="14" />{{ busyDebtor() === d.clinicId ? 'Enviando…' : 'Enviar aviso de cobro' }}
+                      </button>
+                    }
+                  </li>
+                }
+              </ol>
+            }
           </article>
         </div>
+        <article class="card">
+          <header class="card-head">
+            <h2><hab-icon name="list" [size]="18" />Movimientos de tesorería</h2>
+            <button type="button" class="btn ghost sm" [disabled]="!movements().length" (click)="exportMovementsCsv()">
+              <hab-icon name="download" [size]="15" />Exportar a Excel (CSV)
+            </button>
+          </header>
+          <div class="filters">
+            <label>
+              <span>Desde</span>
+              <input type="date" [ngModel]="movFrom()" (ngModelChange)="movFrom.set($event)" />
+            </label>
+            <label>
+              <span>Hasta</span>
+              <input type="date" [ngModel]="movTo()" (ngModelChange)="movTo.set($event)" />
+            </label>
+            <label>
+              <span>Estado</span>
+              <select [ngModel]="movStatus()" (ngModelChange)="movStatus.set($event)">
+                <option value="">Todos</option>
+                <option value="PAID">Pagado (ingreso)</option>
+                <option value="PENDING">Pendiente por cobrar</option>
+              </select>
+            </label>
+            <label>
+              <span>Consultorio</span>
+              <select [ngModel]="movClinic()" (ngModelChange)="movClinic.set($event)">
+                <option value="">Todos</option>
+                @for (c of movClinics(); track c.id) {
+                  <option [value]="c.id">{{ c.name }}</option>
+                }
+              </select>
+            </label>
+            <button type="button" class="btn ghost sm" (click)="clearMovementFilters()">Limpiar filtros</button>
+          </div>
+          <ng-container [ngTemplateOutlet]="receiptsTable" [ngTemplateOutletContext]="{ $implicit: movements() }" />
+          <p class="hint">Incluye los cobros de la plataforma. Las cuentas bancarias, egresos y la conciliación aún no se registran en el sistema.</p>
+        </article>
       }
       @case ('inventarios') {
         <ng-container [ngTemplateOutlet]="inventoryWidget" />
@@ -306,14 +463,6 @@
                 <small>{{ result().transport ? 'Salario hasta 2 SMMLV' : 'No aplica' }}</small>
               </div>
             </div>
-            <ul class="lines">
-              @for (e of result().earnings; track e.label) {
-                @if (e.value) {
-                  <li><span>{{ e.label }}</span><span class="num">{{ cop(e.value) }}</span></li>
-                }
-              }
-              <li class="total"><span>Total devengado</span><span class="num">{{ cop(result().totalEarnings) }}</span></li>
-            </ul>
           </fieldset>
 
           <div class="liq-right">
@@ -329,12 +478,7 @@
                   <input type="number" min="0" step="1000" inputmode="numeric" [ngModel]="input().otherDeductions || null" (ngModelChange)="patchInput('otherDeductions', $event)" />
                 </label>
               </div>
-              <ul class="lines">
-                @for (d of result().deductions; track d.label) {
-                  <li><span>{{ d.label }}</span><span class="num">{{ cop(d.value) }}</span></li>
-                }
-                <li class="total"><span>Total deducciones</span><span class="num">{{ cop(result().totalDeductions) }}</span></li>
-              </ul>
+              <p class="hint">Salud, pensión y fondo de solidaridad se calculan automáticamente sobre el IBC.</p>
             </fieldset>
 
             <section class="net" aria-label="Resumen financiero">
@@ -347,9 +491,58 @@
               <button type="button" class="btn primary block-btn" (click)="generate()">
                 <hab-icon name="check" [size]="16" />Calcular y Generar Planilla PILA
               </button>
+              <button type="button" class="btn ghost block-btn" (click)="newLiquidation()">
+                <hab-icon name="refresh" [size]="15" />Limpiar formulario
+              </button>
             </section>
           </div>
         </div>
+
+        <fieldset class="block">
+          <legend>Desglose de la liquidación</legend>
+          <div class="table-wrap">
+            <table class="pila">
+              <thead>
+                <tr>
+                  <th scope="col">Concepto</th>
+                  <th scope="col" class="r">Devengado</th>
+                  <th scope="col" class="r">Deducción</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (e of result().earnings; track e.label) {
+                  @if (e.value) {
+                    <tr>
+                      <th scope="row">{{ e.label }}</th>
+                      <td class="r num">{{ cop(e.value) }}</td>
+                      <td class="r num muted">—</td>
+                    </tr>
+                  }
+                }
+                @for (d of result().deductions; track d.label) {
+                  @if (d.value) {
+                    <tr>
+                      <th scope="row">{{ d.label }}</th>
+                      <td class="r num muted">—</td>
+                      <td class="r num">{{ cop(d.value) }}</td>
+                    </tr>
+                  }
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row">Totales</th>
+                  <td class="r num">{{ cop(result().totalEarnings) }}</td>
+                  <td class="r num">{{ cop(result().totalDeductions) }}</td>
+                </tr>
+                <tr class="net-row">
+                  <th scope="row">Neto a pagar</th>
+                  <td class="r num" colspan="2">{{ cop(result().net) }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </fieldset>
 
         <fieldset class="block">
           <legend>Planilla PILA · aportes sobre el IBC</legend>
@@ -422,7 +615,10 @@
             <button type="button" class="btn primary" (click)="payrollTab.set('liquidacion')">Liquidar un empleado</button>
           </div>
         } @else {
-          <p class="hint">Planilla consolidada de {{ monthLabel(employee().period) }} · {{ periodRuns().length }} empleado(s).</p>
+          <div class="pila-status">
+            <p class="hint">Planilla consolidada de {{ monthLabel(employee().period) }} · {{ periodRuns().length }} empleado(s).</p>
+            <span [class]="'badge ' + pilaStatus().tone">{{ pilaStatus().label }}</span>
+          </div>
           <div class="table-wrap">
             <table class="pila">
               <thead>
@@ -560,7 +756,7 @@
         <li><span class="dot off"></span>Facturación electrónica DIAN<span class="badge gray">No conectada</span></li>
         <li><span class="dot off"></span>Validación RIPS JSON (CUPS / CIE)<span class="badge gray">Sin datos</span></li>
       </ul>
-      <a routerLink="/admin/ingresos" class="btn primary block-btn"><hab-icon name="layers" [size]="16" />Facturación masiva</a>
+      <a routerLink="/admin/ingresos" [queryParams]="{ tab: 'mensual' }" class="btn primary block-btn"><hab-icon name="layers" [size]="16" />Facturación masiva</a>
     }
   </article>
 </ng-template>
@@ -579,27 +775,52 @@
         <div><dt>Cartera por cobrar</dt><dd>{{ cop(receivable()) }}</dd></div>
       </dl>
       <p class="sub-title">Envejecimiento de cartera</p>
-      @if (!pending().length) {
-        <p class="muted small">No hay cuentas de cobro pendientes.</p>
-      } @else {
-        <div class="aging" role="img" aria-label="Envejecimiento de cartera por rango de días">
-          @for (b of aging(); track b.label; let i = $index) {
-            <div class="aging-col">
-              <span class="aging-val">{{ b.value ? cop(b.value) : '—' }}</span>
-              <span [class]="'aging-bar s' + i" [style.height.%]="b.height"></span>
-              <span class="aging-label">{{ b.label }}</span>
-            </div>
-          }
-        </div>
+      <ng-container [ngTemplateOutlet]="agingChart" />
+      @if (pending().length) {
         <p class="sub-title">Top 3 deudores</p>
         <ol class="debtors">
-          @for (d of topDebtors(); track d.name) {
+          @for (d of topDebtors().slice(0, 3); track d.clinicId) {
             <li><span>{{ d.name }}</span><span class="num">{{ cop(d.amount) }}</span></li>
           }
         </ol>
+        <button type="button" class="btn ghost block-btn" (click)="go('tesoreria')">Ver cartera completa</button>
       }
     }
   </article>
+</ng-template>
+
+<!-- Gráfico de envejecimiento: el color indica el riesgo de cada rango -->
+<ng-template #agingChart>
+  @if (loading()) {
+    <span class="skel tall"></span>
+  } @else if (!pending().length) {
+    <p class="muted small">No hay cuentas de cobro pendientes.</p>
+  } @else {
+    <div class="aging" role="img" aria-label="Envejecimiento de cartera por rango de días">
+      @for (b of aging(); track b.label; let i = $index) {
+        <div class="aging-col">
+          <span class="aging-val">{{ b.value ? cop(b.value) : '—' }}</span>
+          <span [class]="'aging-bar s' + i" [style.height.%]="b.height"></span>
+          <span class="aging-label">{{ b.label }}<br />{{ b.count }} {{ b.count === 1 ? 'cuenta' : 'cuentas' }}</span>
+        </div>
+      }
+    </div>
+    <ul class="aging-legend" aria-hidden="true">
+      <li><span class="sw s0"></span>Al día</li>
+      <li><span class="sw s1"></span>Atención</li>
+      <li><span class="sw s2"></span>Vencida</li>
+      <li><span class="sw s3"></span>Crítica</li>
+    </ul>
+  }
+</ng-template>
+
+<!-- Variación del recaudo frente al mes anterior -->
+<ng-template #variation>
+  @if (monthVariation() !== null) {
+    <span class="var" [class.up]="monthVariation()! >= 0" [class.down]="monthVariation()! < 0">
+      {{ monthVariation()! >= 0 ? '+' : '' }}{{ monthVariation() }} % vs. mes anterior
+    </span>
+  }
 </ng-template>
 
 <!-- 08. Inventarios -->
@@ -649,13 +870,15 @@
           <tbody>
             @for (r of periodRuns(); track r.id) {
               <tr>
-                <th scope="row">{{ r.name }}</th>
+                <th scope="row">
+                  <span class="who"><span class="avatar" aria-hidden="true">{{ initials(r.name) }}</span>{{ r.name }}</span>
+                </th>
                 <td>{{ r.idNumber }}</td>
                 <td>{{ r.role || '—' }}</td>
                 <td>{{ r.department || '—' }}</td>
                 <td class="r num">{{ cop(r.input.salary) }}</td>
                 <td>
-                  <span class="badge" [class.mint]="r.status === 'PAGADO'" [class.teal]="r.status === 'LIQUIDADO'" [class.amber]="r.status === 'PENDIENTE'">
+                  <span class="badge" [class.blue]="r.status === 'PAGADO'" [class.mint]="r.status === 'LIQUIDADO'" [class.amber]="r.status === 'PENDIENTE'">
                     {{ statusLabels[r.status] }}
                   </span>
                 </td>
@@ -689,18 +912,19 @@
     <header class="card-head">
       <h2><hab-icon name="calendar" [size]="18" />Novedades de nómina</h2>
     </header>
+    <p class="hint">Elija el tipo para registrarla rápidamente.</p>
     <ul class="novelty-counts">
-      @for (c of noveltyCounts(); track c.label) {
+      @for (c of noveltyCounts(); track c.type) {
         <li>
-          <span class="nc-ico"><hab-icon [name]="c.icon" [size]="16" /></span>
-          <span>{{ c.label }}</span>
-          <strong>{{ c.value }}</strong>
+          <button type="button" (click)="quickNovelty(c.type)" [attr.aria-label]="'Registrar novedad: ' + c.label + ' (' + c.value + ' registradas)'">
+            <span class="nc-ico"><hab-icon [name]="c.icon" [size]="16" /></span>
+            <span>{{ c.label }}</span>
+            <strong>{{ c.value }}</strong>
+            <hab-icon name="plus" [size]="14" class="nc-add" />
+          </button>
         </li>
       }
     </ul>
-    <button type="button" class="btn ghost block-btn" (click)="go('nomina'); payrollTab.set('novedades')">
-      <hab-icon name="plus" [size]="15" />Registrar novedad
-    </button>
   </article>
 </ng-template>
 
@@ -717,9 +941,12 @@
           <tr>
             <th scope="col">Número</th>
             <th scope="col">Consultorio</th>
+            <th scope="col">Concepto</th>
             <th scope="col">Emitido</th>
-            <th scope="col" class="r">Monto</th>
-            <th scope="col">Estado</th>
+            <th scope="col" class="r">Valor</th>
+            <th scope="col">Estado de pago</th>
+            <th scope="col">Factura electrónica</th>
+            <th scope="col"><span class="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody>
@@ -727,10 +954,19 @@
             <tr>
               <th scope="row">{{ r.number }}</th>
               <td>{{ r.clinic?.name || r.payerName || '—' }}</td>
+              <td>{{ r.kindLabel }}</td>
               <td>{{ r.createdAt | date: 'dd/MM/yyyy' }}</td>
               <td class="r num">{{ cop(r.amount) }}</td>
               <td>
                 <span class="badge" [class.mint]="r.status === 'PAID'" [class.amber]="r.status === 'PENDING'">{{ r.statusLabel }}</span>
+              </td>
+              <td><span class="badge gray">No aplica · recibo de caja</span></td>
+              <td>
+                <div class="actions">
+                  <button type="button" class="btn ghost sm" (click)="openPdf(r.id)" [attr.aria-label]="'Ver PDF del cobro ' + r.number">
+                    <hab-icon name="download" [size]="14" />PDF
+                  </button>
+                </div>
               </td>
             </tr>
           }

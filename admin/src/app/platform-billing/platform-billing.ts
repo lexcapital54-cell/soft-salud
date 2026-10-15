@@ -1,6 +1,7 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { AdminApiService } from '../admin-api.service';
 import { AuthService } from '../auth.service';
 import { Clinic } from '../models';
@@ -29,6 +30,7 @@ export class PlatformBillingPage implements OnInit {
   private readonly api = inject(PlatformBillingApiService);
   private readonly adminApi = inject(AdminApiService);
   private readonly auth = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly tab = signal<Tab>('resumen');
   readonly loading = signal(false);
@@ -79,6 +81,8 @@ export class PlatformBillingPage implements OnInit {
       next: (rows) => this.clinics.set(rows),
       error: () => undefined,
     });
+    const tab = this.route.snapshot.queryParamMap.get('tab');
+    if (tab === 'nuevo' || tab === 'tarifas' || tab === 'mensual') this.tab.set(tab);
     this.reload();
   }
 
