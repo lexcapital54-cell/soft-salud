@@ -3,8 +3,7 @@
   $navy, $navy-2, $gold, $shadow, $line, $soft, $bg, $ink,
   $field-border, $field-hover, $readonly-bg, $readonly-ink, $placeholder, $arrow,
   $row-line, $row-even, $row-hover, $ghost-border, $chip-border, $chip-bg, $chip-ink,
-  $fields: true,
-  $bar: $navy, $on-bar: #fff, $on-bar-muted: rgba(255, 255, 255, 0.78)
+  $fields: true
 ) {
   --hce-accent: #{$navy};
   background: $bg;
@@ -16,7 +15,7 @@
   .cups-block > h3 {
     margin: -16px -16px 14px;
     padding: 10px 16px;
-    color: $on-bar;
+    color: #fff;
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.03em;
@@ -32,7 +31,7 @@
       margin: 0 0 6px;
       padding: 0;
       background: transparent;
-      color: $on-bar;
+      color: #fff;
       font-size: 14px;
       font-weight: 700;
       letter-spacing: 0.03em;
@@ -40,7 +39,7 @@
     }
 
     .muted {
-      color: $on-bar-muted;
+      color: rgba(255, 255, 255, 0.78);
     }
   }
 
@@ -66,7 +65,7 @@
   .cups-block > h3,
   .block .section3-head,
   .control-mode .control-mode-head {
-    background: $bar;
+    background: $navy;
     border-bottom: 2px solid $gold;
     border-radius: 17px 17px 0 0;
     letter-spacing: 0.01em;
@@ -113,9 +112,9 @@
     color: $navy;
 
     &.on {
-      background: $bar;
-      border-color: $bar;
-      color: $on-bar;
+      background: $navy;
+      border-color: $navy;
+      color: #fff;
       box-shadow: inset 0 -2px 0 $gold;
     }
   }
@@ -226,8 +225,8 @@
     }
 
     th {
-      background: $bar;
-      color: $on-bar;
+      background: $navy;
+      color: #fff;
       font-weight: 600;
       letter-spacing: 0.02em;
     }
