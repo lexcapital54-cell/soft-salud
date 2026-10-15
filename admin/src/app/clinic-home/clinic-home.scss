@@ -13,14 +13,17 @@ header {
 
 .brand {
   margin: 0;
-  letter-spacing: -0.02em;
-  color: #000;
+  line-height: 0;
   text-decoration: none;
   cursor: pointer;
-}
 
-.brand:hover {
-  color: #0d7377;
+  img {
+    display: block;
+    height: 40px;
+    width: auto;
+    max-width: min(200px, 55vw);
+    object-fit: contain;
+  }
 }
 
 .header-actions {

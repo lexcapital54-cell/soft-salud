@@ -40,9 +40,13 @@
     }
     .sb-brand { display: grid; gap: 6px; padding: 0 10px 18px; border-bottom: 1px solid rgba(var(--glow-rgb), .35); }
     .brand {
-      font-family: var(--serif); font-size: 1.25rem; font-weight: 600; letter-spacing: .08em;
-      color: #fff; text-decoration: none;
+      display: inline-flex; align-items: center; text-decoration: none; line-height: 0;
     }
+    .brand img {
+      display: block; height: 40px; width: auto; max-width: 100%; object-fit: contain;
+      background: #fff; border-radius: 10px; padding: 4px 7px;
+    }
+    .brand-short img { height: 34px; padding: 3px; }
     .sb-clinic { margin: 0; font-size: .74rem; letter-spacing: .2em; text-transform: uppercase; color: var(--accent-soft); overflow-wrap: anywhere; }
     .sb nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
     .sb nav a {
@@ -446,7 +450,10 @@
     <aside class="sb" id="sidebar" aria-label="Menú del consultorio">
       <button type="button" class="sb-close" id="sbClose" aria-label="Cerrar menú"><svg class="ico"><use href="#i-x"/></svg></button>
       <div class="sb-brand">
-        <a class="brand" href="https://www.habilisalud.com" title="HABILISALUD"><span class="brand-full">HABILISALUD</span><span class="brand-short" aria-hidden="true">HS</span></a>
+        <a class="brand" href="https://www.habilisalud.com" title="HabiliSalud" aria-label="HabiliSalud">
+          <span class="brand-full"><img src="/habilisalud-logo-h.png" alt="HabiliSalud" width="180" height="46" /></span>
+          <span class="brand-short" aria-hidden="true"><img src="/habilisalud-mark.png" alt="" width="34" height="34" /></span>
+        </a>
         <p class="sb-clinic" id="sbClinic">Consultorio</p>
       </div>
       <nav>

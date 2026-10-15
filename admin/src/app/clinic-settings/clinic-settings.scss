@@ -18,6 +18,16 @@
   text-decoration: none;
 }
 
+.crumbs .brand-link {
+  line-height: 0;
+
+  img {
+    display: block;
+    height: 28px;
+    width: auto;
+  }
+}
+
 .crumbs h1 {
   flex-basis: 100%;
   margin: 4px 0 0;

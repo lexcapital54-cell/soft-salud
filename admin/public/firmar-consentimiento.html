@@ -14,7 +14,8 @@
       color: var(--ink); padding: 20px;
     }
     .wrap { width: min(720px, 100%); margin: 0 auto; }
-    .brand { color: #000; text-decoration: none; font-size: 1.05rem; }
+    .brand { display: inline-block; line-height: 0; text-decoration: none; }
+    .brand img { display: block; height: 40px; width: auto; max-width: min(200px, 70vw); object-fit: contain; }
     .card {
       margin-top: 14px; background: #fff; border: 1px solid #d7e3e6;
       border-radius: 22px; padding: 22px; box-shadow: 0 12px 32px rgba(0,45,92,.08);
@@ -52,7 +53,7 @@
 </head>
 <body>
   <div class="wrap">
-    <a class="brand" href="/consultorio.html">HABILISALUD</a>
+    <a class="brand" href="/consultorio.html" aria-label="HabiliSalud"><img src="/habilisalud-logo-h.png" alt="HabiliSalud" width="180" height="46" /></a>
     <div class="card" id="main">
       <p class="eyebrow">Firma digital remota</p>
       <h1 id="title">Cargando…</h1>

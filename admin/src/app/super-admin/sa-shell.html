@@ -1,9 +1,8 @@
 <div class="shell" [class.nav-open]="navOpen()">
   <aside class="side" id="sa-nav" aria-label="Navegación del superadmin">
     <div class="side-top">
-      <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()">
-        <span class="brand-mark" aria-hidden="true">H</span>
-        <span>HABILISALUD</span>
+      <a class="brand" [href]="websiteUrl" (click)="goHome(); $event.preventDefault()" aria-label="HabiliSalud">
+        <img class="brand-logo" src="/habilisalud-logo-h.png" alt="HabiliSalud" width="180" height="46" />
       </a>
       <span class="role-badge"><hab-icon name="shield" [size]="14" />{{ roleLabel() }}</span>
       <button type="button" class="side-close" (click)="navOpen.set(false)" aria-label="Cerrar menú">
@@ -48,7 +47,7 @@
       <button type="button" class="menu-btn" (click)="navOpen.set(true)" aria-controls="sa-nav" [attr.aria-expanded]="navOpen()">
         <hab-icon name="menu" /><span class="sr-only">Menú</span>
       </button>
-      <span class="mobile-brand">HABILISALUD</span>
+      <img class="mobile-brand" src="/habilisalud-logo-h.png" alt="HabiliSalud" width="140" height="36" />
       <span class="role-badge light">{{ roleLabel() }}</span>
     </div>
 

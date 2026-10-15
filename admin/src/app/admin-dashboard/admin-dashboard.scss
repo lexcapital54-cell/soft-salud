@@ -83,22 +83,19 @@ hab-icon {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: #fff;
   text-decoration: none;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  line-height: 0;
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
+.brand-logo {
+  display: block;
+  height: 40px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  background: #fff;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  font-size: 18px;
-  letter-spacing: 0;
+  padding: 5px 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
@@ -1331,9 +1328,11 @@ tbody tr:last-child td {
 
   .mobile-brand {
     flex: 1;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    color: var(--navy);
+    height: 28px;
+    width: auto;
+    max-width: 160px;
+    object-fit: contain;
+    object-position: left center;
   }
 
   main {

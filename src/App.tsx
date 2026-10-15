@@ -5,6 +5,7 @@ import { loginUrl } from './config'
 const HERO_VIDEO = '/assets/media/habilisalud.mp4'
 const HERO_POSTER = '/assets/media/hero-poster.jpg'
 const ALLY_POSTER = '/assets/media/ally-poster.jpg'
+const BRAND_LOGO = '/assets/media/habilisalud-logo-h.png'
 
 const WHATSAPP =
   'https://wa.me/573126639980?text=Hola%20HABILISALUD%2C%20quiero%20información%20sobre%20habilitación%20e%20interoperabilidad'
@@ -129,13 +130,15 @@ const stats = [
   { value: '+10', label: 'Años de experiencia' },
 ]
 
-function CrossMark() {
+function BrandLogo({ className = '' }: { className?: string }) {
   return (
-    <span className="inline-flex size-8 items-center justify-center rounded-lg bg-navy text-white">
-      <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
-        <path d="M11 4h2v16h-2V4zm-7 7h16v2H4v-2z" fill="currentColor" />
-      </svg>
-    </span>
+    <img
+      src={BRAND_LOGO}
+      alt="HabiliSalud"
+      className={`h-9 w-auto max-w-[200px] object-contain object-left sm:h-10 ${className}`}
+      width={200}
+      height={50}
+    />
   )
 }
 
@@ -190,9 +193,8 @@ export default function App() {
     <div className="min-h-screen overflow-x-hidden bg-paper text-ink">
       <header className="sticky top-0 z-50 border-b border-line/80 bg-paper/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1180px] items-center gap-4 px-5 py-3.5">
-          <a href="#inicio" className="flex shrink-0 items-center gap-2.5">
-            <CrossMark />
-            <span className="text-[17px] font-bold tracking-[-0.03em] text-navy">HABILISALUD</span>
+          <a href="#inicio" className="flex shrink-0 items-center" aria-label="HabiliSalud">
+            <BrandLogo />
           </a>
 
           <nav className="ml-4 hidden flex-1 items-center justify-center gap-6 text-[14px] font-semibold text-ink/80 lg:flex">
@@ -330,8 +332,8 @@ export default function App() {
                     </svg>
                   </span>
                   <div>
-                    <p className="text-[14px] font-bold text-navy">Excelencia en salud</p>
-                    <p className="text-[12px] text-muted">Calidad · Seguridad · Confianza</p>
+                    <p className="text-[14px] font-bold text-navy">HabiliSalud</p>
+                    <p className="text-[12px] text-muted">Documentación y HCE para consultorios</p>
                   </div>
                 </div>
               </div>
@@ -507,13 +509,9 @@ export default function App() {
 
       <footer className="border-t border-line bg-soft px-5 py-10">
         <div className="mx-auto flex max-w-[1180px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5">
-            <CrossMark />
-            <span className="font-bold text-navy">HABILISALUD</span>
+          <div className="flex items-center">
+            <BrandLogo className="h-8 sm:h-9" />
           </div>
-          <p className="text-[13px] text-muted">
-            Expertos en habilitación de consultorios · Colombia
-          </p>
           <div className="flex gap-4 text-[13px] font-semibold">
             <a href={loginUrl('profesional')} className="text-navy hover:text-teal-dark">
               Profesional

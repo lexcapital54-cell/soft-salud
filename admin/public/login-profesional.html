@@ -15,10 +15,8 @@
       color: var(--ink); display: grid; place-items: center; padding: 24px;
     }
     .wrap { width: min(420px, 100%); }
-    .brand {
-      display: inline-block; margin-bottom: 18px; letter-spacing: -0.02em;
-      color: #000; text-decoration: none; font-size: 1.1rem;
-    }
+    .brand { display: inline-block; margin-bottom: 18px; line-height: 0; text-decoration: none; }
+    .brand img { display: block; height: 44px; width: auto; max-width: min(220px, 80vw); object-fit: contain; }
     .card {
       background: #fff; border: 1px solid #d7e3e6; border-radius: 28px;
       padding: 28px; box-shadow: 0 16px 40px rgba(0,45,92,.1);
@@ -48,7 +46,7 @@
 </head>
 <body>
   <div class="wrap">
-    <a class="brand" href="https://www.habilisalud.com">HABILISALUD</a>
+    <a class="brand" href="https://www.habilisalud.com" aria-label="HabiliSalud"><img src="/habilisalud-logo-h.png" alt="HabiliSalud" width="200" height="50" /></a>
     <div class="card">
       <p class="eyebrow">Acceso al consultorio</p>
       <h1>Ingreso del consultorio</h1>

@@ -1,14 +1,8 @@
 <div class="fo" [class.nav-open]="navOpen()">
   <aside class="side" id="fo-nav" aria-label="Operación y Finanzas">
     <div class="brand">
-      <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
-        <rect width="40" height="40" rx="11" fill="#2EC4B6" />
-        <circle cx="20" cy="20" r="12.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-dasharray="3.3 3.25" />
-        <circle cx="20" cy="20" r="9.5" fill="#002B5C" />
-        <path d="M18 13.5h4v4.5h4.5v4H22v4.5h-4V22h-4.5v-4H18z" fill="#fff" />
-      </svg>
+      <img class="logo" src="/habilisalud-logo-h.png" alt="HabiliSalud" width="180" height="46" />
       <div>
-        <p class="brand-name">HabiliSalud</p>
         <p class="brand-sub">{{ isClinic ? user()?.clinicName || 'Operación y Finanzas' : 'Operación y Finanzas' }}</p>
       </div>
       <button type="button" class="side-close" (click)="navOpen.set(false)" aria-label="Cerrar menú">

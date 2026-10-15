@@ -7,11 +7,18 @@
 
 .brand {
   position: absolute;
-  top: 28px;
-  left: 28px;
-  color: #2e2e2e;
+  top: 24px;
+  left: 24px;
   text-decoration: none;
-  letter-spacing: -0.02em;
+  line-height: 0;
+
+  img {
+    display: block;
+    height: 44px;
+    width: auto;
+    max-width: min(220px, 70vw);
+    object-fit: contain;
+  }
 }
 
 .card {
