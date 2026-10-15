@@ -6,6 +6,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AdminApiService } from '../admin-api.service';
 import { AuthService } from '../auth.service';
+import { usesWebTheme } from '../web-theme';
 import { Clinic } from '../models';
 import { DocumentsApiService } from '../documents/documents-api.service';
 import { DocumentFileRow, RequirementDetail } from '../documents/documents.models';
@@ -95,7 +96,7 @@ const emptyDocForm = (): DocForm => ({
   imports: [FormsModule, RouterLink, HabIcon, NgTemplateOutlet],
   templateUrl: './habilitation-docs.html',
   styleUrls: ['./habilitation-docs.scss', './habilitation-docs-sa.scss'],
-  host: { '[class.sa]': 'embedded()' },
+  host: { '[class.sa]': 'embedded()', '[class.theme-web]': 'webTheme()' },
 })
 export class HabilitationDocs implements OnInit {
   /** Incrustado en Documentos del superadmin: sin menú propio y con el consultorio que llega por entrada. */
@@ -128,6 +129,7 @@ export class HabilitationDocs implements OnInit {
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
   readonly auth = inject(AuthService);
+  readonly webTheme = computed(() => usesWebTheme(this.auth.user()?.clinicId));
 
   readonly stateLabels = STATE_LABELS;
   readonly isSuper = this.auth.isSuperAdmin();

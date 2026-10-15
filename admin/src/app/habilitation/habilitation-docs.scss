@@ -329,3 +329,33 @@ section.export-bar { margin: 0 0 16px; background: var(--card); }
   .doc-name { min-width: 0; }
   .viewer { right: 0; }
 }
+
+/* Colores de habilisalud.com (azul marino y turquesa) para los consultorios marcados en web-theme.ts. */
+:host(.theme-web) {
+  --petrol: #002b5c;
+  --petrol-2: #0d3a6e;
+  --slate: #4a6585;
+  --bg: #f4f7fb;
+  --beige: #e3f7f5;
+  --taupe: #12786f;
+  --gold: #2ec4b6;
+  --ink: #0a1f3d;
+  --muted: #5a6b7d;
+  --line: #e4eaf0;
+  --shadow: 0 1px 2px rgba(0, 43, 92, 0.05), 0 6px 18px rgba(0, 43, 92, 0.06);
+
+  .side { background: linear-gradient(180deg, var(--petrol) 0%, #001a3a 100%); }
+  .side-mark { border-color: rgba(46, 196, 182, 0.6); }
+  .ico-navy { background: #e8f1fa; }
+  .std,
+  .support,
+  .due-list button { background: #fff; }
+  .quick-btn:hover { background: #f4f7fb; }
+  .btn-primary:hover:not(:disabled) { background: #0e625a; }
+  .btn-soft { border-color: #b9e8e2; }
+  .tbl th { background: #f4f7fb; }
+  .tbl td,
+  .cat-list li { border-bottom-color: #edf1f6; }
+  .tbl tbody tr:hover { background: #f8fafd; }
+  .skeleton { background: linear-gradient(90deg, #e8eef5 0%, #f4f7fb 50%, #e8eef5 100%); background-size: 200% 100%; }
+}

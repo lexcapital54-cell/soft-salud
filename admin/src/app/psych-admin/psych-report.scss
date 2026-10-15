@@ -553,3 +553,34 @@ span.box { overflow-wrap: anywhere; }
   .field label { font-size: 11.5pt; }
   .doc-foot { margin-top: 10pt; break-inside: avoid; }
 }
+
+/* Colores de habilisalud.com (azul marino y turquesa) para los consultorios marcados en web-theme.ts. */
+:host(.theme-web) {
+  --navy: #002b5c;
+  --gold: #12786f;
+  --gold-l: #7fe0d6;
+  --gold-soft: #e3f7f5;
+  --box: #2c4a72;
+  --ink: #0a1f3d;
+  --muted: #5a6b7d;
+  --line: #e4eaf0;
+
+  .rp-back { color: #a6ece5; }
+  .rp-bar .btn:focus-visible,
+  .rp-bar .file-btn:focus-within { outline-color: #a6ece5; }
+  .rp-bar .btn.ghost { border-color: rgba(166, 236, 229, 0.45); }
+  .btn.primary:hover:not(:disabled) { background: #0e625a; }
+  .rp-tools .btn.ghost,
+  .sig-tools .btn.ghost { border-color: #9fd9d2; }
+  .search:focus-within { box-shadow: 0 0 0 3px rgba(0, 43, 92, 0.12); }
+  .logo-thumb { border-color: #9fd9d2; color: #5a6b7d; background: #f4f7fb; }
+  .doc-head { box-shadow: inset 0 0 0 3px var(--navy), inset 0 0 0 4px rgba(46, 196, 182, 0.55); }
+  .doc-clinic-input {
+    border-bottom-color: rgba(127, 224, 214, 0.5);
+    &::placeholder { color: rgba(127, 224, 214, 0.6); }
+  }
+  .doc-sec + .doc-sec { border-top-color: rgba(46, 196, 182, 0.45); }
+  .sec-h .num { box-shadow: inset 0 0 0 2px var(--navy), inset 0 0 0 2.6px rgba(46, 196, 182, 0.6); }
+  .saved button:hover,
+  .saved button:focus-visible { border-color: #9fd9d2; }
+}

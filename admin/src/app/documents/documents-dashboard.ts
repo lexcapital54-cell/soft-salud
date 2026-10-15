@@ -15,6 +15,7 @@ import SignaturePad from 'signature_pad';
 import { WEBSITE_URL } from '../api.config';
 import { AdminApiService } from '../admin-api.service';
 import { AuthService } from '../auth.service';
+import { usesWebTheme } from '../web-theme';
 import { ClinicalApiService } from '../clinical/clinical-api.service';
 import { Clinic, ClinicSpecialty, DashboardType, SPECIALTY_LABELS } from '../models';
 import { ClinicLogoSettings } from '../clinic-settings/clinic-logo-settings';
@@ -128,7 +129,7 @@ function describeError(error: unknown): string {
   imports: [RouterLink, FormsModule, DatePipe, NgTemplateOutlet, ClinicLogoSettings, SaShell, HabIcon, HabilitationDocs],
   templateUrl: './documents-dashboard.html',
   styleUrls: ['./documents-dashboard.scss', './documents-dashboard-sa.scss'],
-  host: { '[class.sa]': 'canManage()' },
+  host: { '[class.sa]': 'canManage()', '[class.theme-web]': 'webTheme()' },
 })
 export class DocumentsDashboard {
   private readonly api = inject(DocumentsApiService);
@@ -136,6 +137,7 @@ export class DocumentsDashboard {
   private readonly adminApi = inject(AdminApiService);
   private readonly clinicalApi = inject(ClinicalApiService);
   private readonly auth = inject(AuthService);
+  readonly webTheme = computed(() => usesWebTheme(this.auth.user()?.clinicId));
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly sanitizer = inject(DomSanitizer);

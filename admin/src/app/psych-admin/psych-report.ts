@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { AuthService } from '../auth.service';
+import { usesWebTheme } from '../web-theme';
 import { clinicLogoUrl } from '../clinic-logo';
 import { HabIcon } from '../habilitation/hab-icon';
 import { UnsavedWorkService } from '../unsaved-work.service';
@@ -105,6 +106,7 @@ async function compressSignature(source: Blob): Promise<string> {
   imports: [FormsModule, RouterLink, HabIcon],
   templateUrl: './psych-report.html',
   styleUrl: './psych-report.scss',
+  host: { '[class.theme-web]': 'webTheme()' },
 })
 export class PsychReportPage implements OnInit, OnDestroy {
   private readonly api = inject(PsychReportApiService);
@@ -127,6 +129,7 @@ export class PsychReportPage implements OnInit, OnDestroy {
   readonly datePieces = datePieces;
 
   readonly user = this.auth.user;
+  readonly webTheme = computed(() => usesWebTheme(this.user()?.clinicId));
   readonly isPsychology = computed(() => String(this.user()?.specialty || '').toUpperCase() === 'PSYCHOLOGY');
   readonly canWrite = computed(() => ['ADMIN', 'HEALTH_PROFESSIONAL'].includes(String(this.user()?.role)));
 
