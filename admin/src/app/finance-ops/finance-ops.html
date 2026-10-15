@@ -1,0 +1,741 @@
+<div class="fo" [class.nav-open]="navOpen()">
+  <aside class="side" id="fo-nav" aria-label="Operación y Finanzas">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
+        <rect width="40" height="40" rx="11" fill="#10B981" />
+        <circle cx="20" cy="20" r="12.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-dasharray="3.3 3.25" />
+        <circle cx="20" cy="20" r="9.5" fill="#0F5A47" />
+        <path d="M18 13.5h4v4.5h4.5v4H22v4.5h-4V22h-4.5v-4H18z" fill="#fff" />
+      </svg>
+      <div>
+        <p class="brand-name">HabiliSalud</p>
+        <p class="brand-sub">Operación y Finanzas</p>
+      </div>
+      <button type="button" class="side-close" (click)="navOpen.set(false)" aria-label="Cerrar menú">
+        <hab-icon name="x" />
+      </button>
+    </div>
+
+    <nav>
+      <ul>
+        @for (s of sections; track s.id) {
+          <li>
+            <button
+              type="button"
+              class="nav-item"
+              [class.active]="section() === s.id"
+              [attr.aria-current]="section() === s.id ? 'page' : null"
+              (click)="go(s.id)"
+            >
+              <span class="nav-num" aria-hidden="true">{{ s.num || '··' }}</span>
+              <hab-icon [name]="s.icon" [size]="17" />
+              <span>{{ s.num ? s.num + '. ' : '' }}{{ s.label }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <div class="side-foot">
+      <a routerLink="/admin" class="back"><hab-icon name="arrowLeft" [size]="16" />Volver al panel</a>
+      <p class="side-user">{{ user()?.fullName }}</p>
+    </div>
+  </aside>
+  @if (navOpen()) {
+    <div class="scrim" (click)="navOpen.set(false)" aria-hidden="true"></div>
+  }
+
+  <main>
+    <div class="mobile-bar">
+      <button type="button" class="menu-btn" (click)="navOpen.set(true)" aria-controls="fo-nav" [attr.aria-expanded]="navOpen()">
+        <hab-icon name="menu" /><span class="sr-only">Menú</span>
+      </button>
+      <span>Operación y Finanzas</span>
+    </div>
+
+    <header class="top">
+      <div>
+        <p class="eyebrow">Operación y Finanzas</p>
+        <h1>{{ sectionInfo().num ? sectionInfo().num + '. ' : '' }}{{ sectionInfo().label }}</h1>
+      </div>
+      <div class="top-meta">
+        <span class="chip"><hab-icon name="calendar" [size]="15" />Periodo: {{ monthLabel(employee().period) }}</span>
+      </div>
+    </header>
+
+    @if (notice()) {
+      <p class="notice" role="status"><hab-icon name="check" [size]="16" />{{ notice() }}</p>
+    }
+    @if (loadError()) {
+      <p class="alert-error" role="alert">
+        <hab-icon name="alert" [size]="16" />{{ loadError() }}
+        <button type="button" class="btn ghost sm" (click)="loadPlatformData()">Reintentar</button>
+      </p>
+    }
+
+    @if (section() === 'dashboard' || section() === 'nomina') {
+      <section class="kpis" aria-label="Indicadores principales">
+        <article class="kpi">
+          <span class="kpi-ico"><hab-icon name="receipt" [size]="18" /></span>
+          <p class="kpi-label">Recaudado del mes</p>
+          @if (loading()) {
+            <span class="skel"></span>
+          } @else {
+            <p class="kpi-value">{{ cop(income()?.currentMonth?.total ?? 0) }}</p>
+            <p class="kpi-hint">{{ income()?.currentMonth?.count ?? 0 }} recibos pagados</p>
+          }
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico"><hab-icon name="users" [size]="18" /></span>
+          <p class="kpi-label">Costo de nómina del periodo</p>
+          <p class="kpi-value">{{ cop(periodTotals().cost) }}</p>
+          <p class="kpi-hint">{{ periodTotals().count }} {{ periodTotals().count === 1 ? 'liquidación' : 'liquidaciones' }} · sin prestaciones</p>
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico"><hab-icon name="scale" [size]="18" /></span>
+          <p class="kpi-label">Recaudado en el año</p>
+          @if (loading()) {
+            <span class="skel"></span>
+          } @else {
+            <p class="kpi-value">{{ cop(income()?.yearTotal ?? 0) }}</p>
+            <p class="kpi-hint">Cobros de la plataforma {{ income()?.year }}</p>
+          }
+        </article>
+        <article class="kpi">
+          <span class="kpi-ico warn"><hab-icon name="clock" [size]="18" /></span>
+          <p class="kpi-label">Cartera por cobrar</p>
+          @if (loading()) {
+            <span class="skel"></span>
+          } @else {
+            <p class="kpi-value">{{ cop(receivable()) }}</p>
+            <p class="kpi-hint">{{ pending().length }} cuentas de cobro pendientes</p>
+          }
+        </article>
+      </section>
+    }
+
+    @switch (section()) {
+      @case ('nomina') {
+        <div class="layout">
+          <ng-container [ngTemplateOutlet]="payrollCard" />
+          <div class="side-widgets">
+            <ng-container [ngTemplateOutlet]="billingWidget" />
+            <ng-container [ngTemplateOutlet]="treasuryWidget" />
+            <ng-container [ngTemplateOutlet]="inventoryWidget" />
+          </div>
+        </div>
+        <div class="bottom">
+          <ng-container [ngTemplateOutlet]="employeesTable" />
+          <ng-container [ngTemplateOutlet]="noveltiesCard" />
+        </div>
+      }
+      @case ('dashboard') {
+        <div class="grid-4">
+          <article class="card">
+            <header class="card-head">
+              <h2><hab-icon name="clipboard" [size]="18" />07. Nómina del periodo</h2>
+            </header>
+            <dl class="mini-dl">
+              <div><dt>Liquidaciones</dt><dd>{{ periodTotals().count }}</dd></div>
+              <div><dt>Total devengado</dt><dd>{{ cop(periodTotals().earnings) }}</dd></div>
+              <div><dt>Neto a pagar</dt><dd>{{ cop(periodTotals().net) }}</dd></div>
+              <div><dt>Aportes PILA</dt><dd>{{ cop(periodTotals().employer + periodTotals().employee) }}</dd></div>
+            </dl>
+            <button type="button" class="btn primary" (click)="go('nomina')">Ir a nómina</button>
+          </article>
+          <ng-container [ngTemplateOutlet]="billingWidget" />
+          <ng-container [ngTemplateOutlet]="treasuryWidget" />
+          <ng-container [ngTemplateOutlet]="inventoryWidget" />
+        </div>
+        <ng-container [ngTemplateOutlet]="employeesTable" />
+      }
+      @case ('empleados') {
+        <div class="bottom">
+          <ng-container [ngTemplateOutlet]="employeesTable" />
+          <ng-container [ngTemplateOutlet]="noveltiesCard" />
+        </div>
+      }
+      @case ('facturacion') {
+        <div class="two">
+          <ng-container [ngTemplateOutlet]="billingWidget" />
+          <article class="card">
+            <header class="card-head"><h2><hab-icon name="list" [size]="18" />Últimos cobros emitidos</h2></header>
+            <ng-container [ngTemplateOutlet]="receiptsTable" [ngTemplateOutletContext]="{ $implicit: receipts().slice(0, 10) }" />
+          </article>
+        </div>
+      }
+      @case ('tesoreria') {
+        <div class="two">
+          <ng-container [ngTemplateOutlet]="treasuryWidget" />
+          <article class="card">
+            <header class="card-head"><h2><hab-icon name="clock" [size]="18" />Cuentas de cobro pendientes</h2></header>
+            <ng-container [ngTemplateOutlet]="receiptsTable" [ngTemplateOutletContext]="{ $implicit: pending() }" />
+          </article>
+        </div>
+      }
+      @case ('inventarios') {
+        <ng-container [ngTemplateOutlet]="inventoryWidget" />
+      }
+      @case ('reportes') {
+        <ng-container [ngTemplateOutlet]="payrollCard" />
+      }
+      @case ('config') {
+        <article class="card config">
+          <header class="card-head">
+            <h2><hab-icon name="settings" [size]="18" />Parámetros de nómina</h2>
+          </header>
+          <p class="hint">Valores usados por la calculadora. Verifíquelos con el decreto vigente antes de liquidar.</p>
+          <div class="form-grid">
+            <label>
+              <span>Salario mínimo (SMMLV)</span>
+              <input type="number" min="0" step="1" inputmode="numeric" [ngModel]="params().smmlv" (ngModelChange)="patchParams('smmlv', $event)" />
+            </label>
+            <label>
+              <span>Auxilio de transporte mensual</span>
+              <input type="number" min="0" step="1" inputmode="numeric" [ngModel]="params().transportAid" (ngModelChange)="patchParams('transportAid', $event)" />
+            </label>
+          </div>
+          <label class="check">
+            <input type="checkbox" [ngModel]="params().exempt114" (ngModelChange)="patchParams('exempt114', $event)" />
+            <span>Aplicar exoneración del art. 114-1 E.T. (salud de la empresa, SENA e ICBF para salarios menores a 10 SMMLV)</span>
+          </label>
+        </article>
+      }
+    }
+  </main>
+</div>
+
+<!-- 07. Nómina y seguridad social -->
+<ng-template #payrollCard>
+  <article class="card payroll">
+    <header class="card-head">
+      <h2><hab-icon name="clipboard" [size]="18" />07. Nómina y Seguridad Social (PILA)</h2>
+      <button type="button" class="btn ghost sm" (click)="newLiquidation()"><hab-icon name="plus" [size]="15" />Nueva liquidación</button>
+    </header>
+
+    <div class="tabs" role="tablist" aria-label="Nómina">
+      @for (t of payrollTabs; track t.id) {
+        <button
+          type="button"
+          role="tab"
+          [class.active]="payrollTab() === t.id"
+          [attr.aria-selected]="payrollTab() === t.id"
+          (click)="payrollTab.set(t.id); formError.set('')"
+        >
+          {{ t.label }}
+        </button>
+      }
+    </div>
+
+    @if (formError()) {
+      <p class="alert-error" role="alert"><hab-icon name="alert" [size]="16" />{{ formError() }}</p>
+    }
+
+    @switch (payrollTab()) {
+      @case ('liquidacion') {
+        <fieldset class="block">
+          <legend>Empleado y periodo</legend>
+          <div class="form-grid three">
+            <label>
+              <span>Empleado</span>
+              <input type="text" list="fo-employees" autocomplete="off" [ngModel]="employee().name" (ngModelChange)="patchEmployee('name', $event)" />
+              <datalist id="fo-employees">
+                @for (n of employeeNames(); track n) {
+                  <option [value]="n"></option>
+                }
+              </datalist>
+            </label>
+            <label>
+              <span>Identificación</span>
+              <input type="text" autocomplete="off" [ngModel]="employee().idNumber" (ngModelChange)="patchEmployee('idNumber', $event)" />
+            </label>
+            <label>
+              <span>Cargo</span>
+              <input type="text" autocomplete="off" [ngModel]="employee().role" (ngModelChange)="patchEmployee('role', $event)" />
+            </label>
+            <label>
+              <span>Departamento</span>
+              <input type="text" autocomplete="off" [ngModel]="employee().department" (ngModelChange)="patchEmployee('department', $event)" />
+            </label>
+            <label>
+              <span>Periodo</span>
+              <input type="month" [ngModel]="employee().period" (ngModelChange)="patchEmployee('period', $event)" />
+            </label>
+            <label>
+              <span>Fecha de pago</span>
+              <input type="date" [ngModel]="employee().payDate" (ngModelChange)="patchEmployee('payDate', $event)" />
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="liq-grid">
+          <fieldset class="block">
+            <legend>Devengados</legend>
+            <div class="form-grid">
+              <label>
+                <span>Salario básico mensual</span>
+                <input type="number" min="0" step="1000" inputmode="numeric" [ngModel]="input().salary || null" (ngModelChange)="patchInput('salary', $event)" />
+              </label>
+              <label>
+                <span>Días trabajados</span>
+                <input type="number" min="1" max="30" step="1" [ngModel]="input().days" (ngModelChange)="patchInput('days', $event)" />
+              </label>
+              <label>
+                <span>Horas extra y recargos ($)</span>
+                <input type="number" min="0" step="1000" inputmode="numeric" [ngModel]="input().overtime || null" (ngModelChange)="patchInput('overtime', $event)" />
+              </label>
+              <label>
+                <span>Comisiones</span>
+                <input type="number" min="0" step="1000" inputmode="numeric" [ngModel]="input().commissions || null" (ngModelChange)="patchInput('commissions', $event)" />
+              </label>
+              <label>
+                <span>Bonificaciones salariales</span>
+                <input type="number" min="0" step="1000" inputmode="numeric" [ngModel]="input().bonusSalary || null" (ngModelChange)="patchInput('bonusSalary', $event)" />
+              </label>
+              <label>
+                <span>Bonificaciones no salariales</span>
+                <input type="number" min="0" step="1000" inputmode="numeric" [ngModel]="input().bonusNonSalary || null" (ngModelChange)="patchInput('bonusNonSalary', $event)" />
+              </label>
+              <label>
+                <span>Incapacidades</span>
+                <input type="number" min="0" step="1000" inputmode="numeric" [ngModel]="input().sickPay || null" (ngModelChange)="patchInput('sickPay', $event)" />
+              </label>
+              <div class="readonly">
+                <span>Auxilio de transporte</span>
+                <strong>{{ cop(result().transport) }}</strong>
+                <small>{{ result().transport ? 'Salario hasta 2 SMMLV' : 'No aplica' }}</small>
+              </div>
+            </div>
+            <ul class="lines">
+              @for (e of result().earnings; track e.label) {
+                @if (e.value) {
+                  <li><span>{{ e.label }}</span><span class="num">{{ cop(e.value) }}</span></li>
+                }
+              }
+              <li class="total"><span>Total devengado</span><span class="num">{{ cop(result().totalEarnings) }}</span></li>
+            </ul>
+          </fieldset>
+
+          <div class="liq-right">
+            <fieldset class="block">
+              <legend>Deducciones del trabajador</legend>
+              <div class="form-grid">
+                <label>
+                  <span>Retención en la fuente</span>
+                  <input type="number" min="0" step="1000" inputmode="numeric" [ngModel]="input().withholding || null" (ngModelChange)="patchInput('withholding', $event)" />
+                </label>
+                <label>
+                  <span>Otras deducciones</span>
+                  <input type="number" min="0" step="1000" inputmode="numeric" [ngModel]="input().otherDeductions || null" (ngModelChange)="patchInput('otherDeductions', $event)" />
+                </label>
+              </div>
+              <ul class="lines">
+                @for (d of result().deductions; track d.label) {
+                  <li><span>{{ d.label }}</span><span class="num">{{ cop(d.value) }}</span></li>
+                }
+                <li class="total"><span>Total deducciones</span><span class="num">{{ cop(result().totalDeductions) }}</span></li>
+              </ul>
+            </fieldset>
+
+            <section class="net" aria-label="Resumen financiero">
+              <p class="net-label">Neto a pagar</p>
+              <p class="net-value">{{ cop(result().net) }}</p>
+              <dl>
+                <div><dt>Costo para la empresa</dt><dd>{{ cop(result().employerCost) }}</dd></div>
+                <div><dt>Aportes PILA (total)</dt><dd>{{ cop(result().pilaTotal) }}</dd></div>
+              </dl>
+              <button type="button" class="btn primary block-btn" (click)="generate()">
+                <hab-icon name="check" [size]="16" />Calcular y Generar Planilla PILA
+              </button>
+            </section>
+          </div>
+        </div>
+
+        <fieldset class="block">
+          <legend>Planilla PILA · aportes sobre el IBC</legend>
+          <div class="pila-head">
+            <label>
+              <span>Clase de riesgo ARL</span>
+              <select [ngModel]="input().arlClass" (ngModelChange)="patchInput('arlClass', $event)">
+                @for (o of arlOptions; track o.value) {
+                  <option [ngValue]="o.value">{{ o.label }}</option>
+                }
+              </select>
+            </label>
+            <p class="ibc">
+              IBC <strong class="num">{{ cop(result().ibc) }}</strong>
+              @if (result().ibcAdjusted === 'min') {
+                <small>Ajustado al mínimo de 1 SMMLV proporcional</small>
+              } @else if (result().ibcAdjusted === 'max') {
+                <small>Limitado al tope de 25 SMMLV</small>
+              }
+            </p>
+          </div>
+          <div class="table-wrap">
+            <table class="pila">
+              <thead>
+                <tr>
+                  <th scope="col">Subsistema</th>
+                  <th scope="col" class="r">Tasa total</th>
+                  <th scope="col" class="r">Empresa</th>
+                  <th scope="col" class="r">Trabajador</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (l of result().pila; track l.key) {
+                  <tr>
+                    <th scope="row">
+                      {{ l.label }}
+                      @if (l.note) {
+                        <small>{{ l.note }}</small>
+                      }
+                    </th>
+                    <td class="r num">{{ pct(l.totalRate) }}</td>
+                    <td class="r num">{{ cop(l.employer) }}<small>{{ pct(l.employerRate) }}</small></td>
+                    <td class="r num">{{ cop(l.employee) }}<small>{{ pct(l.employeeRate) }}</small></td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row">Total aportes</th>
+                  <td></td>
+                  <td class="r num">{{ cop(result().pilaEmployer) }}</td>
+                  <td class="r num">{{ cop(result().pilaEmployee) }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p class="hint">
+            Cálculo de referencia (aportes aproximados al múltiplo de 100). No incluye prestaciones sociales ni el
+            cálculo de retención en la fuente; valídelo con su contador antes de pagar. Las liquidaciones solo se
+            conservan mientras esta página esté abierta.
+          </p>
+        </fieldset>
+      }
+
+      @case ('pila') {
+        @if (!periodRuns().length) {
+          <div class="empty">
+            <hab-icon name="clipboard" [size]="28" />
+            <p>No hay liquidaciones en {{ monthLabel(employee().period) }}.</p>
+            <button type="button" class="btn primary" (click)="payrollTab.set('liquidacion')">Liquidar un empleado</button>
+          </div>
+        } @else {
+          <p class="hint">Planilla consolidada de {{ monthLabel(employee().period) }} · {{ periodRuns().length }} empleado(s).</p>
+          <div class="table-wrap">
+            <table class="pila">
+              <thead>
+                <tr>
+                  <th scope="col">Subsistema</th>
+                  <th scope="col" class="r">Empresa</th>
+                  <th scope="col" class="r">Trabajador</th>
+                  <th scope="col" class="r">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of periodPila(); track row.label) {
+                  <tr>
+                    <th scope="row">{{ row.label }}</th>
+                    <td class="r num">{{ cop(row.employer) }}</td>
+                    <td class="r num">{{ cop(row.employee) }}</td>
+                    <td class="r num">{{ cop(row.employer + row.employee) }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row">Total a pagar en PILA</th>
+                  <td class="r num">{{ cop(periodTotals().employer) }}</td>
+                  <td class="r num">{{ cop(periodTotals().employee) }}</td>
+                  <td class="r num">{{ cop(periodTotals().employer + periodTotals().employee) }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        }
+      }
+
+      @case ('novedades') {
+        <form class="block novelty-form" (ngSubmit)="addNovelty()">
+          <div class="form-grid three">
+            <label>
+              <span>Empleado</span>
+              <input type="text" name="nEmployee" list="fo-employees-n" autocomplete="off" [(ngModel)]="noveltyForm.employee" />
+              <datalist id="fo-employees-n">
+                @for (n of employeeNames(); track n) {
+                  <option [value]="n"></option>
+                }
+              </datalist>
+            </label>
+            <label>
+              <span>Tipo de novedad</span>
+              <select name="nType" [(ngModel)]="noveltyForm.type">
+                @for (t of noveltyTypes; track t.value) {
+                  <option [ngValue]="t.value">{{ t.label }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>Observación</span>
+              <input type="text" name="nNotes" autocomplete="off" [(ngModel)]="noveltyForm.notes" />
+            </label>
+            <label>
+              <span>Desde</span>
+              <input type="date" name="nFrom" [(ngModel)]="noveltyForm.from" />
+            </label>
+            <label>
+              <span>Hasta</span>
+              <input type="date" name="nTo" [(ngModel)]="noveltyForm.to" />
+            </label>
+            <div class="form-action">
+              <button type="submit" class="btn primary"><hab-icon name="plus" [size]="15" />Registrar novedad</button>
+            </div>
+          </div>
+        </form>
+        @if (!novelties().length) {
+          <div class="empty"><hab-icon name="calendar" [size]="28" /><p>Aún no hay novedades registradas.</p></div>
+        } @else {
+          <ul class="novelty-list">
+            @for (n of novelties(); track n.id) {
+              <li>
+                <span class="badge mint">{{ noveltyLabel(n.type) }}</span>
+                <strong>{{ n.employee }}</strong>
+                <span class="muted">{{ n.from | date: 'dd/MM/yyyy' }} – {{ n.to | date: 'dd/MM/yyyy' }}</span>
+                @if (n.notes) {
+                  <span class="muted">{{ n.notes }}</span>
+                }
+                <button type="button" class="icon-btn" (click)="removeNovelty(n)" [attr.aria-label]="'Quitar novedad de ' + n.employee">
+                  <hab-icon name="trash" [size]="16" />
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      }
+
+      @case ('reportes') {
+        <div class="report-grid">
+          <div class="report"><span>Liquidaciones</span><strong>{{ periodTotals().count }}</strong></div>
+          <div class="report"><span>Total devengado</span><strong>{{ cop(periodTotals().earnings) }}</strong></div>
+          <div class="report"><span>Total deducciones</span><strong>{{ cop(periodTotals().deductions) }}</strong></div>
+          <div class="report"><span>Neto a pagar</span><strong>{{ cop(periodTotals().net) }}</strong></div>
+          <div class="report"><span>Aportes empresa</span><strong>{{ cop(periodTotals().employer) }}</strong></div>
+          <div class="report"><span>Costo total empresa</span><strong>{{ cop(periodTotals().cost) }}</strong></div>
+        </div>
+        <div class="report-actions">
+          <button type="button" class="btn primary" [disabled]="!periodRuns().length" (click)="exportCsv()">
+            <hab-icon name="download" [size]="16" />Descargar resumen del periodo (CSV)
+          </button>
+          @if (!periodRuns().length) {
+            <span class="muted">No hay liquidaciones en {{ monthLabel(employee().period) }}.</span>
+          }
+        </div>
+      }
+    }
+  </article>
+</ng-template>
+
+<!-- 05. Facturación y RIPS -->
+<ng-template #billingWidget>
+  <article class="card widget">
+    <header class="card-head">
+      <h2><hab-icon name="receipt" [size]="18" />05. Facturación y RIPS</h2>
+    </header>
+    @if (loading()) {
+      <span class="skel"></span><span class="skel"></span>
+    } @else {
+      <div class="meter">
+        <div class="meter-top"><span>Consultorios activos con RIPS</span><strong>{{ rips().pct }} %</strong></div>
+        <div class="bar" role="img" [attr.aria-label]="rips().enabled + ' de ' + rips().active + ' consultorios con RIPS activo'">
+          <span [style.width.%]="rips().pct"></span>
+        </div>
+        <small>{{ rips().enabled }} de {{ rips().active }} consultorios</small>
+      </div>
+      <dl class="mini-dl">
+        <div><dt>Cobros emitidos este mes</dt><dd>{{ monthReceipts().total }}</dd></div>
+        <div><dt>Pagados / pendientes</dt><dd>{{ monthReceipts().paid }} / {{ monthReceipts().pending }}</dd></div>
+      </dl>
+      <ul class="status-list">
+        <li><span class="dot off"></span>Facturación electrónica DIAN<span class="badge gray">No conectada</span></li>
+        <li><span class="dot off"></span>Validación RIPS JSON (CUPS / CIE)<span class="badge gray">Sin datos</span></li>
+      </ul>
+      <a routerLink="/admin/ingresos" class="btn primary block-btn"><hab-icon name="layers" [size]="16" />Facturación masiva</a>
+    }
+  </article>
+</ng-template>
+
+<!-- 06. Tesorería y cartera -->
+<ng-template #treasuryWidget>
+  <article class="card widget">
+    <header class="card-head">
+      <h2><hab-icon name="scale" [size]="18" />06. Tesorería y Cartera</h2>
+    </header>
+    @if (loading()) {
+      <span class="skel tall"></span>
+    } @else {
+      <dl class="mini-dl">
+        <div><dt>Recaudado del mes</dt><dd>{{ cop(income()?.currentMonth?.total ?? 0) }}</dd></div>
+        <div><dt>Cartera por cobrar</dt><dd>{{ cop(receivable()) }}</dd></div>
+      </dl>
+      <p class="sub-title">Envejecimiento de cartera</p>
+      @if (!pending().length) {
+        <p class="muted small">No hay cuentas de cobro pendientes.</p>
+      } @else {
+        <div class="aging" role="img" aria-label="Envejecimiento de cartera por rango de días">
+          @for (b of aging(); track b.label; let i = $index) {
+            <div class="aging-col">
+              <span class="aging-val">{{ b.value ? cop(b.value) : '—' }}</span>
+              <span [class]="'aging-bar s' + i" [style.height.%]="b.height"></span>
+              <span class="aging-label">{{ b.label }}</span>
+            </div>
+          }
+        </div>
+        <p class="sub-title">Top 3 deudores</p>
+        <ol class="debtors">
+          @for (d of topDebtors(); track d.name) {
+            <li><span>{{ d.name }}</span><span class="num">{{ cop(d.amount) }}</span></li>
+          }
+        </ol>
+      }
+    }
+  </article>
+</ng-template>
+
+<!-- 08. Inventarios -->
+<ng-template #inventoryWidget>
+  <article class="card widget">
+    <header class="card-head">
+      <h2><hab-icon name="package" [size]="18" />08. Inventarios e Insumos</h2>
+    </header>
+    <dl class="mini-dl">
+      <div><dt>Entradas del mes</dt><dd>—</dd></div>
+      <div><dt>Salidas del mes</dt><dd>—</dd></div>
+      <div><dt>Costo del inventario</dt><dd>—</dd></div>
+    </dl>
+    <div class="empty compact">
+      <hab-icon name="package" [size]="24" />
+      <p>Aún no hay insumos registrados. Las alertas de stock bajo aparecerán aquí cuando se conecte el inventario.</p>
+    </div>
+  </article>
+</ng-template>
+
+<!-- Empleados del periodo -->
+<ng-template #employeesTable>
+  <article class="card employees">
+    <header class="card-head">
+      <h2><hab-icon name="users" [size]="18" />Empleados del periodo · {{ monthLabel(employee().period) }}</h2>
+    </header>
+    @if (!periodRuns().length) {
+      <div class="empty">
+        <hab-icon name="users" [size]="28" />
+        <p>Aún no hay empleados liquidados en este periodo.</p>
+        <button type="button" class="btn primary" (click)="newLiquidation(); go('nomina')">Liquidar un empleado</button>
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table class="emp">
+          <thead>
+            <tr>
+              <th scope="col">Nombre</th>
+              <th scope="col">Identificación</th>
+              <th scope="col">Cargo</th>
+              <th scope="col">Departamento</th>
+              <th scope="col" class="r">Salario</th>
+              <th scope="col">Estado de pago</th>
+              <th scope="col"><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of periodRuns(); track r.id) {
+              <tr>
+                <th scope="row">{{ r.name }}</th>
+                <td>{{ r.idNumber }}</td>
+                <td>{{ r.role || '—' }}</td>
+                <td>{{ r.department || '—' }}</td>
+                <td class="r num">{{ cop(r.input.salary) }}</td>
+                <td>
+                  <span class="badge" [class.mint]="r.status === 'PAGADO'" [class.teal]="r.status === 'LIQUIDADO'" [class.amber]="r.status === 'PENDIENTE'">
+                    {{ statusLabels[r.status] }}
+                  </span>
+                </td>
+                <td>
+                  <div class="actions">
+                  <button type="button" class="btn ghost sm" (click)="loadRun(r)" [attr.aria-label]="'Abrir liquidación de ' + r.name">
+                    <hab-icon name="eye" [size]="15" />Abrir
+                  </button>
+                  @if (r.status !== 'PAGADO') {
+                    <button type="button" class="btn ghost sm" (click)="setStatus(r, 'PAGADO')">Marcar pagado</button>
+                  } @else {
+                    <button type="button" class="btn ghost sm" (click)="setStatus(r, 'PENDIENTE')">Marcar pendiente</button>
+                  }
+                  <button type="button" class="icon-btn" (click)="removeRun(r)" [attr.aria-label]="'Quitar liquidación de ' + r.name">
+                    <hab-icon name="trash" [size]="16" />
+                  </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </article>
+</ng-template>
+
+<!-- Novedades de nómina -->
+<ng-template #noveltiesCard>
+  <article class="card novelties">
+    <header class="card-head">
+      <h2><hab-icon name="calendar" [size]="18" />Novedades de nómina</h2>
+    </header>
+    <ul class="novelty-counts">
+      @for (c of noveltyCounts(); track c.label) {
+        <li>
+          <span class="nc-ico"><hab-icon [name]="c.icon" [size]="16" /></span>
+          <span>{{ c.label }}</span>
+          <strong>{{ c.value }}</strong>
+        </li>
+      }
+    </ul>
+    <button type="button" class="btn ghost block-btn" (click)="go('nomina'); payrollTab.set('novedades')">
+      <hab-icon name="plus" [size]="15" />Registrar novedad
+    </button>
+  </article>
+</ng-template>
+
+<!-- Tabla de cobros de la plataforma -->
+<ng-template #receiptsTable let-rows>
+  @if (loading()) {
+    <span class="skel"></span><span class="skel"></span>
+  } @else if (!rows.length) {
+    <div class="empty compact"><hab-icon name="receipt" [size]="24" /><p>No hay cobros para mostrar.</p></div>
+  } @else {
+    <div class="table-wrap">
+      <table class="emp">
+        <thead>
+          <tr>
+            <th scope="col">Número</th>
+            <th scope="col">Consultorio</th>
+            <th scope="col">Emitido</th>
+            <th scope="col" class="r">Monto</th>
+            <th scope="col">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of rows; track r.id) {
+            <tr>
+              <th scope="row">{{ r.number }}</th>
+              <td>{{ r.clinic?.name || r.payerName || '—' }}</td>
+              <td>{{ r.createdAt | date: 'dd/MM/yyyy' }}</td>
+              <td class="r num">{{ cop(r.amount) }}</td>
+              <td>
+                <span class="badge" [class.mint]="r.status === 'PAID'" [class.amber]="r.status === 'PENDING'">{{ r.statusLabel }}</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</ng-template>

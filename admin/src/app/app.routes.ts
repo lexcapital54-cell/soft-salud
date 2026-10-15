@@ -49,6 +49,11 @@ export const routes: Routes = [
     canActivate: [authGuard, superAdminGuard],
   },
   {
+    path: 'admin/finanzas',
+    loadComponent: () => import('./finance-ops/finance-ops').then((m) => m.FinanceOpsPage),
+    canActivate: [authGuard, superAdminGuard],
+  },
+  {
     path: 'admin/demos',
     component: DemoClinicsPage,
     canActivate: [authGuard, demosGuard],
