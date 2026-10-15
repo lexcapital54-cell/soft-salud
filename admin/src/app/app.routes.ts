@@ -6,6 +6,7 @@ import {
   agendaOnlyGuard,
   clinicStaffGuard,
   clinicalWriteGuard,
+  clinicFinanceGuard,
   documentsReadGuard,
   guestGuard,
   superAdminGuard,
@@ -126,6 +127,12 @@ export const routes: Routes = [
     path: 'consultorio/recibos',
     component: BillingDashboard,
     canActivate: [authGuard, clinicStaffGuard],
+  },
+  {
+    path: 'consultorio/finanzas',
+    loadComponent: () => import('./finance-ops/finance-ops').then((m) => m.FinanceOpsPage),
+    canActivate: [authGuard, clinicFinanceGuard],
+    data: { mode: 'clinic' },
   },
   // Rutas desconocidas: no mandar al login administrativo por defecto.
   { path: '**', redirectTo: 'login', pathMatch: 'full' },

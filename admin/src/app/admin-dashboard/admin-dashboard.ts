@@ -201,6 +201,33 @@ export class AdminDashboard implements OnDestroy {
     });
   }
 
+  /** Activa o desactiva Operación y Finanzas en el consultorio; no borra ningún dato. */
+  toggleFinance(clinic: Clinic) {
+    const next = !clinic.financeEnabled;
+    const question = next
+      ? `¿Activar Operación y Finanzas en «${clinic.name}»? El administrador del consultorio verá nómina y PILA, facturación, tesorería e inventario.`
+      : `¿Desactivar Operación y Finanzas en «${clinic.name}»? Sus recibos y gastos se conservan; el módulo deja de mostrarse hasta que se active de nuevo.`;
+    if (!window.confirm(question)) return;
+    this.busyClinicId.set(clinic.id);
+    this.api.setClinicFinance(clinic.id, next).subscribe({
+      next: () => {
+        this.busyClinicId.set(null);
+        this.error.set('');
+        this.message.set(
+          next
+            ? `Operación y Finanzas activado en «${clinic.name}».`
+            : `Operación y Finanzas desactivado en «${clinic.name}».`,
+        );
+        this.refresh();
+      },
+      error: (err) => {
+        this.busyClinicId.set(null);
+        this.message.set('');
+        this.error.set(this.readError(err, 'No se pudo cambiar el módulo Operación y Finanzas.'));
+      },
+    });
+  }
+
   toggleDashboardMenu(clinicId: string) {
     this.openDashboardMenuId.update((current) => (current === clinicId ? null : clinicId));
   }

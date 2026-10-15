@@ -460,6 +460,7 @@
           <li><a href="/consultorio/historias-pdf" data-for="hcePdf" title="Historias en PDF"><svg class="ico"><use href="#i-download"/></svg><span>Historias en PDF</span></a></li>
           <li><a href="/consultorio/habilitacion" data-for="docs" title="Gestión documental"><svg class="ico"><use href="#i-file"/></svg><span>Gestión documental</span></a></li>
           <li><a href="/consultorio/recibos" data-for="billing" title="Recibos de caja"><svg class="ico"><use href="#i-receipt"/></svg><span>Recibos de caja</span></a></li>
+          <li><a href="/consultorio/finanzas" data-for="financeMod" title="Operación y Finanzas"><svg class="ico"><use href="#i-chart"/></svg><span>Operación y Finanzas</span></a></li>
           <li><a href="/consultorio/configuracion?seccion=servicios" data-for="servicesMod" title="Catálogo de servicios"><svg class="ico"><use href="#i-clipboard"/></svg><span>Catálogo de servicios</span></a></li>
           <li><a href="/consultorio/indicadores-esteticos" data-for="indicatorsMod" title="Indicadores estéticos"><svg class="ico"><use href="#i-chart"/></svg><span>Indicadores estéticos</span></a></li>
           <li><a href="/consultorio/configuracion?seccion=asistentes" data-for="assistantsMod" title="Asistentes"><svg class="ico"><use href="#i-user-plus"/></svg><span>Asistentes</span></a></li>
@@ -701,6 +702,12 @@
             <p>Cobros, gastos, paquetes de sesiones y cierre diario de caja del consultorio.</p>
             <span class="cta">Abrir caja<svg class="ico"><use href="#i-chevron"/></svg></span>
           </a>
+          <a class="module" id="financeMod" href="/consultorio/finanzas" hidden>
+            <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-chart"/></svg></span>
+            <h2>Operación y Finanzas</h2>
+            <p>Nómina y PILA, facturación, tesorería con ingresos y egresos, e inventario del consultorio.</p>
+            <span class="cta">Abrir módulo<svg class="ico"><use href="#i-chevron"/></svg></span>
+          </a>
         </div>
         <dialog class="receipts-folder" id="receiptsFolder" aria-labelledby="receiptsFolderTitle">
           <header>
@@ -821,6 +828,9 @@
       if (billingOk) {
         document.getElementById('billing').hidden = false;
       }
+
+      // Operación y Finanzas: solo el admin del consultorio y si el superadmin lo activó.
+      document.getElementById('financeMod').hidden = !(user.role === 'ADMIN' && user.financeEnabled);
 
       var canWriteClinical = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
       document.getElementById('assistantsMod').hidden = !canWriteClinical;
@@ -1358,6 +1368,20 @@
       setInterval(function () { if (!document.hidden) loadAgenda(); }, 60000);
       document.addEventListener('visibilitychange', function () { if (!document.hidden) loadAgenda(); });
       window.addEventListener('pageshow', function (ev) { if (ev.persisted) loadAgenda(); });
+
+      if (user.role === 'ADMIN') {
+        // Operación y Finanzas lo activa HABILISALUD: se refleja sin volver a iniciar sesión.
+        fetch('/api/auth/me', { headers: authHeaders(), cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (me) {
+            if (!me || me.financeEnabled === undefined || !!me.financeEnabled === !!user.financeEnabled) return;
+            user.financeEnabled = !!me.financeEnabled;
+            localStorage.setItem('habilisalud_user', JSON.stringify(user));
+            document.getElementById('financeMod').hidden = !user.financeEnabled;
+            syncNav();
+          })
+          .catch(function () {});
+      }
 
       if (!isSecretaria) {
         // RIPS lo activa HABILISALUD; aquí solo se sincroniza la sesión para la HCE.

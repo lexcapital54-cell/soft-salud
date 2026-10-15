@@ -244,6 +244,20 @@
                         <span class="track" aria-hidden="true"><span class="thumb"></span></span>
                         <span class="switch-text" aria-hidden="true">SG-SST</span>
                       </button>
+                      <button
+                        type="button"
+                        class="switch"
+                        role="switch"
+                        [class.on]="!!clinic.financeEnabled"
+                        [attr.aria-checked]="!!clinic.financeEnabled"
+                        [attr.aria-label]="'Operación y Finanzas de ' + clinic.name"
+                        [title]="clinic.financeEnabled ? 'Con Operación y Finanzas. Pulse para desactivarlo (no se borran datos).' : 'Sin Operación y Finanzas. Pulse para activarlo.'"
+                        [disabled]="busyClinicId() === clinic.id"
+                        (click)="toggleFinance(clinic)"
+                      >
+                        <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+                        <span class="switch-text" aria-hidden="true">Finanzas</span>
+                      </button>
                     </div>
                   </td>
                   <td class="row-actions">

@@ -859,6 +859,11 @@ table {
     color: #1d4ed8;
     background: #e0ebff;
   }
+
+  &.out {
+    color: #9a3412;
+    background: #ffedd5;
+  }
 }
 
 /* ---------- Widgets ---------- */
@@ -1007,6 +1012,31 @@ table {
 
   &.s3 {
     background: #ef4444;
+  }
+}
+
+/* Flujo de caja del consultorio: ingresos y egresos */
+.aging.flow {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.aging-bar {
+  &.in {
+    background: var(--mint);
+  }
+
+  &.out {
+    background: #f97316;
+  }
+}
+
+.flow-net {
+  margin: 10px 0 0;
+  color: var(--teal-text);
+  font-size: 13px;
+
+  &.down {
+    color: #b91c1c;
   }
 }
 

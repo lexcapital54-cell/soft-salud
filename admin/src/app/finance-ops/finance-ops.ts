@@ -1,9 +1,10 @@
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AdminApiService } from '../admin-api.service';
 import { AuthService } from '../auth.service';
+import { BillingApiService, BillingExpense, BillingReceipt, BillingSummary } from '../billing/billing-api.service';
 import { HabIcon } from '../habilitation/hab-icon';
 import { Clinic } from '../models';
 import {
@@ -43,6 +44,27 @@ interface Novelty {
   notes: string;
 }
 
+/** Movimiento normalizado: cobro de la plataforma, o recibo / gasto del consultorio. */
+interface FinDoc {
+  id: string;
+  number: string;
+  partyId: string;
+  party: string;
+  concept: string;
+  issuedAt: string;
+  paidAt: string | null;
+  amount: number;
+  type: 'INCOME' | 'EXPENSE';
+  status: 'PAID' | 'PENDING';
+  statusLabel: string;
+  pdf: boolean;
+}
+
+const pad = (n: number) => String(n).padStart(2, '0');
+/** Fecha local YYYY-MM-DD. */
+const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const monthKey = (iso: string) => ymd(new Date(iso)).slice(0, 7);
+
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
@@ -66,8 +88,9 @@ const emptyInput = (): PayrollInput => ({
 });
 
 /**
- * Operación y Finanzas: nómina y PILA (calculadora de referencia), facturación, tesorería
- * y cartera con los cobros reales de la plataforma, e inventario.
+ * Operación y Finanzas: nómina y PILA (calculadora de referencia), facturación, tesorería e inventario.
+ * En el superadmin usa los cobros de la plataforma; en el consultorio (ruta con data.mode = 'clinic'),
+ * sus recibos de caja y gastos.
  * Las liquidaciones y novedades viven solo en memoria: no se guardan en el servidor ni en el navegador.
  */
 @Component({
@@ -84,7 +107,12 @@ export class FinanceOpsPage implements OnInit {
   private readonly billingApi = inject(PlatformBillingApiService);
   private readonly adminApi = inject(AdminApiService);
   private readonly auth = inject(AuthService);
+  private readonly clinicBilling = inject(BillingApiService);
+  private readonly route = inject(ActivatedRoute);
 
+  readonly isClinic = this.route.snapshot.data['mode'] === 'clinic';
+  /** Encabezado de la columna del tercero en las tablas de movimientos. */
+  readonly partyLabel = this.isClinic ? 'Paciente / responsable' : 'Consultorio';
   readonly user = this.auth.user;
   readonly navOpen = signal(false);
 
@@ -99,11 +127,15 @@ export class FinanceOpsPage implements OnInit {
     },
     {
       id: 'facturacion', num: '05', label: 'Facturación y RIPS', icon: 'receipt',
-      subtitle: 'Cobros emitidos por la plataforma, estado de pago y activación de RIPS por consultorio.',
+      subtitle: this.isClinic
+        ? 'Recibos de caja emitidos por el consultorio y estado de RIPS.'
+        : 'Cobros emitidos por la plataforma, estado de pago y activación de RIPS por consultorio.',
     },
     {
       id: 'tesoreria', num: '06', label: 'Tesorería y Cartera', icon: 'scale',
-      subtitle: 'Recaudos, cuentas de cobro pendientes y envejecimiento de cartera por consultorio.',
+      subtitle: this.isClinic
+        ? 'Ingresos, egresos y flujo de caja del consultorio.'
+        : 'Recaudos, cuentas de cobro pendientes y envejecimiento de cartera por consultorio.',
     },
     {
       id: 'nomina', num: '07', label: 'Nómina y PILA', icon: 'clipboard',
@@ -175,6 +207,65 @@ export class FinanceOpsPage implements OnInit {
   readonly income = signal<MonthlyIncomeReport | null>(null);
   readonly clinics = signal<Clinic[]>([]);
 
+  // Datos del consultorio (recibos de caja y gastos).
+  readonly clinicReceipts = signal<BillingReceipt[]>([]);
+  readonly expenses = signal<BillingExpense[]>([]);
+  readonly summaryMonth = signal<BillingSummary | null>(null);
+  readonly summaryPrev = signal<BillingSummary | null>(null);
+  readonly summaryYear = signal<BillingSummary | null>(null);
+
+  readonly docs = computed<FinDoc[]>(() => {
+    if (!this.isClinic) {
+      return this.receipts().map((r) => ({
+        id: r.id,
+        number: r.number,
+        partyId: r.clinicId,
+        party: r.clinic?.name || r.payerName || 'Sin consultorio',
+        concept: r.kindLabel,
+        issuedAt: r.createdAt,
+        paidAt: r.paidAt,
+        amount: r.amount,
+        type: 'INCOME' as const,
+        status: r.status,
+        statusLabel: r.statusLabel,
+        pdf: true,
+      }));
+    }
+    const income: FinDoc[] = this.clinicReceipts().map((r) => {
+      const first = r.items[0]?.description || 'Recibo de caja';
+      const date = r.issuedAt || '';
+      return {
+        id: r.id,
+        number: r.number,
+        partyId: r.patient?.id || '',
+        party: [r.patient?.firstName, r.patient?.lastName].filter(Boolean).join(' ') || '—',
+        concept: r.items.length > 1 ? `${first} y ${r.items.length - 1} más` : first,
+        issuedAt: date,
+        paidAt: date,
+        amount: r.total,
+        type: 'INCOME' as const,
+        status: 'PAID' as const,
+        statusLabel: 'Ingreso',
+        pdf: true,
+      };
+    });
+    const out: FinDoc[] = this.expenses().map((e) => ({
+      id: e.id,
+      number: '—',
+      partyId: '',
+      party: e.createdBy?.fullName || '—',
+      concept: e.category + (e.notes ? ` · ${e.notes}` : ''),
+      issuedAt: e.paidAt,
+      paidAt: e.paidAt,
+      amount: e.amount,
+      type: 'EXPENSE' as const,
+      status: 'PAID' as const,
+      statusLabel: 'Egreso',
+      pdf: false,
+    }));
+    return [...income, ...out].sort((a, b) => b.issuedAt.localeCompare(a.issuedAt));
+  });
+
   readonly periodRuns = computed(() => this.runs().filter((r) => r.period === this.employee().period));
   readonly periodTotals = computed(() => {
     const rows = this.periodRuns();
@@ -224,7 +315,8 @@ export class FinanceOpsPage implements OnInit {
   });
   readonly employeeNames = computed(() => [...new Set(this.runs().map((r) => r.name))]);
 
-  readonly pending = computed(() => this.receipts().filter((r) => r.status === 'PENDING'));
+  readonly incomeDocs = computed(() => this.docs().filter((r) => r.type === 'INCOME'));
+  readonly pending = computed(() => this.docs().filter((r) => r.status === 'PENDING'));
   readonly receivable = computed(() => this.pending().reduce((s, r) => s + r.amount, 0));
   /** Envejecimiento de cartera según la fecha de emisión de la cuenta de cobro. */
   readonly aging = computed(() => {
@@ -236,7 +328,7 @@ export class FinanceOpsPage implements OnInit {
     ];
     const now = Date.now();
     for (const r of this.pending()) {
-      const days = Math.floor((now - new Date(r.createdAt).getTime()) / 86_400_000);
+      const days = Math.floor((now - new Date(r.issuedAt).getTime()) / 86_400_000);
       const i = days <= 30 ? 0 : days <= 60 ? 1 : days <= 90 ? 2 : 3;
       buckets[i].value += r.amount;
       buckets[i].count += 1;
@@ -262,7 +354,7 @@ export class FinanceOpsPage implements OnInit {
       string,
       { clinicId: string; name: string; amount: number; count: number; lastPaidAt: string | null; hostingPeriod: string | null }
     >();
-    for (const r of this.pending()) {
+    for (const r of this.receipts().filter((x) => x.status === 'PENDING')) {
       const name = r.clinic?.name || r.payerName || 'Sin consultorio';
       const row = map.get(r.clinicId) ?? {
         clinicId: r.clinicId, name, amount: 0, count: 0, lastPaidAt: lastPaid.get(r.clinicId) ?? null, hostingPeriod: null,
@@ -276,41 +368,83 @@ export class FinanceOpsPage implements OnInit {
     }
     return [...map.values()].sort((a, b) => b.amount - a.amount).slice(0, 5);
   });
-  /** Variación del recaudo del mes frente al mes anterior (mismo año). */
-  readonly monthVariation = computed(() => {
+  /** Cifras principales del mes y del año según el modo (plataforma o consultorio). */
+  readonly kpi = computed(() => {
+    if (this.isClinic) {
+      const m = this.summaryMonth();
+      const p = this.summaryPrev();
+      const y = this.summaryYear();
+      const monthIncome = m?.income ?? 0;
+      return {
+        monthIncome,
+        monthExpense: m?.expense ?? 0,
+        monthNet: m?.net ?? 0,
+        yearIncome: y?.income ?? 0,
+        yearNet: y?.net ?? 0,
+        variation: p?.income ? Math.round(((monthIncome - p.income) / p.income) * 100) : null,
+      };
+    }
     const inc = this.income();
-    if (!inc) return null;
-    const i = inc.months.findIndex((m) => m.month === inc.currentMonth.month);
-    if (i <= 0) return null;
-    const prev = inc.months[i - 1].total;
-    if (!prev) return null;
-    return Math.round(((inc.currentMonth.total - prev) / prev) * 100);
+    let variation: number | null = null;
+    if (inc) {
+      const i = inc.months.findIndex((m) => m.month === inc.currentMonth.month);
+      const prev = i > 0 ? inc.months[i - 1].total : 0;
+      if (prev) variation = Math.round(((inc.currentMonth.total - prev) / prev) * 100);
+    }
+    return {
+      monthIncome: inc?.currentMonth.total ?? 0,
+      monthExpense: 0,
+      monthNet: inc?.currentMonth.total ?? 0,
+      yearIncome: inc?.yearTotal ?? 0,
+      yearNet: inc?.yearTotal ?? 0,
+      variation,
+    };
+  });
+  /** Variación del recaudo del mes frente al mes anterior. */
+  readonly monthVariation = computed(() => this.kpi().variation);
+  /** Barras de ingresos frente a egresos del mes (consultorio). */
+  readonly cashFlow = computed(() => {
+    const { monthIncome, monthExpense } = this.kpi();
+    const max = Math.max(1, monthIncome, monthExpense);
+    const h = (v: number) => (v > 0 ? Math.max(6, Math.round((v / max) * 100)) : 0);
+    return [
+      { label: 'Ingresos', value: monthIncome, height: h(monthIncome), tone: 'in' },
+      { label: 'Egresos', value: monthExpense, height: h(monthExpense), tone: 'out' },
+    ];
   });
 
-  // Filtros de movimientos (cobros de la plataforma).
+  // Filtros de movimientos.
   readonly movFrom = signal('');
   readonly movTo = signal('');
   readonly movStatus = signal<'' | 'PAID' | 'PENDING'>('');
+  readonly movType = signal<'' | 'INCOME' | 'EXPENSE'>('');
   readonly movClinic = signal('');
   readonly movClinics = computed(() => {
     const map = new Map<string, string>();
-    for (const r of this.receipts()) map.set(r.clinicId, r.clinic?.name || r.payerName || 'Sin consultorio');
+    for (const r of this.docs()) if (r.partyId) map.set(r.partyId, r.party);
     return [...map.entries()].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   });
   readonly movements = computed(() => {
     const from = this.movFrom();
     const to = this.movTo();
     const status = this.movStatus();
+    const type = this.movType();
     const clinic = this.movClinic();
-    return this.receipts().filter((r) => {
-      const day = (r.paidAt || r.createdAt).slice(0, 10);
-      return (!from || day >= from) && (!to || day <= to) && (!status || r.status === status) && (!clinic || r.clinicId === clinic);
+    return this.docs().filter((r) => {
+      const day = r.issuedAt ? ymd(new Date(r.paidAt || r.issuedAt)) : '';
+      return (
+        (!from || day >= from) &&
+        (!to || day <= to) &&
+        (!status || r.status === status) &&
+        (!type || r.type === type) &&
+        (!clinic || r.partyId === clinic)
+      );
     });
   });
   readonly busyDebtor = signal<string | null>(null);
   readonly monthReceipts = computed(() => {
-    const ym = new Date().toISOString().slice(0, 7);
-    const rows = this.receipts().filter((r) => r.createdAt.slice(0, 7) === ym);
+    const ym = ymd(new Date()).slice(0, 7);
+    const rows = this.docs().filter((r) => r.type === 'INCOME' && r.issuedAt && monthKey(r.issuedAt) === ym);
     return {
       total: rows.length,
       paid: rows.filter((r) => r.status === 'PAID').length,
@@ -328,6 +462,10 @@ export class FinanceOpsPage implements OnInit {
   }
 
   loadPlatformData() {
+    if (this.isClinic) {
+      this.loadClinicData();
+      return;
+    }
     this.loading.set(true);
     this.loadError.set('');
     let pendingCalls = 3;
@@ -342,6 +480,33 @@ export class FinanceOpsPage implements OnInit {
     this.billingApi.listReceipts().subscribe({ next: (rows) => (this.receipts.set(rows), done()), error: fail });
     this.billingApi.monthlyIncome(new Date().getFullYear()).subscribe({ next: (r) => (this.income.set(r), done()), error: fail });
     this.adminApi.listClinics().subscribe({ next: (rows) => (this.clinics.set(rows), done()), error: fail });
+  }
+
+  /** Recibos y gastos de los últimos tres meses, y resúmenes de caja del mes, el mes anterior y el año. */
+  private loadClinicData() {
+    this.loading.set(true);
+    this.loadError.set('');
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const listFrom = ymd(new Date(y, m - 2, 1));
+    let pendingCalls = 5;
+    const done = () => {
+      pendingCalls -= 1;
+      if (pendingCalls === 0) this.loading.set(false);
+    };
+    const fail = () => {
+      this.loadError.set('No se pudieron cargar los recibos y gastos del consultorio.');
+      done();
+    };
+    const api = this.clinicBilling;
+    api.listReceipts(listFrom).subscribe({ next: (rows) => (this.clinicReceipts.set(rows), done()), error: fail });
+    api.listExpenses(listFrom).subscribe({ next: (rows) => (this.expenses.set(rows), done()), error: fail });
+    api.summary(ymd(new Date(y, m, 1)), ymd(now)).subscribe({ next: (s) => (this.summaryMonth.set(s), done()), error: fail });
+    api
+      .summary(ymd(new Date(y, m - 1, 1)), ymd(new Date(y, m, 0)))
+      .subscribe({ next: (s) => (this.summaryPrev.set(s), done()), error: fail });
+    api.summary(ymd(new Date(y, 0, 1)), ymd(now)).subscribe({ next: (s) => (this.summaryYear.set(s), done()), error: fail });
   }
 
   go(section: Section) {
@@ -470,19 +635,21 @@ export class FinanceOpsPage implements OnInit {
 
   openPdf(id: string) {
     const token = this.auth.token();
-    fetch(this.billingApi.receiptPdfUrl(id), { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    const url = this.isClinic ? this.clinicBilling.receiptPdfUrl(id) : this.billingApi.receiptPdfUrl(id);
+    fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
       .then((r) => {
         if (!r.ok) throw new Error();
         return r.blob();
       })
       .then((blob) => window.open(URL.createObjectURL(blob), '_blank'))
-      .catch(() => this.loadError.set('No se pudo abrir el PDF del cobro.'));
+      .catch(() => this.loadError.set('No se pudo abrir el PDF del recibo.'));
   }
 
   clearMovementFilters() {
     this.movFrom.set('');
     this.movTo.set('');
     this.movStatus.set('');
+    this.movType.set('');
     this.movClinic.set('');
   }
 
@@ -491,11 +658,11 @@ export class FinanceOpsPage implements OnInit {
     const rows = this.movements();
     if (!rows.length) return;
     const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-    const header = ['Número', 'Consultorio', 'Concepto', 'Emitido', 'Pagado', 'Medio de pago', 'Monto', 'Estado'];
+    const header = ['Número', this.partyLabel, 'Concepto', 'Fecha', 'Tipo', 'Valor', 'Estado'];
     const lines = rows.map((r) =>
       [
-        r.number, r.clinic?.name || r.payerName || '', r.kindLabel, r.createdAt.slice(0, 10), r.paidAt?.slice(0, 10) || '',
-        r.methodLabel, r.amount, r.statusLabel,
+        r.number, r.party, r.concept, r.issuedAt ? ymd(new Date(r.issuedAt)) : '',
+        r.type === 'INCOME' ? 'Ingreso' : 'Egreso', r.amount, r.statusLabel,
       ]
         .map(esc)
         .join(';'),

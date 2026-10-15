@@ -32,6 +32,9 @@ export class Clinic {
   @Column({ name: 'sgsst_enabled', default: false })
   sgsstEnabled: boolean;
 
+  @Column({ name: 'finance_enabled', default: false })
+  financeEnabled: boolean;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   address: string | null;
 

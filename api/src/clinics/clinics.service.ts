@@ -162,6 +162,17 @@ export class ClinicsService {
     return this.findOne(id);
   }
 
+  /** Activa o desactiva Operación y Finanzas; no borra datos, solo muestra u oculta el módulo. */
+  async setFinance(id: string, financeEnabled: boolean) {
+    const clinic = await this.clinicsRepository.findOne({ where: { id } });
+    if (!clinic) {
+      throw new NotFoundException('El consultorio no existe');
+    }
+    clinic.financeEnabled = financeEnabled;
+    await this.clinicsRepository.save(clinic);
+    return this.findOne(id);
+  }
+
   private async provisionDocuments(clinicId: string, dashboardType: string | null) {
     try {
       await this.documentProvision.ensureForClinic(clinicId, dashboardType);
@@ -350,6 +361,7 @@ export class ClinicsService {
       specialty: clinic.specialty,
       dashboardType: clinic.dashboardType,
       sgsstEnabled: clinic.sgsstEnabled,
+      financeEnabled: clinic.financeEnabled,
       address: clinic.address,
       phone: clinic.phone,
       nit: clinic.nit,

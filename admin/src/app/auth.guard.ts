@@ -121,6 +121,23 @@ export const documentsReadGuard: CanActivateFn = () => {
   return goClinicLogin();
 };
 
+/** Operación y Finanzas del consultorio: solo el admin y si el superadmin activó el módulo. */
+export const clinicFinanceGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (auth.isClinicAdmin() && auth.user()?.financeEnabled) {
+    return true;
+  }
+  if (auth.isSuperAdmin()) {
+    return router.createUrlTree(['/admin/finanzas']);
+  }
+  if (auth.isClinicStaff()) {
+    window.location.replace(`/consultorio.html?_=${Date.now()}`);
+    return false;
+  }
+  return goClinicLogin();
+};
+
 /** @deprecated usar clinicStaffGuard */
 export const clinicAdminGuard = clinicStaffGuard;
 

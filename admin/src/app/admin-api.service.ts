@@ -75,6 +75,10 @@ export class AdminApiService {
     return this.http.post<Clinic>(`${API}/clinics/${clinicId}/sgsst`, { sgsstEnabled });
   }
 
+  setClinicFinance(clinicId: string, financeEnabled: boolean) {
+    return this.http.post<Clinic>(`${API}/clinics/${clinicId}/finance`, { financeEnabled });
+  }
+
   setClinicRips(clinicId: string, ripsEnabled: boolean) {
     return this.http.post<{ clinicId: string; ripsEnabled: boolean; usersUpdated: number }>(
       `${API}/clinics/${clinicId}/rips`,

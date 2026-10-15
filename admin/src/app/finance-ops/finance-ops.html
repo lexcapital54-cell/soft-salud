@@ -9,7 +9,7 @@
       </svg>
       <div>
         <p class="brand-name">HabiliSalud</p>
-        <p class="brand-sub">Operación y Finanzas</p>
+        <p class="brand-sub">{{ isClinic ? user()?.clinicName || 'Operación y Finanzas' : 'Operación y Finanzas' }}</p>
       </div>
       <button type="button" class="side-close" (click)="navOpen.set(false)" aria-label="Cerrar menú">
         <hab-icon name="x" />
@@ -37,7 +37,11 @@
     </nav>
 
     <div class="side-foot">
-      <a routerLink="/admin" class="back"><hab-icon name="arrowLeft" [size]="16" />Volver al panel</a>
+      @if (isClinic) {
+        <a href="/consultorio.html" class="back"><hab-icon name="arrowLeft" [size]="16" />Volver al consultorio</a>
+      } @else {
+        <a routerLink="/admin" class="back"><hab-icon name="arrowLeft" [size]="16" />Volver al panel</a>
+      }
       <p class="side-user">{{ user()?.fullName }}</p>
     </div>
   </aside>
@@ -60,7 +64,9 @@
         <p class="top-sub">{{ sectionInfo().subtitle }}</p>
       </div>
       <div class="top-meta">
-        @if (section() === 'facturacion') {
+        @if (section() === 'facturacion' && isClinic) {
+          <a routerLink="/consultorio/recibos" class="btn primary"><hab-icon name="plus" [size]="15" />Nuevo recibo de caja</a>
+        } @else if (section() === 'facturacion') {
           <a routerLink="/admin/ingresos" [queryParams]="{ tab: 'nuevo' }" class="btn ghost"><hab-icon name="plus" [size]="15" />Nuevo cobro individual</a>
           <a routerLink="/admin/ingresos" [queryParams]="{ tab: 'mensual' }" class="btn primary"><hab-icon name="layers" [size]="15" />Generación masiva de cobros</a>
         } @else {
@@ -79,7 +85,9 @@
       </p>
     }
 
-    @if (section() === 'dashboard' || section() === 'nomina') {
+    @if (isClinic) {
+      <ng-container [ngTemplateOutlet]="clinicKpis" />
+    } @else if (section() === 'dashboard' || section() === 'nomina') {
       <section class="kpis" aria-label="Indicadores principales">
         <article class="kpi">
           <span class="kpi-ico"><hab-icon name="receipt" [size]="18" /></span>
@@ -252,11 +260,29 @@
           <ng-container [ngTemplateOutlet]="treasuryWidget" />
         </div>
         <article class="card">
-          <header class="card-head"><h2><hab-icon name="list" [size]="18" />Documentos emitidos</h2></header>
-          <ng-container [ngTemplateOutlet]="receiptsTable" [ngTemplateOutletContext]="{ $implicit: receipts().slice(0, 15) }" />
+          <header class="card-head">
+            <h2><hab-icon name="list" [size]="18" />{{ isClinic ? 'Recibos de caja emitidos' : 'Documentos emitidos' }}</h2>
+          </header>
+          <ng-container [ngTemplateOutlet]="receiptsTable" [ngTemplateOutletContext]="{ $implicit: incomeDocs().slice(0, 15) }" />
         </article>
       }
       @case ('tesoreria') {
+        @if (isClinic) {
+          <div class="two even">
+            <article class="card">
+              <header class="card-head"><h2><hab-icon name="activity" [size]="18" />Flujo de caja del mes</h2></header>
+              <ng-container [ngTemplateOutlet]="cashFlowChart" />
+            </article>
+            <article class="card">
+              <header class="card-head"><h2><hab-icon name="clock" [size]="18" />Cartera de pacientes</h2></header>
+              <p class="hint">
+                Los recibos de caja se registran pagados, así que aquí no hay cuentas por cobrar. Los saldos pendientes de
+                cada paciente (plan de tratamiento y abonos) se consultan al crear un recibo en Recibos de caja.
+              </p>
+              <a routerLink="/consultorio/recibos" class="btn ghost"><hab-icon name="receipt" [size]="15" />Ir a recibos de caja</a>
+            </article>
+          </div>
+        } @else {
         <div class="two even">
           <article class="card">
             <header class="card-head"><h2><hab-icon name="activity" [size]="18" />Envejecimiento de cartera</h2></header>
@@ -291,6 +317,7 @@
             }
           </article>
         </div>
+        }
         <article class="card">
           <header class="card-head">
             <h2><hab-icon name="list" [size]="18" />Movimientos de tesorería</h2>
@@ -307,27 +334,44 @@
               <span>Hasta</span>
               <input type="date" [ngModel]="movTo()" (ngModelChange)="movTo.set($event)" />
             </label>
-            <label>
-              <span>Estado</span>
-              <select [ngModel]="movStatus()" (ngModelChange)="movStatus.set($event)">
-                <option value="">Todos</option>
-                <option value="PAID">Pagado (ingreso)</option>
-                <option value="PENDING">Pendiente por cobrar</option>
-              </select>
-            </label>
-            <label>
-              <span>Consultorio</span>
-              <select [ngModel]="movClinic()" (ngModelChange)="movClinic.set($event)">
-                <option value="">Todos</option>
-                @for (c of movClinics(); track c.id) {
-                  <option [value]="c.id">{{ c.name }}</option>
-                }
-              </select>
-            </label>
+            @if (isClinic) {
+              <label>
+                <span>Tipo</span>
+                <select [ngModel]="movType()" (ngModelChange)="movType.set($event)">
+                  <option value="">Todos</option>
+                  <option value="INCOME">Ingreso</option>
+                  <option value="EXPENSE">Egreso</option>
+                </select>
+              </label>
+            } @else {
+              <label>
+                <span>Estado</span>
+                <select [ngModel]="movStatus()" (ngModelChange)="movStatus.set($event)">
+                  <option value="">Todos</option>
+                  <option value="PAID">Pagado (ingreso)</option>
+                  <option value="PENDING">Pendiente por cobrar</option>
+                </select>
+              </label>
+              <label>
+                <span>Consultorio</span>
+                <select [ngModel]="movClinic()" (ngModelChange)="movClinic.set($event)">
+                  <option value="">Todos</option>
+                  @for (c of movClinics(); track c.id) {
+                    <option [value]="c.id">{{ c.name }}</option>
+                  }
+                </select>
+              </label>
+            }
             <button type="button" class="btn ghost sm" (click)="clearMovementFilters()">Limpiar filtros</button>
           </div>
           <ng-container [ngTemplateOutlet]="receiptsTable" [ngTemplateOutletContext]="{ $implicit: movements() }" />
-          <p class="hint">Incluye los cobros de la plataforma. Las cuentas bancarias, egresos y la conciliación aún no se registran en el sistema.</p>
+          <p class="hint">
+            @if (isClinic) {
+              Recibos de caja y gastos de los últimos tres meses. Las cuentas bancarias y la conciliación aún no se registran en el sistema.
+            } @else {
+              Incluye los cobros de la plataforma. Las cuentas bancarias, egresos y la conciliación aún no se registran en el sistema.
+            }
+          </p>
         </article>
       }
       @case ('inventarios') {
@@ -740,6 +784,20 @@
     </header>
     @if (loading()) {
       <span class="skel"></span><span class="skel"></span>
+    } @else if (isClinic) {
+      <dl class="mini-dl">
+        <div><dt>Recibos de caja este mes</dt><dd>{{ monthReceipts().total }}</dd></div>
+        <div><dt>Total facturado del mes</dt><dd>{{ cop(kpi().monthIncome) }}</dd></div>
+      </dl>
+      <ul class="status-list">
+        <li>
+          <span class="dot" [class.off]="!user()?.ripsEnabled"></span>Generación de RIPS
+          <span class="badge" [class.mint]="user()?.ripsEnabled" [class.gray]="!user()?.ripsEnabled">{{ user()?.ripsEnabled ? 'Activa' : 'No activa' }}</span>
+        </li>
+        <li><span class="dot off"></span>Facturación electrónica DIAN<span class="badge gray">No conectada</span></li>
+        <li><span class="dot off"></span>Validación RIPS JSON (CUPS / CIE)<span class="badge gray">Sin datos</span></li>
+      </ul>
+      <a routerLink="/consultorio/recibos" class="btn primary block-btn"><hab-icon name="receipt" [size]="16" />Ir a recibos de caja</a>
     } @else {
       <div class="meter">
         <div class="meter-top"><span>Consultorios activos con RIPS</span><strong>{{ rips().pct }} %</strong></div>
@@ -769,9 +827,18 @@
     </header>
     @if (loading()) {
       <span class="skel tall"></span>
+    } @else if (isClinic) {
+      <dl class="mini-dl">
+        <div><dt>Ingresos del mes</dt><dd>{{ cop(kpi().monthIncome) }}</dd></div>
+        <div><dt>Egresos del mes</dt><dd>{{ cop(kpi().monthExpense) }}</dd></div>
+        <div><dt>Flujo neto del mes</dt><dd>{{ cop(kpi().monthNet) }}</dd></div>
+      </dl>
+      <p class="sub-title">Flujo de caja del mes</p>
+      <ng-container [ngTemplateOutlet]="cashFlowChart" />
+      <button type="button" class="btn ghost block-btn" (click)="go('tesoreria')">Ver tesorería</button>
     } @else {
       <dl class="mini-dl">
-        <div><dt>Recaudado del mes</dt><dd>{{ cop(income()?.currentMonth?.total ?? 0) }}</dd></div>
+        <div><dt>Recaudado del mes</dt><dd>{{ cop(kpi().monthIncome) }}</dd></div>
         <div><dt>Cartera por cobrar</dt><dd>{{ cop(receivable()) }}</dd></div>
       </dl>
       <p class="sub-title">Envejecimiento de cartera</p>
@@ -811,6 +878,148 @@
       <li><span class="sw s2"></span>Vencida</li>
       <li><span class="sw s3"></span>Crítica</li>
     </ul>
+  }
+</ng-template>
+
+<!-- Flujo de caja del mes del consultorio: ingresos frente a egresos -->
+<ng-template #cashFlowChart>
+  @if (loading()) {
+    <span class="skel tall"></span>
+  } @else if (!kpi().monthIncome && !kpi().monthExpense) {
+    <p class="muted small">Aún no hay ingresos ni egresos registrados este mes.</p>
+  } @else {
+    <div class="aging flow" role="img" [attr.aria-label]="'Ingresos ' + cop(kpi().monthIncome) + ', egresos ' + cop(kpi().monthExpense)">
+      @for (b of cashFlow(); track b.label) {
+        <div class="aging-col">
+          <span class="aging-val">{{ b.value ? cop(b.value) : '—' }}</span>
+          <span [class]="'aging-bar ' + b.tone" [style.height.%]="b.height"></span>
+          <span class="aging-label">{{ b.label }}</span>
+        </div>
+      }
+    </div>
+    <p class="flow-net" [class.down]="kpi().monthNet < 0">Flujo neto: <strong class="num">{{ cop(kpi().monthNet) }}</strong></p>
+  }
+</ng-template>
+
+<!-- Indicadores del consultorio según la sección -->
+<ng-template #clinicKpis>
+  @if (section() === 'facturacion') {
+    <section class="kpis" aria-label="Indicadores de facturación">
+      <article class="kpi">
+        <span class="kpi-ico"><hab-icon name="receipt" [size]="18" /></span>
+        <p class="kpi-label">Total facturado del mes</p>
+        @if (loading()) {
+          <span class="skel"></span>
+        } @else {
+          <p class="kpi-value">{{ cop(kpi().monthIncome) }}</p>
+          <p class="kpi-hint">Recibos de caja <ng-container [ngTemplateOutlet]="variation" /></p>
+        }
+      </article>
+      <article class="kpi">
+        <span class="kpi-ico"><hab-icon name="file" [size]="18" /></span>
+        <p class="kpi-label">Generación de RIPS</p>
+        <p class="kpi-value" [class.muted]="!user()?.ripsEnabled">{{ user()?.ripsEnabled ? 'Activa' : 'No activa' }}</p>
+        <p class="kpi-hint">{{ user()?.ripsEnabled ? 'Se genera el JSON RIPS al firmar la historia' : 'La activa el administrador de la plataforma' }}</p>
+      </article>
+      <article class="kpi">
+        <span class="kpi-ico muted-ico"><hab-icon name="shield" [size]="18" /></span>
+        <p class="kpi-label">Validación RIPS (Minsalud)</p>
+        <p class="kpi-value muted">Sin datos</p>
+        <p class="kpi-hint">El resultado de la validación aún no se registra</p>
+      </article>
+      <article class="kpi">
+        <span class="kpi-ico"><hab-icon name="list" [size]="18" /></span>
+        <p class="kpi-label">Recibos emitidos del mes</p>
+        @if (loading()) {
+          <span class="skel"></span>
+        } @else {
+          <p class="kpi-value">{{ monthReceipts().total }}</p>
+          <p class="kpi-hint">Factura electrónica DIAN no conectada</p>
+        }
+      </article>
+    </section>
+  } @else if (section() === 'tesoreria') {
+    <section class="kpis" aria-label="Indicadores de tesorería">
+      <article class="kpi">
+        <span class="kpi-ico"><hab-icon name="receipt" [size]="18" /></span>
+        <p class="kpi-label">Ingresos del mes</p>
+        @if (loading()) {
+          <span class="skel"></span>
+        } @else {
+          <p class="kpi-value">{{ cop(kpi().monthIncome) }}</p>
+          <p class="kpi-hint">Recibos de caja <ng-container [ngTemplateOutlet]="variation" /></p>
+        }
+      </article>
+      <article class="kpi">
+        <span class="kpi-ico warn"><hab-icon name="download" [size]="18" /></span>
+        <p class="kpi-label">Egresos del mes</p>
+        @if (loading()) {
+          <span class="skel"></span>
+        } @else {
+          <p class="kpi-value">{{ cop(kpi().monthExpense) }}</p>
+          <p class="kpi-hint">Gastos registrados</p>
+        }
+      </article>
+      <article class="kpi" [class.kpi-alert]="kpi().monthNet < 0">
+        <span class="kpi-ico"><hab-icon name="activity" [size]="18" /></span>
+        <p class="kpi-label">Flujo neto del mes</p>
+        @if (loading()) {
+          <span class="skel"></span>
+        } @else {
+          <p class="kpi-value">{{ cop(kpi().monthNet) }}</p>
+          <p class="kpi-hint">Ingresos menos egresos</p>
+        }
+      </article>
+      <article class="kpi">
+        <span class="kpi-ico"><hab-icon name="scale" [size]="18" /></span>
+        <p class="kpi-label">Ingresos del año</p>
+        @if (loading()) {
+          <span class="skel"></span>
+        } @else {
+          <p class="kpi-value">{{ cop(kpi().yearIncome) }}</p>
+          <p class="kpi-hint">Neto del año: {{ cop(kpi().yearNet) }}</p>
+        }
+      </article>
+    </section>
+  } @else if (section() === 'dashboard' || section() === 'nomina') {
+    <section class="kpis" aria-label="Indicadores principales">
+      <article class="kpi">
+        <span class="kpi-ico"><hab-icon name="receipt" [size]="18" /></span>
+        <p class="kpi-label">Ingresos del mes</p>
+        @if (loading()) {
+          <span class="skel"></span>
+        } @else {
+          <p class="kpi-value">{{ cop(kpi().monthIncome) }}</p>
+          <p class="kpi-hint">{{ monthReceipts().total }} recibos <ng-container [ngTemplateOutlet]="variation" /></p>
+        }
+      </article>
+      <article class="kpi">
+        <span class="kpi-ico"><hab-icon name="users" [size]="18" /></span>
+        <p class="kpi-label">Costo de nómina del periodo</p>
+        <p class="kpi-value">{{ cop(periodTotals().cost) }}</p>
+        <p class="kpi-hint">{{ periodTotals().count }} {{ periodTotals().count === 1 ? 'liquidación' : 'liquidaciones' }} · sin prestaciones</p>
+      </article>
+      <article class="kpi">
+        <span class="kpi-ico warn"><hab-icon name="download" [size]="18" /></span>
+        <p class="kpi-label">Egresos del mes</p>
+        @if (loading()) {
+          <span class="skel"></span>
+        } @else {
+          <p class="kpi-value">{{ cop(kpi().monthExpense) }}</p>
+          <p class="kpi-hint">Gastos registrados</p>
+        }
+      </article>
+      <article class="kpi" [class.kpi-alert]="kpi().monthNet < 0">
+        <span class="kpi-ico"><hab-icon name="scale" [size]="18" /></span>
+        <p class="kpi-label">Flujo neto del mes</p>
+        @if (loading()) {
+          <span class="skel"></span>
+        } @else {
+          <p class="kpi-value">{{ cop(kpi().monthNet) }}</p>
+          <p class="kpi-hint">Ingresos menos egresos</p>
+        }
+      </article>
+    </section>
   }
 </ng-template>
 
@@ -928,21 +1137,21 @@
   </article>
 </ng-template>
 
-<!-- Tabla de cobros de la plataforma -->
+<!-- Tabla de movimientos (cobros de la plataforma o recibos y gastos del consultorio) -->
 <ng-template #receiptsTable let-rows>
   @if (loading()) {
     <span class="skel"></span><span class="skel"></span>
   } @else if (!rows.length) {
-    <div class="empty compact"><hab-icon name="receipt" [size]="24" /><p>No hay cobros para mostrar.</p></div>
+    <div class="empty compact"><hab-icon name="receipt" [size]="24" /><p>No hay movimientos para mostrar.</p></div>
   } @else {
     <div class="table-wrap">
       <table class="emp">
         <thead>
           <tr>
             <th scope="col">Número</th>
-            <th scope="col">Consultorio</th>
+            <th scope="col">{{ partyLabel }}</th>
             <th scope="col">Concepto</th>
-            <th scope="col">Emitido</th>
+            <th scope="col">Fecha</th>
             <th scope="col" class="r">Valor</th>
             <th scope="col">Estado de pago</th>
             <th scope="col">Factura electrónica</th>
@@ -952,20 +1161,34 @@
         <tbody>
           @for (r of rows; track r.id) {
             <tr>
-              <th scope="row">{{ r.number }}</th>
-              <td>{{ r.clinic?.name || r.payerName || '—' }}</td>
-              <td>{{ r.kindLabel }}</td>
-              <td>{{ r.createdAt | date: 'dd/MM/yyyy' }}</td>
-              <td class="r num">{{ cop(r.amount) }}</td>
+              <th scope="row">{{ r.number || '—' }}</th>
+              <td>{{ r.party || '—' }}</td>
+              <td>{{ r.concept || '—' }}</td>
+              <td>{{ r.issuedAt | date: 'dd/MM/yyyy' }}</td>
+              <td class="r num">{{ r.type === 'EXPENSE' ? '−' : '' }}{{ cop(r.amount) }}</td>
               <td>
-                <span class="badge" [class.mint]="r.status === 'PAID'" [class.amber]="r.status === 'PENDING'">{{ r.statusLabel }}</span>
+                <span
+                  class="badge"
+                  [class.mint]="r.type === 'INCOME' && r.status === 'PAID'"
+                  [class.amber]="r.status === 'PENDING'"
+                  [class.out]="r.type === 'EXPENSE'"
+                  >{{ r.statusLabel }}</span
+                >
               </td>
-              <td><span class="badge gray">No aplica · recibo de caja</span></td>
+              <td>
+                @if (r.type === 'INCOME') {
+                  <span class="badge gray">No aplica · recibo de caja</span>
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </td>
               <td>
                 <div class="actions">
-                  <button type="button" class="btn ghost sm" (click)="openPdf(r.id)" [attr.aria-label]="'Ver PDF del cobro ' + r.number">
-                    <hab-icon name="download" [size]="14" />PDF
-                  </button>
+                  @if (r.pdf) {
+                    <button type="button" class="btn ghost sm" (click)="openPdf(r.id)" [attr.aria-label]="'Ver PDF del recibo ' + r.number">
+                      <hab-icon name="download" [size]="14" />PDF
+                    </button>
+                  }
                 </div>
               </td>
             </tr>

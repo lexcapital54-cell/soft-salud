@@ -99,6 +99,15 @@ export interface BillingPackage {
   createdAt: string;
 }
 
+export interface BillingSummary {
+  from: string;
+  to: string;
+  income: number;
+  expense: number;
+  net: number;
+  transactions: number;
+}
+
 export interface DailyClose {
   date: string;
   income: number;
@@ -184,6 +193,15 @@ export class BillingApiService {
     cupsCode?: string;
   }) {
     return this.http.post<BillingPackage>(`${API}/billing/packages`, body);
+  }
+
+  /** Ingresos y egresos del consultorio en el rango (por defecto, el año en curso). */
+  summary(from?: string, to?: string) {
+    const qs = new URLSearchParams();
+    if (from) qs.set('from', from);
+    if (to) qs.set('to', to);
+    const suffix = qs.toString() ? `?${qs}` : '';
+    return this.http.get<BillingSummary>(`${API}/billing/summary${suffix}`);
   }
 
   dailyClose(date?: string) {
