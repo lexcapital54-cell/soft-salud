@@ -1,18 +1,19 @@
 :host {
-  /* Paleta de Operación y Finanzas (verde bosque y menta) */
-  --forest: #0f5a47;
-  --forest-2: #116854;
-  --mint: #10b981;
-  --mint-2: #059669;
-  /* Botones con texto blanco: verde más oscuro para contraste AA */
-  --action: #047857;
-  --action-hover: #065f46;
-  --soft: #e6f4f1;
-  --soft-2: #d1fae5;
-  --ink: #1e293b;
-  --muted: #64748b;
-  --line: #e2e8f0;
-  --bg: #f8fafc;
+  /* Misma paleta del panel del superadmin (azul marino y turquesa de habilisalud.com) */
+  --forest: #002b5c;
+  --forest-2: #001a3a;
+  --mint: #2ec4b6;
+  --mint-2: #1a9e92;
+  /* Turquesa oscuro para textos sobre blanco (contraste AA) */
+  --teal-text: #12786f;
+  --action: #002b5c;
+  --action-hover: #001a3a;
+  --soft: #eef4fb;
+  --soft-2: #dff5f2;
+  --ink: #0a1f3d;
+  --muted: #5a6b7d;
+  --line: #e4eaf0;
+  --bg: #f4f7fb;
   --card: #fff;
   --amber-bg: #fef3c7;
   --amber-ink: #92400e;
@@ -82,7 +83,7 @@ hab-icon {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   min-height: 100vh;
-  background: linear-gradient(90deg, var(--forest) 260px, transparent 260px);
+  background: linear-gradient(90deg, var(--forest-2) 260px, transparent 260px);
 }
 
 .side {
@@ -93,8 +94,8 @@ hab-icon {
   flex-direction: column;
   gap: 20px;
   padding: 22px 14px 16px;
-  color: #d1fae5;
-  background: linear-gradient(180deg, var(--forest-2) 0%, var(--forest) 100%);
+  color: #c3d3e8;
+  background: linear-gradient(180deg, var(--forest) 0%, var(--forest-2) 100%);
   z-index: 40;
 }
 
@@ -118,7 +119,7 @@ hab-icon {
 }
 
 .brand-sub {
-  color: #a7f3d0;
+  color: #8fe3da;
   font-size: 12px;
   font-weight: 600;
 }
@@ -141,7 +142,7 @@ nav {
   padding: 10px 12px;
   border: 1px solid transparent;
   border-radius: 10px;
-  color: #d1fae5;
+  color: #c3d3e8;
   background: transparent;
   font: inherit;
   font-weight: 500;
@@ -159,11 +160,10 @@ nav {
   }
 
   &.active {
-    color: var(--forest);
-    font-weight: 700;
-    background: var(--soft);
-    border-color: var(--mint);
-    box-shadow: inset 4px 0 0 var(--mint);
+    color: #fff;
+    font-weight: 600;
+    background: rgba(46, 196, 182, 0.22);
+    box-shadow: inset 3px 0 0 var(--mint);
   }
 }
 
@@ -191,7 +191,7 @@ nav {
 
 .side-user {
   padding: 0 10px;
-  color: #a7f3d0;
+  color: #a3b9d8;
   font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -220,7 +220,7 @@ main {
 }
 
 .eyebrow {
-  color: var(--mint-2);
+  color: var(--teal-text);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -257,7 +257,7 @@ h1 {
 }
 
 .notice {
-  color: #065f46;
+  color: #0e625a;
   background: var(--soft-2);
 }
 
@@ -417,10 +417,10 @@ h1 {
   &.ghost {
     color: var(--forest);
     background: #fff;
-    border-color: #b7e4d6;
+    border-color: #c9d6e6;
 
     &:hover {
-      background: var(--soft);
+      background: #eef3fa;
     }
   }
 
@@ -554,7 +554,7 @@ select {
 
   &:focus {
     border-color: var(--mint-2);
-    outline: 2px solid rgba(16, 185, 129, 0.35);
+    outline: 2px solid rgba(46, 196, 182, 0.35);
     outline-offset: 0;
   }
 }
@@ -637,7 +637,7 @@ input[type='number'] {
   display: grid;
   gap: 8px;
   padding: 18px;
-  border: 1px solid #a7f3d0;
+  border: 1px solid #b5ebe5;
   border-radius: var(--radius);
   background: linear-gradient(135deg, var(--soft-2), var(--soft));
 
@@ -654,7 +654,7 @@ input[type='number'] {
     }
 
     dt {
-      color: #3f5f55;
+      color: #3d5368;
     }
 
     dd {
@@ -665,7 +665,7 @@ input[type='number'] {
 }
 
 .net-label {
-  color: #065f46;
+  color: #0e625a;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -745,7 +745,7 @@ table {
   }
 
   tbody tr:hover {
-    background: #f3fbf8;
+    background: #f7f9fc;
   }
 
   tfoot th,
@@ -789,14 +789,14 @@ table {
   white-space: nowrap;
 
   &.mint {
-    color: #065f46;
+    color: #0e625a;
     background: var(--soft-2);
   }
 
   &.teal {
     color: var(--forest);
     background: var(--soft);
-    box-shadow: inset 0 0 0 1px #a7f3d0;
+    box-shadow: inset 0 0 0 1px #c9d6e6;
   }
 
   &.amber {
@@ -938,7 +938,7 @@ table {
   border-radius: 6px 6px 2px 2px;
 
   &.s0 {
-    background: #6ee7b7;
+    background: #a6ece5;
   }
 
   &.s1 {
@@ -1067,7 +1067,7 @@ table {
   background: var(--soft);
 
   span {
-    color: #3f5f55;
+    color: #3d5368;
     font-size: 13px;
     font-weight: 600;
   }
@@ -1188,7 +1188,7 @@ table {
     position: fixed;
     inset: 0;
     z-index: 74;
-    background: rgba(15, 90, 71, 0.45);
+    background: rgba(0, 26, 58, 0.45);
   }
 
   .side-close {
