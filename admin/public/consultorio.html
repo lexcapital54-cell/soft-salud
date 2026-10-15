@@ -396,6 +396,20 @@
     body.specialty-psychology .stat-ico,
     body.specialty-psychology .mod-ico,
     body.specialty-psychology .alert-ico { color: #8a6a55; }
+
+    /* Colores de habilisalud.com: azul marino y turquesa (solo consultorios marcados). */
+    body.theme-web {
+      --nav: #002b5c; --nav-2: #001a3a; --accent: #2ec4b6; --accent-soft: #a6ece5;
+      --bg: #f4f7fb; --soft: #e8f1fa; --ink: #0a1f3d; --muted: #5a6b7d; --line: #e4eaf0;
+      --glow-rgb: 46, 196, 182; --cta: #002b5c; --tone-bg: #e3f7f5; --tone-ink: #12786f;
+      --shadow: 0 1px 2px rgba(0, 43, 92, .05), 0 18px 50px -28px rgba(0, 43, 92, .35);
+    }
+    body.theme-web .sb { background: linear-gradient(180deg, #002b5c 0%, #001a3a 100%); }
+    body.theme-web .btn-primary { border-color: #002b5c; background: #002b5c; }
+    body.theme-web .btn-primary:hover { background: #001a3a; }
+    body.theme-web .stat-ico,
+    body.theme-web .mod-ico,
+    body.theme-web .alert-ico { color: #1a9e92; }
   </style>
 </head>
 <body>
@@ -777,6 +791,11 @@
         document.body.classList.add('specialty-physiotherapy');
       } else if (user.specialty === 'DENTISTRY' || user.specialty === 'ORTHODONTICS') {
         document.body.classList.add('specialty-dentistry');
+      }
+      // Consultorios que pidieron los colores de habilisalud.com en su panel.
+      var webThemeClinics = ['b2e8b662-47a4-4b54-af07-3439a5d32852'];
+      if (webThemeClinics.indexOf(user.clinicId) !== -1) {
+        document.body.classList.add('theme-web');
       }
 
       var isSecretaria = user.role === 'RECEPTIONIST';
