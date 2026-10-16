@@ -511,6 +511,32 @@ tr.dim {
   color: #003d4c;
 }
 
+.check-row {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px !important;
+  font-weight: 600;
+  color: #003d4c;
+}
+
+.check-row input {
+  width: auto;
+  margin: 0;
+}
+
+.creds-box {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #eef8f1;
+  border: 1px solid #bfe0c9;
+  color: #1f6b3a;
+}
+
+.creds-box p {
+  margin: 0 0 4px;
+}
+
 @media (max-width: 900px) {
   .kpi.wide {
     grid-column: span 1;

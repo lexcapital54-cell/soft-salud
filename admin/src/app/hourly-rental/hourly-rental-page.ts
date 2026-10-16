@@ -71,6 +71,18 @@ export class HourlyRentalPage implements OnInit {
     status: 'CONFIRMED' as HourlyBookingStatus,
   };
 
+  /** Alta de profesional al agendar (si no existe aún en el consultorio). */
+  createNewProfessional = false;
+  newProfessional = {
+    fullName: '',
+    email: '',
+    password: '',
+    professionalCard: '',
+  };
+  readonly createdCredentials = signal<{ email: string; password: string; fullName: string } | null>(
+    null,
+  );
+
   roomForm = {
     id: '' as string,
     name: '',
@@ -268,6 +280,9 @@ export class HourlyRentalPage implements OnInit {
       notes: '',
       status: 'CONFIRMED',
     };
+    this.createNewProfessional = !this.professionals().length;
+    this.newProfessional = { fullName: '', email: '', password: '', professionalCard: '' };
+    this.createdCredentials.set(null);
     this.showForm.set(true);
     this.error.set('');
     this.notice.set('');
@@ -284,19 +299,18 @@ export class HourlyRentalPage implements OnInit {
       notes: b.notes || '',
       status: b.status,
     };
+    this.createNewProfessional = false;
+    this.createdCredentials.set(null);
     this.showForm.set(true);
     this.error.set('');
   }
 
   closeForm() {
     this.showForm.set(false);
+    this.createNewProfessional = false;
   }
 
   saveBooking() {
-    if (!this.bookingForm.professionalId) {
-      this.error.set('Seleccione el profesional.');
-      return;
-    }
     if (!this.bookingForm.startLocal || !this.bookingForm.endLocal) {
       this.error.set('Indique inicio y fin.');
       return;
@@ -307,9 +321,10 @@ export class HourlyRentalPage implements OnInit {
       this.error.set('La hora de fin debe ser posterior al inicio.');
       return;
     }
-    this.saving.set(true);
-    this.error.set('');
+
     if (this.bookingForm.id) {
+      this.saving.set(true);
+      this.error.set('');
       this.api
         .updateBooking(this.bookingForm.id, {
           roomId: this.bookingForm.roomId || null,
@@ -333,9 +348,79 @@ export class HourlyRentalPage implements OnInit {
         });
       return;
     }
+
+    if (this.createNewProfessional) {
+      const fullName = this.newProfessional.fullName.trim();
+      const email = this.newProfessional.email.trim();
+      if (fullName.length < 2) {
+        this.error.set('Escriba el nombre del profesional.');
+        return;
+      }
+      if (!email || !email.includes('@')) {
+        this.error.set('Indique un correo válido para el ingreso del profesional.');
+        return;
+      }
+      if (this.newProfessional.password && this.newProfessional.password.length < 8) {
+        this.error.set('La clave debe tener mínimo 8 caracteres, o déjela vacía para generar una.');
+        return;
+      }
+      this.saving.set(true);
+      this.error.set('');
+      this.api
+        .createHourlyProfessional({
+          fullName,
+          email,
+          password: this.newProfessional.password.trim() || undefined,
+          professionalCard: this.newProfessional.professionalCard.trim() || undefined,
+        })
+        .subscribe({
+          next: (pro) => {
+            this.createdCredentials.set({
+              email: pro.email,
+              password: pro.temporaryPassword,
+              fullName: pro.fullName,
+            });
+            this.professionals.update((list) => [
+              {
+                id: pro.id,
+                fullName: pro.fullName,
+                email: pro.email,
+                role: pro.role,
+                membershipType: pro.membershipType,
+                hoursUsedThisMonth: 0,
+                hoursRemainingThisMonth: pro.hoursRemainingThisMonth,
+                hoursLimitThisMonth: pro.hoursLimitThisMonth,
+              },
+              ...list,
+            ]);
+            this.submitNewBooking(pro.id, startTime, endTime, true);
+          },
+          error: (err) => {
+            this.saving.set(false);
+            this.error.set(this.msg(err, 'No se pudo crear el profesional.'));
+          },
+        });
+      return;
+    }
+
+    if (!this.bookingForm.professionalId) {
+      this.error.set('Seleccione el profesional o cree uno nuevo.');
+      return;
+    }
+    this.saving.set(true);
+    this.error.set('');
+    this.submitNewBooking(this.bookingForm.professionalId, startTime, endTime, false);
+  }
+
+  private submitNewBooking(
+    professionalId: string,
+    startTime: string,
+    endTime: string,
+    justCreatedPro: boolean,
+  ) {
     this.api
       .createBooking({
-        professionalId: this.bookingForm.professionalId,
+        professionalId,
         roomId: this.bookingForm.roomId || undefined,
         startTime,
         endTime,
@@ -344,14 +429,31 @@ export class HourlyRentalPage implements OnInit {
       .subscribe({
         next: () => {
           this.saving.set(false);
-          this.notice.set('Reserva programada en el calendario.');
-          this.showForm.set(false);
+          const creds = this.createdCredentials();
+          this.notice.set(
+            justCreatedPro && creds
+              ? `Profesional y reserva creados. Entregue el acceso: ${creds.email} / ${creds.password}`
+              : 'Reserva programada en el calendario.',
+          );
+          if (!justCreatedPro) this.showForm.set(false);
+          this.createNewProfessional = false;
           this.reloadBookings();
           this.reloadProfessionals();
         },
         error: (err) => {
           this.saving.set(false);
-          this.error.set(this.msg(err, 'No se pudo crear la reserva.'));
+          this.error.set(
+            this.msg(
+              err,
+              justCreatedPro
+                ? 'El profesional se creó, pero no se pudo crear la reserva. Selecciónelo e intente de nuevo.'
+                : 'No se pudo crear la reserva.',
+            ),
+          );
+          if (justCreatedPro) {
+            this.createNewProfessional = false;
+            this.bookingForm.professionalId = professionalId;
+          }
         },
       });
   }

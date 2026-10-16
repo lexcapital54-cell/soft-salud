@@ -1,5 +1,6 @@
 import {
   IsDateString,
+  IsEmail,
   IsEnum,
   IsInt,
   IsOptional,
@@ -11,6 +12,29 @@ import {
   MinLength,
 } from 'class-validator';
 import { HourlyBookingStatus } from '@prisma/client';
+
+/** Alta rápida de profesional con plan de arriendo (desde el calendario). */
+export class CreateHourlyProfessionalDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(160)
+  fullName: string;
+
+  @IsEmail()
+  email: string;
+
+  /** Si no se envía, se genera una clave temporal de 8 caracteres. */
+  @IsOptional()
+  @IsString()
+  @MinLength(8)
+  @MaxLength(72)
+  password?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  professionalCard?: string;
+}
 
 export class UpdateHourlyRentalSettingsDto {
   @IsOptional()

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -9,10 +10,13 @@ import {
   MembershipType,
   UserRole,
 } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.module';
 import { User } from '../../users/user.entity';
 import {
   CreateHourlyBookingDto,
+  CreateHourlyProfessionalDto,
   UpdateHourlyBookingDto,
   UpdateHourlyRentalSettingsDto,
   UpsertClinicRoomDto,
@@ -190,6 +194,72 @@ export class HourlyBookingsService {
     const room = await this.prisma.clinicRoom.findFirst({ where: { id: roomId, clinicId: id } });
     if (!room) throw new NotFoundException('Sala no encontrada');
     return this.prisma.clinicRoom.update({ where: { id: roomId }, data: { isActive } });
+  }
+
+  /**
+   * Crea un profesional de salud con plan HOURLY_RENTAL en el consultorio
+   * (admin o asistente, al agendar una sala).
+   */
+  async createHourlyProfessional(
+    user: User,
+    dto: CreateHourlyProfessionalDto,
+    clinicId?: string,
+  ) {
+    const id = this.clinicScope(user, clinicId);
+    const clinic = await this.requireHourlyModule(id);
+
+    const fullName = dto.fullName.trim();
+    const email = dto.email.trim().toLowerCase();
+    if (!fullName) throw new BadRequestException('Escriba el nombre del profesional');
+    if (!email) throw new BadRequestException('Indique el correo de ingreso');
+
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new ConflictException('Ya existe un usuario con ese correo');
+    }
+
+    const password =
+      dto.password?.trim() && dto.password.trim().length >= 8
+        ? dto.password.trim()
+        : this.generateTempPassword();
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const created = await this.prisma.user.create({
+      data: {
+        email,
+        fullName,
+        passwordHash,
+        passwordReminder: password,
+        role: UserRole.HEALTH_PROFESSIONAL,
+        clinicId: id,
+        membershipType: MembershipType.HOURLY_RENTAL,
+        professionalCard: dto.professionalCard?.trim() || null,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        role: true,
+        membershipType: true,
+      },
+    });
+
+    return {
+      ...created,
+      temporaryPassword: password,
+      hoursUsedThisMonth: 0,
+      hoursRemainingThisMonth: clinic.hourlyMaxHoursPerMonth,
+      hoursLimitThisMonth: clinic.hourlyMaxHoursPerMonth,
+    };
+  }
+
+  private generateTempPassword() {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    const bytes = randomBytes(8);
+    let out = '';
+    for (let i = 0; i < 8; i++) out += alphabet[bytes[i]! % alphabet.length];
+    return out;
   }
 
   /** Profesionales con plan de arriendo + horas usadas en el mes. */

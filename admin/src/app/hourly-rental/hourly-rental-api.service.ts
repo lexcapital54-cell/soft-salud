@@ -103,6 +103,18 @@ export class HourlyRentalApiService {
     return this.http.get<HourlyProfessional[]>(`${API}/hourly-professionals`, { params });
   }
 
+  createHourlyProfessional(body: {
+    fullName: string;
+    email: string;
+    password?: string;
+    professionalCard?: string;
+  }) {
+    return this.http.post<HourlyProfessional & { temporaryPassword: string }>(
+      `${API}/hourly-professionals`,
+      body,
+    );
+  }
+
   listBookings(opts?: { professionalId?: string; from?: string; to?: string }) {
     let params = new HttpParams();
     if (opts?.professionalId) params = params.set('professionalId', opts.professionalId);

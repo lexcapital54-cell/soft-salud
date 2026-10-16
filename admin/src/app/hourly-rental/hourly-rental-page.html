@@ -273,17 +273,51 @@
       <button type="button" class="ghost compact" (click)="closeForm()" aria-label="Cerrar">✕</button>
     </header>
     <div class="grid">
-      <label>
-        Profesional
-        <select [(ngModel)]="bookingForm.professionalId" name="professionalId" [disabled]="!!bookingForm.id">
-          <option value="">Seleccione</option>
-          @for (p of professionals(); track p.id) {
-            <option [value]="p.id">
-              {{ p.fullName }} ({{ p.hoursRemainingThisMonth ?? '—' }} h libres)
-            </option>
-          }
-        </select>
-      </label>
+      @if (!bookingForm.id) {
+        <label class="span-2 check-row">
+          <input type="checkbox" [(ngModel)]="createNewProfessional" name="createNewProfessional" />
+          Crear profesional nuevo al agendar
+        </label>
+      }
+
+      @if (createNewProfessional && !bookingForm.id) {
+        <label>
+          Nombre completo
+          <input [(ngModel)]="newProfessional.fullName" name="newFullName" maxlength="160" autocomplete="off" />
+        </label>
+        <label>
+          Correo (usuario de ingreso)
+          <input type="email" [(ngModel)]="newProfessional.email" name="newEmail" autocomplete="off" />
+        </label>
+        <label>
+          Clave (opcional)
+          <input
+            type="text"
+            [(ngModel)]="newProfessional.password"
+            name="newPassword"
+            maxlength="72"
+            placeholder="Mín. 8; si queda vacío se genera"
+            autocomplete="off"
+          />
+        </label>
+        <label>
+          Tarjeta profesional (opcional)
+          <input [(ngModel)]="newProfessional.professionalCard" name="newCard" maxlength="40" autocomplete="off" />
+        </label>
+      } @else {
+        <label>
+          Profesional
+          <select [(ngModel)]="bookingForm.professionalId" name="professionalId" [disabled]="!!bookingForm.id">
+            <option value="">Seleccione</option>
+            @for (p of professionals(); track p.id) {
+              <option [value]="p.id">
+                {{ p.fullName }} ({{ p.hoursRemainingThisMonth ?? '—' }} h libres)
+              </option>
+            }
+          </select>
+        </label>
+      }
+
       <label>
         Sala / espacio
         <select [(ngModel)]="bookingForm.roomId" name="roomId">
@@ -317,9 +351,20 @@
         <input type="text" [(ngModel)]="bookingForm.notes" name="notes" maxlength="500" />
       </label>
     </div>
+    @if (createdCredentials(); as creds) {
+      <div class="creds-box" role="status">
+        <p>
+          <strong>Profesional creado.</strong> Entregue estos datos de ingreso a
+          {{ creds.fullName }}:
+        </p>
+        <p>Usuario: <strong>{{ creds.email }}</strong></p>
+        <p>Clave: <strong>{{ creds.password }}</strong></p>
+      </div>
+    }
+
     <div class="actions">
       <button type="button" class="primary" [disabled]="saving()" (click)="saveBooking()">
-        {{ saving() ? 'Guardando…' : 'Guardar' }}
+        {{ saving() ? 'Guardando…' : createNewProfessional && !bookingForm.id ? 'Crear profesional y reservar' : 'Guardar' }}
       </button>
       <button type="button" class="ghost" (click)="closeForm()">Cerrar</button>
     </div>

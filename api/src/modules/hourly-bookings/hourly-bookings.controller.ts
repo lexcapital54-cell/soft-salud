@@ -19,6 +19,7 @@ import { UserRole } from '../../common/enums';
 import { User } from '../../users/user.entity';
 import {
   CreateHourlyBookingDto,
+  CreateHourlyProfessionalDto,
   UpdateHourlyBookingDto,
   UpdateHourlyRentalSettingsDto,
   UpsertClinicRoomDto,
@@ -97,6 +98,17 @@ export class HourlyBookingsController {
     @Query('month') month?: string,
   ) {
     return this.service.listHourlyProfessionals(req.user, clinicId, month);
+  }
+
+  /** Alta rápida al agendar: profesional con plan de arriendo por horas. */
+  @Post('hourly-professionals')
+  @Roles(...SCHEDULERS)
+  createHourlyProfessional(
+    @Req() req: AuthedRequest,
+    @Body() dto: CreateHourlyProfessionalDto,
+    @Query('clinicId') clinicId?: string,
+  ) {
+    return this.service.createHourlyProfessional(req.user, dto, clinicId);
   }
 
   @Get('hourly-bookings')
