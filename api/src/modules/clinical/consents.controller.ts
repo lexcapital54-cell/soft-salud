@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 import { UserRole } from '../../common/enums';
+import { ClinicalAccessGuard } from '../clinical-access/clinical-access.guard';
 import { User } from '../../users/user.entity';
 import { ConsentRevocationService } from './consent-revocation.service';
 import { ConsentsService } from './consents.service';
@@ -45,7 +46,7 @@ function sendPdf(
 }
 
 @Controller()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ClinicalAccessGuard)
 @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
 export class ConsentsController {
   constructor(

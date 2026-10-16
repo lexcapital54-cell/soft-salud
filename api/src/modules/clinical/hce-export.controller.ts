@@ -13,12 +13,13 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 import { UserRole } from '../../common/enums';
+import { ClinicalAccessGuard } from '../clinical-access/clinical-access.guard';
 import { User } from '../../users/user.entity';
 import { SearchHceExportQueryDto } from './dto/hce-export.dto';
 import { HceExportService } from './hce-export.service';
 
 @Controller('clinical-exports')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ClinicalAccessGuard)
 export class HceExportController {
   constructor(private readonly exports: HceExportService) {}
 

@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 import { UserRole } from '../../common/enums';
+import { ClinicalAccessGuard } from '../clinical-access/clinical-access.guard';
 import { User } from '../../users/user.entity';
 import { AestheticIndicatorsService } from './aesthetic-indicators.service';
 
@@ -22,7 +23,7 @@ export class AestheticIndicatorsQueryDto {
 }
 
 @Controller('aesthetic-indicators')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ClinicalAccessGuard)
 export class AestheticIndicatorsController {
   constructor(private readonly indicators: AestheticIndicatorsService) {}
 

@@ -6,6 +6,7 @@ import {
   agendaOnlyGuard,
   clinicStaffGuard,
   clinicalWriteGuard,
+  clinicalMembershipGuard,
   clinicFinanceGuard,
   documentsReadGuard,
   guestGuard,
@@ -77,19 +78,25 @@ export const routes: Routes = [
     canActivate: [authGuard, clinicStaffGuard],
   },
   {
+    path: 'consultorio/acceso-clinico',
+    loadComponent: () =>
+      import('./clinical/clinical-access-denied').then((m) => m.ClinicalAccessDeniedPage),
+    canActivate: [authGuard, clinicStaffGuard],
+  },
+  {
     path: 'consultorio/pacientes',
     component: PatientsDirectory,
-    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard],
+    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard, clinicalMembershipGuard],
   },
   {
     path: 'consultorio/historia-clinica',
     loadComponent: () => import('./clinical/hce-workspace').then((m) => m.HceWorkspace),
-    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard],
+    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard, clinicalMembershipGuard],
   },
   {
     path: 'consultorio/historias-pdf',
     component: HceExport,
-    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard],
+    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard, clinicalMembershipGuard],
   },
   {
     path: 'consultorio/sivigila',
@@ -109,19 +116,19 @@ export const routes: Routes = [
   {
     path: 'consultorio/informe-psicologico',
     loadComponent: () => import('./psych-admin/psych-report').then((m) => m.PsychReportPage),
-    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard],
+    canActivate: [authGuard, clinicStaffGuard, agendaOnlyGuard, clinicalMembershipGuard],
     canDeactivate: [(page: { canLeave?: () => boolean }) => page.canLeave?.() ?? true],
   },
   {
     path: 'consultorio/control-citas',
     loadComponent: () => import('./psych-admin/attendance-control').then((m) => m.AttendanceControlPage),
-    canActivate: [authGuard, clinicStaffGuard],
+    canActivate: [authGuard, clinicStaffGuard, clinicalMembershipGuard],
     canDeactivate: [(page: { canLeave?: () => boolean }) => page.canLeave?.() ?? true],
   },
   {
     path: 'consultorio/indicadores-esteticos',
     loadComponent: () => import('./aesthetic-indicators/aesthetic-indicators').then((m) => m.AestheticIndicatorsPage),
-    canActivate: [authGuard, clinicalWriteGuard],
+    canActivate: [authGuard, clinicalWriteGuard, clinicalMembershipGuard],
   },
   {
     path: 'consultorio/recibos',

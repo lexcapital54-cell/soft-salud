@@ -127,6 +127,16 @@
       background: #fdf3f3; color: #9b3333; border-radius: 12px;
     }
     .err-banner a { color: inherit; font-weight: 600; }
+    .access-banner {
+      margin: 0; padding: 14px 16px; border-radius: 12px;
+      border: 1px solid #f0d4a8; background: #fff8ee; color: #7a4a12;
+      font-size: .92rem; line-height: 1.45;
+    }
+    .access-banner strong { font-weight: 700; }
+    .access-banner a { color: inherit; font-weight: 600; }
+    .module.is-locked, .hero-btn.is-locked {
+      opacity: .55; pointer-events: none; cursor: not-allowed;
+    }
 
     .hero {
       position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between;
@@ -510,6 +520,7 @@
       </p>
 
       <main class="card" id="main" hidden>
+        <p class="access-banner" id="clinicalAccessBanner" hidden role="status"></p>
         <section class="hero" aria-labelledby="greeting">
           <svg class="hero-decor" viewBox="0 0 400 400" preserveAspectRatio="xMaxYMin slice" aria-hidden="true">
             <circle cx="400" cy="0" r="150" /><circle cx="400" cy="0" r="210" /><circle cx="400" cy="0" r="270" />
@@ -849,6 +860,52 @@
       if (!canWriteClinical) {
         var pdfMod = document.getElementById('hcePdf');
         if (pdfMod) pdfMod.hidden = true;
+      }
+
+      var clinicalModuleIds = ['modPacientes', 'hce', 'hcePdf', 'attendanceMod', 'reportMod', 'indicatorsMod'];
+
+      function setClinicalModulesLocked(locked) {
+        clinicalModuleIds.forEach(function (id) {
+          var el = document.getElementById(id);
+          if (!el || el.hidden) return;
+          el.classList.toggle('is-locked', locked);
+          if (locked) {
+            el.setAttribute('aria-disabled', 'true');
+            el.setAttribute('tabindex', '-1');
+          } else {
+            el.removeAttribute('aria-disabled');
+            el.removeAttribute('tabindex');
+          }
+        });
+        document.querySelectorAll('.hero-actions a[data-for]').forEach(function (link) {
+          var forId = link.getAttribute('data-for');
+          if (clinicalModuleIds.indexOf(forId) === -1) return;
+          link.classList.toggle('is-locked', locked);
+        });
+        syncNav();
+      }
+
+      function loadClinicalAccess() {
+        if (user.role !== 'HEALTH_PROFESSIONAL' || user.membershipType !== 'HOURLY_RENTAL') {
+          return;
+        }
+        fetch('/api/clinical-access/check', { headers: authHeaders(), cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (data) {
+            if (!data || data.hasAccess) {
+              setClinicalModulesLocked(false);
+              document.getElementById('clinicalAccessBanner').hidden = true;
+              return;
+            }
+            setClinicalModulesLocked(true);
+            var banner = document.getElementById('clinicalAccessBanner');
+            banner.hidden = false;
+            banner.innerHTML =
+              '<strong>Acceso a historia clínica restringido.</strong> ' +
+              esc(data.message || 'Necesita una reserva por horas activa.') +
+              ' <a href="/consultorio/acceso-clinico">Ver detalle</a>';
+          })
+          .catch(function () { /* no bloquear el panel si falla la red */ });
       }
 
       function initials(name) {
@@ -1370,6 +1427,7 @@
       loadSedes();
       loadAgenda();
       syncNav();
+      loadClinicalAccess();
 
       // Los cambios de estado se hacen en la Agenda: el resumen se vuelve a leer al regresar y cada minuto.
       setInterval(function () { if (!document.hidden) loadAgenda(); }, 60000);

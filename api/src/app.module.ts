@@ -12,6 +12,7 @@ import { FinanceModule } from './modules/finance/finance.module';
 import { HourlyBookingsModule } from './modules/hourly-bookings/hourly-bookings.module';
 import { PlatformBillingModule } from './modules/platform-billing/platform-billing.module';
 import { ClinicalModule } from './modules/clinical/clinical.module';
+import { ClinicalAccessModule } from './modules/clinical-access/clinical-access.module';
 import { DemoModule } from './modules/demo/demo.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -46,6 +47,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     ClinicsModule,
     AuthModule,
+    ClinicalAccessModule,
     ClinicalModule,
     NotificationsModule,
     AgendaModule,

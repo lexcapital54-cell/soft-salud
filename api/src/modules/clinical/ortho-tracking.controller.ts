@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 import { UserRole } from '../../common/enums';
+import { ClinicalAccessGuard } from '../clinical-access/clinical-access.guard';
 import { User } from '../../users/user.entity';
 import { OrthoTrackingService } from './ortho-tracking.service';
 
@@ -18,7 +19,7 @@ export class SaveOrthoTrackingDto {
 }
 
 @Controller('patients/:patientId/ortho-tracking')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ClinicalAccessGuard)
 export class OrthoTrackingController {
   constructor(private readonly tracking: OrthoTrackingService) {}
 

@@ -14,6 +14,7 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 import { UserRole } from '../../common/enums';
+import { ClinicalAccessGuard } from '../clinical-access/clinical-access.guard';
 import { User } from '../../users/user.entity';
 import {
   CreateIncapacityDto,
@@ -23,7 +24,7 @@ import {
 import { IncapacitiesService } from './incapacities.service';
 
 @Controller('incapacities')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ClinicalAccessGuard)
 @Roles(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL)
 export class IncapacitiesController {
   constructor(private readonly incapacitiesService: IncapacitiesService) {}

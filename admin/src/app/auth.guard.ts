@@ -1,6 +1,8 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { map, catchError, of } from 'rxjs';
 import { AuthService } from './auth.service';
+import { ClinicalAccessService } from './clinical/clinical-access.service';
 import { UserRole } from './models';
 
 function goAdminLogin(): false {
@@ -89,6 +91,36 @@ export const clinicalWriteGuard: CanActivateFn = () => {
     return router.createUrlTree(['/admin']);
   }
   return goClinicLogin();
+};
+
+/**
+ * ABAC: profesional con plan HOURLY_RENTAL solo entra a HCE/pacientes
+ * si tiene reserva activa (más margen de gracia). Mensualidad fija no se restringe.
+ */
+export const clinicalMembershipGuard: CanActivateFn = (route, state) => {
+  const auth = inject(AuthService);
+  const access = inject(ClinicalAccessService);
+  const router = inject(Router);
+  const user = auth.user();
+  if (!user) return goClinicLogin();
+  if (user.role !== 'HEALTH_PROFESSIONAL' || user.membershipType !== 'HOURLY_RENTAL') {
+    return true;
+  }
+  return access.check().pipe(
+    map((r) => {
+      if (r.hasAccess) return true;
+      return router.createUrlTree(['/consultorio/acceso-clinico'], {
+        queryParams: { reason: r.reason, returnUrl: state.url },
+      });
+    }),
+    catchError(() =>
+      of(
+        router.createUrlTree(['/consultorio/acceso-clinico'], {
+          queryParams: { returnUrl: state.url },
+        }),
+      ),
+    ),
+  );
 };
 
 /** Auditoría SIVIGILA */

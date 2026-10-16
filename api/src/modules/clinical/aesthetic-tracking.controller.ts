@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 import { UserRole } from '../../common/enums';
+import { ClinicalAccessGuard } from '../clinical-access/clinical-access.guard';
 import { User } from '../../users/user.entity';
 import { AestheticTrackingService } from './aesthetic-tracking.service';
 import { AestheticPhotoReportService } from './aesthetic-photo-report.service';
@@ -36,7 +37,7 @@ export class PhotoReportQueryDto {
 }
 
 @Controller('patients/:patientId/aesthetic-tracking')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ClinicalAccessGuard)
 export class AestheticTrackingController {
   constructor(
     private readonly tracking: AestheticTrackingService,

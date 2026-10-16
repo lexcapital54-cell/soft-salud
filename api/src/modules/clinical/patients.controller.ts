@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 import { UserRole } from '../../common/enums';
+import { ClinicalAccessGuard } from '../clinical-access/clinical-access.guard';
 import { User } from '../../users/user.entity';
 import {
   CreatePatientDto,
@@ -29,7 +30,7 @@ import {
 import { PatientsService } from './patients.service';
 
 @Controller('patients')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ClinicalAccessGuard)
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
