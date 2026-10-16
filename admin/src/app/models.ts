@@ -17,6 +17,14 @@ export type ClinicSpecialty =
 
 export type DashboardType = 'CLINICAL_HISTORY' | 'CLINICAL_HISTORY_WITH_DOCS';
 
+/** Plan del profesional en el consultorio. */
+export type MembershipType = 'MONTHLY_FIXED' | 'HOURLY_RENTAL';
+
+export const MEMBERSHIP_LABELS: Record<MembershipType, string> = {
+  MONTHLY_FIXED: 'Mensualidad fija',
+  HOURLY_RENTAL: 'Arriendo por horas',
+};
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -32,6 +40,7 @@ export interface AuthUser {
   financeEnabled?: boolean;
   ripsEnabled?: boolean;
   repsExpirationDate?: string | null;
+  membershipType?: MembershipType;
   isActive: boolean;
 }
 

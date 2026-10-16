@@ -27,3 +27,9 @@ export enum AppointmentEventType {
   CITA = 'CITA',
   BLOQUEO = 'BLOQUEO',
 }
+
+/** Plan del profesional: mensualidad fija o arriendo por horas. */
+export enum MembershipType {
+  MONTHLY_FIXED = 'MONTHLY_FIXED',
+  HOURLY_RENTAL = 'HOURLY_RENTAL',
+}

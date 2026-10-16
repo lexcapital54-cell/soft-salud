@@ -70,6 +70,23 @@ enum AppointmentEventType {
   @@map("appointments_event_type_enum")
 }
 
+/// Plan del profesional en el consultorio: mensualidad fija o arriendo por horas.
+enum MembershipType {
+  MONTHLY_FIXED
+  HOURLY_RENTAL
+
+  @@map("users_membership_type_enum")
+}
+
+enum HourlyBookingStatus {
+  CONFIRMED
+  CANCELLED
+  IN_PROGRESS
+  COMPLETED
+
+  @@map("hourly_bookings_status_enum")
+}
+
 /// Tipo de usuario RIPS (Res. 2275 de 2023)
 enum RipsUserType {
   PARTICULAR
@@ -400,6 +417,8 @@ model Clinic {
   payrollRuns          PayrollRun[]
   payrollNovelties     PayrollNovelty[]
   supplyMovements      SupplyMovement[]
+  clinicRooms          ClinicRoom[]
+  hourlyBookings       HourlyBooking[]
 
   @@map("clinics")
 }
@@ -420,6 +439,9 @@ model User {
   ripsEnabled                 Boolean  @default(false) @map("rips_enabled")
   /// Vencimiento del registro REPS del profesional (independiente de la sede).
   repsExpirationDate          DateTime? @map("reps_expiration_date") @db.Date
+  /// Plan de ocupación del profesional: mensualidad fija o arriendo por horas.
+  /// Solo aplica a HEALTH_PROFESSIONAL; el resto queda en MONTHLY_FIXED por defecto.
+  membershipType              MembershipType @default(MONTHLY_FIXED) @map("membership_type")
   clinicId                    String?  @map("clinic_id") @db.Uuid
   clinic                      Clinic?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
   isActive                    Boolean  @default(true) @map("is_active")
@@ -446,8 +468,11 @@ model User {
   payrollRunsCreated         PayrollRun[]           @relation("PayrollRunCreatedBy")
   payrollNoveltiesCreated    PayrollNovelty[]       @relation("PayrollNoveltyCreatedBy")
   supplyMovementsCreated     SupplyMovement[]       @relation("SupplyMovementCreatedBy")
+  hourlyBookings             HourlyBooking[]        @relation("HourlyBookingProfessional")
+  hourlyBookingsCreated      HourlyBooking[]        @relation("HourlyBookingCreatedBy")
 
   @@index([clinicId])
+  @@index([clinicId, membershipType])
   @@map("users")
 }
 
@@ -749,6 +774,9 @@ model ClinicalRecord {
   signedAt         DateTime?            @map("signed_at") @db.Timestamptz(6)
   closedAt         DateTime?            @map("closed_at") @db.Timestamptz(6)
   verificationCode String?              @map("verification_code") @db.VarChar(80)
+  /// Reserva por horas que originó esta atención (null si el profesional es de mensualidad fija).
+  bookingId        String?              @map("booking_id") @db.Uuid
+  booking          HourlyBooking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -757,7 +785,55 @@ model ClinicalRecord {
   attachments        ClinicalAttachment[]
   draftLogs          ClinicalRecordDraftLog[]
 
+  @@index([bookingId])
   @@map("clinical_records")
+}
+
+/// Sala / box del consultorio para arriendo por horas.
+model ClinicRoom {
+  id        String   @id @default(uuid()) @db.Uuid
+  clinicId  String   @map("clinic_id") @db.Uuid
+  clinic    Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  name      String   @db.VarChar(120)
+  code      String?  @db.VarChar(40)
+  capacity  Int      @default(1)
+  isActive  Boolean  @default(true) @map("is_active")
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  bookings HourlyBooking[]
+
+  @@unique([clinicId, name])
+  @@index([clinicId, isActive])
+  @@map("clinic_rooms")
+}
+
+/// Bloque de horas reservado por un profesional con plan HOURLY_RENTAL.
+model HourlyBooking {
+  id             String              @id @default(uuid()) @db.Uuid
+  clinicId       String              @map("clinic_id") @db.Uuid
+  clinic         Clinic              @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  professionalId String              @map("professional_id") @db.Uuid
+  professional   User                @relation("HourlyBookingProfessional", fields: [professionalId], references: [id], onDelete: Cascade)
+  roomId         String?             @map("room_id") @db.Uuid
+  room           ClinicRoom?         @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  startTime      DateTime            @map("start_time") @db.Timestamptz(6)
+  endTime        DateTime            @map("end_time") @db.Timestamptz(6)
+  status         HourlyBookingStatus @default(CONFIRMED)
+  notes          String?
+  createdById    String?             @map("created_by_id") @db.Uuid
+  createdBy      User?               @relation("HourlyBookingCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  clinicalRecords ClinicalRecord[]
+
+  @@index([clinicId, startTime])
+  @@index([professionalId, startTime])
+  @@index([roomId, startTime])
+  @@index([status, startTime])
+  @@map("hourly_bookings")
 }
 
 /// Auditoría de autoguardados parciales (debounce) sobre borradores HCE.

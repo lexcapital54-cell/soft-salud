@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApiService, StaffUser } from '../admin-api.service';
-import { Clinic, ROLE_LABELS, UserRole } from '../models';
+import { Clinic, MEMBERSHIP_LABELS, MembershipType, ROLE_LABELS, UserRole } from '../models';
 import { SaShell } from '../super-admin/sa-shell';
 
 type StaffRole = Exclude<UserRole, 'SUPER_ADMIN'>;
@@ -28,8 +28,14 @@ export class PasswordAdminPage implements OnInit {
   selectedUserId = '';
   resetPassword = '';
   repsDate = '';
+  membershipType: MembershipType = 'MONTHLY_FIXED';
   showCurrentPassword = signal(false);
   showResetPassword = signal(false);
+  readonly membershipLabels = MEMBERSHIP_LABELS;
+  readonly membershipOptions: Array<{ value: MembershipType; label: string }> = [
+    { value: 'MONTHLY_FIXED', label: MEMBERSHIP_LABELS.MONTHLY_FIXED },
+    { value: 'HOURLY_RENTAL', label: MEMBERSHIP_LABELS.HOURLY_RENTAL },
+  ];
 
   readonly roleOptions: Array<{ value: StaffRole; label: string }> = [
     { value: 'ADMIN', label: ROLE_LABELS.ADMIN },
@@ -55,7 +61,9 @@ export class PasswordAdminPage implements OnInit {
   onSelectUser(userId: string) {
     this.selectedUserId = userId;
     this.resetPassword = '';
-    this.repsDate = this.users().find((u) => u.id === userId)?.repsExpirationDate?.slice(0, 10) || '';
+    const selected = this.users().find((u) => u.id === userId);
+    this.repsDate = selected?.repsExpirationDate?.slice(0, 10) || '';
+    this.membershipType = selected?.membershipType || 'MONTHLY_FIXED';
     this.showCurrentPassword.set(false);
     this.showResetPassword.set(false);
     this.error.set('');
@@ -122,6 +130,31 @@ export class PasswordAdminPage implements OnInit {
 
   isProfessional(u: StaffUser) {
     return u.role === 'ADMIN' || u.role === 'HEALTH_PROFESSIONAL';
+  }
+
+  isHealthProfessional(u: StaffUser) {
+    return u.role === 'HEALTH_PROFESSIONAL';
+  }
+
+  saveMembership() {
+    const target = this.selectedUser();
+    if (!target || !this.isHealthProfessional(target)) return;
+    this.loading.set(true);
+    this.error.set('');
+    this.notice.set('');
+    this.api.updateStaffUser(target.id, { membershipType: this.membershipType }).subscribe({
+      next: (res) => {
+        this.loading.set(false);
+        this.notice.set(
+          `Plan de ${target.fullName}: ${this.membershipLabels[res.membershipType || this.membershipType]}.`,
+        );
+        this.reload();
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err?.error?.message || 'No se pudo guardar el tipo de plan.');
+      },
+    });
   }
 
   saveReps() {

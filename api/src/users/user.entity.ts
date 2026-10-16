@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ClinicSpecialty, DashboardType, UserRole } from '../common/enums';
+import { ClinicSpecialty, DashboardType, MembershipType, UserRole } from '../common/enums';
 import { Clinic } from '../clinics/clinic.entity';
 
 @Entity('users')
@@ -56,6 +56,16 @@ export class User {
   @Column({ name: 'reps_expiration_date', type: 'date', nullable: true })
   repsExpirationDate: Date | null;
 
+  /** Plan de ocupación del profesional (mensualidad fija o arriendo por horas). */
+  @Column({
+    name: 'membership_type',
+    type: 'enum',
+    enum: MembershipType,
+    enumName: 'users_membership_type_enum',
+    default: MembershipType.MONTHLY_FIXED,
+  })
+  membershipType: MembershipType;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
@@ -78,6 +88,7 @@ export type PublicUser = {
   financeEnabled?: boolean;
   ripsEnabled?: boolean;
   repsExpirationDate?: string | null;
+  membershipType?: MembershipType;
   isActive: boolean;
 };
 
@@ -105,6 +116,7 @@ export function toPublicUser(user: User): PublicUser {
             String(user.repsExpirationDate.getUTCDate()).padStart(2, '0'),
           ].join('-')
       : null,
+    membershipType: user.membershipType ?? MembershipType.MONTHLY_FIXED,
     isActive: user.isActive,
   };
 }

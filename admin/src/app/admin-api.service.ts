@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Clinic, ClinicAdmin, ClinicSpecialty, DashboardType, UserRole } from './models';
+import { Clinic, ClinicAdmin, ClinicSpecialty, DashboardType, MembershipType, UserRole } from './models';
 import { API } from './api.config';
 
 export interface StaffUser extends ClinicAdmin {
@@ -9,6 +9,7 @@ export interface StaffUser extends ClinicAdmin {
   /** Última contraseña asignada por el superadmin (solo panel admin). */
   currentPassword?: string | null;
   repsExpirationDate?: string | null;
+  membershipType?: MembershipType;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -119,5 +120,12 @@ export class AdminApiService {
 
   setUserReps(userId: string, repsExpirationDate: string | null) {
     return this.http.post<StaffUser>(`${API}/users/${userId}/reps`, { repsExpirationDate });
+  }
+
+  updateStaffUser(
+    userId: string,
+    payload: { fullName?: string; professionalCard?: string | null; isActive?: boolean; membershipType?: MembershipType },
+  ) {
+    return this.http.patch<StaffUser>(`${API}/users/${userId}`, payload);
   }
 }

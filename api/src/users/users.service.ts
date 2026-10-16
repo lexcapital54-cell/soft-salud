@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { In, Repository } from 'typeorm';
 import { Clinic } from '../clinics/clinic.entity';
-import { UserRole } from '../common/enums';
+import { MembershipType, UserRole } from '../common/enums';
 import { CreateClinicAdminDto } from './dto/create-clinic-admin.dto';
 import {
   CreateStaffUserDto,
@@ -113,6 +113,11 @@ export class UsersService {
       throw new ConflictException('Ya existe un usuario con ese correo');
     }
 
+    const membershipType =
+      dto.role === UserRole.HEALTH_PROFESSIONAL
+        ? dto.membershipType ?? MembershipType.MONTHLY_FIXED
+        : MembershipType.MONTHLY_FIXED;
+
     const user = this.usersRepository.create({
       email,
       fullName: dto.fullName.trim(),
@@ -121,6 +126,7 @@ export class UsersService {
       role: dto.role,
       clinicId: clinic.id,
       professionalCard: dto.professionalCard?.trim() || null,
+      membershipType,
       isActive: true,
     });
 
@@ -258,6 +264,12 @@ export class UsersService {
       user.professionalCard = dto.professionalCard.trim() || null;
     }
     if (dto.isActive !== undefined) user.isActive = dto.isActive;
+    if (dto.membershipType !== undefined) {
+      if (user.role !== UserRole.HEALTH_PROFESSIONAL) {
+        throw new BadRequestException('El tipo de plan solo aplica a profesionales de la salud.');
+      }
+      user.membershipType = dto.membershipType;
+    }
 
     const saved = await this.usersRepository.save(user);
     return this.toStaffUser(saved);

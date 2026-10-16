@@ -8,7 +8,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { UserRole } from '../../common/enums';
+import { MembershipType, UserRole } from '../../common/enums';
 
 /** Roles que SUPER_ADMIN puede crear en un consultorio. */
 export const STAFF_CREATABLE_ROLES = [
@@ -42,6 +42,11 @@ export class CreateStaffUserDto {
   @IsString()
   @MaxLength(80)
   professionalCard?: string;
+
+  /** Solo aplica a HEALTH_PROFESSIONAL. */
+  @IsOptional()
+  @IsEnum(MembershipType)
+  membershipType?: MembershipType;
 }
 
 export class ResetUserPasswordDto {
@@ -66,4 +71,9 @@ export class UpdateStaffUserDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  /** Solo aplica a HEALTH_PROFESSIONAL. */
+  @IsOptional()
+  @IsEnum(MembershipType)
+  membershipType?: MembershipType;
 }
