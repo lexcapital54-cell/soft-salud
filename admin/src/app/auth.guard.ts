@@ -103,7 +103,8 @@ export const clinicalMembershipGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
   const user = auth.user();
   if (!user) return goClinicLogin();
-  if (user.role !== 'HEALTH_PROFESSIONAL' || user.membershipType !== 'HOURLY_RENTAL') {
+  const clinicalWriter = user.role === 'HEALTH_PROFESSIONAL' || user.role === 'ADMIN';
+  if (!clinicalWriter || user.membershipType !== 'HOURLY_RENTAL') {
     return true;
   }
   return access.check().pipe(

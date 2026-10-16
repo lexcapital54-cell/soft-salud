@@ -15,14 +15,12 @@ export class ClinicalAccessService {
   /** Consulta el estado de acceso a HCE (con caché breve por navegación). */
   check(force = false): Observable<AccessCheckResult> {
     const user = this.auth.user();
-    if (
-      !user ||
-      user.role !== 'HEALTH_PROFESSIONAL' ||
-      user.membershipType !== 'HOURLY_RENTAL'
-    ) {
+    const clinicalWriter =
+      !!user && (user.role === 'HEALTH_PROFESSIONAL' || user.role === 'ADMIN');
+    if (!user || !clinicalWriter || user.membershipType !== 'HOURLY_RENTAL') {
       return of({
         hasAccess: true,
-        reason: user?.role === 'HEALTH_PROFESSIONAL' ? 'MONTHLY_UNRESTRICTED' : 'ROLE_EXEMPT',
+        reason: clinicalWriter ? 'MONTHLY_UNRESTRICTED' : 'ROLE_EXEMPT',
         membershipType: user?.membershipType ?? 'MONTHLY_FIXED',
         gracePeriodMinutes: 45,
         message: 'Acceso permitido.',

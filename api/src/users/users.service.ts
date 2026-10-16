@@ -113,10 +113,11 @@ export class UsersService {
       throw new ConflictException('Ya existe un usuario con ese correo');
     }
 
-    const membershipType =
-      dto.role === UserRole.HEALTH_PROFESSIONAL
-        ? dto.membershipType ?? MembershipType.MONTHLY_FIXED
-        : MembershipType.MONTHLY_FIXED;
+    const clinicalWriter =
+      dto.role === UserRole.HEALTH_PROFESSIONAL || dto.role === UserRole.ADMIN;
+    const membershipType = clinicalWriter
+      ? dto.membershipType ?? MembershipType.MONTHLY_FIXED
+      : MembershipType.MONTHLY_FIXED;
 
     const user = this.usersRepository.create({
       email,
@@ -265,8 +266,10 @@ export class UsersService {
     }
     if (dto.isActive !== undefined) user.isActive = dto.isActive;
     if (dto.membershipType !== undefined) {
-      if (user.role !== UserRole.HEALTH_PROFESSIONAL) {
-        throw new BadRequestException('El tipo de plan solo aplica a profesionales de la salud.');
+      if (user.role !== UserRole.HEALTH_PROFESSIONAL && user.role !== UserRole.ADMIN) {
+        throw new BadRequestException(
+          'El tipo de plan solo aplica a administradores del consultorio y profesionales de la salud.',
+        );
       }
       user.membershipType = dto.membershipType;
     }

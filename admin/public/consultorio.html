@@ -886,7 +886,8 @@
       }
 
       function loadClinicalAccess() {
-        if (user.role !== 'HEALTH_PROFESSIONAL' || user.membershipType !== 'HOURLY_RENTAL') {
+        var clinicalWriter = user.role === 'HEALTH_PROFESSIONAL' || user.role === 'ADMIN';
+        if (!clinicalWriter || user.membershipType !== 'HOURLY_RENTAL') {
           return;
         }
         fetch('/api/clinical-access/check', { headers: authHeaders(), cache: 'no-store' })

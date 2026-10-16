@@ -43,7 +43,7 @@ export class CreateStaffUserDto {
   @MaxLength(80)
   professionalCard?: string;
 
-  /** Solo aplica a HEALTH_PROFESSIONAL. */
+  /** Aplica a ADMIN del consultorio y HEALTH_PROFESSIONAL. */
   @IsOptional()
   @IsEnum(MembershipType)
   membershipType?: MembershipType;
@@ -72,7 +72,7 @@ export class UpdateStaffUserDto {
   @IsBoolean()
   isActive?: boolean;
 
-  /** Solo aplica a HEALTH_PROFESSIONAL. */
+  /** Aplica a ADMIN del consultorio y HEALTH_PROFESSIONAL. */
   @IsOptional()
   @IsEnum(MembershipType)
   membershipType?: MembershipType;

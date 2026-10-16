@@ -132,13 +132,14 @@ export class PasswordAdminPage implements OnInit {
     return u.role === 'ADMIN' || u.role === 'HEALTH_PROFESSIONAL';
   }
 
-  isHealthProfessional(u: StaffUser) {
-    return u.role === 'HEALTH_PROFESSIONAL';
+  /** Admin del consultorio o profesional: pueden escribir HCE y tienen tipo de plan. */
+  isClinicalWriter(u: StaffUser) {
+    return u.role === 'ADMIN' || u.role === 'HEALTH_PROFESSIONAL';
   }
 
   saveMembership() {
     const target = this.selectedUser();
-    if (!target || !this.isHealthProfessional(target)) return;
+    if (!target || !this.isClinicalWriter(target)) return;
     this.loading.set(true);
     this.error.set('');
     this.notice.set('');

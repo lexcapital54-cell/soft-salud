@@ -131,12 +131,17 @@ export class HourlyBookingsService {
     if (!(start < end)) throw new BadRequestException('La hora de fin debe ser posterior al inicio');
 
     const professional = await this.prisma.user.findFirst({
-      where: { id: dto.professionalId, clinicId: id, role: UserRole.HEALTH_PROFESSIONAL, isActive: true },
+      where: {
+        id: dto.professionalId,
+        clinicId: id,
+        isActive: true,
+        role: { in: [UserRole.HEALTH_PROFESSIONAL, UserRole.ADMIN] },
+      },
     });
     if (!professional) throw new NotFoundException('Profesional no encontrado en este consultorio');
     if (professional.membershipType !== MembershipType.HOURLY_RENTAL) {
       throw new BadRequestException(
-        'Este profesional tiene plan de mensualidad fija; no requiere reserva por horas.',
+        'Este usuario tiene plan de mensualidad fija; no requiere reserva por horas.',
       );
     }
 

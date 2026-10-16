@@ -23,8 +23,10 @@ export class ClinicalAccessService {
     const grace = this.gracePeriodMinutes();
     const membershipType = (user.membershipType as MembershipType) || MembershipType.MONTHLY_FIXED;
 
-    // Solo el profesional con arriendo por horas queda condicionado.
-    if (user.role !== UserRole.HEALTH_PROFESSIONAL) {
+    // Roles que pueden escribir HCE: el plan de arriendo solo aplica a ellos.
+    const clinicalWriter =
+      user.role === UserRole.HEALTH_PROFESSIONAL || user.role === UserRole.ADMIN;
+    if (!clinicalWriter) {
       return {
         hasAccess: true,
         reason: 'ROLE_EXEMPT',
