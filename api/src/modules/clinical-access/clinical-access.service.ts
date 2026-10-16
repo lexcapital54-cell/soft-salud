@@ -56,6 +56,21 @@ export class ClinicalAccessService {
       };
     }
 
+    // Si HabiliSALUD no activó el módulo en la sede, no se restringe el acceso.
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: user.clinicId },
+      select: { hourlyRentalEnabled: true },
+    });
+    if (!clinic?.hourlyRentalEnabled) {
+      return {
+        hasAccess: true,
+        reason: 'MONTHLY_UNRESTRICTED',
+        membershipType,
+        gracePeriodMinutes: grace,
+        message: 'El módulo de arriendo por horas no está activo en este consultorio.',
+      };
+    }
+
     const booking = await this.findActiveBooking(user.id, user.clinicId, at, grace);
     if (!booking) {
       // ¿Hay alguna reserva hoy que ya pasó la gracia?

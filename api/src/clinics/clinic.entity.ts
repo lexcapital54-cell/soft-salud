@@ -35,6 +35,9 @@ export class Clinic {
   @Column({ name: 'finance_enabled', default: false })
   financeEnabled: boolean;
 
+  @Column({ name: 'hourly_rental_enabled', default: false })
+  hourlyRentalEnabled: boolean;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   address: string | null;
 

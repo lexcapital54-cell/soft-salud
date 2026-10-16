@@ -257,6 +257,20 @@
                         <span class="track" aria-hidden="true"><span class="thumb"></span></span>
                         <span class="switch-text" aria-hidden="true">Finanzas</span>
                       </button>
+                      <button
+                        type="button"
+                        class="switch"
+                        role="switch"
+                        [class.on]="!!clinic.hourlyRentalEnabled"
+                        [attr.aria-checked]="!!clinic.hourlyRentalEnabled"
+                        [attr.aria-label]="'Arriendo por horas de ' + clinic.name"
+                        [title]="clinic.hourlyRentalEnabled ? 'Con arriendo de HCE por horas. Pulse para desactivarlo (no se borran salas ni reservas).' : 'Sin arriendo por horas. Pulse para activarlo.'"
+                        [disabled]="busyClinicId() === clinic.id"
+                        (click)="toggleHourlyRental(clinic)"
+                      >
+                        <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+                        <span class="switch-text" aria-hidden="true">Arriendo horas</span>
+                      </button>
                     </div>
                   </td>
                   <td class="row-actions">

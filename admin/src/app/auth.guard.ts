@@ -104,7 +104,7 @@ export const clinicalMembershipGuard: CanActivateFn = (route, state) => {
   const user = auth.user();
   if (!user) return goClinicLogin();
   const clinicalWriter = user.role === 'HEALTH_PROFESSIONAL' || user.role === 'ADMIN';
-  if (!clinicalWriter || user.membershipType !== 'HOURLY_RENTAL') {
+  if (!clinicalWriter || user.membershipType !== 'HOURLY_RENTAL' || !user.hourlyRentalEnabled) {
     return true;
   }
   return access.check().pipe(
@@ -159,6 +159,23 @@ export const clinicOwnerGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   if (auth.isClinicAdmin()) {
+    return true;
+  }
+  if (auth.isSuperAdmin()) {
+    return router.createUrlTree(['/admin']);
+  }
+  if (auth.isClinicStaff()) {
+    window.location.replace(`/consultorio.html?_=${Date.now()}`);
+    return false;
+  }
+  return goClinicLogin();
+};
+
+/** Arriendo HCE por horas: admin del consultorio y módulo activado por HabiliSALUD. */
+export const clinicHourlyRentalGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (auth.isClinicAdmin() && auth.user()?.hourlyRentalEnabled) {
     return true;
   }
   if (auth.isSuperAdmin()) {

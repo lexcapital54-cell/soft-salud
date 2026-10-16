@@ -80,6 +80,12 @@ export class AdminApiService {
     return this.http.post<Clinic>(`${API}/clinics/${clinicId}/finance`, { financeEnabled });
   }
 
+  setClinicHourlyRental(clinicId: string, hourlyRentalEnabled: boolean) {
+    return this.http.post<Clinic>(`${API}/clinics/${clinicId}/hourly-rental`, {
+      hourlyRentalEnabled,
+    });
+  }
+
   setClinicRips(clinicId: string, ripsEnabled: boolean) {
     return this.http.post<{ clinicId: string; ripsEnabled: boolean; usersUpdated: number }>(
       `${API}/clinics/${clinicId}/rips`,

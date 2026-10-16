@@ -17,7 +17,12 @@ export class ClinicalAccessService {
     const user = this.auth.user();
     const clinicalWriter =
       !!user && (user.role === 'HEALTH_PROFESSIONAL' || user.role === 'ADMIN');
-    if (!user || !clinicalWriter || user.membershipType !== 'HOURLY_RENTAL') {
+    if (
+      !user ||
+      !clinicalWriter ||
+      user.membershipType !== 'HOURLY_RENTAL' ||
+      !user.hourlyRentalEnabled
+    ) {
       return of({
         hasAccess: true,
         reason: clinicalWriter ? 'MONTHLY_UNRESTRICTED' : 'ROLE_EXEMPT',

@@ -38,6 +38,7 @@ export interface AuthUser {
   dashboardType?: DashboardType | null;
   sgsstEnabled?: boolean;
   financeEnabled?: boolean;
+  hourlyRentalEnabled?: boolean;
   ripsEnabled?: boolean;
   repsExpirationDate?: string | null;
   membershipType?: MembershipType;
@@ -86,6 +87,8 @@ export interface Clinic {
   sgsstEnabled?: boolean;
   /** Módulo Operación y Finanzas para el admin del consultorio. */
   financeEnabled?: boolean;
+  /** Módulo de arriendo de HCE por horas. */
+  hourlyRentalEnabled?: boolean;
   address: string | null;
   phone: string | null;
   nit?: string | null;

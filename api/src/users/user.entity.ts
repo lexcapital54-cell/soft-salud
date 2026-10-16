@@ -86,6 +86,7 @@ export type PublicUser = {
   dashboardType?: DashboardType | null;
   sgsstEnabled?: boolean;
   financeEnabled?: boolean;
+  hourlyRentalEnabled?: boolean;
   ripsEnabled?: boolean;
   repsExpirationDate?: string | null;
   membershipType?: MembershipType;
@@ -106,6 +107,7 @@ export function toPublicUser(user: User): PublicUser {
     dashboardType: user.clinic?.dashboardType ?? null,
     sgsstEnabled: user.clinic?.sgsstEnabled ?? false,
     financeEnabled: user.clinic?.financeEnabled ?? false,
+    hourlyRentalEnabled: user.clinic?.hourlyRentalEnabled ?? false,
     ripsEnabled: user.ripsEnabled ?? false,
     repsExpirationDate: user.repsExpirationDate
       ? typeof user.repsExpirationDate === 'string'

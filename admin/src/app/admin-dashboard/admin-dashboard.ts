@@ -228,6 +228,33 @@ export class AdminDashboard implements OnDestroy {
     });
   }
 
+  /** Activa o desactiva arriendo de HCE por horas; no borra salas ni reservas. */
+  toggleHourlyRental(clinic: Clinic) {
+    const next = !clinic.hourlyRentalEnabled;
+    const question = next
+      ? `¿Activar arriendo de HCE por horas en «${clinic.name}»? El administrador podrá gestionar salas y reservas; el acceso a historias quedará condicionado al plan y a la reserva activa.`
+      : `¿Desactivar arriendo de HCE por horas en «${clinic.name}»? Salas y reservas se conservan; el módulo deja de mostrarse y deja de restringir el acceso a HCE.`;
+    if (!window.confirm(question)) return;
+    this.busyClinicId.set(clinic.id);
+    this.api.setClinicHourlyRental(clinic.id, next).subscribe({
+      next: () => {
+        this.busyClinicId.set(null);
+        this.error.set('');
+        this.message.set(
+          next
+            ? `Arriendo por horas activado en «${clinic.name}».`
+            : `Arriendo por horas desactivado en «${clinic.name}».`,
+        );
+        this.refresh();
+      },
+      error: (err) => {
+        this.busyClinicId.set(null);
+        this.message.set('');
+        this.error.set(this.readError(err, 'No se pudo cambiar el módulo de arriendo por horas.'));
+      },
+    });
+  }
+
   toggleDashboardMenu(clinicId: string) {
     this.openDashboardMenuId.update((current) => (current === clinicId ? null : clinicId));
   }

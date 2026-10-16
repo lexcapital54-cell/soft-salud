@@ -173,6 +173,17 @@ export class ClinicsService {
     return this.findOne(id);
   }
 
+  /** Activa o desactiva arriendo de HCE por horas; no borra salas ni reservas. */
+  async setHourlyRental(id: string, hourlyRentalEnabled: boolean) {
+    const clinic = await this.clinicsRepository.findOne({ where: { id } });
+    if (!clinic) {
+      throw new NotFoundException('El consultorio no existe');
+    }
+    clinic.hourlyRentalEnabled = hourlyRentalEnabled;
+    await this.clinicsRepository.save(clinic);
+    return this.findOne(id);
+  }
+
   private async provisionDocuments(clinicId: string, dashboardType: string | null) {
     try {
       await this.documentProvision.ensureForClinic(clinicId, dashboardType);
@@ -362,6 +373,7 @@ export class ClinicsService {
       dashboardType: clinic.dashboardType,
       sgsstEnabled: clinic.sgsstEnabled,
       financeEnabled: clinic.financeEnabled,
+      hourlyRentalEnabled: clinic.hourlyRentalEnabled,
       address: clinic.address,
       phone: clinic.phone,
       nit: clinic.nit,

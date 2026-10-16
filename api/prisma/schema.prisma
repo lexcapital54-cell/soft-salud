@@ -365,6 +365,8 @@ model Clinic {
   sgsstEnabled  Boolean         @default(false) @map("sgsst_enabled")
   /// Módulo Operación y Finanzas (nómina y PILA, facturación, tesorería, inventario) para el admin del consultorio.
   financeEnabled Boolean        @default(false) @map("finance_enabled")
+  /// Módulo de arriendo de HCE por horas (salas, reservas y acceso condicionado a la historia clínica).
+  hourlyRentalEnabled Boolean   @default(false) @map("hourly_rental_enabled")
   billingMode   BillingMode     @default(RECEIPT_ONLY) @map("billing_mode")
   address       String?         @db.VarChar(255)
   phone         String?         @db.VarChar(40)

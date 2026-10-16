@@ -7,7 +7,7 @@ import {
   clinicStaffGuard,
   clinicalWriteGuard,
   clinicalMembershipGuard,
-  clinicOwnerGuard,
+  clinicHourlyRentalGuard,
   clinicFinanceGuard,
   documentsReadGuard,
   guestGuard,
@@ -145,7 +145,7 @@ export const routes: Routes = [
   {
     path: 'consultorio/arriendo-horas',
     loadComponent: () => import('./hourly-rental/hourly-rental-page').then((m) => m.HourlyRentalPage),
-    canActivate: [authGuard, clinicOwnerGuard],
+    canActivate: [authGuard, clinicHourlyRentalGuard],
   },
   // Rutas desconocidas: no mandar al login administrativo por defecto.
   { path: '**', redirectTo: 'login', pathMatch: 'full' },

@@ -856,8 +856,8 @@
 
       // Operación y Finanzas: solo el admin del consultorio y si el superadmin lo activó.
       document.getElementById('financeMod').hidden = !(user.role === 'ADMIN' && user.financeEnabled);
-      // Arriendo HCE por horas: solo el administrador del consultorio.
-      document.getElementById('hourlyMod').hidden = user.role !== 'ADMIN';
+      // Arriendo HCE por horas: admin del consultorio y módulo activado por HabiliSALUD.
+      document.getElementById('hourlyMod').hidden = !(user.role === 'ADMIN' && user.hourlyRentalEnabled);
 
       var canWriteClinical = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
       document.getElementById('assistantsMod').hidden = !canWriteClinical;
@@ -896,7 +896,7 @@
 
       function loadClinicalAccess() {
         var clinicalWriter = user.role === 'HEALTH_PROFESSIONAL' || user.role === 'ADMIN';
-        if (!clinicalWriter || user.membershipType !== 'HOURLY_RENTAL') {
+        if (!clinicalWriter || user.membershipType !== 'HOURLY_RENTAL' || !user.hourlyRentalEnabled) {
           return;
         }
         fetch('/api/clinical-access/check', { headers: authHeaders(), cache: 'no-store' })
@@ -1445,14 +1445,24 @@
       window.addEventListener('pageshow', function (ev) { if (ev.persisted) loadAgenda(); });
 
       if (user.role === 'ADMIN') {
-        // Operación y Finanzas lo activa HABILISALUD: se refleja sin volver a iniciar sesión.
+        // Finanzas y arriendo por horas los activa HABILISALUD: se refleja sin volver a iniciar sesión.
         fetch('/api/auth/me', { headers: authHeaders(), cache: 'no-store' })
           .then(function (r) { return r.ok ? r.json() : null; })
           .then(function (me) {
-            if (!me || me.financeEnabled === undefined || !!me.financeEnabled === !!user.financeEnabled) return;
-            user.financeEnabled = !!me.financeEnabled;
+            if (!me) return;
+            var changed = false;
+            if (me.financeEnabled !== undefined && !!me.financeEnabled !== !!user.financeEnabled) {
+              user.financeEnabled = !!me.financeEnabled;
+              document.getElementById('financeMod').hidden = !user.financeEnabled;
+              changed = true;
+            }
+            if (me.hourlyRentalEnabled !== undefined && !!me.hourlyRentalEnabled !== !!user.hourlyRentalEnabled) {
+              user.hourlyRentalEnabled = !!me.hourlyRentalEnabled;
+              document.getElementById('hourlyMod').hidden = !user.hourlyRentalEnabled;
+              changed = true;
+            }
+            if (!changed) return;
             localStorage.setItem('habilisalud_user', JSON.stringify(user));
-            document.getElementById('financeMod').hidden = !user.financeEnabled;
             syncNav();
           })
           .catch(function () {});

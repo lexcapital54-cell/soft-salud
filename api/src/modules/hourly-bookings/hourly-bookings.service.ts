@@ -44,10 +44,23 @@ export class HourlyBookingsService {
     return id;
   }
 
+  private async requireHourlyModule(clinicId: string) {
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+      select: { hourlyRentalEnabled: true },
+    });
+    if (!clinic?.hourlyRentalEnabled) {
+      throw new ForbiddenException(
+        'El módulo de arriendo por horas no está activo. Solicite a HabiliSALUD que lo active para este consultorio.',
+      );
+    }
+  }
+
   // ─── Salas ────────────────────────────────────────────────────────────────
 
   async listRooms(user: User, clinicId?: string) {
     const id = this.clinicScope(user, clinicId);
+    await this.requireHourlyModule(id);
     return this.prisma.clinicRoom.findMany({
       where: { clinicId: id },
       orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
@@ -56,6 +69,7 @@ export class HourlyBookingsService {
 
   async createRoom(user: User, dto: UpsertClinicRoomDto, clinicId?: string) {
     const id = this.clinicScope(user, clinicId);
+    await this.requireHourlyModule(id);
     const name = dto.name.trim();
     if (!name) throw new BadRequestException('Escriba el nombre de la sala');
     return this.prisma.clinicRoom.create({
@@ -71,6 +85,7 @@ export class HourlyBookingsService {
 
   async updateRoom(user: User, roomId: string, dto: UpsertClinicRoomDto, clinicId?: string) {
     const id = this.clinicScope(user, clinicId);
+    await this.requireHourlyModule(id);
     const room = await this.prisma.clinicRoom.findFirst({ where: { id: roomId, clinicId: id } });
     if (!room) throw new NotFoundException('Sala no encontrada');
     const name = dto.name.trim();
@@ -88,6 +103,7 @@ export class HourlyBookingsService {
 
   async setRoomActive(user: User, roomId: string, isActive: boolean, clinicId?: string) {
     const id = this.clinicScope(user, clinicId);
+    await this.requireHourlyModule(id);
     const room = await this.prisma.clinicRoom.findFirst({ where: { id: roomId, clinicId: id } });
     if (!room) throw new NotFoundException('Sala no encontrada');
     return this.prisma.clinicRoom.update({ where: { id: roomId }, data: { isActive } });
@@ -96,6 +112,7 @@ export class HourlyBookingsService {
   /** Profesionales del consultorio con plan de arriendo por horas. */
   async listHourlyProfessionals(user: User, clinicId?: string) {
     const id = this.clinicScope(user, clinicId);
+    await this.requireHourlyModule(id);
     return this.prisma.user.findMany({
       where: {
         clinicId: id,
@@ -121,6 +138,7 @@ export class HourlyBookingsService {
     opts: { clinicId?: string; professionalId?: string; from?: string; to?: string },
   ) {
     const clinicId = this.clinicScope(user, opts.clinicId);
+    await this.requireHourlyModule(clinicId);
     const from = opts.from ? new Date(opts.from) : undefined;
     const to = opts.to ? new Date(opts.to) : undefined;
     return this.prisma.hourlyBooking.findMany({
@@ -147,6 +165,7 @@ export class HourlyBookingsService {
 
   async createBooking(user: User, dto: CreateHourlyBookingDto, clinicId?: string) {
     const id = this.clinicScope(user, clinicId);
+    await this.requireHourlyModule(id);
     const start = new Date(dto.startTime);
     const end = new Date(dto.endTime);
     if (!(start < end)) throw new BadRequestException('La hora de fin debe ser posterior al inicio');
@@ -196,6 +215,7 @@ export class HourlyBookingsService {
 
   async updateBooking(user: User, bookingId: string, dto: UpdateHourlyBookingDto, clinicId?: string) {
     const id = this.clinicScope(user, clinicId);
+    await this.requireHourlyModule(id);
     const existing = await this.prisma.hourlyBooking.findFirst({ where: { id: bookingId, clinicId: id } });
     if (!existing) throw new NotFoundException('Reserva no encontrada');
 

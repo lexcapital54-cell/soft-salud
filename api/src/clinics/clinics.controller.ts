@@ -10,6 +10,7 @@ import { DeleteClinicDto } from './dto/delete-clinic.dto';
 import { UpdateClinicDto } from './dto/update-clinic.dto';
 import { UpdateSgsstDto } from './dto/update-sgsst.dto';
 import { UpdateFinanceDto } from './dto/update-finance.dto';
+import { UpdateHourlyRentalDto } from './dto/update-hourly-rental.dto';
 import { UpdateRipsSettingsDto } from '../modules/clinical/dto/clinical.dto';
 
 @Controller('clinics')
@@ -89,6 +90,12 @@ export class ClinicsController {
   @Post(':id/finance')
   setFinance(@Param('id') id: string, @Body() dto: UpdateFinanceDto) {
     return this.clinicsService.setFinance(id, dto.financeEnabled);
+  }
+
+  /** Módulo de arriendo de HCE por horas por sede. */
+  @Post(':id/hourly-rental')
+  setHourlyRental(@Param('id') id: string, @Body() dto: UpdateHourlyRentalDto) {
+    return this.clinicsService.setHourlyRental(id, dto.hourlyRentalEnabled);
   }
 
   @Patch(':id')
