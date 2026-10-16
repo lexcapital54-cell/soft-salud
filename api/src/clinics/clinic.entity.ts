@@ -38,6 +38,12 @@ export class Clinic {
   @Column({ name: 'hourly_rental_enabled', default: false })
   hourlyRentalEnabled: boolean;
 
+  @Column({ name: 'hourly_max_concurrent_rooms', type: 'int', default: 1 })
+  hourlyMaxConcurrentRooms: number;
+
+  @Column({ name: 'hourly_max_hours_per_month', type: 'int', default: 50 })
+  hourlyMaxHoursPerMonth: number;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   address: string | null;
 

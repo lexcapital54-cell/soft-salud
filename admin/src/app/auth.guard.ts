@@ -171,11 +171,12 @@ export const clinicOwnerGuard: CanActivateFn = () => {
   return goClinicLogin();
 };
 
-/** Arriendo HCE por horas: admin del consultorio y módulo activado por HabiliSALUD. */
+/** Arriendo HCE por horas: admin o asistente, con módulo activado por HabiliSALUD. */
 export const clinicHourlyRentalGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (auth.isClinicAdmin() && auth.user()?.hourlyRentalEnabled) {
+  const canSchedule = auth.isClinicAdmin() || auth.isReceptionist();
+  if (canSchedule && auth.user()?.hourlyRentalEnabled) {
     return true;
   }
   if (auth.isSuperAdmin()) {

@@ -5,11 +5,26 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
   Min,
   MinLength,
 } from 'class-validator';
 import { HourlyBookingStatus } from '@prisma/client';
+
+export class UpdateHourlyRentalSettingsDto {
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  hourlyMaxConcurrentRooms?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  hourlyMaxHoursPerMonth?: number;
+}
 
 export class UpsertClinicRoomDto {
   @IsString()

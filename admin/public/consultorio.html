@@ -856,8 +856,10 @@
 
       // Operación y Finanzas: solo el admin del consultorio y si el superadmin lo activó.
       document.getElementById('financeMod').hidden = !(user.role === 'ADMIN' && user.financeEnabled);
-      // Arriendo HCE por horas: admin del consultorio y módulo activado por HabiliSALUD.
-      document.getElementById('hourlyMod').hidden = !(user.role === 'ADMIN' && user.hourlyRentalEnabled);
+      // Arriendo HCE por horas: admin o asistente, con módulo activado por HabiliSALUD.
+      document.getElementById('hourlyMod').hidden = !(
+        (user.role === 'ADMIN' || user.role === 'RECEPTIONIST') && user.hourlyRentalEnabled
+      );
 
       var canWriteClinical = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
       document.getElementById('assistantsMod').hidden = !canWriteClinical;

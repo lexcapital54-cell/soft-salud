@@ -1,25 +1,26 @@
 <header class="top">
   <div>
-    <a routerLink="/consultorio" class="back">← Consultorio</a>
-    <h1>Arriendo de HCE por horas</h1>
+    @if (isReceptionist()) {
+      <a routerLink="/consultorio/agenda" class="back">← Agenda</a>
+    } @else {
+      <a routerLink="/consultorio" class="back">← Consultorio</a>
+    }
+    <h1>Arriendo de consultorio por horas</h1>
     <p class="muted">
-      Reserve bloques de acceso a la historia clínica para profesionales con plan de arriendo.
-      Tras el fin del bloque hay un margen de gracia (por defecto 45 minutos).
+      Programe en calendario las horas de renta y las salas. Tope mensual por profesional y cupo de
+      consultorios simultáneos.
     </p>
   </div>
   <button type="button" class="ghost" (click)="logout()">Cerrar sesión</button>
 </header>
 
 <nav class="tabs" aria-label="Secciones">
-  <button type="button" [class.active]="tab() === 'reservas'" (click)="setTab('reservas')">
-    Reservas
-  </button>
-  <button type="button" [class.active]="tab() === 'nueva'" (click)="setTab('nueva')">
-    Nueva reserva
-  </button>
-  <button type="button" [class.active]="tab() === 'salas'" (click)="setTab('salas')">
-    Salas
-  </button>
+  <button type="button" [class.active]="tab() === 'calendario'" (click)="setTab('calendario')">Calendario</button>
+  <button type="button" [class.active]="tab() === 'lista'" (click)="setTab('lista')">Lista</button>
+  <button type="button" [class.active]="tab() === 'salas'" (click)="setTab('salas')">Salas</button>
+  @if (isAdmin()) {
+    <button type="button" [class.active]="tab() === 'cupos'" (click)="setTab('cupos')">Cupos</button>
+  }
 </nav>
 
 @if (error()) {
@@ -29,52 +30,130 @@
   <p class="banner ok" role="status">{{ notice() }}</p>
 }
 
+@if (settings(); as s) {
+  <section class="kpis">
+    <div class="kpi">
+      <span class="kpi-label">Consultorios a la vez</span>
+      <strong>{{ s.hourlyMaxConcurrentRooms }}</strong>
+      <span class="kpi-hint">{{ s.activeRooms }} sala(s) activa(s)</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-label">Horas / mes por profesional</span>
+      <strong>{{ s.hourlyMaxHoursPerMonth }} h</strong>
+      <span class="kpi-hint">Tope de uso</span>
+    </div>
+    <div class="kpi wide">
+      <span class="kpi-label">Uso del mes</span>
+      @if (!professionals().length) {
+        <span class="kpi-hint">Sin profesionales con plan de arriendo</span>
+      } @else {
+        <ul class="usage-list">
+          @for (p of professionals(); track p.id) {
+            <li>
+              <span class="dot" [style.background]="colorFor(p.id)"></span>
+              {{ p.fullName }}
+              <strong>{{ p.hoursUsedThisMonth ?? 0 }} / {{ p.hoursLimitThisMonth ?? s.hourlyMaxHoursPerMonth }} h</strong>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </section>
+}
+
 @if (!professionals().length && !loading()) {
   <section class="card warn-card">
     <hab-icon name="alert" [size]="22" />
     <div>
       <h2>No hay profesionales con arriendo por horas</h2>
       <p>
-        En <strong>Admin → Contraseñas</strong> asigne el plan «Arriendo por horas» al administrador
-        o profesional que alquile el consultorio. Luego podrá crear reservas aquí.
+        En <strong>Admin → Contraseñas</strong> asigne el plan «Arriendo por horas». Luego programe
+        bloques en el calendario.
       </p>
     </div>
   </section>
 }
 
-@if (tab() === 'reservas') {
-  <section class="card">
-    <div class="card-head">
-      <h2>Reservas programadas</h2>
-      <button type="button" class="ghost compact" (click)="reloadBookings()" [disabled]="loading()">
-        Actualizar
-      </button>
-    </div>
-
-    <div class="filters">
-      <label>
-        Profesional
-        <select [(ngModel)]="filterProfessionalId" name="filterProfessionalId" (ngModelChange)="reloadBookings()">
-          <option value="">Todos</option>
-          @for (p of professionals(); track p.id) {
-            <option [value]="p.id">{{ p.fullName }}</option>
-          }
-        </select>
-      </label>
-      <label>
-        Desde
-        <input type="date" [(ngModel)]="filterFrom" name="filterFrom" (ngModelChange)="reloadBookings()" />
-      </label>
-      <label>
-        Hasta
-        <input type="date" [(ngModel)]="filterTo" name="filterTo" (ngModelChange)="reloadBookings()" />
-      </label>
+@if (tab() === 'calendario') {
+  <section class="card cal-card">
+    <div class="cal-toolbar">
+      <div class="cal-nav">
+        <button type="button" class="ghost compact" (click)="shiftWeek(-1)" aria-label="Semana anterior">‹</button>
+        <button type="button" class="ghost compact" (click)="goThisWeek()">Hoy</button>
+        <button type="button" class="ghost compact" (click)="shiftWeek(1)" aria-label="Semana siguiente">›</button>
+        <strong class="week-label">{{ weekLabel() }}</strong>
+      </div>
+      <div class="cal-actions">
+        <label class="inline">
+          Profesional
+          <select [(ngModel)]="filterProfessionalId" name="filterPro" (ngModelChange)="reloadBookings()">
+            <option value="">Todos</option>
+            @for (p of professionals(); track p.id) {
+              <option [value]="p.id">{{ p.fullName }}</option>
+            }
+          </select>
+        </label>
+        <button type="button" class="primary" (click)="openCreate()">+ Nueva reserva</button>
+      </div>
     </div>
 
     @if (loading()) {
-      <p class="muted">Cargando…</p>
-    } @else if (!bookings().length) {
-      <p class="muted">No hay reservas en este rango. Cree una en «Nueva reserva».</p>
+      <p class="muted">Cargando calendario…</p>
+    } @else {
+      <div class="cal-scroll" role="grid" aria-label="Calendario semanal de arriendo">
+        <div class="cal-grid">
+          <div class="cal-corner"></div>
+          @for (day of weekDays(); track day.toISOString(); let i = $index) {
+            <div class="cal-dayhead" [class.today]="isToday(day)">
+              <span>{{ dayLabels[i] }}</span>
+              <strong>{{ day | date: 'd MMM' }}</strong>
+            </div>
+          }
+          @for (hour of hours; track hour) {
+            <div class="cal-hour">{{ hour }}:00</div>
+            @for (day of weekDays(); track $index) {
+              <button
+                type="button"
+                class="cal-slot"
+                [attr.aria-label]="'Reservar ' + (day | date: 'shortDate') + ' a las ' + hour + ':00'"
+                (click)="openCreate(day, hour)"
+              >
+                @for (b of eventsStartingAt(day, hour); track b.id) {
+                  <div
+                    class="cal-event"
+                    [style.top]="eventStyle(b).top"
+                    [style.height]="eventStyle(b).height"
+                    [style.background]="eventStyle(b).background"
+                    (click)="openEdit(b, $event)"
+                    role="button"
+                    tabindex="0"
+                    (keydown.enter)="openEdit(b, $event)"
+                  >
+                    <strong>{{ b.professional?.fullName || 'Profesional' }}</strong>
+                    <span>{{ b.startTime | date: 'HH:mm' }}–{{ b.endTime | date: 'HH:mm' }}</span>
+                    @if (b.room?.name) {
+                      <span>{{ b.room?.name }}</span>
+                    }
+                  </div>
+                }
+              </button>
+            }
+          }
+        </div>
+      </div>
+      <p class="hint">Pulse una franja vacía para programar, o una reserva para editarla / cancelarla.</p>
+    }
+  </section>
+}
+
+@if (tab() === 'lista') {
+  <section class="card">
+    <div class="card-head">
+      <h2>Reservas de la semana</h2>
+      <button type="button" class="ghost compact" (click)="reloadBookings()" [disabled]="loading()">Actualizar</button>
+    </div>
+    @if (!bookings().length) {
+      <p class="muted">No hay reservas en esta semana.</p>
     } @else {
       <div class="table-wrap">
         <table>
@@ -95,29 +174,11 @@
                 <td>{{ b.endTime | date: 'short' }}</td>
                 <td>{{ b.professional?.fullName || '—' }}</td>
                 <td>{{ b.room?.name || 'Sin sala' }}</td>
-                <td>
-                  <span class="badge" [attr.data-status]="statusClass(b.status)">
-                    {{ statusLabels[b.status] }}
-                  </span>
-                </td>
+                <td>{{ statusLabels[b.status] }}</td>
                 <td class="actions">
+                  <button type="button" class="ghost compact" (click)="openEdit(b)">Editar</button>
                   @if (b.status === 'CONFIRMED') {
-                    <button type="button" class="ghost compact" [disabled]="saving()" (click)="setBookingStatus(b, 'IN_PROGRESS')">
-                      Iniciar
-                    </button>
-                    <button type="button" class="ghost compact danger" [disabled]="saving()" (click)="setBookingStatus(b, 'CANCELLED')">
-                      Cancelar
-                    </button>
-                  }
-                  @if (b.status === 'IN_PROGRESS') {
-                    <button type="button" class="ghost compact" [disabled]="saving()" (click)="setBookingStatus(b, 'COMPLETED')">
-                      Completar
-                    </button>
-                  }
-                  @if (b.status === 'CANCELLED') {
-                    <button type="button" class="ghost compact" [disabled]="saving()" (click)="setBookingStatus(b, 'CONFIRMED')">
-                      Reactivar
-                    </button>
+                    <button type="button" class="ghost compact danger" [disabled]="saving()" (click)="setBookingStatus(b, 'CANCELLED')">Cancelar</button>
                   }
                 </td>
               </tr>
@@ -125,70 +186,14 @@
           </tbody>
         </table>
       </div>
-      @if (upcomingBookings().length) {
-        <p class="hint">
-          {{ upcomingBookings().length }} reserva(s) vigentes o con margen de gracia aún activo.
-        </p>
-      }
-    }
-  </section>
-}
-
-@if (tab() === 'nueva') {
-  <section class="card">
-    <h2>Nueva reserva</h2>
-    <p class="lead">
-      El profesional solo podrá crear y consultar historias clínicas mientras la reserva esté activa
-      (incluye el margen de gracia al terminar).
-    </p>
-
-    @if (!professionals().length) {
-      <p class="muted">Primero asigne el plan «Arriendo por horas» a un profesional en Contraseñas.</p>
-    } @else {
-      <div class="grid">
-        <label>
-          Profesional
-          <select [(ngModel)]="bookingForm.professionalId" name="professionalId">
-            <option value="">Seleccione</option>
-            @for (p of professionals(); track p.id) {
-              <option [value]="p.id">{{ p.fullName }}</option>
-            }
-          </select>
-        </label>
-        <label>
-          Sala (opcional)
-          <select [(ngModel)]="bookingForm.roomId" name="roomId">
-            <option value="">Sin sala</option>
-            @for (r of activeRooms(); track r.id) {
-              <option [value]="r.id">{{ r.name }}@if (r.code) { ({{ r.code }}) }</option>
-            }
-          </select>
-        </label>
-        <label>
-          Inicio
-          <input type="datetime-local" [(ngModel)]="bookingForm.startLocal" name="startLocal" />
-        </label>
-        <label>
-          Fin
-          <input type="datetime-local" [(ngModel)]="bookingForm.endLocal" name="endLocal" />
-        </label>
-        <label class="span-2">
-          Notas
-          <input type="text" [(ngModel)]="bookingForm.notes" name="notes" placeholder="Opcional" maxlength="500" />
-        </label>
-      </div>
-      <button type="button" class="primary" [disabled]="saving()" (click)="createBooking()">
-        {{ saving() ? 'Guardando…' : 'Crear reserva' }}
-      </button>
     }
   </section>
 }
 
 @if (tab() === 'salas') {
   <section class="card">
-    <h2>Salas del consultorio</h2>
-    <p class="lead">Opcional: asocie cada reserva a una sala para evitar solapes de horario.</p>
-
+    <h2>Salas / espacios</h2>
+    <p class="lead">Defina los consultorios físicos disponibles para arriendo.</p>
     @if (rooms().length) {
       <ul class="room-list">
         @for (r of rooms(); track r.id) {
@@ -197,48 +202,126 @@
               <strong>{{ r.name }}</strong>
               <small>
                 @if (r.code) { {{ r.code }} · }
-                Capacidad {{ r.capacity }} · {{ r.isActive ? 'Activa' : 'Inactiva' }}
+                {{ r.isActive ? 'Activa' : 'Inactiva' }}
               </small>
             </div>
-            <div class="actions">
-              <button type="button" class="ghost compact" (click)="editRoom(r)">Editar</button>
-              <button type="button" class="ghost compact" [disabled]="saving()" (click)="toggleRoom(r)">
-                {{ r.isActive ? 'Desactivar' : 'Activar' }}
-              </button>
-            </div>
+            @if (isAdmin()) {
+              <div class="actions">
+                <button type="button" class="ghost compact" (click)="editRoom(r)">Editar</button>
+                <button type="button" class="ghost compact" [disabled]="saving()" (click)="toggleRoom(r)">
+                  {{ r.isActive ? 'Desactivar' : 'Activar' }}
+                </button>
+              </div>
+            }
           </li>
         }
       </ul>
-    } @else if (!loading()) {
-      <p class="muted">Aún no hay salas. Cree la primera abajo.</p>
+    } @else {
+      <p class="muted">Aún no hay salas.</p>
     }
 
-    <h3 class="subhead">{{ roomForm.id ? 'Editar sala' : 'Nueva sala' }}</h3>
+    @if (isAdmin()) {
+      <h3 class="subhead">{{ roomForm.id ? 'Editar sala' : 'Nueva sala' }}</h3>
+      <div class="grid">
+        <label>Nombre <input [(ngModel)]="roomForm.name" name="roomName" maxlength="120" /></label>
+        <label>Código <input [(ngModel)]="roomForm.code" name="roomCode" maxlength="40" /></label>
+        <label>Capacidad <input type="number" min="1" [(ngModel)]="roomForm.capacity" name="roomCapacity" /></label>
+        <label class="span-2">Notas <input [(ngModel)]="roomForm.notes" name="roomNotes" /></label>
+      </div>
+      <div class="actions">
+        <button type="button" class="primary" [disabled]="saving()" (click)="saveRoom()">
+          {{ saving() ? 'Guardando…' : roomForm.id ? 'Guardar' : 'Crear sala' }}
+        </button>
+        @if (roomForm.id) {
+          <button type="button" class="ghost" (click)="editRoom()">Cancelar</button>
+        }
+      </div>
+    } @else {
+      <p class="hint">Solo el administrador crea o modifica salas.</p>
+    }
+  </section>
+}
+
+@if (tab() === 'cupos' && isAdmin()) {
+  <section class="card">
+    <h2>Cupos de arriendo</h2>
+    <p class="lead">
+      Defina cuántos consultorios pueden usarse al mismo tiempo y el máximo de horas al mes por profesional
+      (por defecto 50).
+    </p>
     <div class="grid">
       <label>
-        Nombre
-        <input [(ngModel)]="roomForm.name" name="roomName" maxlength="120" placeholder="Consultorio 1" />
+        Consultorios simultáneos (máx.)
+        <input type="number" min="1" max="50" [(ngModel)]="settingsForm.hourlyMaxConcurrentRooms" name="maxConc" />
       </label>
       <label>
-        Código
-        <input [(ngModel)]="roomForm.code" name="roomCode" maxlength="40" placeholder="C1" />
+        Horas al mes por profesional
+        <input type="number" min="1" max="500" [(ngModel)]="settingsForm.hourlyMaxHoursPerMonth" name="maxHours" />
+      </label>
+    </div>
+    <button type="button" class="primary" [disabled]="saving()" (click)="saveSettings()">
+      {{ saving() ? 'Guardando…' : 'Guardar cupos' }}
+    </button>
+  </section>
+}
+
+@if (showForm()) {
+  <div class="modal-scrim" (click)="closeForm()" role="presentation"></div>
+  <aside class="modal" role="dialog" aria-labelledby="bookingTitle">
+    <header>
+      <h2 id="bookingTitle">{{ bookingForm.id ? 'Editar reserva' : 'Nueva reserva' }}</h2>
+      <button type="button" class="ghost compact" (click)="closeForm()" aria-label="Cerrar">✕</button>
+    </header>
+    <div class="grid">
+      <label>
+        Profesional
+        <select [(ngModel)]="bookingForm.professionalId" name="professionalId" [disabled]="!!bookingForm.id">
+          <option value="">Seleccione</option>
+          @for (p of professionals(); track p.id) {
+            <option [value]="p.id">
+              {{ p.fullName }} ({{ p.hoursRemainingThisMonth ?? '—' }} h libres)
+            </option>
+          }
+        </select>
       </label>
       <label>
-        Capacidad
-        <input type="number" min="1" [(ngModel)]="roomForm.capacity" name="roomCapacity" />
+        Sala / espacio
+        <select [(ngModel)]="bookingForm.roomId" name="roomId">
+          <option value="">Sin sala</option>
+          @for (r of activeRooms(); track r.id) {
+            <option [value]="r.id">{{ r.name }}</option>
+          }
+        </select>
       </label>
+      <label>
+        Inicio
+        <input type="datetime-local" [(ngModel)]="bookingForm.startLocal" name="startLocal" />
+      </label>
+      <label>
+        Fin
+        <input type="datetime-local" [(ngModel)]="bookingForm.endLocal" name="endLocal" />
+      </label>
+      @if (bookingForm.id) {
+        <label>
+          Estado
+          <select [(ngModel)]="bookingForm.status" name="status">
+            <option value="CONFIRMED">Confirmada</option>
+            <option value="IN_PROGRESS">En curso</option>
+            <option value="COMPLETED">Completada</option>
+            <option value="CANCELLED">Cancelada</option>
+          </select>
+        </label>
+      }
       <label class="span-2">
         Notas
-        <input [(ngModel)]="roomForm.notes" name="roomNotes" maxlength="500" />
+        <input type="text" [(ngModel)]="bookingForm.notes" name="notes" maxlength="500" />
       </label>
     </div>
     <div class="actions">
-      <button type="button" class="primary" [disabled]="saving()" (click)="saveRoom()">
-        {{ saving() ? 'Guardando…' : roomForm.id ? 'Guardar cambios' : 'Crear sala' }}
+      <button type="button" class="primary" [disabled]="saving()" (click)="saveBooking()">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
       </button>
-      @if (roomForm.id) {
-        <button type="button" class="ghost" (click)="editRoom()">Cancelar edición</button>
-      }
+      <button type="button" class="ghost" (click)="closeForm()">Cerrar</button>
     </div>
-  </section>
+  </aside>
 }

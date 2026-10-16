@@ -17,6 +17,9 @@
       @if (isReceptionist() && billingEnabled()) {
         <a class="ghost topbar-link" routerLink="/consultorio/recibos">Recibos de caja</a>
       }
+      @if (hourlyRentalEnabled()) {
+        <a class="ghost topbar-link" routerLink="/consultorio/arriendo-horas">Arriendo por horas</a>
+      }
       @if (canManage()) {
         <button type="button" class="primary" (click)="toggleBooking()">
           {{ showBooking() ? 'Cerrar' : 'Nueva cita' }}

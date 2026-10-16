@@ -367,6 +367,10 @@ model Clinic {
   financeEnabled Boolean        @default(false) @map("finance_enabled")
   /// Módulo de arriendo de HCE por horas (salas, reservas y acceso condicionado a la historia clínica).
   hourlyRentalEnabled Boolean   @default(false) @map("hourly_rental_enabled")
+  /// Máximo de salas/consultorios ocupados a la vez en arriendo por horas.
+  hourlyMaxConcurrentRooms Int  @default(1) @map("hourly_max_concurrent_rooms")
+  /// Tope de horas de arriendo por profesional en un mes calendario.
+  hourlyMaxHoursPerMonth Int    @default(50) @map("hourly_max_hours_per_month")
   billingMode   BillingMode     @default(RECEIPT_ONLY) @map("billing_mode")
   address       String?         @db.VarChar(255)
   phone         String?         @db.VarChar(40)

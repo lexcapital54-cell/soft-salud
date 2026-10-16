@@ -21,6 +21,9 @@ export interface HourlyProfessional {
   email: string;
   role: string;
   membershipType: MembershipType;
+  hoursUsedThisMonth?: number;
+  hoursRemainingThisMonth?: number;
+  hoursLimitThisMonth?: number;
 }
 
 export interface HourlyBooking {
@@ -34,6 +37,13 @@ export interface HourlyBooking {
   notes: string | null;
   professional?: { id: string; fullName: string; membershipType: MembershipType };
   room?: { id: string; name: string; code: string | null } | null;
+}
+
+export interface HourlyRentalSettings {
+  clinicId: string;
+  hourlyMaxConcurrentRooms: number;
+  hourlyMaxHoursPerMonth: number;
+  activeRooms: number;
 }
 
 export interface UpsertRoomPayload {
@@ -63,6 +73,14 @@ export interface UpdateBookingPayload {
 export class HourlyRentalApiService {
   private readonly http = inject(HttpClient);
 
+  getSettings() {
+    return this.http.get<HourlyRentalSettings>(`${API}/hourly-rental-settings`);
+  }
+
+  updateSettings(body: Partial<Pick<HourlyRentalSettings, 'hourlyMaxConcurrentRooms' | 'hourlyMaxHoursPerMonth'>>) {
+    return this.http.put<HourlyRentalSettings>(`${API}/hourly-rental-settings`, body);
+  }
+
   listRooms() {
     return this.http.get<ClinicRoom[]>(`${API}/clinic-rooms`);
   }
@@ -79,8 +97,10 @@ export class HourlyRentalApiService {
     return this.http.patch<ClinicRoom>(`${API}/clinic-rooms/${id}/active`, { isActive });
   }
 
-  listHourlyProfessionals() {
-    return this.http.get<HourlyProfessional[]>(`${API}/hourly-professionals`);
+  listHourlyProfessionals(month?: string) {
+    let params = new HttpParams();
+    if (month) params = params.set('month', month);
+    return this.http.get<HourlyProfessional[]>(`${API}/hourly-professionals`, { params });
   }
 
   listBookings(opts?: { professionalId?: string; from?: string; to?: string }) {

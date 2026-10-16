@@ -124,6 +124,12 @@ export class TodayAppointmentsDashboard implements OnInit, OnDestroy {
   readonly user = this.auth.user;
   readonly canManage = this.auth.canManageAgenda;
   readonly isReceptionist = this.auth.isReceptionist;
+  /** Módulo de arriendo HCE activado por HabiliSALUD (admin o asistente). */
+  readonly hourlyRentalEnabled = computed(() => {
+    const u = this.user();
+    if (!u?.hourlyRentalEnabled) return false;
+    return u.role === 'ADMIN' || u.role === 'RECEPTIONIST';
+  });
   /** Solo profesional o administrador del consultorio abren la HC desde la agenda (no el asistente). */
   readonly canWriteClinical = this.auth.canWriteClinical;
   /** Solo doctoras/profesionales bloquean; secretaría recibe aviso. */
