@@ -7,6 +7,7 @@ import {
   clinicStaffGuard,
   clinicalWriteGuard,
   clinicalMembershipGuard,
+  clinicOwnerGuard,
   clinicFinanceGuard,
   documentsReadGuard,
   guestGuard,
@@ -140,6 +141,11 @@ export const routes: Routes = [
     loadComponent: () => import('./finance-ops/finance-ops').then((m) => m.FinanceOpsPage),
     canActivate: [authGuard, clinicFinanceGuard],
     data: { mode: 'clinic' },
+  },
+  {
+    path: 'consultorio/arriendo-horas',
+    loadComponent: () => import('./hourly-rental/hourly-rental-page').then((m) => m.HourlyRentalPage),
+    canActivate: [authGuard, clinicOwnerGuard],
   },
   // Rutas desconocidas: no mandar al login administrativo por defecto.
   { path: '**', redirectTo: 'login', pathMatch: 'full' },

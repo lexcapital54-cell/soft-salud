@@ -68,6 +68,11 @@ export class HourlyBookingsController {
     return this.service.setRoomActive(req.user, id, !!body.isActive, clinicId);
   }
 
+  @Get('hourly-professionals')
+  listHourlyProfessionals(@Req() req: AuthedRequest, @Query('clinicId') clinicId?: string) {
+    return this.service.listHourlyProfessionals(req.user, clinicId);
+  }
+
   @Get('hourly-bookings')
   listBookings(
     @Req() req: AuthedRequest,

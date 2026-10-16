@@ -1,0 +1,244 @@
+<header class="top">
+  <div>
+    <a routerLink="/consultorio" class="back">← Consultorio</a>
+    <h1>Arriendo de HCE por horas</h1>
+    <p class="muted">
+      Reserve bloques de acceso a la historia clínica para profesionales con plan de arriendo.
+      Tras el fin del bloque hay un margen de gracia (por defecto 45 minutos).
+    </p>
+  </div>
+  <button type="button" class="ghost" (click)="logout()">Cerrar sesión</button>
+</header>
+
+<nav class="tabs" aria-label="Secciones">
+  <button type="button" [class.active]="tab() === 'reservas'" (click)="setTab('reservas')">
+    Reservas
+  </button>
+  <button type="button" [class.active]="tab() === 'nueva'" (click)="setTab('nueva')">
+    Nueva reserva
+  </button>
+  <button type="button" [class.active]="tab() === 'salas'" (click)="setTab('salas')">
+    Salas
+  </button>
+</nav>
+
+@if (error()) {
+  <p class="banner err" role="alert">{{ error() }}</p>
+}
+@if (notice()) {
+  <p class="banner ok" role="status">{{ notice() }}</p>
+}
+
+@if (!professionals().length && !loading()) {
+  <section class="card warn-card">
+    <hab-icon name="alert" [size]="22" />
+    <div>
+      <h2>No hay profesionales con arriendo por horas</h2>
+      <p>
+        En <strong>Admin → Contraseñas</strong> asigne el plan «Arriendo por horas» al administrador
+        o profesional que alquile el consultorio. Luego podrá crear reservas aquí.
+      </p>
+    </div>
+  </section>
+}
+
+@if (tab() === 'reservas') {
+  <section class="card">
+    <div class="card-head">
+      <h2>Reservas programadas</h2>
+      <button type="button" class="ghost compact" (click)="reloadBookings()" [disabled]="loading()">
+        Actualizar
+      </button>
+    </div>
+
+    <div class="filters">
+      <label>
+        Profesional
+        <select [(ngModel)]="filterProfessionalId" name="filterProfessionalId" (ngModelChange)="reloadBookings()">
+          <option value="">Todos</option>
+          @for (p of professionals(); track p.id) {
+            <option [value]="p.id">{{ p.fullName }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Desde
+        <input type="date" [(ngModel)]="filterFrom" name="filterFrom" (ngModelChange)="reloadBookings()" />
+      </label>
+      <label>
+        Hasta
+        <input type="date" [(ngModel)]="filterTo" name="filterTo" (ngModelChange)="reloadBookings()" />
+      </label>
+    </div>
+
+    @if (loading()) {
+      <p class="muted">Cargando…</p>
+    } @else if (!bookings().length) {
+      <p class="muted">No hay reservas en este rango. Cree una en «Nueva reserva».</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Inicio</th>
+              <th>Fin</th>
+              <th>Profesional</th>
+              <th>Sala</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (b of bookings(); track b.id) {
+              <tr [class.dim]="b.status === 'CANCELLED' || b.status === 'COMPLETED'">
+                <td>{{ b.startTime | date: 'short' }}</td>
+                <td>{{ b.endTime | date: 'short' }}</td>
+                <td>{{ b.professional?.fullName || '—' }}</td>
+                <td>{{ b.room?.name || 'Sin sala' }}</td>
+                <td>
+                  <span class="badge" [attr.data-status]="statusClass(b.status)">
+                    {{ statusLabels[b.status] }}
+                  </span>
+                </td>
+                <td class="actions">
+                  @if (b.status === 'CONFIRMED') {
+                    <button type="button" class="ghost compact" [disabled]="saving()" (click)="setBookingStatus(b, 'IN_PROGRESS')">
+                      Iniciar
+                    </button>
+                    <button type="button" class="ghost compact danger" [disabled]="saving()" (click)="setBookingStatus(b, 'CANCELLED')">
+                      Cancelar
+                    </button>
+                  }
+                  @if (b.status === 'IN_PROGRESS') {
+                    <button type="button" class="ghost compact" [disabled]="saving()" (click)="setBookingStatus(b, 'COMPLETED')">
+                      Completar
+                    </button>
+                  }
+                  @if (b.status === 'CANCELLED') {
+                    <button type="button" class="ghost compact" [disabled]="saving()" (click)="setBookingStatus(b, 'CONFIRMED')">
+                      Reactivar
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (upcomingBookings().length) {
+        <p class="hint">
+          {{ upcomingBookings().length }} reserva(s) vigentes o con margen de gracia aún activo.
+        </p>
+      }
+    }
+  </section>
+}
+
+@if (tab() === 'nueva') {
+  <section class="card">
+    <h2>Nueva reserva</h2>
+    <p class="lead">
+      El profesional solo podrá crear y consultar historias clínicas mientras la reserva esté activa
+      (incluye el margen de gracia al terminar).
+    </p>
+
+    @if (!professionals().length) {
+      <p class="muted">Primero asigne el plan «Arriendo por horas» a un profesional en Contraseñas.</p>
+    } @else {
+      <div class="grid">
+        <label>
+          Profesional
+          <select [(ngModel)]="bookingForm.professionalId" name="professionalId">
+            <option value="">Seleccione</option>
+            @for (p of professionals(); track p.id) {
+              <option [value]="p.id">{{ p.fullName }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          Sala (opcional)
+          <select [(ngModel)]="bookingForm.roomId" name="roomId">
+            <option value="">Sin sala</option>
+            @for (r of activeRooms(); track r.id) {
+              <option [value]="r.id">{{ r.name }}@if (r.code) { ({{ r.code }}) }</option>
+            }
+          </select>
+        </label>
+        <label>
+          Inicio
+          <input type="datetime-local" [(ngModel)]="bookingForm.startLocal" name="startLocal" />
+        </label>
+        <label>
+          Fin
+          <input type="datetime-local" [(ngModel)]="bookingForm.endLocal" name="endLocal" />
+        </label>
+        <label class="span-2">
+          Notas
+          <input type="text" [(ngModel)]="bookingForm.notes" name="notes" placeholder="Opcional" maxlength="500" />
+        </label>
+      </div>
+      <button type="button" class="primary" [disabled]="saving()" (click)="createBooking()">
+        {{ saving() ? 'Guardando…' : 'Crear reserva' }}
+      </button>
+    }
+  </section>
+}
+
+@if (tab() === 'salas') {
+  <section class="card">
+    <h2>Salas del consultorio</h2>
+    <p class="lead">Opcional: asocie cada reserva a una sala para evitar solapes de horario.</p>
+
+    @if (rooms().length) {
+      <ul class="room-list">
+        @for (r of rooms(); track r.id) {
+          <li [class.off]="!r.isActive">
+            <div>
+              <strong>{{ r.name }}</strong>
+              <small>
+                @if (r.code) { {{ r.code }} · }
+                Capacidad {{ r.capacity }} · {{ r.isActive ? 'Activa' : 'Inactiva' }}
+              </small>
+            </div>
+            <div class="actions">
+              <button type="button" class="ghost compact" (click)="editRoom(r)">Editar</button>
+              <button type="button" class="ghost compact" [disabled]="saving()" (click)="toggleRoom(r)">
+                {{ r.isActive ? 'Desactivar' : 'Activar' }}
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    } @else if (!loading()) {
+      <p class="muted">Aún no hay salas. Cree la primera abajo.</p>
+    }
+
+    <h3 class="subhead">{{ roomForm.id ? 'Editar sala' : 'Nueva sala' }}</h3>
+    <div class="grid">
+      <label>
+        Nombre
+        <input [(ngModel)]="roomForm.name" name="roomName" maxlength="120" placeholder="Consultorio 1" />
+      </label>
+      <label>
+        Código
+        <input [(ngModel)]="roomForm.code" name="roomCode" maxlength="40" placeholder="C1" />
+      </label>
+      <label>
+        Capacidad
+        <input type="number" min="1" [(ngModel)]="roomForm.capacity" name="roomCapacity" />
+      </label>
+      <label class="span-2">
+        Notas
+        <input [(ngModel)]="roomForm.notes" name="roomNotes" maxlength="500" />
+      </label>
+    </div>
+    <div class="actions">
+      <button type="button" class="primary" [disabled]="saving()" (click)="saveRoom()">
+        {{ saving() ? 'Guardando…' : roomForm.id ? 'Guardar cambios' : 'Crear sala' }}
+      </button>
+      @if (roomForm.id) {
+        <button type="button" class="ghost" (click)="editRoom()">Cancelar edición</button>
+      }
+    </div>
+  </section>
+}

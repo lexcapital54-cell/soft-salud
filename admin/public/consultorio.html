@@ -478,6 +478,7 @@
           <li><a href="/consultorio/habilitacion" data-for="docs" title="Gestión documental"><svg class="ico"><use href="#i-file"/></svg><span>Gestión documental</span></a></li>
           <li><a href="/consultorio/recibos" data-for="billing" title="Recibos de caja"><svg class="ico"><use href="#i-receipt"/></svg><span>Recibos de caja</span></a></li>
           <li><a href="/consultorio/finanzas" data-for="financeMod" title="Operación y Finanzas"><svg class="ico"><use href="#i-chart"/></svg><span>Operación y Finanzas</span></a></li>
+          <li><a href="/consultorio/arriendo-horas" data-for="hourlyMod" title="Arriendo HCE por horas"><svg class="ico"><use href="#i-clock"/></svg><span>Arriendo por horas</span></a></li>
           <li><a href="/consultorio/configuracion?seccion=servicios" data-for="servicesMod" title="Catálogo de servicios"><svg class="ico"><use href="#i-clipboard"/></svg><span>Catálogo de servicios</span></a></li>
           <li><a href="/consultorio/indicadores-esteticos" data-for="indicatorsMod" title="Indicadores estéticos"><svg class="ico"><use href="#i-chart"/></svg><span>Indicadores estéticos</span></a></li>
           <li><a href="/consultorio/configuracion?seccion=asistentes" data-for="assistantsMod" title="Asistentes"><svg class="ico"><use href="#i-user-plus"/></svg><span>Asistentes</span></a></li>
@@ -726,6 +727,12 @@
             <p>Nómina y PILA, facturación, tesorería con ingresos y egresos, e inventario del consultorio.</p>
             <span class="cta">Abrir módulo<svg class="ico"><use href="#i-chevron"/></svg></span>
           </a>
+          <a class="module" id="hourlyMod" href="/consultorio/arriendo-horas" hidden>
+            <span class="mod-ico" aria-hidden="true"><svg class="ico"><use href="#i-clock"/></svg></span>
+            <h2>Arriendo de HCE por horas</h2>
+            <p>Gestione salas y bloques de acceso a la historia clínica para profesionales con plan de arriendo.</p>
+            <span class="cta">Gestionar reservas<svg class="ico"><use href="#i-chevron"/></svg></span>
+          </a>
         </div>
         <dialog class="receipts-folder" id="receiptsFolder" aria-labelledby="receiptsFolderTitle">
           <header>
@@ -849,6 +856,8 @@
 
       // Operación y Finanzas: solo el admin del consultorio y si el superadmin lo activó.
       document.getElementById('financeMod').hidden = !(user.role === 'ADMIN' && user.financeEnabled);
+      // Arriendo HCE por horas: solo el administrador del consultorio.
+      document.getElementById('hourlyMod').hidden = user.role !== 'ADMIN';
 
       var canWriteClinical = ['ADMIN', 'HEALTH_PROFESSIONAL'].indexOf(user.role) !== -1;
       document.getElementById('assistantsMod').hidden = !canWriteClinical;

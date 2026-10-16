@@ -93,6 +93,27 @@ export class HourlyBookingsService {
     return this.prisma.clinicRoom.update({ where: { id: roomId }, data: { isActive } });
   }
 
+  /** Profesionales del consultorio con plan de arriendo por horas. */
+  async listHourlyProfessionals(user: User, clinicId?: string) {
+    const id = this.clinicScope(user, clinicId);
+    return this.prisma.user.findMany({
+      where: {
+        clinicId: id,
+        isActive: true,
+        membershipType: MembershipType.HOURLY_RENTAL,
+        role: { in: [UserRole.HEALTH_PROFESSIONAL, UserRole.ADMIN] },
+      },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        role: true,
+        membershipType: true,
+      },
+      orderBy: { fullName: 'asc' },
+    });
+  }
+
   // ─── Reservas ─────────────────────────────────────────────────────────────
 
   async listBookings(

@@ -154,6 +154,23 @@ export const documentsReadGuard: CanActivateFn = () => {
   return goClinicLogin();
 };
 
+/** Solo el administrador del consultorio (gestión de salas, reservas por horas, etc.). */
+export const clinicOwnerGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (auth.isClinicAdmin()) {
+    return true;
+  }
+  if (auth.isSuperAdmin()) {
+    return router.createUrlTree(['/admin']);
+  }
+  if (auth.isClinicStaff()) {
+    window.location.replace(`/consultorio.html?_=${Date.now()}`);
+    return false;
+  }
+  return goClinicLogin();
+};
+
 /** Operación y Finanzas del consultorio: solo el admin y si el superadmin activó el módulo. */
 export const clinicFinanceGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
